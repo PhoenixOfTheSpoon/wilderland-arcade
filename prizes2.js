@@ -197,6 +197,13 @@ const rollCap = (c, P) => { const r = Math.random()*100; let acc = 0, tier = 0; 
 // 10M → 10B → 10T → 10Qa → 10Qi (10 quintillion) → 10Sx … ×1,000 each Rebirth
 W.rebirthNeed = P => 1e7 * Math.pow(1000, P.rebirths||0);
 W.rebirthStars = P => { const need = W.rebirthNeed(P); if ((P.tickets||0) < need) return 0; return 1 + Math.floor(Math.log10(P.tickets/need)); };
+// Rebirth: tickets, Multiplier upgrades, The Mines (miners, ore, mine upgrades — depth stays) and the Mines Workshop upgrades reset;
+// every saved game restarts. Returns the profile patch plus how many Golden Stars were earned.
+W.doRebirth = P => { const stars = W.rebirthStars(P); if (!stars) return null;
+  const idle = P.idle && typeof P.idle=='object' ? {...P.idle, grid:[1,0,0,0,0,0,0,0,0,0,0,0], up:{}, ore:0, hires:1, last:Date.now()} : P.idle;
+  const upg = {...(P.upg||{})}; delete upg.idle;
+  return {stars, patch:{tickets:0, mult:{}, stars:(P.stars||0)+stars, rebirths:(P.rebirths||0)+1, saves:{}, idle, upg}}; };
+W.rebirthCard = (stars, total, n) => ({n:'+'+stars+' Golden Star'+(stars>1?'s':''), d:'Every ticket is now worth ×'+W.fmt(Math.pow(1.5,total))+'. Your next milestone is '+W.fmt(1e7*Math.pow(1000,n))+' tickets.', e:'⭐', r:7, colName:'Rebirth #'+n});
 const SKINS = [{id:'',n:'Classic',stars:0},{id:'gold',n:'Gold Trim',stars:1},{id:'neon',n:'Neon Glow',stars:3},{id:'galaxy',n:'Galaxy',stars:6},{id:'rainbow',n:'Wilderland Rainbow',stars:10}];
 W.SKINS = SKINS;
 W.skinStyle = id => ({gold:'0 0 0 3px #F9BF01, 0 0 16px rgba(249,191,1,.6)', neon:'0 0 0 3px #64CDF5, 0 0 18px #EA55AB', galaxy:'0 0 0 3px #4a5cff, 0 0 22px rgba(166,75,224,.8)', rainbow:'0 0 0 3px #ff5fd2, 0 0 14px #64CDF5, 0 0 26px #F9BF01'})[id] || '';
@@ -266,6 +273,18 @@ const E = (tag, props, ...kids) => { const e = document.createElement(tag); if (
 const icon = (it, owned=true, big=false) => { const r = R[it.r]; const d = E('div', {cls:'wlp-ic'+(owned?'':' off'), style:{'--rc':r.c, '--rg':r.glow, '--rbg': r.c+'33'}});
   if (it.art) d.appendChild(E('img', {src:it.art, alt:''})); else d.appendChild(E('span', null, it.e)); if (!owned) d.title = '???'; return d; };
 
+W.reveal = (it, label, low, sfx) => { ensureCss(); sfx = sfx || (n => window.Arcade && window.Arcade.sfx && window.Arcade.sfx(n)); const r = R[it.r], big = it.r >= 6, wild = it.r == 7;
+  const o = E('div', {cls:'wlp-reveal'+(big?' big':'')+(wild?' wild':''), style:{'--rc':r.c, '--rg':r.glow}});
+  const card = E('div', {cls:'card'}, E('div', {cls:'ttl'+(wild?' wlp-rain':'')}, label || (r.n.toUpperCase()+'!')), icon(it), E('div', {style:{fontWeight:800, fontSize:'20px', color:'#015640'}}, it.n), E('div', {cls:'wlp-small'}, it.d), E('div', {style:{fontSize:'11px', fontWeight:700, color:'#8a8a8a'}}, it.colName),
+    E('button', {cls:'wlp-buy', style:{marginTop:'6px', maxWidth:'200px'}, onclick:()=>o.remove()}, 'Awesome!'));
+  o.appendChild(card);
+  if (!low && it.r >= 2) { const n = it.r >= 6 ? 70 : it.r >= 4 ? 40 : 18; for (let i=0;i<n;i++) { const a = Math.random()*Math.PI*2, d = 120 + Math.random()*(big?420:220);
+      const p = E('div', {cls:'wlp-p', style:{background: wild ? ['#ff4539','#f9bf01','#00b451','#64cdf5','#a64be0'][i%5] : (i%3? r.c : '#fff'), animationDelay:(Math.random()*.25)+'s'}}); p.style.setProperty('--dx', Math.cos(a)*d+'px'); p.style.setProperty('--dy', Math.sin(a)*d+'px'); o.appendChild(p); } }
+  o.onclick = e => { if (e.target === o) o.remove(); };
+  document.body.appendChild(o); sfx(it.r >= 4 ? 'win' : 'coin');
+  if (it.r >= 5 && window.Arcade && window.Arcade.tone) [523,659,784,1046,1318].slice(0, it.r-2).forEach((f,i)=>window.Arcade.tone(f,.18,'triangle',.06,i*.09)); };
+
+
 W.mount = (root, api) => {
   ensureCss(); build(api.classicArt);
   const games = api.games();
@@ -277,16 +296,7 @@ W.mount = (root, api) => {
   // keep challenges current
   { const p = W.ensureChal(P(), games); if (p) set(p); }
 
-  const reveal = (it, label) => { const r = R[it.r], big = it.r >= 6, wild = it.r == 7, low = api.lowFx();
-    const o = E('div', {cls:'wlp-reveal'+(big?' big':'')+(wild?' wild':''), style:{'--rc':r.c, '--rg':r.glow}});
-    const card = E('div', {cls:'card'}, E('div', {cls:'ttl'+(wild?' wlp-rain':'')}, label || (r.n.toUpperCase()+'!')), icon(it), E('div', {style:{fontWeight:800, fontSize:'20px', color:'#015640'}}, it.n), E('div', {cls:'wlp-small'}, it.d), E('div', {style:{fontSize:'11px', fontWeight:700, color:'#8a8a8a'}}, it.colName),
-      E('button', {cls:'wlp-buy', style:{marginTop:'6px', maxWidth:'200px'}, onclick:()=>o.remove()}, 'Awesome!'));
-    o.appendChild(card);
-    if (!low && it.r >= 2) { const n = it.r >= 6 ? 70 : it.r >= 4 ? 40 : 18; for (let i=0;i<n;i++) { const a = Math.random()*Math.PI*2, d = 120 + Math.random()*(big?420:220);
-        const p = E('div', {cls:'wlp-p', style:{background: wild ? ['#ff4539','#f9bf01','#00b451','#64cdf5','#a64be0'][i%5] : (i%3? r.c : '#fff'), animationDelay:(Math.random()*.25)+'s'}}); p.style.setProperty('--dx', Math.cos(a)*d+'px'); p.style.setProperty('--dy', Math.sin(a)*d+'px'); o.appendChild(p); } }
-    o.onclick = e => { if (e.target === o) o.remove(); };
-    document.body.appendChild(o); api.sfx(it.r >= 4 ? 'win' : 'coin');
-    if (it.r >= 5 && window.Arcade && window.Arcade.tone) [523,659,784,1046,1318].slice(0, it.r-2).forEach((f,i)=>window.Arcade.tone(f,.18,'triangle',.06,i*.09)); };
+  const reveal = (it, label) => W.reveal(it, label, api.lowFx(), api.sfx);
 
   const checkCols = () => { const st = W.colStatus(P()), done = {...(P().colDone||{})}; let newly = null;
     st.forEach(c => { if (c.done && !done[c.id]) { done[c.id] = true; newly = c; } });
@@ -410,16 +420,15 @@ W.mount = (root, api) => {
   const rebirth = () => { const p = P(), box = E('div'), need = W.rebirthNeed(p), stars = W.rebirthStars(p), pct = Math.min(100, (p.tickets||0)/need*100);
     box.appendChild(E('div', {cls:'wlp-box', style:{border:'3px solid #F9BF01'}},
       E('div', {style:{fontWeight:800, fontSize:'20px', color:'#015640'}}, '⭐ Rebirth'),
-      E('div', {cls:'wlp-small'}, 'Reach the milestone, then Rebirth: your tickets and Multiplier upgrades reset, every game’s saved run restarts, and The Mines clears its miners, ore and mine upgrades (you keep the depth you reached). In return you get Golden Stars: each multiplies every ticket ×1.5 forever and unlocks Golden Hall prizes and cabinet skins — and The Mines’ max miner level grows 15% (now '+(function(){ let m = 30; for (let i=0;i<(p.rebirths||0);i++) m = Math.floor(m*1.15); return m; })()+'). You keep high scores, prizes, collections, achievements and Workshop upgrades.'),
+      E('div', {cls:'wlp-small'}, 'When you reach the milestone you Rebirth automatically: your tickets and Multiplier upgrades reset, every game’s saved run restarts, and The Mines clears its miners, ore, mine upgrades and its Workshop upgrades (you keep the depth you reached). In return you get Golden Stars: each multiplies every ticket ×1.5 forever and unlocks Golden Hall prizes and cabinet skins — and The Mines’ max miner level grows 15% (now '+(function(){ let m = 30; for (let i=0;i<(p.rebirths||0);i++) m = Math.floor(m*1.15); return m; })()+'). You keep high scores, prizes, collections, achievements and Workshop upgrades.'),
       E('div', {style:{marginTop:'10px', fontWeight:700}}, 'Rebirths: '+(p.rebirths||0)+' · Golden Stars: '+(p.stars||0)+' · star bonus ×'+W.fmt(starMult(p))),
       E('div', {style:{marginTop:'6px', fontSize:'13px'}}, 'Next milestone: '+W.fmt(need)+' tickets'),
       E('div', {cls:'wlp-small'}, 'Milestones: '+[0,1,2,3,4,5].map(i=>W.fmt(1e7*Math.pow(1000,(p.rebirths||0)+i))).join(' → ')+' → …'),
       E('div', {cls:'wlp-bar', style:{margin:'6px 0'}}, E('div', {style:{width:pct+'%', background:'#F9BF01'}})),
       (() => { const b = E('button', {cls:'wlp-buy', style:{background:'#F9BF01', color:'#121313', fontSize:'15px', padding:'10px'}, onclick:()=>{ if (api.admin()) return api.toast('ADMIN MODE · REBIRTH DISABLED'); if (!stars) return api.sfx('bad');
           if (b.dataset.arm !== '1') { b.dataset.arm = '1'; b.textContent = 'Are you sure? Tap again to Rebirth for '+stars+' ⭐'; return; }
-          const pp = P(); const idle = pp.idle && typeof pp.idle=='object' ? {...pp.idle, grid:[1,0,0,0,0,0,0,0,0,0,0,0], up:{}, ore:0, hires:1, last:Date.now()} : pp.idle;
-          set({tickets:0, mult:{}, stars:(pp.stars||0)+stars, rebirths:(pp.rebirths||0)+1, saves:{}, idle});
-          reveal({n:'+'+stars+' Golden Star'+(stars>1?'s':''), d:'Every ticket is now worth ×'+W.fmt(Math.pow(1.5,(pp.stars||0)+stars))+'.', e:'⭐', r:7, colName:'Rebirth #'+((pp.rebirths||0)+1)}, 'REBIRTH!'); render(); }},
+          const pp = P(), rb = W.doRebirth(pp); if (!rb) return; set(rb.patch); const np = P();
+          reveal(W.rebirthCard(rb.stars, np.stars, np.rebirths), 'REBIRTH!'); render(); }},
           stars ? 'Rebirth now for +'+stars+' Golden Star'+(stars>1?'s':'') : 'Need '+W.fmt(need-(p.tickets||0))+' more tickets'); if (!stars) b.disabled = true; return b; })()));
     box.appendChild(E('div', {cls:'wlp-h'}, 'CABINET SKINS (UNLOCK WITH GOLDEN STARS)'));
     const sk = E('div', {style:{display:'flex', gap:'8px', flexWrap:'wrap'}});

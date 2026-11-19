@@ -17,7 +17,8 @@ const LV = [null,
   {n:'Magma Wrangler',c:'#ff8a3c'}, {n:'Quantum Quarrier',c:'#C7F1EE'}, {n:'Core Tapper',c:'#D5F367'}, {n:'Planet Cracker',c:'#ffffff'}];
 ['Moon Miner','Comet Catcher','Star Breaker','Nebula Drill','Solar Smelter','Void Digger','Galaxy Grinder','Black-Hole Borer','Time Tunneler','Dimension Delver','Reality Ripper','Cosmic Quarry','Infinity Pick','Big Bang Boss','Multiverse Miner','The Last Miner','Legend of the Deep','Wilderland Titan']
   .forEach((n,i)=>LV.push({n, c:'hsl('+((i*37)%360)+',85%,'+(62+(i%3)*8)+'%)'}));
-const lvRate = L => L ? Math.pow(2.5, L-1) : 0;
+// Miners are the main engine: each level ~2.7× the one before, and they start at 3 ore/s.
+const lvRate = L => L ? 3 * Math.pow(2.7, L-1) : 0;
 const DEPTHS = [
   {n:'Topsoil',at:0,a:'#6b4a2b',b:'#4e3520',ore:'#c48a4a'},
   {n:'Clay Bed',at:1e3,a:'#8a5a3c',b:'#62402b',ore:'#e0a36a'},
@@ -36,7 +37,7 @@ const UPS = [
   {id:'pick',  n:'Sharper Pick',  d:'Taps dig more',                    max:999, cost:l=>25*Math.pow(1.55,l)},
   {id:'cart',  n:'Mine Carts',    d:'+25% ore from every miner',        max:999, cost:l=>150*Math.pow(1.7,l)},
   {id:'drill', n:'Deep Charges',  d:'+10% of ALL ore, stacks forever',  max:999, cost:l=>5000*Math.pow(1.45,l)},
-  {id:'luck',  n:'Lucky Strike',  d:'+2% chance a tap digs ×25',        max:25,  cost:l=>1000*Math.pow(2,l)},
+  {id:'luck',  n:'Lucky Strike',  d:'+2% chance a tap digs ×10',        max:25,  cost:l=>1000*Math.pow(2,l)},
   {id:'hire',  n:'Better Hires',  d:'New miners start 1 level up',      max:20,  cost:l=>4000*Math.pow(11,l)},
   {id:'night', n:'Night Shift',   d:'+2 h of digging while away',       max:46,  cost:l=>600*Math.pow(2.1,l)},
   {id:'gem',   n:'Gem Sense',     d:'Gems & geodes show up faster',     max:4,   cost:l=>2500*Math.pow(6,l)},
@@ -66,7 +67,8 @@ A.register('idle', { mount(host, api){
   const depthIdx = () => { let d = 0; DEPTHS.forEach((x,i)=>{ if (S.life >= x.at) d = i; }); return d; };
   const mult = () => (1 + .25*U('cart')) * (1 + .2*depthIdx()) * (1 + .1*U('drill'));
   const rate = () => S.grid.reduce((a,L)=>a+lvRate(L),0) * mult();
-  const tapAmt = () => (learn ? 1/3 : 1) * ((2 + 3*U('pick')) + rate()*.03*(1+U('pick')));
+  // A tap is worth about 1% of a second of your miners (plus the pick bonus), so idle miners always out-earn clicking.
+  const tapAmt = () => (learn ? 1/3 : 1) * ((1 + 2*U('pick')) + rate()*.01*(1+.1*U('pick')));
   const hireCost = () => Math.ceil(8*Math.pow(1.09, S.hires) * Math.pow(2.5, U('hire')) * Math.pow(.85, A.U('cheap')));
   const hireLv = () => Math.min(MAXL-1, 1 + U('hire') + A.U('start'));
   const give = n => { S.ore += n; S.life += n; };
@@ -110,10 +112,10 @@ A.register('idle', { mount(host, api){
   const moveOrSwap = (a, b) => { if (a===b || a<0 || b<0) return; if (merge(a,b)) return; const t0 = S.grid[b]; S.grid[b] = S.grid[a]; S.grid[a] = t0; A.sfx('flip'); };
   const autoMerge = () => { for (let L=1; L<MAXL; L++) { const idx = S.grid.map((v,i)=>v===L?i:-1).filter(i=>i>=0); if (idx.length>=2) { merge(idx[0], idx[1]); return; } } };
   let combo = 0, comboT = 0, crack = {a:Math.random()*7, r:.6}, gcart = null, gcartT = 35 + Math.random()*30;
-  const tapRock = (x,y) => { comboT = .7; combo = Math.min(60, combo+1); const cm = 1 + Math.min(combo,40)*.05;
+  const tapRock = (x,y) => { comboT = .7; combo = Math.min(60, combo+1); const cm = 1 + Math.min(combo,40)*.0125;
     const cx = BOULDER.x + Math.cos(crack.a)*BOULDER.r*crack.r, cy = BOULDER.y + Math.sin(crack.a)*BOULDER.r*crack.r*.82, onCrack = Math.hypot(x-cx, y-cy) < 20;
-    if (onCrack) { crack = {a:Math.random()*7, r:.3+Math.random()*.5}; float(x, y-46, 'CRACK ×5', '#fff'); A.tone(1100,.06,'square',.04); }
-    const lucky = Math.random() < .02*U('luck'), n = tapAmt()*(lucky?25:1)*cm*(onCrack?5:1); give(n); if (lucky) { float(x, y-30, 'LUCKY ×25!', C.gold); A.tone(1400,.08,'triangle',.05); } shake = .12; float(x, y-10, '+'+fmt(n), DEPTHS[depthIdx()].ore); burst(x, y, DEPTHS[depthIdx()].ore, 6); A.tone(180+Math.random()*60,.05,'square',.04); };
+    if (onCrack) { crack = {a:Math.random()*7, r:.3+Math.random()*.5}; float(x, y-46, 'CRACK ×3', '#fff'); A.tone(1100,.06,'square',.04); }
+    const lucky = Math.random() < .02*U('luck'), n = tapAmt()*(lucky?10:1)*cm*(onCrack?3:1); give(n); if (lucky) { float(x, y-30, 'LUCKY ×10!', C.gold); A.tone(1400,.08,'triangle',.05); } shake = .12; float(x, y-10, '+'+fmt(n), DEPTHS[depthIdx()].ore); burst(x, y, DEPTHS[depthIdx()].ore, 6); A.tone(180+Math.random()*60,.05,'square',.04); };
   const cashOut = () => { if (busy) return; const can = tixFor(S.ore);
     if (can < 1) { say('NOT ENOUGH ORE','9 ore = 1 ticket · it grows from there', '#ffb3ab'); A.sfx('bad'); return; }
     const n = can, used = S.ore;
@@ -218,7 +220,7 @@ A.register('idle', { mount(host, api){
       g.fillStyle = '#121313'; g.beginPath(); g.arc(cx-10, ty+5, 4, 0, 7); g.arc(cx+10, ty+5, 4, 0, 7); g.fill(); });
     { const cx = BOULDER.x + Math.cos(crack.a)*BOULDER.r*crack.r, cy = BOULDER.y + Math.sin(crack.a)*BOULDER.r*crack.r*.82, gl = lowFx() ? .8 : .55+.45*Math.sin(t*8);
       g.strokeStyle = 'rgba(255,255,255,'+gl+')'; g.lineWidth = 3; g.beginPath(); g.moveTo(cx-9,cy-7); g.lineTo(cx-2,cy-1); g.lineTo(cx-5,cy+4); g.lineTo(cx+8,cy+8); g.stroke(); }
-    if (combo > 2) { g.fillStyle = C.lime; g.font = '700 14px '+A.font; g.textAlign = 'left'; g.fillText('COMBO '+combo+' · ×'+(1+Math.min(combo,40)*.05).toFixed(2), 40, ROCK.y+ROCK.h-40); }
+    if (combo > 2) { g.fillStyle = C.lime; g.font = '700 14px '+A.font; g.textAlign = 'left'; g.fillText('COMBO '+combo+' · ×'+(1+Math.min(combo,40)*.0125).toFixed(2), 40, ROCK.y+ROCK.h-40); }
     if (gcart) { const ty2 = ROCK.y + ROCK.h - 18, gx = gcart.x; g.fillStyle = C.gold; rrect(g, gx-22, ty2-16, 44, 20, 5); g.fill(); g.fillStyle = '#fff6b0'; g.beginPath(); g.ellipse(gx, ty2-16, 18, 7, 0, Math.PI, 0); g.fill();
       g.fillStyle = '#121313'; g.beginPath(); g.arc(gx-12, ty2+5, 4, 0, 7); g.arc(gx+12, ty2+5, 4, 0, 7); g.fill(); g.fillStyle = '#fff'; g.font = '700 10px '+A.font; g.textAlign = 'center'; g.fillText('TAP!', gx, ty2-26); }
     // gem / geode
