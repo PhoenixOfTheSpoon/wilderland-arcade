@@ -43,6 +43,7 @@ button{font-family:inherit;}
       <button onClick="{{ openAccount }}" style="background:{{ acctHeadBg }}; color:{{ acctHeadFg }}; border:1.5px solid #D5F367; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ acctHeadLabel }}</button>
       <button onClick="{{ openCode }}" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">{{ adminLabel }}</button>
       <button onClick="{{ toggleSound }}" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">{{ soundLabel }}</button>
+      <button onClick="{{ openChat }}" title="Chat (T)" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">CHAT · T</button>
       <button onClick="{{ toggleFx }}" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">{{ fxLabel }}</button>
     </div>
   </header>
@@ -314,7 +315,7 @@ button{font-family:inherit;}
       <div style="background:#EDE9D8; border-radius:20px; padding:22px; width:680px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:14px; color:#121313;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
           <div><div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#8a6100;">OPERATOR ACCESS · ADMIN ∞</div><div style="font-size:28px; font-weight:700; color:#015640;">Admin tools</div><div style="font-size:13px; font-weight:500; color:#3d3d3d;">Games played in admin mode never save, pay tickets or post scores.</div></div>
-          <button onClick="{{ closeAdmin }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer;">Close</button>
+          <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;"><button onClick="{{ adminOff }}" style="background:#F9BF01; color:#121313; border:none; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;">Turn admin mode off · play normally</button><button onClick="{{ closeAdmin }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer;">Close</button></div>
         </div>
         <div style="background:#ffffff; border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:8px; border:2px solid #B3001B;">
           <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;"><div style="font-size:12px; font-weight:700; letter-spacing:0.1em; color:#B3001B;">SHUT DOWN THE ARCADE</div><div style="font-size:12px; font-weight:700; color:#015640;">Now: {{ downStatus }}</div></div>
@@ -508,6 +509,32 @@ button{font-family:inherit;}
           <button onClick="{{ closePrizes }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;">Leave · Esc</button>
         </div>
         <div ref="{{ pzRef }}"></div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ chatOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; right:12px; bottom:12px; top:12px; width:380px; max-width:calc(100vw - 24px); z-index:70; background:#EDE9D8; border-radius:18px; box-shadow:0 20px 50px rgba(0,0,0,.45); display:flex; flex-direction:column; overflow:hidden; color:#121313; font-family:'Uncut Sans','Inter',system-ui,sans-serif;">
+      <div style="background:#015640; color:#ffffff; padding:12px 14px; display:flex; justify-content:space-between; align-items:center; gap:8px;">
+        <div><div style="font-size:11px; font-weight:700; letter-spacing:0.14em; color:#D5F367;">ARCADE CHAT</div><div style="font-size:12px; color:#cfe3d9;">{{ chatNote }}</div></div>
+        <button onClick="{{ closeChat }}" style="background:#D5F367; color:#015640; border:none; border-radius:999px; padding:6px 12px; font-weight:700; font-size:12px; cursor:pointer;">Close · Esc</button>
+      </div>
+      <div id="wl-chatlist" style="flex:1; overflow-y:auto; padding:10px; display:flex; flex-direction:column; gap:6px;">
+        <sc-if value="{{ chatEmpty }}" hint-placeholder-val="{{ false }}"><div style="font-size:13px; color:#4a4a4a; text-align:center; padding:20px;">No messages yet. Say hi!</div></sc-if>
+        <sc-for list="{{ chatList }}" as="m" hint-placeholder-count="6">
+          <div style="display:flex; gap:8px; align-items:flex-start; background:{{ m.bg }}; border-radius:12px; padding:7px 9px;">
+            <img src="{{ m.avImg }}" alt="" style="width:30px; height:30px; flex-shrink:0;">
+            <div style="flex:1; min-width:0;"><div style="display:flex; justify-content:space-between; gap:6px;"><span style="font-weight:700; font-size:13px; color:#015640;">{{ m.name }}</span><span style="font-size:10px; color:#8a8a8a;">{{ m.time }}</span></div>
+              <div style="font-size:14px; line-height:1.3; overflow-wrap:anywhere;">{{ m.text }}</div>
+              <sc-if value="{{ chatAdmin }}" hint-placeholder-val="{{ false }}"><div style="display:flex; gap:6px; margin-top:4px;"><button onClick="{{ m.del }}" style="border:none; border-radius:999px; padding:2px 9px; font-size:11px; font-weight:700; background:#B3001B; color:#fff; cursor:pointer;">Delete</button><button onClick="{{ m.mute }}" style="border:none; border-radius:999px; padding:2px 9px; font-size:11px; font-weight:700; background:#121313; color:#fff; cursor:pointer;">{{ m.muteLabel }}</button></div></sc-if>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+      <sc-if value="{{ chatErr }}" hint-placeholder-val="{{ false }}"><div style="background:#fff4cc; color:#5c4100; font-size:12px; font-weight:700; padding:7px 12px;">{{ chatErr }}</div></sc-if>
+      <div style="display:flex; gap:6px; padding:10px; background:#ffffff;">
+        <input id="wl-chatin" class="wl-field" value="{{ chatVal }}" onChange="{{ inChat }}" onKeyDown="{{ chatKey }}" maxLength="140" autoFocus="{{ true }}" autoComplete="off" placeholder="Type a message…" aria-label="Chat message" style="flex:1; min-width:0; font-family:inherit; font-size:15px; border:1.5px solid #015640; border-radius:999px; padding:8px 12px;">
+        <button onClick="{{ sendChat }}" style="background:#015640; color:#D5F367; border:none; border-radius:999px; padding:8px 14px; font-weight:700; font-size:14px; cursor:pointer;">Send</button>
       </div>
     </div>
   </sc-if>
@@ -835,6 +862,10 @@ const NO_TIX = ['2048'];
 const ADMIN_EMAILS = ['jonah@wilderland.academy'];
 const TIX_SPEED_GAMES = ['snake','breakout','flappy','pong','whack','simon','td','crossing','stack','rootout'];
 // Fair payout: every game pays ~100 tickets for hitting its target score, scaling smoothly above and below.
+// ---------- chat safety (kids use this) ----------
+const CHAT_BAD = ['fuck','shit','bitch','bastard','dick','cock','pussy','cunt','whore','slut','fag','retard','nigg','nazi','porn','sex','asshole','damn','crap','piss','kill yourself','kys','stupid idiot','dumbass','wtf','stfu','hell no'];
+const chatClean = t => { let o = String(t||'').replace(/\s+/g,' ').trim().slice(0,140); CHAT_BAD.forEach(w => { const re = new RegExp(w.split('').join('[\\W_]*'), 'gi'); o = o.replace(re, m => '★'.repeat(Math.min(6, m.length))); }); return o; };
+const chatPrivate = t => /(https?:|www\.|\.(com|net|org|io|gg|co|me|tv|xyz)\b)/i.test(t) || /[\w.+-]+@[\w-]+\.\w+/.test(t) || /(\d[\s().-]*){7,}/.test(t) || /\b(my (address|phone|number|house|school is)|i live (at|on|in))\b/i.test(t) || /(snap|insta|discord|tiktok|whatsapp)\s*[:@]/i.test(t);
 const fmtDur2 = sec => { sec = Math.ceil(sec); const h = Math.floor(sec/3600), m = Math.floor(sec%3600/60), ss = sec%60; return (h ? h+':'+String(m).padStart(2,'0') : m)+':'+String(ss).padStart(2,'0'); };
 // Big numbers: 12,345 then 12.3K, 4.5M, 6.7B, T, Qa, Qi, Sx … then 1.2e45 style.
 const fmtN = n => (window.WLP ? window.WLP.fmt(n) : (Number(n)||0).toLocaleString());
@@ -1039,7 +1070,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-11-20e';
+const BUILD = '2026-11-20f';
 const SCRIPTS = ['arcade-core.js','prizes2.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-edu.js','games-idle.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
@@ -1126,7 +1157,7 @@ class Component extends DCLogic {
         else { if (adj.upg) { this.P = {...this.P, upg:{}}; msgs.push('AN ADMIN REMOVED YOUR UPGRADES'); }
           if (adj.all || adj.rm > 0) { const cut = adj.all ? this.P.tickets : Math.min(this.P.tickets, adj.rm|0); this.P = {...this.P, tickets:this.P.tickets-cut, earned:Math.max(0, this.P.earned-cut)}; msgs.push('AN ADMIN REMOVED '+cut.toLocaleString()+' TICKETS'); } }
         this.setP({}); this.setState({...this.P}); this.persist(true); this.addScore('_none',0); msgs.forEach(m=>this.toast(m)); }
-      if (ADMIN_EMAILS.includes(String(u.email||'').toLowerCase()) && !this.state.admin) { if (window.Arcade) window.Arcade.infiniteHints = true; this.setState({admin:true}); this.toast('ADMIN ACCOUNT · ADMIN MODE ON'); }
+      if (ADMIN_EMAILS.includes(String(u.email||'').toLowerCase()) && !this.state.admin && (()=>{ try { return localStorage.getItem('wl-admin-off')!=='1'; } catch(e) { return true; } })()) { if (window.Arcade) window.Arcade.infiniteHints = true; this.setState({admin:true}); this.toast('ADMIN ACCOUNT · ADMIN MODE ON'); }
     } catch(e){}
     if (carry) { try { localStorage.removeItem(KEY); } catch(e){} }
     try { localStorage.removeItem(SESSION_KEY); sessionStorage.removeItem(SESSION_KEY); } catch(e){}
@@ -1162,7 +1193,10 @@ class Component extends DCLogic {
     (async()=>{ for (const s of SCRIPTS) await new Promise(r=>{ const e=document.createElement('script'); e.src=s+'?v='+BUILD; e.onload=r; e.onerror=r; document.head.appendChild(e); }); this.ready=true; })();
     this.kd = e => {
       const k = e.key.length==1 ? e.key.toLowerCase() : e.key;
-      if (k=='Escape') { this.closeAll(); this.setState({codeOpen:false}); return; }
+      if (k=='Escape') { if (this.state.chatOpen) { this.closeChat(); return; } this.closeAll(); this.setState({codeOpen:false}); return; }
+      const tg = e.target && e.target.tagName; if (tg=='INPUT' || tg=='TEXTAREA' || tg=='SELECT') return;
+      if (k=='t' && !this.state.chatOpen && !this.state.game && !this.state.codeOpen && !this.state.authOpen) { e.preventDefault(); this.openChat(); return; }
+      if (this.state.chatOpen) return;
       const S = this.state; if (S.game || S.shopOpen || S.avOpen || S.prizesOpen || S.codeOpen || S.authOpen || S.achOpen || S.learnOpen || S.lbOpen || S.uOpen) return;
       if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k)) e.preventDefault();
       this.keys[k] = true;
@@ -1200,7 +1234,7 @@ class Component extends DCLogic {
     this.onResize(); setTimeout(this.onResize, 100); setTimeout(this.onResize, 600);
     setTimeout(()=>this.setP({}), 900);
   }
-  componentWillUnmount(){ clearInterval(this.downIv); window.removeEventListener('wl-down', this.onDown); clearInterval(this.actIv); window.removeEventListener('keydown', this._poke, true); window.removeEventListener('pointerdown', this._poke, true); this.onHide && this.onHide(); cancelAnimationFrame(this.raf); clearInterval(this.autoIv); clearInterval(this.saveIv); window.removeEventListener('keydown',this.kd); window.removeEventListener('keyup',this.ku); window.removeEventListener('resize',this.onResize);
+  componentWillUnmount(){ if (this._chatOff) this._chatOff(); clearInterval(this.downIv); window.removeEventListener('wl-down', this.onDown); clearInterval(this.actIv); window.removeEventListener('keydown', this._poke, true); window.removeEventListener('pointerdown', this._poke, true); this.onHide && this.onHide(); cancelAnimationFrame(this.raf); clearInterval(this.autoIv); clearInterval(this.saveIv); window.removeEventListener('keydown',this.kd); window.removeEventListener('keyup',this.ku); window.removeEventListener('resize',this.onResize);
     window.removeEventListener('pagehide',this.onHide); window.removeEventListener('beforeunload',this.onHide); document.removeEventListener('visibilitychange',this.onVis); this.ro && this.ro.disconnect(); this.unmountGame(); }
   componentDidUpdate(){
     if (window.WLP && this._loginFor !== this.profKey()) { this._loginFor = this.profKey(); const W2 = window.WLP; setTimeout(()=>{ const l = W2.login(this.P); const c = W2.ensureChal({...this.P, ...(l||{})}, GAMES); if (l || c) { this.setP({...(l||{}), ...(c||{})}); if (l && l.login.streak > 1) this.toast('DAY '+l.login.streak+' LOGIN STREAK · BONUS ×'+W2.fmt(W2.globalMult(this.P))); } }, 400); }
@@ -1268,7 +1302,7 @@ class Component extends DCLogic {
       try { if (kind=='tix') await C.adjust(x.k, amt); else await C.adminFlag(x.k, kind=='upg' ? {upg:true} : {full:true});
         if (kind!='upg') { try { await C.deleteUserScores('_tix', x.k); } catch(e){} } this._bAt = {}; this.cloudBoard = {};
         this.setState({admArm:'', admMsg:'Removing '+what+' from '+x.u+'. It happens the next time their game loads.'}); }
-      catch(e) { this.setState({admArm:'', admMsg: String(e && e.code||'').includes('permission') ? 'Firebase said no: paste the new firestore.rules into Firestore → Rules → Publish, and make sure you’re logged in with a verified admin email.' : 'Couldn’t do that: '+(e && (e.code||e.message))}); } return; }
+      catch(e) { this.setState({admArm:'', admMsg: String(e && e.code||'').includes('permission') ? 'Firebase said no — the database rules aren’t published yet. In the Firebase console go to Firestore Database → Rules, paste the newest rules, click Publish, and make sure you’re logged in as jonah@wilderland.academy.' : 'Couldn’t do that: '+(e && (e.code||e.message))}); } return; }
     const P2 = getJSON(x.k, null); if (!P2) return this.setState({admArm:'', admMsg:'That player’s profile isn’t on this device.'});
     let out = P2;
     if (kind=='tix') { const cut = all ? (P2.tickets||0) : Math.min(P2.tickets||0, amt); out = {...P2, tickets:(P2.tickets||0)-cut, earned:Math.max(0,(P2.earned||0)-cut)}; }
@@ -1288,6 +1322,22 @@ class Component extends DCLogic {
     try { await window.WLCloud.shutdown(mins, (s.downText||'').slice(0,140)); this.setState({admArm:'', admMsg: open ? 'The arcade is open again for everyone.' : 'Done! The arcade is closed for '+mins+' minute'+(mins==1?'':'s')+'. Every other player sees the countdown now. You won’t see it because admins can still play — press “Preview” to see what they see, or open the site in a private window.'}); }
     catch(e) { const code = String(e && (e.code||e.message) || 'unknown');
       this.setState({admArm:'', admMsg: code.includes('permission') ? 'Firebase refused (permission-denied). Open console.firebase.google.com → Firestore Database → Rules, paste the newest rules (they allow jonah@wilderland.academy to write “config”), and click Publish. Then try again.' : 'Couldn’t shut down: '+code}); } }
+  openChat(){ if (this.state.chatOpen) return; this.keys = {}; this.setState({chatOpen:true, chatErr:''}); const C = window.WLCloud;
+    if (C && C.chatListen && !this._chatOff) this._chatOff = C.chatListen(list => { if (!list) return this.setState({chatErr:'Chat can’t load right now (the database rules may need the new “chat” section).'}); this.setState({chatMsgs:list}); setTimeout(()=>{ const el = document.getElementById('wl-chatlist'); if (el) el.scrollTop = el.scrollHeight; }, 30); }); }
+  closeChat(){ this.setState({chatOpen:false}); if (this._chatOff) { try { this._chatOff(); } catch(e){} this._chatOff = null; } }
+  async sendChat(){ const s = this.state, C = window.WLCloud; const raw = String(s.chatVal||'').trim(); if (!raw) return;
+    if (!s.cloud || !C) return this.setState({chatErr:'Chat only works on the online arcade.'});
+    if (!this.cloudUid) return this.setState({chatErr:'Log in (Sign up / Log in at the top) to chat.'});
+    if (!this.P.username) return this.setState({chatErr:'Create a username first — that’s the name people see in chat.'});
+    if ((C.mutes ? C.mutes() : []).includes(this.cloudUid)) return this.setState({chatErr:'You’ve been muted by an admin.'});
+    if (chatPrivate(raw)) return this.setState({chatErr:'For safety, no links, emails, phone numbers or where you live. Keep it about the games!'});
+    const now = Date.now(); if (now - (this._chatT||0) < 4000) return this.setState({chatErr:'Slow down a little — one message every few seconds.'});
+    const t = chatClean(raw); if (!t) return; this._chatT = now;
+    try { await C.chatSend({uid:this.cloudUid, u:this.P.username, t, av:avEnc(this.P.avatar), al:(this.P.ach||[]).length}); this.setState({chatVal:'', chatErr:''}); }
+    catch(e) { this.setState({chatErr: String(e && e.code||'').includes('permission') ? 'Couldn’t send (the database rules need the new “chat” section, or you’re muted).' : 'Couldn’t send: '+(e && (e.code||e.message))}); } }
+  async chatAdmin(m, kind){ const C = window.WLCloud; if (!this.state.admin || !C) return;
+    try { if (kind=='del') await C.chatDelete(m.id); else { const mutes = new Set(C.mutes ? C.mutes() : []); if (mutes.has(m.uid)) mutes.delete(m.uid); else mutes.add(m.uid); await C.setMutes([...mutes]); this.toast((mutes.has(m.uid)?'MUTED ':'UNMUTED ')+m.u.toUpperCase()); } }
+    catch(e) { this.toast('ADMIN: '+(e && (e.code||e.message))); } }
   previewDown(){ this.setState({downPreview:Date.now()+8000}); setTimeout(()=>this.setState({downPreview:0}), 8100); }
   async adminReloadAll(){ const s = this.state; if (!s.admin || !s.cloud || !this.cloudUid) return this.setState({admMsg:'Log in with an admin account (online) first.'});
     try { await window.WLCloud.reloadEveryone(); this.setState({admMsg:'Reloading every open arcade tab…'}); } catch(e) { this.setState({admMsg:'Couldn’t: '+(e && (e.code||e.message))+' · publish the new firestore.rules first.'}); } }
@@ -1295,13 +1345,13 @@ class Component extends DCLogic {
     if (s.admArm !== 'resetall') return this.setState({admArm:'resetall', admMsg:'Press FULL RESET again to wipe every player’s tickets, upgrades, prizes and scores and start an empty leaderboard. This can’t be undone.'});
     if (s.cloud) { if (!this.cloudUid) return this.setState({admArm:'', admMsg:'Log in with an admin account first.'});
       try { await window.WLCloud.resetEveryone(); this.setState({admArm:'', admMsg:'Full reset done. Every open arcade tab reloads now and starts fresh with an empty leaderboard.'}); }
-      catch(e) { this.setState({admArm:'', admMsg: String(e && e.code||'').includes('permission') ? 'Firebase said no: publish the new firestore.rules (it adds the “config” section) and log in with a verified admin email.' : 'Couldn’t reset: '+(e && (e.code||e.message))}); } return; }
+      catch(e) { this.setState({admArm:'', admMsg: String(e && e.code||'').includes('permission') ? 'Firebase said no — the database rules aren’t published yet. In the Firebase console go to Firestore Database → Rules, paste the newest rules, click Publish, and make sure you’re logged in as jonah@wilderland.academy.' : 'Couldn’t reset: '+(e && (e.code||e.message))}); } return; }
     try { Object.keys(localStorage).filter(k=>k.startsWith(KEY)).forEach(k=>{ const P2 = getJSON(k, null); if (P2 && typeof P2=='object') putJSON(k, {username:P2.username, avatar:P2.avatar, savesV:2}); }); } catch(e){}
     putJSON(BOARD_KEY, {e:[]}); this.P = normP({username:this.P.username, avatar:this.P.avatar, savesV:2}); this.persist(true); this.setState({...this.P, admArm:'', admMsg:'Full reset done on this device.'}); }
   async adminDelete(g, x){ const s = this.state, key = 'del:'+(x.id||x.k+x.s); if (!s.admin) return;
     if (s.admArm !== key) return this.setState({admArm:key, admMsg:''});
     if (s.cloud) { const C = window.WLCloud; try { if (g=='_tix') await C.deleteUserScores('_tix', x.k); else await C.deleteScore(g, x.id); this._bAt = {}; this.cloudBoard = {}; this.setState({admArm:'', admMsg:'Removed '+x.u+' ('+x.s.toLocaleString()+').'}); }
-      catch(e) { this.setState({admArm:'', admMsg: String(e && e.code||'').includes('permission') ? 'Firebase said no: your account isn’t an admin in the database rules yet. Paste the new firestore.rules into Firestore → Rules → Publish.' : 'Couldn’t delete: '+(e && (e.code||e.message))}); } }
+      catch(e) { this.setState({admArm:'', admMsg: String(e && e.code||'').includes('permission') ? 'Firebase said no — the database rules aren’t published yet. In the Firebase console go to Firestore Database → Rules, paste the newest rules, click Publish, and make sure you’re logged in as jonah@wilderland.academy.' : 'Couldn’t delete: '+(e && (e.code||e.message))}); } }
     else { const B = getJSON(BOARD_KEY,{e:[]}); B.e = B.e.filter(y=>!(y.g==g && (g=='_tix' ? y.k==x.k : (y.k==x.k && y.s==x.s && y.d==x.d)))); putJSON(BOARD_KEY,B); this.setState({admArm:'', admMsg:'Removed '+x.u+'.'}); } }
   toast(text){ const id = Math.random(); this.setState(s=>({toasts:[...s.toasts,{id,text}]})); setTimeout(()=>this.setState(s=>({toasts:s.toasts.filter(t=>t.id!=id)})), 3000); }
   buyUpg(gid, k){ const list = UPG[gid] || [], u = list.find(x=>x.k==k); if (!u) return; if (this.state.admin) { this.toast('ADMIN MODE · SHOPPING DISABLED'); return; } const P = this.P, cur = ((P.upg||{})[gid]||{})[k]||0;
@@ -1347,7 +1397,7 @@ class Component extends DCLogic {
   }
   async submitCode(){ const v = (this.state.codeVal||'').trim().toUpperCase(); let hx = '';
     try { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(v)); hx = [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join(''); } catch(e) {}
-    if (hx == '711125e6da98be03f5351f602a547a86121f7e33f8f5f21ff6868b83900be16e') { if (window.Arcade) window.Arcade.infiniteHints = true; this.setState(s=>({admin:true, codeOpen:false, hint: s.hint ? {...s.hint, left:Infinity} : s.hint})); window.Arcade && window.Arcade.sfx('win'); this.toast('ADMIN MODE · INFINITE HINTS UNTIL RELOAD'); }
+    if (hx == '711125e6da98be03f5351f602a547a86121f7e33f8f5f21ff6868b83900be16e') { try { localStorage.removeItem('wl-admin-off'); } catch(e){} if (window.Arcade) window.Arcade.infiniteHints = true; this.setState(s=>({admin:true, codeOpen:false, hint: s.hint ? {...s.hint, left:Infinity} : s.hint})); window.Arcade && window.Arcade.sfx('win'); this.toast('ADMIN MODE · INFINITE HINTS UNTIL RELOAD'); }
     else { window.Arcade && window.Arcade.sfx('bad'); this.setState({codeMsg:'Code not recognised', codeVal:''}); } }
   open(id){ this.keys = {}; this.setState({game:id, liveScore:0, payout:''}); }
   closeAll(){ const saved = this.unmountGame(); this.keys = {}; Object.keys(this.padHeld).forEach(k=>{ if (this.padHeld[k]) fireKey(k,'keyup'); }); this.padHeld = {};
@@ -1562,6 +1612,13 @@ class Component extends DCLogic {
       admRows: (()=>{ const g0 = s.admGame||'_tix'; let e; if (s.cloud) { if (s.adminOpen) this.needBoard(g0); e = ((this.cloudBoard||{})[g0]||[]).slice(); } else e = getJSON(BOARD_KEY,{e:[]}).e.filter(x=>x.g==g0);
         return e.sort((a,b)=>b.s-a.s).slice(0,50).map((x,i)=>({rank:i+1, avImg: avSVG(avDec(x.av), x.al||0), name:x.u, score:fmtN(x.s), date:x.d||'', isTix: g0=='_tix', rm: ()=>this.adminPlayer(x,'tix'), rmLabel: s.admArm=='tix:'+x.k ? 'Confirm' : '− Tickets', upg: ()=>this.adminPlayer(x,'upg'), upgLabel: s.admArm=='upg:'+x.k ? 'Confirm' : 'Take upgrades', full: ()=>this.adminPlayer(x,'full'), fullLabel: s.admArm=='full:'+x.k ? 'Confirm' : 'Full reset', del: ()=>this.adminDelete(g0, x), delLabel: s.admArm=='del:'+(x.id||x.k+x.s) ? 'Confirm' : (g0=='_tix' ? 'Remove player' : 'Delete')})); })(),
       reloadAll: ()=>this.adminReloadAll(), downMin: s.downMin||'', inDownMin: e=>this.setState({downMin:e.target.value.slice(0,6)}), downText: s.downText||'', inDownText: e=>this.setState({downText:e.target.value.slice(0,140)}),
+      chatOpen: !!s.chatOpen, openChat: ()=>this.openChat(), closeChat: ()=>this.closeChat(), chatVal: s.chatVal||'', inChat: e=>this.setState({chatVal:e.target.value.slice(0,140), chatErr:''}),
+      chatKey: e=>{ e.stopPropagation(); if (e.key=='Enter') { e.preventDefault(); this.sendChat(); } if (e.key=='Escape') this.closeChat(); }, sendChat: ()=>this.sendChat(), chatErr: s.chatErr||'',
+      chatNote: !s.cloud ? 'Chat works on the online arcade (arcade.wilderland.academy).' : !this.cloudUid ? 'Log in to chat. Anyone can read along.' : !P.username ? 'Create a username to chat.' : 'Be kind · no personal info · keep it about the games',
+      chatEmpty: (s.chatMsgs||[]).length==0, chatAdmin: !!s.admin,
+      chatList: (s.chatMsgs||[]).filter(m=>!((window.WLCloud && window.WLCloud.mutes ? window.WLCloud.mutes() : []).includes(m.uid)) || s.admin).map(m=>({key:m.id, avImg: avSVG(avDec(m.av), m.al||0), name:m.u||'?', text:chatClean(m.t), time: new Date(m.at).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}), mine: m.uid===this.cloudUid, bg: m.uid===this.cloudUid ? '#e4f7a8' : '#ffffff',
+        del: ()=>this.chatAdmin(m,'del'), mute: ()=>this.chatAdmin(m,'mute'), muteLabel: ((window.WLCloud && window.WLCloud.mutes ? window.WLCloud.mutes() : []).includes(m.uid)) ? 'Unmute' : 'Mute'})),
+      adminOff: ()=>{ try { localStorage.setItem('wl-admin-off','1'); } catch(e){} if (window.Arcade) { window.Arcade.infiniteHints = false; window.Arcade.immortal = false; } this.closeAll(); this.setState({admin:false, immortal:false, adminMult:1, adminOpen:false, codeOpen:false}); this.toast('ADMIN MODE OFF · TICKETS, SCORES AND SAVES COUNT AGAIN'); },
       doShutdown: ()=>this.adminShutdown(false), doReopen: ()=>this.adminShutdown(true), doPreview: ()=>this.previewDown(), shutLabel: s.admArm=='down' ? 'YES · SHUT IT DOWN' : 'Shut down',
       downStatus: (s.downUntil||0) > Date.now() ? 'CLOSED · reopens in '+fmtDur2((s.downUntil-Date.now())/1000) : 'Open',
       downOn: ((s.downUntil||0) > Date.now() && !s.admin) || (s.downPreview||0) > Date.now(), downLeft: fmtDur2(Math.max(0,(((s.downUntil||0) > Date.now() ? s.downUntil : (s.downPreview ? Date.now() + (parseFloat(s.downMin)||15)*60000 : 0))-Date.now())/1000)), downNote: s.downMsg || 'The arcade is closed for a little maintenance. Grab a snack — it reopens by itself when the timer hits zero.',

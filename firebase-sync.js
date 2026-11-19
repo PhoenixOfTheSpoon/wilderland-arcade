@@ -17,8 +17,8 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 // Season comes from config/global so an admin's FULL RESET can start a brand-new empty leaderboard for everyone.
-let SEASON = 's2', RESET_AT = 0, FROZEN = false, DOWN = {until:0, msg:''};
-const setDown = d => { DOWN = {until: d.downUntil || 0, msg: d.downMsg || ''}; window.dispatchEvent(new CustomEvent('wl-down', {detail: DOWN})); };
+let SEASON = 's2', RESET_AT = 0, FROZEN = false, DOWN = {until:0, msg:''}, MUTES = [];
+const setDown = d => { MUTES = d.mutes || []; DOWN = {until: d.downUntil || 0, msg: d.downMsg || ''}; window.dispatchEvent(new CustomEvent('wl-down', {detail: DOWN})); };
 try { const c = await Promise.race([getDoc(doc(db, 'config', 'global')), new Promise((_, no) => setTimeout(() => no(new Error('slow')), 4000))]); if (c && c.exists()) { const d = c.data(); if (d.season) SEASON = d.season; RESET_AT = d.resetAt || 0; DOWN = {until: d.downUntil || 0, msg: d.downMsg || ''}; } } catch (e) {}
 const board = game => collection(db, 'boards', game + '@' + SEASON, 'scores');
 
@@ -60,5 +60,11 @@ try { onSnapshot(doc(db, 'config', 'global'), snap => { const d = snap.exists() 
 // Maintenance shutdown: admins close the arcade for everyone for N minutes (admins can still get in).
 WLCloud.down = () => DOWN;
 WLCloud.shutdown = (minutes, msg) => setDoc(doc(db, 'config', 'global'), { downUntil: minutes > 0 ? Date.now() + minutes * 60000 : 0, downMsg: msg || '' }, { merge: true });
+// Arcade chat (kid-safe: the page filters words, links and personal info; rules limit length; admin can delete and mute).
+WLCloud.chatListen = cb => onSnapshot(query(collection(db, 'chat'), orderBy('at', 'desc'), limit(60)), snap => cb(snap.docs.map(d => ({ id: d.id, ...d.data(), at: d.data().at && d.data().at.toMillis ? d.data().at.toMillis() : Date.now() })).reverse()), () => cb(null));
+WLCloud.chatSend = row => addDoc(collection(db, 'chat'), { ...row, at: serverTimestamp() });
+WLCloud.chatDelete = id => deleteDoc(doc(db, 'chat', id));
+WLCloud.setMutes = mutes => setDoc(doc(db, 'config', 'global'), { mutes }, { merge: true });
+WLCloud.mutes = () => MUTES;
 window.WLCloud = WLCloud;
 window.dispatchEvent(new Event('wlcloud-ready'));
