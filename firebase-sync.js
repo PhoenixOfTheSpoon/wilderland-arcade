@@ -2,7 +2,7 @@
 // Loaded as an ES module. If it can't load (offline, blocked), the arcade keeps working in on-device mode.
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, setPersistence, GoogleAuthProvider, signInWithPopup, browserLocalPersistence, browserSessionPersistence } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { getFirestore, doc, getDoc, setDoc, deleteDoc, where, collection, addDoc, query, orderBy, limit, getDocs, runTransaction, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, where, collection, addDoc, query, orderBy, limit, getDocs, runTransaction, serverTimestamp, increment } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCVBNMAm4oDibHmWru9LIYnnT898NXFNu0",
@@ -42,5 +42,8 @@ const WLCloud = {
 // Admin moderation (the database rules only allow this for admin accounts).
 WLCloud.deleteScore = (game, id) => deleteDoc(doc(db, 'boards', game + '@' + SEASON, 'scores', id));
 WLCloud.deleteUserScores = async (game, uid) => { const r = await getDocs(query(board(game), where('uid', '==', uid))); await Promise.all(r.docs.map(d => deleteDoc(d.ref))); return r.size; };
+// Admin: queue a ticket removal for a player (amount < 0 means remove ALL). Applied by that player's game on next load.
+WLCloud.adjust = (uid, amount) => setDoc(doc(db, 'adjust', uid), amount < 0 ? { all: true, at: serverTimestamp() } : { rm: increment(amount), at: serverTimestamp() }, { merge: true });
+WLCloud.takeAdjust = async uid => { const ref = doc(db, 'adjust', uid), s = await getDoc(ref); if (!s.exists()) return null; const d = s.data(); await deleteDoc(ref); return d; };
 window.WLCloud = WLCloud;
 window.dispatchEvent(new Event('wlcloud-ready'));

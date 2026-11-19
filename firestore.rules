@@ -25,6 +25,12 @@ service cloud.firestore {
       allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
     }
 
+    // Admin ticket adjustments: an admin queues a removal; the player's own game applies it on next load, then clears it.
+    match /adjust/{uid} {
+      allow read, delete: if request.auth != null && request.auth.uid == uid;
+      allow create, update: if isAdmin();
+    }
+
     // Leaderboards: anyone can read; signed-in players can post their own scores.
     match /boards/{game}/scores/{id} {
       function validScore() {
