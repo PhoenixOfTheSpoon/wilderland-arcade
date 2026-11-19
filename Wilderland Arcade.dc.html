@@ -559,6 +559,13 @@ button{font-family:inherit;}
       <div style="font-size:13px; font-weight:700; letter-spacing:0.14em; color:#D5F367; margin-top:6px;">BACK IN</div>
       <div style="font-size:64px; font-weight:700; font-variant-numeric:tabular-nums; color:#D5F367; line-height:1;">{{ downLeft }}</div>
       <div style="font-size:12px; color:#b9cfc5;">Your tickets, prizes and saved games are safe.</div>
+      <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:10px; align-items:center;">
+        <span style="font-size:12px; color:#cfe3d9;">{{ downAcct }}</span>
+        <sc-if value="{{ downIn }}" hint-placeholder-val="{{ true }}"><button onClick="{{ downLogin }}" style="background:#D5F367; color:#015640; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer;">Log in</button></sc-if>
+        <sc-if value="{{ downOut }}" hint-placeholder-val="{{ false }}"><button onClick="{{ logout }}" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:7px 14px; font-weight:700; font-size:13px; cursor:pointer;">Log out</button></sc-if>
+        <sc-if value="{{ downIsAdminAcct }}" hint-placeholder-val="{{ false }}"><button onClick="{{ downAdminOn }}" style="background:#F9BF01; color:#121313; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer;">Admin: reopen the arcade</button></sc-if>
+        <button onClick="{{ downCode }}" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.35); border-radius:999px; padding:7px 14px; font-weight:700; font-size:12px; cursor:pointer;">Admin code</button>
+      </div>
     </div>
   </sc-if>
   <sc-if value="{{ adminDownBanner }}" hint-placeholder-val="{{ false }}"><div style="position:fixed; left:50%; bottom:12px; transform:translateX(-50%); z-index:480; background:#B3001B; color:#fff; font-weight:700; font-size:13px; padding:8px 16px; border-radius:999px;">ARCADE IS SHUT DOWN FOR PLAYERS · {{ downLeft }} LEFT · you're in as admin</div></sc-if>
@@ -1081,7 +1088,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-11-20k';
+const BUILD = '2026-11-20l';
 const SCRIPTS = ['arcade-core.js','prizes2.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-edu.js','games-idle.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
@@ -1653,10 +1660,12 @@ class Component extends DCLogic {
       adminOff: ()=>{ try { localStorage.setItem('wl-admin-off','1'); } catch(e){} if (window.Arcade) { window.Arcade.infiniteHints = false; window.Arcade.immortal = false; } this.closeAll(); this.setState({admin:false, immortal:false, adminMult:1, adminOpen:false, codeOpen:false}); this.toast('ADMIN MODE OFF · TICKETS, SCORES AND SAVES COUNT AGAIN'); },
       doShutdown: ()=>this.adminShutdown(false), doReopen: ()=>this.adminShutdown(true), doPreview: ()=>this.previewDown(), shutLabel: s.admArm=='down' ? 'YES · SHUT IT DOWN' : 'Shut down',
       downStatus: (s.downUntil||0) > Date.now() ? 'CLOSED · reopens in '+fmtDur2((s.downUntil-Date.now())/1000) : 'Open',
-      downOn: ((s.downUntil||0) > Date.now() && !s.admin) || (s.downPreview||0) > Date.now(), downLeft: fmtDur2(Math.max(0,(((s.downUntil||0) > Date.now() ? s.downUntil : (s.downPreview ? Date.now() + (parseFloat(s.downMin)||15)*60000 : 0))-Date.now())/1000)), downNote: s.downMsg || 'The arcade is closed for a little maintenance. Grab a snack — it reopens by itself when the timer hits zero.',
+      downOn: (((s.downUntil||0) > Date.now() && !s.admin) || (s.downPreview||0) > Date.now()) && !s.authOpen && !s.codeOpen,
+      downAcct: s.account ? 'Logged in as '+(this.cloudMeta&&this.cloudMeta.email || s.account) : 'Not logged in', downIn: !s.account, downOut: !!s.account, downIsAdminAcct: !!(this.cloudMeta && ADMIN_EMAILS.includes(String(this.cloudMeta.email||'').toLowerCase())),
+      downLogin: ()=>this.openAuth('login'), downAdminOn: ()=>{ try { localStorage.removeItem('wl-admin-off'); } catch(e){} if (window.Arcade) window.Arcade.infiniteHints = true; this.setState({admin:true, adminOpen:true, admMsg:'Admin mode on. Press “Reopen now” to open the arcade for everyone.'}); }, downCode: ()=>this.setState({codeOpen:true, codeVal:'', codeMsg:''}), downLeft: fmtDur2(Math.max(0,(((s.downUntil||0) > Date.now() ? s.downUntil : (s.downPreview ? Date.now() + (parseFloat(s.downMin)||15)*60000 : 0))-Date.now())/1000)), downNote: s.downMsg || 'The arcade is closed for a little maintenance. Grab a snack — it reopens by itself when the timer hits zero.',
       adminDownBanner: (s.downUntil||0) > Date.now() && s.admin, resetAll: ()=>this.adminResetAll(), resetAllLabel: s.admArm=='resetall' ? 'YES · WIPE EVERYONE' : 'FULL RESET · everyone',
       kickMin: s.kickMin||'', inKickMin: e=>this.setState({kickMin:e.target.value.slice(0,5)}),
-      kickOn: (s.kickUntil||0) > Date.now() && !s.admin, kickLeft: fmtDur2(Math.max(0,((s.kickUntil||0)-Date.now())/1000)),
+      kickOn: (s.kickUntil||0) > Date.now() && !s.admin && !s.authOpen, kickLeft: fmtDur2(Math.max(0,((s.kickUntil||0)-Date.now())/1000)),
       admIsTix: (s.admGame||'_tix')=='_tix', admRm: s.admRm||'', inAdmRm: e=>this.setState({admRm:e.target.value.slice(0,12)}),
       admEmpty: s.cloud && !this.cloudUid ? 'Log in as jonah@wilderland.academy to moderate online players.' : '',
       closeCode: ()=>this.setState({codeOpen:false}),
