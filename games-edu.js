@@ -14,7 +14,7 @@ A.flapMath = (host, api) => {
   const reset = () => { y = bands[1]; vy = 0; cols = []; score = 0; resumed = false; addCol(w+60); api.score(0); };
   reset();
   const R = api.resume; if (R && R.edu && R.cols) { y = R.y; cols = R.cols; score = R.score; api.score(score); resumed = true; }
-  const die = (m,sub) => { if (state!='play') return; state = 'dead'; deadMsg = m; deadSub = sub||''; A.sfx('over'); api.over(score); };
+  const die = (m,sub) => { if (state!='play') return; if (A.immortal) { if (y > GROUND-BR-1) { y = GROUND-BR-2; vy = -290; } cols.forEach(cl=>{ if (cl.entered && !cl.done) { cl.ok = 1; cl.band = -2; } }); return; } state = 'dead'; deadMsg = m; deadSub = sub||''; A.sfx('over'); api.over(score); };
   const flap = () => { if (state=='dead') { reset(); state = 'ready'; return; } state = 'play'; vy = -290; A.sfx('flip'); };
   const offK = A.keys(e=>{ if (e.key==' ' || e.key=='ArrowUp') flap(); }); c.addEventListener('mousedown', flap);
   const BX = 100, BR = 13, PW = 46;
@@ -61,7 +61,7 @@ A.snakeMath = (host, api) => {
   const reset = () => { body(); score = 0; lives = A.D(5,3,2); t = 0; resumed = false; apples = []; newQ(); api.score(0); };
   reset();
   const R = api.resume; if (R && R.edu && R.snake) { snake = R.snake; dir = R.dir; nd = dir; score = R.score; lives = R.lives; p = R.p; apples = R.apples; api.score(score); resumed = true; }
-  const hurt = msg => { lives--; flash = .35; A.sfx('bad'); if (lives<=0) { state = 'dead'; A.sfx('over'); api.over(score); } return msg; };
+  const hurt = msg => { if (!A.immortal) lives--; flash = .35; A.sfx('bad'); if (lives<=0) { state = 'dead'; A.sfx('over'); api.over(score); } return msg; };
   const offK = A.keys(e=>{ const m = {ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],w:[0,-1],s:[0,1],a:[-1,0],d:[1,0]}[e.key];
     if (state!='play' && (e.key==' ' || m)) { if (state=='dead') reset(); state = 'play'; }
     if (m && (m[0]!=-dir.x || m[1]!=-dir.y)) nd = {x:m[0], y:m[1]}; });
@@ -138,7 +138,7 @@ A.register('trace', { mount(host, api){
   const flash = m => { feedback = {s:-1,msg:m}; setTimeout(()=>{ if (feedback && feedback.s<0) feedback = null; },1600); };
   const check = () => { if (done || feedback) return; if (cam) return snap(); if (!strokes.length) return flash('Trace the letter first');
     inkC = strokesCanvas(); badC = outsideOf(inkC); award(grade(inkC,false)); };
-  const finishRound = () => { done = true; const total = stars.reduce((a,b)=>a+b,0); stat(api,'traceRound',total); paintInfo(); A.sfx('win'); api.over(score);
+  const finishRound = () => { done = true; const total = stars.reduce((a,b)=>a+b,0); stat(api,'traceRound',total); if (total >= round.length*3) api.perfect && api.perfect(); paintInfo(); A.sfx('win'); api.over(score);
     choice(wrap, 'ROUND DONE', total+' stars · '+score+' points', [['New round',()=>{ newRound(); }]]); };
 
   // ---------- camera ----------
@@ -306,10 +306,10 @@ A.register('rootout', { mount(host, api){
     if (verdict) head.append(el('span',{marginLeft:'auto',fontSize:'12px',fontWeight:700,color:good?'#007a37':'#B3001B'},verdict));
     fact.append(head, el('div',{fontWeight:500},s.f)); if (!seen[s.n]) { seen[s.n] = 1; stat(api,'rootSpecies',Object.keys(seen).length); } };
   const paintBtns = () => { pullB.textContent = 'Weed puller ×'+pulls; pullB.style.opacity = pulls ? 1 : .5; };
-  const reset = () => { layers = [{x:(w-BASEW)/2, w:BASEW, sp:-1, inf:0}]; score = 0; health = A.D(5,3,2); pulls = 1; perfects = 0; camY = 0; spreadT = 0; fx = []; rooted = 0; resumed = false; banner = null; api.score(0); spawn(); paintBtns();
+  const reset = () => { layers = [{x:(w-BASEW)/2, w:BASEW, sp:-1, inf:0}]; score = 0; health = A.D(5,3,2)+A.U('health'); pulls = 1+A.U('pull'); perfects = 0; camY = 0; spreadT = 0; fx = []; rooted = 0; resumed = false; banner = null; api.score(0); spawn(); paintBtns();
     fact.innerHTML = ''; fact.append(el('div',{fontWeight:700,color:C.forest,marginBottom:'3px'},'Field guide'), el('div',{fontWeight:500},'Plant native species to grow the tower. Root out invasive ones before they land — if they do, their corruption spreads down the tower.')); };
   const say = (txt,sub,col) => banner = {txt,sub,col:col||C.lime,t:1.6};
-  const loseHealth = (why) => { health--; flash = .35; A.sfx('bad'); say(why,'−1 ecosystem health',C.red); if (health<=0) end('ECOSYSTEM COLLAPSED'); };
+  const loseHealth = (why) => { if (!A.immortal) health--; flash = .35; A.sfx('bad'); say(why,'−1 ecosystem health',C.red); if (health<=0) end('ECOSYSTEM COLLAPSED'); };
   const end = (why) => { state = 'dead'; A.sfx('over'); stat(api,'rootHeight',layers.length-1); api.over(score); banner = {txt:why,sub:'',t:99}; };
   function drop(){ if (state=='ready') { state = 'play'; return; } if (state!='play' || !cur || cur.fall) return; cur.fall = {y:0}; A.sfx('flip'); }
   function root(){ if (state!='play' || !cur || cur.fall) return; const s = SPECIES[cur.sp];
@@ -337,7 +337,7 @@ A.register('rootout', { mount(host, api){
       if (spreadT >= every) { spreadT = 0; const idxs = layers.map((l,i)=>l.inf?i:-1).filter(i=>i>0); let spread = false;
         idxs.forEach(i=>{ const below = i-1; if (below>0 && !layers[below].inf) { layers[below].inf = 1; layers[below].w = Math.max(16, layers[below].w*.85); spread = true; } });
         if (spread) { A.tone(110,.2,'sawtooth',.05); say('CORRUPTION SPREADS','A native layer was overrun',C.lavender); }
-        const n = layers.filter(l=>l.inf).length; if (n >= MAXINF) end('TOWER OVERRUN'); } } else spreadT = 0; };
+        const n = layers.filter(l=>l.inf).length; if (n >= MAXINF && !A.immortal) end('TOWER OVERRUN'); } } else spreadT = 0; };
   const drawBlock = (x,y,bw,spi,inf,showTag) => { const s = SPECIES[spi], hide = !showTag;
     const col = inf ? '#6b3a85' : hide ? '#c9a77a' : s.c; g.fillStyle = 'rgba(0,0,0,.2)'; rrect(g,x+2,y+3,bw,LH-2,6); g.fill();
     g.fillStyle = col; rrect(g,x,y,bw,LH-2,6); g.fill();

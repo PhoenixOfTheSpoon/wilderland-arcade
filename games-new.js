@@ -25,7 +25,7 @@ A.register('whack', { mount(host, api){
   const run = (init) => {
     if (offL) { offL(); offL = null; }
     b.innerHTML = '';
-    st = Object.assign({level:1,score:0,lives:A.D(7,5,3),whacks:0,charges:{quake:1,freeze:1,shield:1},shield:0,bestCombo:0}, init||{});
+    st = Object.assign({level:1,score:0,lives:A.D(7,5,3)+A.U('life'),whacks:0,charges:{quake:1+A.U('charge'),freeze:1+A.U('charge'),shield:1+A.U('charge')},shield:0,bestCombo:0}, init||{});
     st.charges = Object.assign({quake:0,freeze:0,shield:0}, st.charges); st.combo = 0;
     let spawnT = .7, frozen = 0, king = null, kingT = 0;
     const learn = !!(A.edu && A.edu.on); let prob = learn ? A.problem() : null;
@@ -83,7 +83,7 @@ A.register('whack', { mount(host, api){
       if (lv>=2 && st.lives<9) W.push(['heart',3]); }
       let r = Math.random()*W.reduce((a,x)=>a+x[1],0); for (const [t,wt] of W) { if ((r-=wt) < 0) return t; } return 'normal'; };
     const flashRed = () => { b.style.boxShadow = 'inset 0 0 0 6px '+C.red; setTimeout(()=>b.style.boxShadow='',220); };
-    const loseLife = (n=1) => { for (let k=0;k<n;k++) { if (st.shield>0) { st.shield--; say('SHIELD BLOCKED IT'); } else st.lives--; }
+    const loseLife = (n=1) => { for (let k=0;k<n;k++) { if (st.shield>0) { st.shield--; say('SHIELD BLOCKED IT'); } else if (!A.immortal) st.lives--; }
       st.combo = 0; A.sfx('bad'); flashRed(); if (st.lives<=0) end(); };
     const spawnKing = () => { const free = holes.filter(h=>!h.up); const h = free[Math.random()*free.length|0] || holes[4]; if (h.up) hide(h); show(h,'king'); king = h; kingT = 14; };
     const levelUp = () => { st.level++; st.whacks = 0; const gift = ['quake','freeze','shield'][Math.random()*3|0]; st.charges[gift]++;
@@ -199,7 +199,7 @@ A.register('td', { mount(host, api){
     if (e.hp<=0) { e.dead = 1; const bb = D.b + Math.floor(wave/5); gold += bb; score += bb*10; api.score(score); float(e.x,e.y-10,'+'+bb);
       A.tone(e.type=='bear'?220:760,.04,'square',.03); if (e.type=='bear') A.sfx('win');
       if (D.split) { spawn('mini',Math.max(0,e.d-8)); spawn('mini',e.d+8); } } };
-  const newGame = (mi,r) => { setMap(mi); wave = r?r.wave:0; gold = r?r.gold:A.D(180,140,110); lives = r?r.lives:A.D(30,20,12); score = r?r.score:0; perfect = r?(r.perfect||0):0;
+  const newGame = (mi,r) => { setMap(mi); wave = r?r.wave:0; gold = r?r.gold:A.D(180,140,110)+40*A.U('gold'); lives = r?r.lives:A.D(30,20,12)+5*A.U('hp'); score = r?r.score:0; perfect = r?(r.perfect||0):0;
     towers = r ? r.towers.map(t=>({...t,cd:0})) : []; enemies = []; shots = []; fx = []; queue = []; sel = null; aim = null;
     cds = {meteor:0,freeze:0,rally:0}; freezeT = rallyT = 0; state = 'build'; between = 12; api.score(score);
     say(r ? 'WELCOME BACK' : MAPS[mi].name.toUpperCase(), r ? 'Wave '+(wave+1)+' is up next' : 'Build towers, then press Space or Next wave'); ui(); };
@@ -226,7 +226,7 @@ A.register('td', { mount(host, api){
     enemies.forEach(e=>{ const D = EN[e.type]; e.slowT = Math.max(0, e.slowT-dt);
       e.d += frozen ? 0 : D.sp*(e.slowT>0 ? 1-e.slow : 1)*dt;
       if (D.heal) enemies.forEach(o=>{ if (o!==e && !o.dead && Math.abs(o.d-e.d)<60) o.hp = Math.min(o.max, o.hp + D.heal*dt*hpMul()*.3); });
-      if (e.d>=total && !e.dead) { e.dead = 1; lives -= D.dmg||1; leaked = true; A.sfx('bad'); flash = .25; }
+      if (e.d>=total && !e.dead) { e.dead = 1; if (!A.immortal) lives -= D.dmg||1; leaked = true; A.sfx('bad'); flash = .25; }
       [e.x,e.y] = posAt(e.d); });
     const rate = rallyT>0 ? .5 : 1;
     towers.forEach(t=>{ const D = TW[t.type]; if (!D.range) return; t.cd -= dt; if (t.cd>0) return; const S = tstat(t), cx = t.c*T+T/2, cy = t.r*T+T/2;
@@ -373,14 +373,14 @@ A.register('crossing', { mount(host, api){
       {r:7,dir:-1,sp:70,kind:'truck',len:2,gap:2.6}, {r:8,dir:1,sp:95,kind:'car',len:1,gap:3.2}, {r:9,dir:-1,sp:50,kind:'tractor',len:1.5,gap:2.4}, {r:10,dir:1,sp:135,kind:'racer',len:1,gap:5.5}];
     defs.forEach(d=>{ const lane = Object.assign({},d,{sp:d.sp*s*(.9+Math.random()*.2),objs:[]}); const span = (d.len + d.len*d.gap)*T, n = Math.ceil((w + d.len*T)/span) + 1, off = Math.random()*span;
       for (let i=0;i<n;i++) lane.objs.push({x:i*span+off-span,len:d.len,ph:Math.random()*6.28,dive:i%2==0}); lane.wrap = n*span; L.push(lane); }); return L; };
-  const reset = () => { level = 1; score = 0; lives = A.D(5,4,3); dens = [0,0,0,0,0]; shieldN = 0; slowT = 0; pickup = null; fly = null; resumed = false; lanes = mkLanes(); respawn(); api.score(0); newProb(); };
+  const reset = () => { level = 1; score = 0; lives = A.D(5,4,3)+A.U('life'); dens = [0,0,0,0,0]; shieldN = 0; slowT = 0; pickup = null; fly = null; resumed = false; lanes = mkLanes(); respawn(); api.score(0); newProb(); };
   const respawn = () => { px = 240; pr = 11; furthest = 11; };
   const submerged = o => level>=2 && o.dive && Math.sin(time*1.1+o.ph) < -.55;
   const sinking = o => level>=2 && o.dive && Math.sin(time*1.1+o.ph) < -.2;
   const laneOf = r => lanes.find(l=>l.r==r);
   const die = m => { if (deadT>0 || st!='play') return;
     if (shieldN>0) { shieldN--; banner = {t:1.4,txt:'SHIELD POPPED',sub:'Back to the start, no life lost'}; A.sfx('blip'); respawn(); return; }
-    lives--; deadT = .9; deadMsg = m; A.sfx('bad');
+    if (!A.immortal) lives--; deadT = .9; deadMsg = m; A.sfx('bad');
     if (lives<=0) { st = 'dead'; A.sfx('over'); api.over(score); } };
   const hop = (dx,dy) => { if (st!='play' || deadT>0) return; pr = Math.max(0,Math.min(11,pr+dy)); px = Math.max(20,Math.min(w-20,px+dx*T)); hopA = 1; A.sfx('step');
     if (pr<furthest) { furthest = pr; score += 10; api.score(score); }
@@ -394,7 +394,7 @@ A.register('crossing', { mount(host, api){
         banner = {t:2,txt:'LEVEL '+level,sub:level==2?'Some turtles dive now':level==3?'Gators! Only ride their backs':'Everything is faster · +1 life'};
         api.score(score); stat(api,'crossLevel',level); }
       newProb(); respawn(); } };
-  const tick = dt => { time += dt; if (slowT>0) slowT -= dt; const m = slowT>0 ? .5 : 1; if (banner) banner.t -= dt; hopA = Math.max(0,hopA-dt*8);
+  const tick = dt => { time += dt; if (slowT>0) slowT -= dt; const m = (slowT>0 ? .5 : 1) * (1 - .1*A.U('slow')); if (banner) banner.t -= dt; hopA = Math.max(0,hopA-dt*8);
     lanes.forEach(l=>l.objs.forEach(o=>{ o.x += l.dir*l.sp*m*dt; if (l.dir>0 && o.x>w) o.x -= l.wrap; if (l.dir<0 && o.x+o.len*T<0) o.x += l.wrap; }));
     flyT -= dt; if (flyT<=0) { flyT = 6+Math.random()*4; const free = [0,1,2,3,4].filter(i=>!dens[i]); fly = free.length && Math.random()<.75 ? {i:free[Math.random()*free.length|0],t:5} : null; }
     if (fly) { fly.t -= dt; if (fly.t<=0) fly = null; }
@@ -454,10 +454,11 @@ A.register('stack', { mount(host, api){
   const rotL = m => m[0].map((_,i)=>m.map(r=>r[r.length-1-i]));
   const fits = (m,x,y) => m.every((row,r)=>row.every((v,c)=>!v || (x+c>=0 && x+c<CW && y+r<CH && (y+r<0 || !grid[y+r][x+c]))));
   const spawnP = (k) => { k = k || next.shift(); while (next.length<3) next.push(draw7()); cur = {k,m:SH[k].map(r=>r.slice()),x:Math.floor((CW-SH[k][0].length)/2),y:0}; lockT = 0; dropT = 0;
+    if (!fits(cur.m,cur.x,cur.y) && A.immortal) { for (let i=0;i<8;i++) { grid.pop(); grid.unshift(Array(CW).fill(0)); } banner = {t:1.2,txt:'IMMORTAL',sub:'Eight rows cleared'}; }
     if (!fits(cur.m,cur.x,cur.y)) { const die = () => { st = 'dead'; A.sfx('over'); stat(api,'stackLines',lines); api.over(score); };
       if (A.learnOn() && chances>0) { chances--; quizzing = true; A.quiz(host,'STACKED OUT · ANSWER FOR A SECOND CHANCE',ok=>{ quizzing = false; edu(ok); if (ok) { for (let i=0;i<5;i++) { grid.pop(); grid.unshift(Array(CW).fill(0)); } banner = {t:1.6,txt:'SECOND CHANCE',sub:'Five rows cleared'}; if (!fits(cur.m,cur.x,cur.y)) die(); } else die(); }); }
       else die(); } };
-  const reset = () => { grid = [...Array(CH)].map(()=>Array(CW).fill(0)); score = 0; lines = 0; level = 1; saws = 1; hold = null; canHold = true; bag = []; next = [draw7(),draw7(),draw7()]; resumed = false; spawnP(); api.score(0); };
+  const reset = () => { grid = [...Array(CH)].map(()=>Array(CW).fill(0)); score = 0; lines = 0; level = 1; saws = 1+A.U('saw'); hold = null; canHold = true; bag = []; next = [draw7(),draw7(),draw7()]; resumed = false; spawnP(); api.score(0); };
   const clearLines = () => { const full = []; for (let r=0;r<CH;r++) if (grid[r].every(v=>v)) full.push(r); if (!full.length) return;
     full.forEach(r=>{ grid.splice(r,1); grid.unshift(Array(CW).fill(0)); }); const n = full.length, before = lines; lines += n;
     score += [0,100,300,500,800][Math.min(4,n)]*level; if (n>=4) banner = {t:1.6,txt:'TIMBER!',sub:'Four lines at once'};

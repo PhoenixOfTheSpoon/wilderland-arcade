@@ -56,14 +56,14 @@ A.register('simon', { mount(host, api){
   const cols=[C.green,C.red,C.gold,C.sky], freqs=[330,392,494,587];
   const grid=el('div',{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'14px',padding:'30px',height:'100%'}); b.appendChild(grid);
   const center=el('div',{position:'absolute',left:'50%',top:'50%',transform:'translate(-50%,-50%)',width:'130px',height:'130px',borderRadius:'50%',background:C.ink,color:C.lime,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:'36px',zIndex:2}); b.appendChild(center);
-  let seq=[], pos=0, busy=true, lost=false, retryUsed=false;
+  let seq=[], pos=0, busy=true, lost=false, retryUsed=false, secondLeft=0;
   const pads=cols.map((c,i)=>{const p=el('div',{background:c,opacity:.35,borderRadius:['240px 12px 12px 12px','12px 240px 12px 12px','12px 12px 12px 240px','12px 12px 240px 12px'][i],cursor:'pointer',transition:'opacity .12s'});
     p.onmousedown=()=>press(i);grid.appendChild(p);return p;});
   const lit=(i,d=300)=>{pads[i].style.opacity=1;A.tone(freqs[i],d/1000,'triangle',.08);tos.push(setTimeout(()=>pads[i].style.opacity=.35,d));};
   const playSeq=()=>{busy=true;pos=0;center.textContent=seq.length;const sp=Math.max(A.D(320,220,150),A.D(650,500,380)-seq.length*20)/A.speed;seq.forEach((v,k)=>tos.push(setTimeout(()=>lit(v,sp*.7),600+k*sp)));tos.push(setTimeout(()=>busy=false,600+seq.length*sp));};
   const hints=A.hinter(api,()=>{ if(busy||!seq.length)return false; playSeq(); });
-  const next=()=>{retryUsed=false;seq.push(Math.random()*4|0);playSeq();};
-  function press(i){ if(busy)return; lit(i,180); if(i!=seq[pos]){ if(A.learnOn()&&!retryUsed){ retryUsed=true; busy=true; A.quiz(b,'WRONG PAD · ANSWER TO RETRY THE PATTERN',ok=>{ try{api.edu&&api.edu(ok);}catch(e){} busy=false; if(ok) playSeq(); else press(i); }); return; } busy=true;lost=true;A.sfx('over');const sc=SS(seq.length-1);api.over(sc);tos.push(setTimeout(()=>splash(b,'WRONG PAD','You remembered '+(seq.length-1)+' in a row · score '+sc,'Try again',()=>{seq=[];lost=false;api.score(0);hints.reset();next();}),400));return;}
+  const next=()=>{if(!seq.length)secondLeft=A.U('second');retryUsed=false;seq.push(Math.random()*4|0);playSeq();};
+  function press(i){ if(busy)return; lit(i,180); if(i!=seq[pos]&&secondLeft>0&&!A.immortal){ secondLeft--; busy=true; center.textContent='↺'; A.sfx('bad'); tos.push(setTimeout(playSeq,700)); return; } if(i!=seq[pos]&&A.immortal){ busy=true; tos.push(setTimeout(playSeq,500)); return; } if(i!=seq[pos]){ if(A.learnOn()&&!retryUsed){ retryUsed=true; busy=true; A.quiz(b,'WRONG PAD · ANSWER TO RETRY THE PATTERN',ok=>{ try{api.edu&&api.edu(ok);}catch(e){} busy=false; if(ok) playSeq(); else press(i); }); return; } busy=true;lost=true;A.sfx('over');const sc=SS(seq.length-1);api.over(sc);tos.push(setTimeout(()=>splash(b,'WRONG PAD','You remembered '+(seq.length-1)+' in a row · score '+sc,'Try again',()=>{seq=[];lost=false;api.score(0);hints.reset();next();}),400));return;}
     pos++; if(pos==seq.length){api.score(SS(seq.length));tos.push(setTimeout(next,500));} }
   api.snap&&api.snap(()=>seq.length>1&&!lost?{seq:seq.slice()}:null);
   if(api.resume&&api.resume.seq) A.ui.choice(b,'WELCOME BACK','Your pattern is '+api.resume.seq.length+' long. Watch it once more.',[['Resume',()=>{seq=api.resume.seq.slice();lost=false;api.score(SS(seq.length-1));hints.reset();playSeq();}],['New game',()=>{seq=[];lost=false;api.score(0);hints.reset();next();}]]);
@@ -75,7 +75,7 @@ A.register('mines', { mount(host, api){
   const b = board(host, C.forest); let N=10, M=14; let iv;
   let hintFn=()=>false; const hints=A.hinter(api,()=>hintFn());
   let snapM=null; api.snap&&api.snap(()=>snapM&&snapM());
-  const start=(R)=>{ N=R?R.N:A.D(8,10,12); M=R?R.M:A.D(8,14,26); b.innerHTML=''; let cells, first=true, dead=false, opened=0, t=0; clearInterval(iv);
+  const start=(R)=>{ N=R?R.N:A.D(8,10,12); M=R?R.M:A.D(8,14,26); b.innerHTML=''; let cells, first=true, dead=false, opened=0, t=0, mShield=A.U('shield'); clearInterval(iv);
     snapM=()=>(!first&&!dead)?{N,M,t,hard:A.diff=='hard',cells:cells.map(q=>q.m|(q.o<<1)|(q.f<<2))}:null;
     const hud=el('div',{display:'flex',justifyContent:'space-between',padding:'10px 16px',color:C.lime,fontWeight:700,fontSize:'16px'},''); const hL=el('span','',M+' mines · right-click to flag'),hT=el('span',{},'0s'); hL.textContent=M+' mines · right-click flags'; hud.append(hL,hT); b.appendChild(hud);
     const grid=el('div',{display:'grid',gridTemplateColumns:'repeat('+N+',1fr)',gap:'3px',padding:'0 16px 16px',height:'438px'}); b.appendChild(grid);
@@ -90,12 +90,14 @@ A.register('mines', { mount(host, api){
     const numC=['',C.sky,C.lime,C.gold,C.orange,C.pink,C.red,C.lavender,'#fff'];
     hintFn=()=>{ if(dead)return false; if(first){A.pulse(cells[(N>>1)*N+(N>>1)].c,C.gold);return;} const safe=cells.map((q,i)=>i).filter(i=>!cells[i].o&&!cells[i].m&&!cells[i].f); const front=safe.filter(i=>nb(i).some(z=>cells[z].o)); const pool=front.length?front:safe; if(!pool.length)return false; A.pulse(cells[pool[Math.random()*pool.length|0]].c,C.gold); }; hints.reset();
     function flag(i){const k=cells[i];if(k.o)return;k.f^=1;k.c.textContent=k.f?'⚑':'';k.c.style.color=C.gold;A.sfx('blip');}
-    function open(i){ const k=cells[i]; if(k.o||k.f)return; if(first){first=false;lay(i);iv=setInterval(()=>hT.textContent=(++t)+'s',1000);}
+    function open(i){ const k=cells[i]; if(k.o||k.f)return; if(first){first=false;lay(i);iv=setInterval(()=>hT.textContent=(++t)+'s',1000); const mm=cells.filter(q=>q.m&&!q.f).sort(()=>Math.random()-.5).slice(0,2*A.U('scan')); mm.forEach(q=>{q.f=1;q.c.textContent='⚑';q.c.style.color=C.sky;}); }
       if(k.m&&A.learnOn()&&!k.qz){ k.qz=1; dead=true; A.quiz(b,'MINE! ANSWER TO DEFUSE IT',ok=>{ try{api.edu&&api.edu(ok);}catch(e){} dead=false; if(ok){ k.f=1; k.c.textContent='⚑'; k.c.style.color=C.gold; } else open(i); }); return; }
+      if(k.m&&mShield>0&&!A.immortal){ mShield--; k.f=1; k.c.textContent='⛉'; k.c.style.color=C.sky; A.sfx('hit'); hL.textContent='Blast shield used · '+mShield+' left'; return; }
+      if(k.m&&A.immortal){ k.f=1; k.c.textContent='⚑'; k.c.style.color=C.gold; A.sfx('blip'); return; }
       if(k.m){dead=true;clearInterval(iv);cells.forEach(q=>{if(q.m){q.c.style.background=C.red;q.c.textContent='✹';q.c.style.color='#fff';}});A.sfx('over');api.over(opened*5);setTimeout(()=>splash(b,'BOOM','Cleared '+opened+' tiles · score '+opened*5,'New field',start),700);return;}
       const flood=[i]; while(flood.length){const j=flood.pop(),q=cells[j];if(q.o||q.f)continue;const n=reveal(j);if(!n)nb(j).forEach(z=>flood.push(z));}
       A.sfx('flip'); api.score(opened*5);
-      if(opened==N*N-M){dead=true;clearInterval(iv);const sc=opened*5+Math.max(0,1000-t*5);api.score(sc);if(A.diff=='hard'&&api.stat)api.stat('minesHard',1,'add');api.over(sc);A.sfx('win');splash(b,'FIELD CLEARED',t+' seconds · score '+sc,'New field',()=>start());} }
+      if(opened==N*N-M){dead=true;clearInterval(iv);const sc=opened*5+Math.max(0,1000-t*5);api.score(sc);if(A.diff=='hard'&&api.stat)api.stat('minesHard',1,'add');api.perfect&&api.perfect();api.over(sc);A.sfx('win');splash(b,'FIELD CLEARED',t+' seconds · score '+sc,'New field',()=>start());} }
     function reveal(j){const q=cells[j];q.o=1;opened++;const n=nb(j).filter(z=>cells[z].m).length;q.c.style.background='rgba(255,255,255,.12)';q.c.style.cursor='default';q.c.textContent=n||'';q.c.style.color=numC[n];return n;}
     if(R){ R.cells.forEach((v,i)=>{ cells[i].m=v&1; if(v&4){cells[i].f=1;cells[i].c.textContent='⚑';cells[i].c.style.color=C.gold;} });
       R.cells.forEach((v,i)=>{ if(v&2)reveal(i); }); first=false; t=R.t||0; hT.textContent=t+'s'; iv=setInterval(()=>hT.textContent=(++t)+'s',1000); api.score(opened*5); }

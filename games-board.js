@@ -27,7 +27,7 @@ A.register('memory', { mount(host, api){
         if(open.length==2){ moves++; const [[a,x],[d,y]]=open; open=[];
           if(x==y){found++;if(probs&&api.edu)api.edu(true);matched.add(+a.dataset.i);matched.add(+d.dataset.i);A.sfx('point');a.style.background=d.style.background=cols[x];a.style.color=d.style.color=C.forest;
             const sc=Math.max(0,1000-moves*25-Math.floor((Date.now()-t0)/1000)*5); api.score(sc);
-            if(found==NP){A.sfx('win');snap=null;if(moves-NP<=6&&api.stat)api.stat('memPerfect',1,'add');setTimeout(()=>{api.over(sc);splash(b,'ALL MATCHED',moves+' moves · score '+sc,'Deal again',()=>start());},500);} }
+            if(found==NP){A.sfx('win');snap=null;if(moves-NP<=6){if(api.stat)api.stat('memPerfect',1,'add');api.perfect&&api.perfect();}setTimeout(()=>{api.over(sc);splash(b,'ALL MATCHED',moves+' moves · score '+sc,'Deal again',()=>start());},500);} }
           else{lock=true;A.sfx('bad');setTimeout(()=>{[a,d].forEach(k=>{delete k.dataset.o;k.style.background=C.green;k.style.color='transparent';});lock=false;},650/A.speed);} } };
       grid.appendChild(c); cards.push([c,v]); });
     found=matched.size/2;
@@ -81,34 +81,57 @@ A.register('2048', { mount(host, api){
 A.register('tictactoe', { mount(host, api){
   const b = board(host, C.cream); let wins=0, to;
   let hintFn=()=>false; const hints=A.hinter(api,()=>hintFn());
-  const lines=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-  const winner=s=>{for(const[a,c,d]of lines)if(s[a]&&s[a]==s[c]&&s[a]==s[d])return s[a];return s.every(x=>x)?'D':null;};
-  const ai=s=>{ const tryW=p=>{for(const l of lines){const v=l.map(i=>s[i]);if(v.filter(x=>x==p).length==2&&v.includes(null))return l[v.indexOf(null)];}return -1;};
-    let m=tryW('O'); if(m<0)m=tryW('X'); if(m<0&&!s[4])m=4; if(m<0||Math.random()<A.D(.5,.15,0)){const e=s.map((v,i)=>v?-1:i).filter(i=>i>=0);m=e[Math.random()*e.length|0];} return m; };
+  // Variants: Classic is free; 4×4, 5×5 and Misère are unlocked in the Upgrade Workshop.
+  const VARS={classic:{n:3,k:3,t:'Classic',m:1}, misere:{n:3,k:3,t:'Misère',mis:1,m:1.5,u:'misere'}, big4:{n:4,k:4,t:'4×4',m:2,u:'big4'}, big5:{n:5,k:4,t:'5×5',m:3,u:'big5'}};
+  let vid='classic'; try{ vid=localStorage.getItem('wl-ttt-var')||'classic'; }catch(e){} if(!VARS[vid]||(VARS[vid].u&&!A.U(VARS[vid].u)))vid='classic';
+  let V, LINES, NN;
+  const setVar=id=>{ V=VARS[id]; vid=id; NN=V.n*V.n; LINES=[]; const n=V.n,k=V.k;
+    for(let r=0;r<n;r++)for(let c=0;c<n;c++)for(const[dr,dc]of[[0,1],[1,0],[1,1],[1,-1]]){ const er=r+dr*(k-1), ec=c+dc*(k-1); if(er<0||er>=n||ec<0||ec>=n)continue; LINES.push([...Array(k)].map((_,i)=>(r+dr*i)*n+(c+dc*i))); } };
+  setVar(vid);
+  const line3=s=>{ for(const l of LINES){ const p=s[l[0]]; if(p&&l.every(i=>s[i]==p))return p; } return null; };
+  const winner=s=>{ const p=line3(s); if(p)return V.mis?(p=='X'?'O':'X'):p; return s.every(x=>x)?'D':null; };
+  const heur=s=>{ let v=0; for(const l of LINES){ let o=0,x=0; for(const i of l){ if(s[i]=='O')o++; else if(s[i]=='X')x++; } if(o&&!x)v+=Math.pow(8,o); else if(x&&!o)v-=Math.pow(8,x)*1.1; } return V.mis?-v:v; };
+  let deadline=0; const ABORT={};
+  const nega=(s,p,depth,a,be)=>{ if(performance.now()>deadline)throw ABORT; const w=winner(s);
+    if(w){ if(w=='D')return 0; return (w==p?1:-1)*(100000+depth); }
+    if(!depth)return (p=='O'?1:-1)*heur(s);
+    let best=-1e9; const q=p=='X'?'O':'X';
+    for(let i=0;i<NN;i++){ if(s[i])continue; s[i]=p; const v=-nega(s,q,depth-1,-be,-a); s[i]=null; if(v>best)best=v; if(v>a)a=v; if(a>=be)break; } return best; };
+  const ai=(s,who='O')=>{ const empty=s.map((v,i)=>v?-1:i).filter(i=>i>=0); if(!empty.length)return -1;
+    if(Math.random()<A.D(.45,.12,0))return empty[Math.random()*empty.length|0];
+    const maxD=V.n==3?9:V.n==4?4:3; deadline=performance.now()+600; let pick=empty[0];
+    try{ for(let d=1;d<=maxD;d++){ let best=-1e9, bp=pick; const ord=[pick,...empty.filter(i=>i!=pick)];
+        for(const i of ord){ s[i]=who; const v=-nega(s,who=='O'?'X':'O',d-1,-1e9,1e9)+Math.random()*.01; s[i]=null; if(v>best){best=v;bp=i;} }
+        pick=bp; if(best>=99000)break; } }catch(e){ if(e!==ABORT)throw e; }
+    return pick; };
   let cur=null; if(api.resume&&api.resume.wins)wins=api.resume.wins;
-  api.snap&&api.snap(()=>{ const live=cur&&!winner(cur)&&cur.some(Boolean); return (wins||live)?{wins,s:live?cur.slice():null}:null; });
-  const start=(R)=>{ b.innerHTML=''; const s=R&&R.s?R.s.slice():Array(9).fill(null); cur=s; let busy=false;
-    const info=el('div',{textAlign:'center',fontWeight:700,fontSize:'20px',color:C.forest,padding:'16px'},'Your move · you are X · streak '+wins); b.appendChild(info);
-    const grid=el('div',{display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'8px',width:'380px',height:'380px',margin:'0 auto',background:C.forest,padding:'8px',borderRadius:'14px'}); b.appendChild(grid);
-    const cs=s.map((_,i)=>{const c=el('div',{background:C.cream,borderRadius:'8px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'72px',fontWeight:700,cursor:'pointer'});c.onclick=()=>play(i);grid.appendChild(c);return c;});
-    hintFn=()=>{ if(busy||winner(s))return false; const sw=s.map(v=>v=='X'?'O':v=='O'?'X':null); const old=A.diff; A.diff='hard'; const m=ai(sw); A.diff=old; A.pulse(cs[m],C.gold); }; hints.reset();
-    const put=(i,p)=>{s[i]=p;cs[i].textContent=p=='X'?'✕':'◯';cs[i].style.color=p=='X'?C.green:C.pink;};
-    if(R&&R.s){ s.forEach((p,i)=>p&&put(i,p)); const nx=s.filter(v=>v=='X').length, no=s.filter(v=>v=='O').length; if(nx>no){ const m=ai(s); if(m!=null&&m>=0)put(m,'O'); } }
-    const end=w=>{ if(w=='X'){wins++;A.sfx('win');api.stat&&api.stat('tttStreak',wins);}else if(w=='O'){A.sfx('over');}else A.sfx('blip');
-      const sc=w=='X'?wins*100:w=='D'?50:0; api.score(sc); api.over(sc); if(w=='O')wins=0;
-      to=setTimeout(()=>splash(b,w=='X'?'YOU WIN':w=='O'?'CPU WINS':'DRAW',w=='X'?'Streak: '+wins+'. Keep it going.':w=='O'?'Streak reset.':'Nobody blinks.','Next round',start),500); };
+  api.snap&&api.snap(()=>{ const live=cur&&!winner(cur)&&cur.some(Boolean); return (wins||live)?{wins,vid,s:live?cur.slice():null}:null; });
+  const start=(R)=>{ if(R&&R.vid&&VARS[R.vid]&&R.s&&R.s.length==VARS[R.vid].n**2)setVar(R.vid); b.innerHTML=''; const s=R&&R.s&&R.s.length==NN?R.s.slice():Array(NN).fill(null); cur=s; let busy=false;
+    const bar=el('div',{display:'flex',justifyContent:'center',gap:'4px',padding:'10px 10px 0',flexWrap:'wrap'}); b.appendChild(bar);
+    Object.entries(VARS).forEach(([id,v])=>{ const locked=v.u&&!A.U(v.u); const x=el('button',{border:'none',borderRadius:'999px',padding:'5px 12px',fontFamily:A.font,fontWeight:700,fontSize:'13px',cursor:locked?'default':'pointer',background:id==vid?C.forest:'rgba(1,86,64,.12)',color:id==vid?'#fff':locked?'#8a8a8a':C.forest},(locked?'🔒 ':'')+v.t+(v.m>1?' ×'+v.m:''));
+      x.onclick=()=>{ if(locked){ info.textContent='Unlock '+v.t+' in the Upgrade Workshop'; A.sfx('bad'); return; } if(id==vid)return; try{localStorage.setItem('wl-ttt-var',id);}catch(e){} setVar(id); wins=0; clearTimeout(to); A.sfx('blip'); start(); }; bar.appendChild(x); });
+    const info=el('div',{textAlign:'center',fontWeight:700,fontSize:'18px',color:C.forest,padding:'8px 10px 10px'},(V.mis?'Misère: DON’T make '+V.k+' in a row · ':V.n>3?'Get '+V.k+' in a row · ':'')+'You are X · streak '+wins); b.appendChild(info);
+    const SZ=V.n==3?360:380, fs=V.n==3?72:V.n==4?52:40;
+    const grid=el('div',{display:'grid',gridTemplateColumns:'repeat('+V.n+',1fr)',gap:'7px',width:SZ+'px',height:SZ+'px',margin:'0 auto',background:V.mis?C.pink:C.forest,padding:'8px',borderRadius:'14px'}); b.appendChild(grid);
+    const cs=s.map((_,i)=>{const c=el('div',{background:C.cream,borderRadius:'8px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:fs+'px',fontWeight:700,cursor:'pointer',transition:'transform .12s'});c.onclick=()=>play(i);grid.appendChild(c);return c;});
+    hintFn=()=>{ if(busy||winner(s))return false; const old=A.diff; A.diff='hard'; const m=ai(s,'X'); A.diff=old; if(m<0)return false; A.pulse(cs[m],C.gold); }; hints.reset();
+    const put=(i,p)=>{s[i]=p;cs[i].textContent=p=='X'?'✕':'◯';cs[i].style.color=p=='X'?C.green:C.pink;cs[i].style.transform='scale(1.12)';setTimeout(()=>cs[i].style.transform='',120);};
+    const glow=()=>{ for(const l of LINES){ const p=s[l[0]]; if(p&&l.every(i=>s[i]==p)){ l.forEach(i=>{cs[i].style.background=V.mis?'#ffd0e0':'#e4f7a8';}); return; } } };
+    if(R&&R.s){ s.forEach((p,i)=>p&&put(i,p)); const nx=s.filter(v=>v=='X').length, no=s.filter(v=>v=='O').length; if(nx>no){ const m=ai(s); if(m>=0)put(m,'O'); } }
+    const end=w=>{ glow(); if(w=='X'){wins++;A.sfx('win');api.stat&&api.stat('tttStreak',wins);}else if(w=='O'){A.sfx('over');}else A.sfx('blip');
+      const sc=Math.round((w=='X'?wins*100:w=='D'?50:0)*V.m); if(w=='X')api.perfect&&api.perfect(); api.score(sc); api.over(sc); if(w=='O')wins=0;
+      to=setTimeout(()=>splash(b,w=='X'?'YOU WIN':w=='O'?'CPU WINS':'DRAW',w=='X'?'Streak: '+wins+'. Keep it going.':w=='O'?'Streak reset.':'Nobody blinks.','Next round',start),700); };
+    const cpu=()=>{ busy=true; info.textContent='CPU thinking…'; to=setTimeout(()=>{ const m=ai(s); if(m>=0&&!s[m])put(m,'O'); A.sfx('flip'); busy=false; info.textContent='Your move · streak '+wins; const w2=winner(s); if(w2)end(w2); },350); };
     const learn=!!(A.edu&&A.edu.on);
-    function play(i){ if(busy||s[i])return; if(learn) return quiz(i); doPlay(i); }
+    function play(i){ if(busy||s[i]||winner(s))return; if(learn) return quiz(i); doPlay(i); }
     function quiz(i){ busy=true; const p=A.problem(); const o=el('div',{position:'absolute',inset:0,background:'rgba(1,86,64,.94)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'14px',zIndex:5,color:'#fff',textAlign:'center',padding:'20px',boxSizing:'border-box'});
       o.append(el('div',{fontSize:'13px',fontWeight:700,letterSpacing:'.1em',color:C.lime},'ANSWER TO CLAIM THE SQUARE'), el('div',{fontSize:'34px',fontWeight:700},A.qText(p)));
       const row=el('div',{display:'flex',gap:'10px',flexWrap:'wrap',justifyContent:'center'});
       p.choices.forEach(v=>{ const x=btn(String(v),()=>{ o.remove(); busy=false; const ok=v===p.a; try{api.edu&&api.edu(ok);}catch(e){}
-        if(ok){ doPlay(i); return; } A.sfx('bad'); info.textContent='Not quite — '+A.solved(p)+'. CPU’s turn.'; busy=true;
-        to=setTimeout(()=>{ const m=ai(s); if(m!=null&&m>=0&&!s[m])put(m,'O'); A.sfx('flip'); busy=false; info.textContent='Your move · streak '+wins; const w2=winner(s); if(w2)end(w2); },1100); });
+        if(ok){ doPlay(i); return; } A.sfx('bad'); info.textContent='Not quite — '+A.solved(p)+'. CPU’s turn.'; cpu(); });
         x.style.minWidth='84px'; x.style.fontSize='22px'; row.appendChild(x); });
       o.appendChild(row); b.appendChild(o); }
-    function doPlay(i){ if(s[i])return; put(i,'X'); A.sfx('blip'); let w=winner(s); if(w)return end(w);
-      busy=true; info.textContent='CPU thinking…'; to=setTimeout(()=>{put(ai(s),'O');A.sfx('flip');busy=false;info.textContent='Your move · streak '+wins;const w2=winner(s);if(w2)end(w2);},400); }
+    function doPlay(i){ if(s[i])return; put(i,'X'); A.sfx('blip'); const w=winner(s); if(w)return end(w); cpu(); }
   };
   start(api.resume); return ()=>clearTimeout(to);
 }});

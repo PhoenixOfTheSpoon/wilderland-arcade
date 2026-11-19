@@ -64,6 +64,7 @@ button{font-family:inherit;}
           <button onClick="{{ openPrizes }}" style="border:none; border-radius:14px; background:#AB2372; color:#ffffff; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:16px 10px; cursor:pointer; min-height:120px;">PRIZE COUNTER<br><span style="font-size:12px; font-weight:500; letter-spacing:0;">{{ prizesOwned }} claimed</span></button>
           <button onClick="{{ openLb }}" style="border:none; border-radius:14px; background:#121313; color:#F9BF01; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:10px; cursor:pointer; min-height:120px; display:flex; flex-direction:column; align-items:center; gap:4px;"><img src="{{ boardIcon }}" alt="" style="width:48px; height:48px;">LEADERBOARD</button>
           <button onClick="{{ openLearn }}" style="border:none; border-radius:14px; background:#014987; color:#ffffff; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:10px; cursor:pointer; min-height:120px; display:flex; flex-direction:column; align-items:center; gap:4px;"><img src="{{ learnIcon }}" alt="" style="width:48px; height:48px;">LEARNING DESK</button>
+          <button onClick="{{ openShop }}" style="border:none; border-radius:14px; background:#2a1d12; color:#F9BF01; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:10px; cursor:pointer; min-height:120px; display:flex; flex-direction:column; align-items:center; gap:4px;"><img src="{{ shopIcon }}" alt="" style="width:48px; height:48px;">UPGRADE WORKSHOP<span style="font-size:11px; font-weight:500; letter-spacing:0; color:#EDE9D8;">{{ shopOwned }} / {{ shopTotal }} owned</span></button>
         </div>
       </sc-if>
       <sc-if value="{{ wide }}" hint-placeholder-val="{{ true }}">
@@ -101,6 +102,11 @@ button{font-family:inherit;}
           <div onClick="{{ openLearn }}" style="position:absolute; left:850px; top:605px; width:230px; height:110px; cursor:pointer; border-radius:14px; background:#014987; border:3px solid #64CDF5; box-shadow:{{ learnShadow }}; padding:10px 12px; box-sizing:border-box; display:flex; align-items:center; gap:10px;">
             <img src="{{ learnIcon }}" alt="" style="width:56px; height:56px; flex-shrink:0;">
             <div style="min-width:0;"><div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:#a9e2fb;">LEARNING DESK</div><div style="font-size:16px; font-weight:700; color:#ffffff;">{{ eduLabel }}</div><div style="font-size:12px; font-weight:500; color:#EDE9D8;">Report &amp; settings</div></div>
+          </div>
+          <div onClick="{{ openShop }}" style="position:absolute; left:678px; top:590px; width:140px; height:130px; cursor:pointer; border-radius:12px; overflow:hidden; background:#2a1d12; border:3px solid #F9BF01; box-sizing:border-box; box-shadow:{{ shopShadow }}; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; transition:transform .18s cubic-bezier(.3,1.4,.5,1);" style-hover="transform:translateY(-6px) scale(1.04);">
+            <img src="{{ shopIcon }}" alt="" style="width:54px; height:54px;">
+            <div style="font-size:11px; font-weight:700; letter-spacing:0.1em; color:#F9BF01; text-align:center; line-height:1.2;">UPGRADE<br>WORKSHOP</div>
+            <div style="font-size:10px; font-weight:600; color:#EDE9D8;">{{ shopOwned }} / {{ shopTotal }} owned</div>
           </div>
 
           <div onClick="{{ openDaily }}" style="position:absolute; left:850px; top:290px; width:230px; height:140px; cursor:pointer; border-radius:14px; background:#121313; border:3px solid #D5F367; box-shadow:{{ dailyShadow }}; padding:14px; box-sizing:border-box; display:flex; flex-direction:column; gap:4px;">
@@ -246,7 +252,7 @@ button{font-family:inherit;}
           <sc-if value="{{ hintBtn }}" hint-placeholder-val="{{ false }}"><button onClick="{{ hintBtn.run }}" style="flex-shrink:0; border:none; border-radius:999px; padding:7px 14px; font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap; background:{{ hintBtn.bg }}; color:{{ hintBtn.fg }};">{{ hintBtn.label }}</button></sc-if>
           <sc-if value="{{ showAuto }}" hint-placeholder-val="{{ false }}"><button onClick="{{ toggleAuto }}" style="flex-shrink:0; border:none; border-radius:999px; padding:7px 14px; font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap; background:{{ autoBg }}; color:{{ autoFg }};">{{ autoLabel }}</button></sc-if>
           <sc-if value="{{ padAvail }}" hint-placeholder-val="{{ false }}"><button onClick="{{ togglePad }}" style="flex-shrink:0; border:none; border-radius:999px; padding:7px 14px; font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap; background:{{ padBg }}; color:{{ padFg }};">{{ padLabel }}</button></sc-if>
-          <sc-if value="{{ showImmortal }}" hint-placeholder-val="{{ false }}"><button onClick="{{ toggleImmortal }}" style="flex-shrink:0; border:none; border-radius:999px; padding:7px 14px; font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap; background:{{ immortalBg }}; color:{{ immortalFg }};">{{ immortalLabel }}</button></sc-if>
+          <sc-if value="{{ showImmortal }}" hint-placeholder-val="{{ false }}"><button onClick="{{ toggleImmortal }}" style="flex-shrink:0; border:none; border-radius:999px; padding:7px 14px; font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap; background:{{ immortalBg }}; color:{{ immortalFg }};">{{ immortalLabel }}</button></sc-if><sc-if value="{{ showMult }}" hint-placeholder-val="{{ false }}"><button onClick="{{ cycleMult }}" style="flex-shrink:0; border:none; border-radius:999px; padding:7px 14px; font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap; background:#EA55AB; color:#ffffff;">{{ multLabel }}</button></sc-if>
         </div>
         <sc-if value="{{ showImmortal }}" hint-placeholder-val="{{ false }}">
           <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px; flex-wrap:wrap;">
@@ -326,7 +332,7 @@ button{font-family:inherit;}
       <div style="background:#EDE9D8; border-radius:20px; padding:24px; width:360px; max-width:90vw; display:flex; flex-direction:column; gap:12px; color:#121313;">
         <div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#007a37;">OPERATOR ACCESS</div>
         <div style="font-size:26px; font-weight:700; color:#015640;">Enter a code</div>
-        <input autoFocus="{{ true }}" value="{{ codeVal }}" onChange="{{ codeInput }}" onKeyDown="{{ codeKey }}" placeholder="••••••" aria-label="Operator code" style="font-family:inherit; font-size:20px; font-weight:700; letter-spacing:0.12em; padding:12px 14px; border-radius:12px; border:2px solid #015640; outline:none; background:#ffffff; color:#121313; text-transform:uppercase;">
+        <input type="password" autoComplete="off" autoFocus="{{ true }}" value="{{ codeVal }}" onChange="{{ codeInput }}" onKeyDown="{{ codeKey }}" placeholder="••••••" aria-label="Operator code" style="font-family:inherit; font-size:20px; font-weight:700; letter-spacing:0.12em; padding:12px 14px; border-radius:12px; border:2px solid #015640; outline:none; background:#ffffff; color:#121313; text-transform:uppercase;">
         <sc-if value="{{ codeMsg }}" hint-placeholder-val="{{ false }}"><div style="font-size:13px; font-weight:700; color:#C0001D;">{{ codeMsg }}</div></sc-if>
         <div style="display:flex; gap:8px; justify-content:flex-end;">
           <button onClick="{{ closeCode }}" style="background:transparent; color:#015640; border:1.5px solid #015640; border-radius:999px; padding:8px 16px; font-family:inherit; font-weight:700; font-size:13px; cursor:pointer;">Cancel</button>
@@ -491,6 +497,34 @@ button{font-family:inherit;}
     </div>
   </sc-if>
 
+  <sc-if value="{{ shopOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; inset:0; background:rgba(27,19,12,.9); display:flex; align-items:safe center; justify-content:center; z-index:50; overflow-y:auto; padding:16px; box-sizing:border-box;">
+      <div style="background:#EDE9D8; border-radius:20px; padding:22px; width:760px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:14px; color:#121313;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
+          <div><div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#8D5B1D;">UPGRADE WORKSHOP</div><div style="font-size:28px; font-weight:700; color:#015640;">Make your games stronger</div><div style="font-size:13px; font-weight:500; color:#3d3d3d;">Permanent upgrades, paid in tickets. You have <b>{{ tickets }}</b> tickets · {{ shopOwned }} of {{ shopTotal }} upgrades owned.</div></div>
+          <button onClick="{{ closeShop }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer;">Close · Esc</button>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:12px;">
+          <sc-for list="{{ shopGames }}" as="sg" hint-placeholder-count="11">
+            <div style="background:#ffffff; border-radius:14px; overflow:hidden; display:flex; flex-direction:column;">
+              <div style="display:flex; align-items:center; gap:10px; padding:8px 12px; background:{{ sg.color }};"><img src="{{ sg.icon }}" alt="" style="width:34px; height:34px; background:#015640; border-radius:8px;"><div style="font-weight:700; font-size:15px; color:#121313;">{{ sg.name }}</div></div>
+              <div style="display:flex; flex-direction:column; gap:8px; padding:10px 12px;">
+                <sc-for list="{{ sg.ups }}" as="u" hint-placeholder-count="2">
+                  <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="flex:1; min-width:0;"><div style="font-weight:700; font-size:14px; color:#015640;">{{ u.n }} <span style="font-size:11px; color:#8a8a8a;">{{ u.lv }}</span></div><div style="font-size:12px; color:#4a4a4a; line-height:1.3;">{{ u.d }}</div>
+                      <div style="display:flex; gap:3px; margin-top:4px;"><sc-for list="{{ u.pips }}" as="pp" hint-placeholder-count="2"><div style="width:16px; height:5px; border-radius:3px; background:{{ pp.bg }};"></div></sc-for></div></div>
+                    <button onClick="{{ u.buy }}" style="flex-shrink:0; min-width:92px; border:none; border-radius:999px; padding:8px 10px; font-family:inherit; font-weight:700; font-size:13px; cursor:{{ u.cur }}; background:{{ u.bg }}; color:{{ u.fg }};">{{ u.label }}</button>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="font-size:12px; color:#4a4a4a;">The Mines has its own upgrades inside the game, bought with ore.</div>
+      </div>
+    </div>
+  </sc-if>
+
   <sc-if value="{{ learnOpen }}" hint-placeholder-val="{{ false }}">
     <div style="position:fixed; inset:0; background:rgba(11,46,36,.9); display:flex; align-items:safe center; justify-content:center; z-index:52; overflow-y:auto; padding:16px; box-sizing:border-box;">
       <div style="background:#EDE9D8; border-radius:20px; padding:22px; width:720px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:14px; color:#121313;">
@@ -647,7 +681,7 @@ const GAMES = [
   {id:'reaction',title:'Reaction Test',name:'REFLEX',color:'#D5F367',glyph:'◉',rate:0.12,target:300,pitch:'HOW FAST ARE YOU, REALLY'},
   {id:'typing',title:'Typing Race',name:'TYPE RACE',color:'#C7F1EE',glyph:'Aa',rate:0.12,target:300,pitch:'FINGERS ON THE HOME ROW'},
   {id:'simon',title:'Simon Says',name:'SIMON',color:'#FFF442',glyph:'◐',rate:0.05,target:2550,pitch:'WATCH. REMEMBER. REPEAT.'},
-  {id:'mines',title:'Minesweeper',name:'MINES',color:'#9a9a9b',glyph:'✹',rate:0.06,target:300,pitch:'TREAD CAREFULLY'},
+  {id:'mines',title:'Minesweeper',name:'MINES',color:'#9a9a9b',glyph:'✹',rate:0.06,target:900,pitch:'TREAD CAREFULLY'},
   {id:'connect4',title:'Connect 4',name:'CONNECT 4',color:'#64CDF5',glyph:'●●●●',rate:0.25,target:250,pitch:'FOUR IN A ROW WINS'},
   {id:'td',title:'Trailhead Defense',name:'DEFENSE',color:'#9fe07a',glyph:'▲◆▲',rate:0.02,target:8000,pitch:'HOLD THE CAMP',isNew:true},
   {id:'crossing',title:'Critter Crossing',name:'CROSSING',color:'#FF8FA3',glyph:'≋',rate:0.06,target:1500,pitch:'MIND THE TRAFFIC',isNew:true},
@@ -683,6 +717,7 @@ const ICONS = {
 };
 const ICON = id => svgURI(ICONS[id] || '');
 const KIOSK_ICONS = {
+  shop: svgURI('<g>'+at('rotate','-20 26 38;10 26 38;-20 26 38',.9,SPLINE)+'<rect x="22" y="14" width="8" height="34" rx="3" fill="#8D5B1D"/><rect x="10" y="8" width="32" height="12" rx="4" fill="#c9ccd1"/></g><circle cx="44" cy="44" r="12" fill="none" stroke="#F9BF01" stroke-width="6" stroke-dasharray="6 3.4">'+at('rotate','0 44 44;360 44 44',3)+'</circle><circle cx="44" cy="44" r="4" fill="#F9BF01"/>'),
   board: svgURI('<path d="M20 10H44V26A12 12 0 0 1 20 26Z" fill="#F9BF01"/><path d="M20 14H12A8 8 0 0 0 20 26M44 14H52A8 8 0 0 1 44 26" fill="none" stroke="#F9BF01" stroke-width="3"/><rect x="28" y="36" width="8" height="10" fill="#F9BF01"/><rect x="20" y="46" width="24" height="7" rx="2" fill="#DD8B03"/><circle cx="26" cy="16" r="2" fill="#fff">'+an('opacity','0;1;0',1.6)+'</circle>'),
   learn: svgURI('<path d="M8 18L32 8L56 18L32 28Z" fill="#64CDF5"/><path d="M16 22V36C16 42 48 42 48 36V22L32 29Z" fill="#a9c8ff"/><path d="M52 20V36" stroke="#F9BF01" stroke-width="2"/><circle cx="52" cy="38" r="3" fill="#F9BF01">'+an('cy','37;40;37',1.4)+'</circle><text x="32" y="58" font-family="sans-serif" font-weight="700" font-size="13" text-anchor="middle" fill="#D5F367">1+1=2</text>'),
 };
@@ -692,7 +727,7 @@ const TOPICS = [['add','Add'],['sub','Subtract'],['mult','Multiply'],['div','Div
 const PADS = {snake:{d:'udlr',a:[['Start',' ']]}, breakout:{d:'lr',a:[['Launch',' ']]}, flappy:{d:'',a:[['Flap',' ']]}, pong:{d:'ud',a:[['Serve',' ']]}, '2048':{d:'udlr',a:[]}, crossing:{d:'udlr',a:[['Start',' ']]}, stack:{d:'ldr',a:[['Rotate','ArrowUp'],['Drop',' '],['Hold','c'],['Saw','x']]}, connect4:{d:'lr',a:[['Drop',' ']]}};
 const SWIPE = ['snake','2048','crossing','stack'];
 const FW = 1120, FH = 780;
-const KIOSKS = [{id:'prize',x:850,y:50,w:230,h:200},{id:'daily',x:850,y:290,w:230,h:140},{id:'board',x:850,y:465,w:230,h:110},{id:'learn',x:850,y:605,w:230,h:110}];
+const KIOSKS = [{id:'prize',x:850,y:50,w:230,h:200},{id:'daily',x:850,y:290,w:230,h:140},{id:'board',x:850,y:465,w:230,h:110},{id:'learn',x:850,y:605,w:230,h:110},{id:'shop',x:678,y:590,w:140,h:130}];
 const BOARD_KEY = 'wl-arcade-board-v3', UNAME_KEY = 'wl-arcade-usernames';
 const getJSON = (k,d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch(e) { return d; } };
 const putJSON = (k,v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} };
@@ -706,7 +741,24 @@ const fireKey = (key,type) => { try { window.dispatchEvent(new KeyboardEvent(typ
 const TIPS = {idle:'Your miners dig even while you are away. Drag two matching miners together to merge them into a stronger one. Sell ore for tickets — up to 400 a day. Spend ore in Upgrades for sharper picks, carts and a Foreman who merges for you.', snake:'Each level has a new maze. Gold apples are worth 3, mushrooms slow time, blue berries shrink your tail. Purple portals connect — and dashed edges wrap around.',breakout:'Hit with the paddle edge to angle shots. Long combos multiply every brick.',flappy:'Tap in short, steady bursts and aim for the middle of each gap.',pong:'Return off the paddle tip for steep angles the CPU struggles to reach.',memory:'Work row by row so you remember where you have already looked.',whack:'Red bombs cost a life — leave them. Every 15-hit combo earns a Quake, Freeze or Shield. The Gopher King shows up every 5 levels.','2048':'Keep your biggest tile pinned in one corner and avoid the opposite direction.',tictactoe:'Take the centre or a corner. Two threats at once is a guaranteed win.',reaction:'Watch the colour, not the words. Gold is a decoy.',typing:'Accuracy beats speed — a missed word scores nothing.',simon:'Say the colours out loud, or chunk them in threes.',mines:'A 1 touching only one hidden tile means that tile is a mine.',connect4:'The centre column is part of the most fours. Watch the diagonals.',td:'Build where the trail passes twice. Frost + Boulder is a strong pair, and Gold Pans pay for themselves after a few waves. Calling a wave early pays bonus gold.',crossing:'Wait for gaps instead of rushing. Diving turtles fade before they sink, and gators bite at the head end.',stack:'Keep the stack flat and leave one column open for long logs. A saw (X) rescues a messy bottom row.',rootout:'Purple “!” tags mark invasives early on — from level 3 the labels disappear, so read the fact cards. Every 5 perfect drops earns a weed puller.',trace:'Cover the whole grey shape — ink outside the lines costs points (it turns red). Tap Camera to write on real paper and hold it up instead.'};
 const RIVALS = [['littletimmy','Little Timmy',3],['jimmy','Jimmy',8],['timmy','Timmy',15],['baubau','Lord Emperor Bau Bau',30],['thetimmy','THE TIMMY',60]];
 const RIVAL = id => RIVALS.find(r=>r[0]==id);
-const SPEEDS = {slow:.6, normal:1, fast:1.4, turbo:1.8};
+// Upgrade Workshop: permanent per-game upgrades bought with tickets. Games read the level with A.U(key).
+const UPG = {
+  snake:[{k:'life',n:'Extra Life',d:'Start every run with one more life',c:[300,900]},{k:'calm',n:'Calm Start',d:'Snake moves 10% slower per level',c:[200,500,1000]}],
+  flappy:[{k:'shield',n:'Bubble Shield',d:'Survive one crash per shield, each run',c:[400,1000,2500]},{k:'gap',n:'Wider Gaps',d:'Log gaps open 14px wider per level',c:[300,800]}],
+  '2048':[{k:'undo',n:'Undo',d:'Take back a move · one undo per level, each game',c:[300,800,2000]}],
+  whack:[{k:'life',n:'Extra Life',d:'Start with one more life',c:[300,900]},{k:'charge',n:'Power Charges',d:'+1 Quake, Freeze and Shield each game',c:[400,1200]}],
+  tictactoe:[{k:'misere',n:'Misère Mode',d:'Unlock the variant where three in a row LOSES · pays ×1.5',c:[500]},{k:'big4',n:'4×4 Board',d:'Unlock 4-in-a-row on a 4×4 board · pays ×2',c:[1000]},{k:'big5',n:'5×5 Board',d:'Unlock 4-in-a-row on a 5×5 board · pays ×3',c:[2500]}],
+  simon:[{k:'second',n:'Second Chance',d:'Forgive one wrong pad per level, each game',c:[600,1800]}],
+  mines:[{k:'scan',n:'Mine Scanner',d:'Flags 2 mines for you per level at the start',c:[300,800,2000]},{k:'shield',n:'Blast Shield',d:'Survive stepping on a mine',c:[700,2000]}],
+  td:[{k:'gold',n:'War Chest',d:'+40 starting gold per level',c:[300,800,2000]},{k:'hp',n:'Stockade',d:'+5 camp health per level',c:[400,1200]}],
+  crossing:[{k:'life',n:'Extra Life',d:'Start with one more life',c:[300,900]},{k:'slow',n:'Traffic Calming',d:'Traffic moves 10% slower per level',c:[400,1200]}],
+  stack:[{k:'saw',n:'Extra Saw',d:'+1 line-clearing saw each game',c:[400,1200,3000]}],
+  rootout:[{k:'health',n:'Healthy Soil',d:'+1 ecosystem health',c:[300,900]},{k:'pull',n:'Weed Puller',d:'+1 root-out pull each game',c:[400,1200]}],
+};
+const SPEEDS = {slow:.6, normal:1, fast:1.4, turbo:1.9};
+const SPEED_TIX = {slow:.5, normal:1, fast:1.5, turbo:2.5};
+// Fair payout: every game pays ~100 tickets for hitting its target score, scaling smoothly above and below.
+const baseTix = (g, score) => Math.max(1, Math.ceil(100 * Math.pow(Math.max(0, score) / Math.max(1, g.target), 0.85)));
 const SPEED_GAMES = ['snake','breakout','flappy','pong','whack','simon','memory','connect4','td','crossing','stack','rootout'];
 const POS = GAMES.map((g,i)=>({x:30+(i%5)*162, y:50+Math.floor(i/5)*180}));
 const NG = GAMES.length;
@@ -801,7 +853,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-11-19f';
+const BUILD = '2026-11-19g';
 const SCRIPTS = ['arcade-core.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-edu.js','games-idle.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
@@ -911,7 +963,7 @@ class Component extends DCLogic {
     this.kd = e => {
       const k = e.key.length==1 ? e.key.toLowerCase() : e.key;
       if (k=='Escape') { this.closeAll(); this.setState({codeOpen:false}); return; }
-      const S = this.state; if (S.game || S.prizesOpen || S.codeOpen || S.authOpen || S.achOpen || S.learnOpen || S.lbOpen || S.uOpen) return;
+      const S = this.state; if (S.game || S.shopOpen || S.prizesOpen || S.codeOpen || S.authOpen || S.achOpen || S.learnOpen || S.lbOpen || S.uOpen) return;
       if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k)) e.preventDefault();
       this.keys[k] = true;
       if ((k=='e'||k=='Enter') && this.near) this.near.act();
@@ -926,7 +978,7 @@ class Component extends DCLogic {
     let last = performance.now(), stepT = 0;
     const tick = now => {
       const dt = Math.min(.05,(now-last)/1000); last = now; const s = this.state;
-      if (!s.game && !s.prizesOpen && !s.codeOpen && !s.authOpen && !s.achOpen && !s.learnOpen && !s.lbOpen && !s.uOpen) {
+      if (!s.game && !s.shopOpen && !s.prizesOpen && !s.codeOpen && !s.authOpen && !s.achOpen && !s.learnOpen && !s.lbOpen && !s.uOpen) {
         const K = this.keys, dx = (K.ArrowRight||K.d?1:0)-(K.ArrowLeft||K.a?1:0), dy = (K.ArrowDown||K.s?1:0)-(K.ArrowUp||K.w?1:0);
         if (dx||dy) {
           const sp = (this.props.walkSpeed ?? 280) * dt / Math.hypot(dx,dy);
@@ -951,15 +1003,16 @@ class Component extends DCLogic {
     const {game} = this.state;
     if (game && this.gameRef.current && this.mounted != game && this.ready) {
       this.unmountGame(); this.mounted = game;
-      const A = window.Arcade; A.immortal = this.state.admin && this.state.immortal; A.diff = (RIVAL(this.P.difficulty) && game!='connect4') ? 'hard' : this.P.difficulty; A.speed = SPEEDS[this.P.speed] || 1; A.muted = this.state.muted || this.props.sound === false;
+      const A = window.Arcade; A.upg = {...((this.P.upg||{})[game]||{})}; A.immortal = this.state.admin && this.state.immortal; A.diff = (RIVAL(this.P.difficulty) && game!='connect4') ? 'hard' : this.P.difficulty; A.speed = SPEEDS[this.P.speed] || 1; A.muted = this.state.muted || this.props.sound === false;
       A.edu = {on: !!this.eduOn() && EDU_SWITCH.includes(game), topic: this.P.edu.topic};
       const resume = this.P.saves[this.saveKey(game)] || null;
       this.setState({hint:null});
-      this.snapFn = null; this.startSess(game);
-      this.cleanup = A.games[game].mount(this.gameRef.current, { score: n => this.setState({liveScore:n}), over: n => this.finish(game, n), hint: h => this.setState({hint:h}),
+      this.snapFn = null; this._perfect = false; this.startSess(game);
+      const am = n => this.state.admin ? Math.round(n*(this.state.adminMult||1)) : n;
+      this.cleanup = A.games[game].mount(this.gameRef.current, { score: n => this.setState({liveScore:am(n)}), over: n => this.finish(game, am(n)), hint: h => this.setState({hint:h}),
         resume, snap: f => { this.snapFn = f; }, stat: (k,v,m) => this.stat(k,v,m),
         stored: this.state.admin ? null : (this.P.idle || null), store: d => { if (this.state.admin) return; try { this.P = {...this.P, idle: JSON.parse(JSON.stringify(d))}; } catch(e) { return; } this.persist(); },
-        tix: (n, score, label) => this.grantTix(game, n, score, label),
+        tix: (n, score, label) => this.grantTix(game, n, score, label), perfect: () => { this._perfect = true; },
         edu: ok => { if (this.sess) { if (ok) this.sess.ok++; else this.sess.bad++; } this.stat(ok?'eduRight':'eduWrong',1,'add'); } });
       if (this.gro && this.gameRef.current !== this._gEl) { if (this._gEl) this.gro.unobserve(this._gEl); this._gEl = this.gameRef.current; this.gro.observe(this._gEl); }
       if (resume) { this.stat('resumes',1,'add'); this.toast('SAVED GAME LOADED'); }
@@ -999,6 +1052,11 @@ class Component extends DCLogic {
       catch(e) { this.setState({admArm:'', admMsg: String(e && e.code||'').includes('permission') ? 'Firebase said no: your account isn’t an admin in the database rules yet. Paste the new firestore.rules into Firestore → Rules → Publish.' : 'Couldn’t delete: '+(e && (e.code||e.message))}); } }
     else { const B = getJSON(BOARD_KEY,{e:[]}); B.e = B.e.filter(y=>!(y.g==g && (g=='_tix' ? y.k==x.k : (y.k==x.k && y.s==x.s && y.d==x.d)))); putJSON(BOARD_KEY,B); this.setState({admArm:'', admMsg:'Removed '+x.u+'.'}); } }
   toast(text){ const id = Math.random(); this.setState(s=>({toasts:[...s.toasts,{id,text}]})); setTimeout(()=>this.setState(s=>({toasts:s.toasts.filter(t=>t.id!=id)})), 3000); }
+  buyUpg(gid, k){ const list = UPG[gid] || [], u = list.find(x=>x.k==k); if (!u) return; const P = this.P, cur = ((P.upg||{})[gid]||{})[k]||0;
+    if (cur >= u.c.length) return; const cost = u.c[cur];
+    if (P.tickets < cost) { window.Arcade && window.Arcade.sfx('bad'); this.toast('NEED '+(cost-P.tickets).toLocaleString()+' MORE TICKETS'); return; }
+    const upg = {...(P.upg||{})}; upg[gid] = {...(upg[gid]||{}), [k]:cur+1};
+    this.setP({tickets:P.tickets-cost, upg, stats:{...P.stats, sum:{...P.stats.sum, upgrades:(P.stats.sum.upgrades||0)+1}}}); window.Arcade && window.Arcade.sfx('coin'); this.toast(u.n.toUpperCase()+' · LEVEL '+(cur+1)); }
   grantTix(id, n, score, label){ if (this.state.admin) return 0; const P = this.P, best = {...P.best};
     let tix = Math.max(0, Math.floor(n)); if (this.isLearn(id)) tix = Math.ceil(tix*1.25); if (!tix) return 0;
     const better = score > (best[id]||0); if (better) best[id] = score;
@@ -1010,7 +1068,10 @@ class Component extends DCLogic {
     const g = GAMES.find(x=>x.id==id), mult = this.props.ticketMultiplier ?? 1, P = this.P;
     const best = {...P.best}, played = {...P.played, [id]:(P.played[id]||0)+1}, sum = {...P.stats.sum};
     const dm = RIVAL(P.difficulty) ? (id=='connect4'?RIVAL(P.difficulty)[2]:2) : ({easy:.75,normal:1,hard:2}[P.difficulty]||1);
-    let tix = Math.ceil(Math.max(1, Math.ceil(score*g.rate)) * mult * dm), lines = [];
+    let tix = Math.ceil(baseTix(g, score) * mult * dm), lines = [];
+    if (dm != 1) lines.push((RIVAL(P.difficulty) ? RIVAL(P.difficulty)[1].toUpperCase() : P.difficulty.toUpperCase())+' ×'+dm);
+    const spm = SPEED_TIX[P.speed] || 1; if (spm != 1) { tix = Math.max(1, Math.ceil(tix*spm)); lines.push(P.speed.toUpperCase()+' SPEED ×'+spm); }
+    if (this._perfect) { tix *= 3; lines.push('PERFECT ×3'); sum.perfect = (sum.perfect||0)+1; } this._perfect = false;
     if (score > (best[id]||0)) { if (best[id]) lines.push('NEW HIGH SCORE'); best[id] = score; }
     const daily = {...(P.daily.date==today() ? P.daily : {date:today(),done:false})};
     if (GAMES[dailyIdx()].id==id && !daily.done && score >= g.target) { daily.done = true; tix += 100; sum.daily = (sum.daily||0)+1; lines.push('DAILY CHALLENGE COMPLETE · +100'); }
@@ -1021,14 +1082,15 @@ class Component extends DCLogic {
     this.setP({best, played, daily, saves, tickets:P.tickets+tix, earned:P.earned+tix, stats:{...P.stats, sum}});
     if (this.P.username) this.addScore(id, score, learn); else if (!this._unameNag) { this._unameNag = true; setTimeout(()=>this.toast('CREATE A USERNAME TO JOIN THE LEADERBOARD'), 1200); }
     this.setState({payout:'+'+tix+' tickets'+(lines.length?' · '+lines.join(' · '):'')});
-    window.Arcade.sfx('coin'); lines.forEach(l=>this.toast(l));
+    window.Arcade.sfx('coin'); lines.filter(l=>/HIGH|DAILY|PERFECT/.test(l)).forEach(l=>this.toast(l));
   }
-  submitCode(){ const v = (this.state.codeVal||'').trim().toUpperCase();
-    if (v == 'LIGHTNINGMAXELYTRA') { if (window.Arcade) window.Arcade.infiniteHints = true; this.setState(s=>({admin:true, codeOpen:false, hint: s.hint ? {...s.hint, left:Infinity} : s.hint})); window.Arcade && window.Arcade.sfx('win'); this.toast('ADMIN MODE · INFINITE HINTS UNTIL RELOAD'); }
+  async submitCode(){ const v = (this.state.codeVal||'').trim().toUpperCase(); let hx = '';
+    try { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(v)); hx = [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join(''); } catch(e) {}
+    if (hx == '711125e6da98be03f5351f602a547a86121f7e33f8f5f21ff6868b83900be16e') { if (window.Arcade) window.Arcade.infiniteHints = true; this.setState(s=>({admin:true, codeOpen:false, hint: s.hint ? {...s.hint, left:Infinity} : s.hint})); window.Arcade && window.Arcade.sfx('win'); this.toast('ADMIN MODE · INFINITE HINTS UNTIL RELOAD'); }
     else { window.Arcade && window.Arcade.sfx('bad'); this.setState({codeMsg:'Code not recognised', codeVal:''}); } }
   open(id){ this.keys = {}; this.setState({game:id, liveScore:0, payout:''}); }
   closeAll(){ const saved = this.unmountGame(); this.keys = {}; Object.keys(this.padHeld).forEach(k=>{ if (this.padHeld[k]) fireKey(k,'keyup'); }); this.padHeld = {};
-    this.setState({game:null, prizesOpen:false, payout:'', authOpen:false, achOpen:false, learnOpen:false, lbOpen:false, uOpen:false, clearArm:false}); if (saved) this.toast('GAME SAVED · PICK IT UP ANY TIME'); }
+    this.setState({game:null, shopOpen:false, prizesOpen:false, payout:'', authOpen:false, achOpen:false, learnOpen:false, lbOpen:false, uOpen:false, clearArm:false}); if (saved) this.toast('GAME SAVED · PICK IT UP ANY TIME'); }
   buy(p){
     const P = this.P; if (P.tickets < p.cost) { window.Arcade && window.Arcade.sfx('bad'); return; }
     const left = P.tickets - p.cost, patch = {tickets:left, prizes:{...P.prizes,[p.id]:(P.prizes[p.id]||0)+1}};
@@ -1080,10 +1142,10 @@ class Component extends DCLogic {
     const eduOn = this.eduOn(), locked = this.locked(), hasCode = !!this.lockInfo().hash;
     const s = this.state, P = this.P, di = dailyIdx(), dg = GAMES[di], dailyDone = P.daily.date==today() && P.daily.done;
     const ni = this.findNear(), glow = '0 0 0 4px #D5F367, 0 12px 24px rgba(0,0,0,.3)', base = '0 10px 18px rgba(0,0,0,.22)';
-    const kiosk = [()=>this.setState({prizesOpen:true}), ()=>this.open(dg.id), ()=>this.setState({lbOpen:true}), ()=>this.setState({learnOpen:true})];
+    const kiosk = [()=>this.setState({prizesOpen:true}), ()=>this.open(dg.id), ()=>this.setState({lbOpen:true}), ()=>this.setState({learnOpen:true}), ()=>this.setState({shopOpen:true})];
     this.near = ni==null ? null : ni<NG ? {act:()=>this.open(GAMES[ni].id)} : {act:kiosk[ni-NG]};
     const savedOf = id => !!(P.saves[id] || P.saves[id+'~edu']);
-    const nearLabel = ni==null ? '' : ni<NG ? 'PLAY '+GAMES[ni].title.toUpperCase()+(savedOf(GAMES[ni].id)?' · SAVED':'') : ['PRIZE COUNTER','DAILY: '+dg.title.toUpperCase(),'LEADERBOARD','LEARNING DESK'][ni-NG];
+    const nearLabel = ni==null ? '' : ni<NG ? 'PLAY '+GAMES[ni].title.toUpperCase()+(savedOf(GAMES[ni].id)?' · SAVED':'') : ['PRIZE COUNTER','DAILY: '+dg.title.toUpperCase(),'LEADERBOARD','LEARNING DESK','UPGRADE WORKSHOP'][ni-NG];
     const g = s.game && GAMES.find(x=>x.id==s.game);
     const [dx,dy] = s.dir;
     // achievements
@@ -1216,7 +1278,7 @@ class Component extends DCLogic {
       showAuto: s.admin && !!s.hint && s.game!='simon',
       autoLabel: s.autoHint ? 'Auto hint · ON' : 'Auto hint · OFF', autoBg: s.autoHint ? '#015640' : '#D9D9D9', autoFg: s.autoHint ? '#D5F367' : '#4a4a4a',
       toggleAuto: ()=>this.setState(st=>({autoHint:!st.autoHint})),
-      showImmortal: s.admin && s.game=='breakout',
+      showImmortal: s.admin && !!s.game && !['2048','tictactoe','connect4','memory','typing','reaction','trace','idle'].includes(s.game), multLabel: 'Score ×'+(s.adminMult||1), cycleMult: ()=>{ const L=[1,2,5,10,100], v=L[(L.indexOf(s.adminMult||1)+1)%L.length]; this.setState({adminMult:v}); window.Arcade && window.Arcade.sfx('blip'); }, showMult: s.admin && !!s.game,
       ballCount: s.ballCount ?? 5, ballInput: e=>this.setState({ballCount:e.target.value}), stopKey: e=>e.stopPropagation(),
       ballPower: s.ballPower ?? 1, powerSlider: Math.min(100,Math.round(Math.log10(s.ballPower ?? 1)*20)),
       powerSlide: e=>{ const v=Math.max(1,Math.min(100000,Math.round(Math.pow(10,(+e.target.value)/20)))); if(window.Arcade) window.Arcade.ballPower=v; this.setState({ballPower:v}); },
@@ -1248,7 +1310,11 @@ class Component extends DCLogic {
       hasRivals: s.game=='connect4',
       rivalOpts: RIVALS.map(([id,label])=>({label, bg: P.difficulty==id?'#B3001B':'transparent', fg: P.difficulty==id?'#ffffff':'#015640', pick:()=>this.pickDiff(id)})),
       diffNote: {easy:'Easy pays ×0.75 tickets',normal:'',hard:'Hard pays ×1.5 tickets',}[P.difficulty] || (RIVAL(P.difficulty) ? (s.game=='connect4' ? RIVAL(P.difficulty)[1]+' pays ×'+RIVAL(P.difficulty)[2]+' tickets' : 'Rivals are Connect 4 only · playing Hard (×1.5)') : ''), payout: s.payout,
-      prizesOpen: s.prizesOpen,
+      prizesOpen: s.prizesOpen, shopOpen: !!s.shopOpen, openShop: ()=>{ this.keys = {}; this.setState({shopOpen:true}); }, closeShop: ()=>this.closeAll(), shopShadow: ni===NG+4?glow:base, shopIcon: KIOSK_ICONS.shop,
+      shopOwned: Object.values(P.upg||{}).reduce((a,o)=>a+Object.values(o).reduce((x,y)=>x+y,0),0), shopTotal: Object.values(UPG).reduce((a,l)=>a+l.reduce((x,u)=>x+u.c.length,0),0),
+      shopGames: Object.entries(UPG).map(([gid,list])=>{ const gm = GAMES.find(x=>x.id==gid); return {id:gid, name:gm.title, color:gm.color, icon:ICON(gid),
+        ups: list.map(u=>{ const lv = ((P.upg||{})[gid]||{})[u.k]||0, max = u.c.length, maxed = lv>=max, cost = maxed?0:u.c[lv], can = !maxed && P.tickets>=cost;
+          return {key:gid+u.k, n:u.n, d:u.d, lv:lv+'/'+max, pips:[...Array(max)].map((_,i)=>({k:i, bg:i<lv?'#F9BF01':'#d9d3bd'})), label: maxed?'MAXED':cost.toLocaleString()+' tix', bg: maxed?'#cfc9b3':can?'#015640':'#bdb7a1', fg: maxed?'#4a4a4a':'#ffffff', cur: can?'pointer':'default', buy: ()=>this.buyUpg(gid,u.k)}; }) }; }),
       prizes: PRIZES.map(p=>{ const ok = P.tickets>=p.cost; return {...p, owned:P.prizes[p.id]||0, cost:p.cost.toLocaleString(), btnBg: ok?'#015640':'#D9D9D9', btnFg: ok?'#ffffff':'#4a4a4a', cursor: ok?'pointer':'not-allowed', buy:()=>this.buy(p)}; }),
       toasts: s.toasts,
     };

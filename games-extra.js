@@ -24,7 +24,12 @@ A.register('2048', { mount(host, api){
   row2.appendChild(goal);
   const S=400, top=70, left=40;
   const area=el('div',{position:'absolute',left:left+'px',top:top+'px',width:S+'px',height:S+'px',background:'rgba(1,86,64,.12)',borderRadius:'14px',overflow:'hidden'}); b.appendChild(area);
-  let N, P, G, CELL, at, tiles=[], score=0, over=false, pending=null, movedAny=false, chances=3;
+  let N, P, G, CELL, at, tiles=[], score=0, over=false, pending=null, movedAny=false, chances=3, hist=[], undos=0;
+  const U2=k=>(A.upg&&A.upg[k])||0;
+  const undoB=el('button',{border:'none',borderRadius:'999px',padding:'4px 10px',fontFamily:A.font,fontWeight:700,fontSize:'12px',cursor:'pointer',background:C.forest,color:'#fff',marginLeft:'8px',display:U2('undo')?'':'none'});
+  const paintUndo=()=>{undoB.textContent='↶ Undo · '+undos; undoB.style.opacity=undos&&hist.length?1:.5;};
+  const undo=()=>{ if(!undos||!hist.length)return; settle(); const h=hist.pop(); undos--; tiles.forEach(t=>t.el.remove()); tiles=[]; h.cells.forEach(x=>make(x.r,x.c,x.v)); score=h.score; over=false; api.score(score); [...b.children].forEach(x=>{ if(x.dataset&&x.dataset.splash)x.remove(); }); A.sfx('flip'); paintUndo(); };
+  undoB.onclick=e=>{e.stopPropagation();undo();undoB.blur();}; row2.appendChild(undoB);
   const lvl=v=>Math.round(Math.log(v)/Math.log(cfg.base));
   const look=t=>{const L=lvl(t.v),digits=String(t.v).length;t.inner.textContent=t.v;t.inner.style.background=PAL[Math.min(L-1,PAL.length-1)];t.inner.style.color=L>=5?'#fff':C.forest;
     t.inner.style.fontSize=Math.round(Math.min(CELL*.42,CELL*1.55/Math.max(digits,2)))+'px';};
@@ -45,8 +50,11 @@ A.register('2048', { mount(host, api){
     if(merged.length){A.sfx('point');api.stat&&api.stat('tileLvl',Math.max(...merged.map(t=>lvl(t.v))));}
     spawn(); api.score(score);
     if(!canMove()&&A.learnOn()&&chances>0){ chances--; over=true; A.quiz(b,'STUCK! ANSWER TO CLEAR YOUR TWO SMALLEST TILES',ok=>{ try{api.edu&&api.edu(ok);}catch(e){} if(ok){ tiles.filter(t=>!t.dead).sort((a,c)=>a.v-c.v).slice(0,2).forEach(t=>{t.dead=true;t.el.remove();}); tiles=tiles.filter(t=>!t.dead); over=false; } else { A.sfx('over'); api.over(score); setTimeout(()=>splash(b,'NO MOVES LEFT','Score '+score,'New board',reset),300); } }); return; }
-    if(!canMove()){over=true;A.sfx('over');api.over(score);setTimeout(()=>splash(b,'NO MOVES LEFT','Score '+score+' · best tile '+Math.max(...tiles.map(t=>t.v)),'New board',reset),400);} };
-  const move=d=>{ if(over)return; if(pending&&(cfg.mode=='glide'||cfg.mode=='crawl'))return; settle();
+    if(!canMove()&&undos>0&&hist.length&&!A.learnOn()){ over=true; A.ui.choice(b,'STUCK!','Spend an undo? You have '+undos+' left.',[['↶ Undo',()=>undo()],['End game',()=>{ over=false; endNow(); }]]); return; }
+    endNow(); };
+  const endNow=()=>{
+    if(!canMove()){over=true;A.sfx('over');if(tiles.some(t=>!t.dead&&t.v>=2048))api.perfect&&api.perfect();api.over(score);setTimeout(()=>splash(b,'NO MOVES LEFT','Score '+score+' · best tile '+Math.max(...tiles.map(t=>t.v)),'New board',reset),400);} };
+  const move=d=>{ if(over)return; if(pending&&(cfg.mode=='glide'||cfg.mode=='crawl'))return; settle(); const snapB=tiles.filter(t=>!t.dead).map(t=>({r:t.r,c:t.c,v:t.v})), scB=score;
     const n=2, D=dur(); let moved=false; const merged=[];
     for(let k=0;k<N;k++){ let line=[...Array(N)].map((_,j)=>d=='L'||d=='R'?[k,j]:[j,k]); if(d=='R'||d=='D')line.reverse();
       const list=line.map(([r,c])=>cellAt(r,c)).filter(Boolean); let t=0,i=0;
@@ -56,7 +64,7 @@ A.register('2048', { mount(host, api){
           run[0].el.style.zIndex=3; merged.push(run[0]); score+=run[0].v*cfg.base; moved=true; i+=n; }
         else { const x=list[i]; if(x.r!=nr||x.c!=nc)moved=true; x.r=nr;x.c=nc; i++; }
         t++; } }
-    if(!moved)return; movedAny=true;
+    if(!moved)return; movedAny=true; hist.push({cells:snapB,score:scB}); if(hist.length>30)hist.shift(); paintUndo();
     tiles.forEach(t=>place(t,D)); A.sfx('blip');
     pending={merged,to:setTimeout(settle,D)}; };
   const simMove=(V,d)=>{ const n=2; let gain=0, moved=false; const out=V.map(r=>r.slice());
@@ -72,7 +80,7 @@ A.register('2048', { mount(host, api){
       for(const d2 of ['U','L','R','D']){const m2=simMove(m.out,d2); if(m2.moved) look=Math.max(look,m2.gain*.5+m2.out.flat().filter(v=>!v).length*4);}
       const sc=m.gain+flat.filter(v=>!v).length*8+corner*.5+look; if(!best||sc>best.sc)best={d,sc}; }
     if(!best)return false; showArrow(best.d); }, A.D(8,5,2));
-  const reset=()=>{ if(pending){clearTimeout(pending.to);pending=null;} tiles.forEach(t=>t.el.remove()); tiles=[]; score=0; over=false; movedAny=false; chances=3;
+  const reset=()=>{ if(pending){clearTimeout(pending.to);pending=null;} tiles.forEach(t=>t.el.remove()); tiles=[]; score=0; over=false; movedAny=false; chances=3; hist=[]; undos=U2('undo'); paintUndo();
     [...area.children].forEach(x=>x.remove());
     N=cfg.size; P=N>=5?7:10; G=N>=5?7:10; CELL=(S-2*P-(N-1)*G)/N; at=i=>P+i*(CELL+G);
     for(let r=0;r<N;r++)for(let c=0;c<N;c++)area.appendChild(el('div',{position:'absolute',left:at(c)+'px',top:at(r)+'px',width:CELL+'px',height:CELL+'px',borderRadius:N>=5?'8px':'10px',background:'rgba(255,255,255,.35)'}));
@@ -168,13 +176,21 @@ const c4Mount=(host,api,remount)=>{
     for(const[dr,dc]of[[0,1],[1,0],[1,1],[1,-1]]) for(let r=0;r<R;r++)for(let c=0;c<K;c++){ const er=r+dr*(N-1), ec=c+dc*(N-1); if(er>=R||ec<0||ec>=K)continue;
       let c2=0,c1=0; for(let i=0;i<N;i++){const v=bd[r+dr*i][c+dc*i]; if(v==2)c2++;else if(v==1)c1++;} s+=sc(c2,c1); } return s; };
   let nodes=0, deadline=Infinity; const ABORT={};
+  const TT=new Map(); // transposition table: remembers positions already searched
+  const keyOf=bd=>{ let k=''; for(let r=0;r<R;r++) k+=bd[r].join(''); return k; };
   const nega=(bd,depth,a,be,p)=>{ if(((++nodes)&1023)==0&&performance.now()>deadline)throw ABORT; const vs=order.filter(c=>!bd[0][c]); if(!vs.length)return 0; if(!depth)return (p==2?1:-1)*evalB(bd);
-    let best=-1e9; for(const c of vs){ const r=lowest(bd,c); bd[r][c]=p; const v=winAt(bd,p,r,c)?100000+depth:-nega(bd,depth-1,-be,-a,3-p); bd[r][c]=0;
-      if(v>best)best=v; if(v>a)a=v; if(a>=be)break; } return best; };
+    const key=keyOf(bd)+p, e=TT.get(key), a0=a; let first=-1;
+    if(e){ if(e.d>=depth){ if(e.f==0)return e.v; if(e.f==1&&e.v>a)a=e.v; else if(e.f==2&&e.v<be)be=e.v; if(a>=be)return e.v; } first=e.m; }
+    // immediate win check first, then best-known move, then centre-out
+    for(const c of vs){ const r=lowest(bd,c); bd[r][c]=p; const w=winAt(bd,p,r,c); bd[r][c]=0; if(w)return 100000+depth; }
+    const ord=first>=0&&!bd[0][first]?[first,...vs.filter(c=>c!=first)]:vs;
+    let best=-1e9, bm=ord[0]; for(const c of ord){ const r=lowest(bd,c); bd[r][c]=p; const v=-nega(bd,depth-1,-be,-a,3-p); bd[r][c]=0;
+      if(v>best){best=v;bm=c;} if(v>a)a=v; if(a>=be)break; }
+    if(TT.size>400000)TT.clear(); TT.set(key,{d:depth,v:best,f:best<=a0?2:best>=be?1:0,m:bm}); return best; };
   const pickFor=(p,id)=>{ const lv=C4AI[id]||C4AI.normal, bd=g.map(r=>r.map(v=>p==2?v:(v?3-v:0)));
     const run=(d,pref)=>{ let best=-1e9, pick=-1; for(const c of [pref,...order.filter(x=>x!=pref)]){ if(c==null||c<0||bd[0][c])continue; const r=lowest(bd,c); bd[r][c]=2;
         const v=winAt(bd,2,r,c)?1e6:(lv.n? -nega(bd,d,-1e9,1e9,1)+Math.random()*lv.n : -nega(bd,d,-1e9,-best+1,1)); bd[r][c]=0; if(v>best){best=v;pick=c;} } return [pick,best]; };
-    let pick=order.find(c=>!bd[0][c]); deadline=performance.now()+(lv.t||600);
+    TT.clear(); let pick=order.find(c=>!bd[0][c]); deadline=performance.now()+(lv.t||600);
     try{ for(let d=0; d<=lv.d; d++){ const [pk,bv]=run(d,pick); if(pk>=0)pick=pk; if(bv>=99000)break; } }catch(e){ if(e!==ABORT)throw e; }
     deadline=Infinity; return pick; };
   const threatFor=p=>{ const bd=g.map(r=>r.slice()); for(let c=0;c<K;c++){ const r=lowest(bd,c); if(r<0)continue; bd[r][c]=p; const w=winAt(bd,p,r,c); bd[r][c]=0; if(w)return true; } return false; };
@@ -207,7 +223,7 @@ const c4Mount=(host,api,remount)=>{
     if(who&&!human(who))talk(wid,'win'); if(who&&loser&&loser!='human')talk(loser,'lose',human(who)?1:.5);
     let sc=0, label='Rematch', small;
     if(mode=='play'){ if(who==1&&['timmy','baubau','thetimmy'].includes(pinkId)&&api.stat)api.stat('c4Boss',1,'add'); if(who==1){streak++;sc=Math.round((Math.max(100,420-moves*12*42/(R*K))+(streak-1)*50)*(1+(N-4)*.25));A.sfx('win');} else if(who==2){streak=0;A.sfx('over');} else {sc=50;A.sfx('blip');}
-      api.score(sc); api.over(sc); label='Next round';
+      if(who==1)api.perfect&&api.perfect(); api.score(sc); api.over(sc); label='Next round';
       small=who==1?'Won in '+moves+' moves · score '+sc+(streak>1?' · streak '+streak:''):who==2?'Streak reset. Shake it off.':'Dead even.'; }
     else { A.sfx(who?'win':'blip'); small=who?nameOf(who)+' ('+(who==1?'lime':'pink')+') beat '+nameOf(3-who)+'.':'Dead even. Nobody blinks.'; }
     tos.push(setTimeout(()=>{ if(wid=='timmy'||wid=='thetimmy')return bigSplash('blood',small,label,wid=='thetimmy'); if(wid=='baubau')return bigSplash('royal',small,label);
