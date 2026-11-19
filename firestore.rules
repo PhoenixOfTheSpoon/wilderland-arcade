@@ -42,7 +42,7 @@ service cloud.firestore {
       function validScore() {
         return request.auth != null
           && request.resource.data.uid == request.auth.uid
-          && request.resource.data.s is int && request.resource.data.s >= 0 && request.resource.data.s < 100000000
+          && request.resource.data.s is number && request.resource.data.s >= 0 && request.resource.data.s < 1e300
           && request.resource.data.u is string && request.resource.data.u.size() <= 16;
       }
       allow read: if true;

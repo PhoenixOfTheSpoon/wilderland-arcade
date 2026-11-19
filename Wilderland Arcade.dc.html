@@ -37,6 +37,7 @@ button{font-family:inherit;}
       <div style="display:flex; align-items:center; gap:8px; background:#D5F367; color:#015640; font-weight:700; font-size:18px; padding:8px 16px; border-radius:999px;">
         <span style="display:inline-block; width:18px; height:12px; background:#015640; border-radius:3px;"></span>{{ tickets }} tickets
       </div>
+      <div onClick="{{ openPrizes }}" title="Your ticket multiplier · tap to upgrade it" style="cursor:pointer; background:#015640; color:#D5F367; border:1.5px solid #D5F367; font-weight:700; font-size:15px; padding:7px 13px; border-radius:999px; white-space:nowrap;">{{ multLabelHead }}</div>
       <button onClick="{{ toggleEdu }}" aria-pressed="{{ eduPressed }}" style="background:{{ eduHeadBg }}; color:{{ eduHeadFg }}; border:1.5px solid #64CDF5; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;">{{ eduLabel }}</button>
       <button onClick="{{ openUname }}" style="background:transparent; color:#F9BF01; border:1.5px solid #F9BF01; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ unameLabel }}</button>
       <button onClick="{{ openAccount }}" style="background:{{ acctHeadBg }}; color:{{ acctHeadFg }}; border:1.5px solid #D5F367; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ acctHeadLabel }}</button>
@@ -116,6 +117,11 @@ button{font-family:inherit;}
             <div style="font-size:13px; font-weight:500; color:#EDE9D8;">Beat {{ daily.target }} · {{ daily.status }}</div>
           </div>
 
+          <div onClick="{{ openPrizes }}" style="position:absolute; left:30px; top:790px; width:1060px; height:56px; border-radius:12px; background:linear-gradient(#5a3a1c,#3b2614); box-shadow:inset 0 -6px 0 #2a1b0e; display:flex; align-items:center; gap:8px; padding:0 12px; box-sizing:border-box; cursor:pointer; overflow:hidden;">
+            <div style="font-size:10px; font-weight:700; letter-spacing:0.14em; color:#F9BF01; line-height:1.15; flex-shrink:0;">TROPHY<br>WALK</div>
+            <sc-if value="{{ trophyEmpty }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px; color:#cfc6a8;">Complete a prize collection to put its trophy here · {{ trophyPct }}</div></sc-if>
+            <sc-for list="{{ floorTrophies }}" as="ft" hint-placeholder-count="4"><div title="{{ ft.n }}" style="width:40px; height:40px; flex-shrink:0; border-radius:10px; background:radial-gradient(circle at 50% 35%, #fff6b0, {{ ft.col }}); box-shadow:0 0 0 2px #F9BF01, 0 4px 6px rgba(0,0,0,.4); display:flex; align-items:center; justify-content:center; font-size:22px;">{{ ft.e }}</div></sc-for>
+          </div>
           <div onClick="{{ openAv }}" style="position:absolute; left:520px; top:732px; width:250px; white-space:nowrap; height:42px; border-radius:10px; background:#015640; color:#D5F367; font-size:11px; font-weight:700; letter-spacing:0.12em; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; border:2px solid #D5F367; box-sizing:border-box;"><img src="{{ avImg }}" alt="" style="width:30px; height:30px;">ENTRANCE · AVATAR STUDIO</div>
           <div style="position:absolute; left:30px; top:730px; width:480px; height:46px; overflow:hidden; display:flex; align-items:center; gap:8px;">
             <div style="font-size:10px; font-weight:700; letter-spacing:0.14em; color:#015640; line-height:1.15;">HALL OF<br>PLAYERS</div>
@@ -486,26 +492,16 @@ button{font-family:inherit;}
   </sc-if>
 
   <sc-if value="{{ prizesOpen }}" hint-placeholder-val="{{ false }}">
-    <div style="position:fixed; inset:0; background:rgba(11,46,36,.88); display:flex; align-items:safe center; justify-content:center; z-index:50; overflow-y:auto; padding:16px 0; box-sizing:border-box;">
-      <div style="background:#EDE9D8; border-radius:20px; padding:24px; width:760px; max-width:92vw; box-sizing:border-box; display:flex; flex-direction:column; gap:16px; color:#121313;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-          <div><div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#AB2372;">REDEMPTION BOOTH</div><div style="font-size:30px; font-weight:700; color:#015640;">Prizes &amp; Trophy Room</div><div style="font-size:14px; font-weight:500; color:#4a4a4a;">You have {{ tickets }} tickets to spend.</div></div>
-          <button onClick="{{ closePrizes }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer;">Leave · Esc</button>
+    <div style="position:fixed; inset:0; background:rgba(11,46,36,.9); display:flex; align-items:flex-start; justify-content:center; z-index:50; overflow-y:auto; padding:16px 10px; box-sizing:border-box;">
+      <div style="background:#EDE9D8; border-radius:20px; padding:20px; width:980px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:10px; color:#121313;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+          <div><div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#AB2372;">PRIZE COUNTER 2.0</div><div style="font-size:28px; font-weight:700; color:#015640;">Prizes, Trophies &amp; Multipliers</div></div>
+          <button onClick="{{ closePrizes }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;">Leave · Esc</button>
         </div>
-        <div style="display:flex; gap:6px; flex-wrap:wrap;"><sc-for list="{{ ptTabs }}" as="t" hint-placeholder-count="3"><button onClick="{{ t.pick }}" style="border:none; border-radius:999px; padding:8px 16px; font-family:inherit; font-weight:700; font-size:14px; cursor:pointer; background:{{ t.bg }}; color:{{ t.fg }};">{{ t.t }}</button></sc-for></div>
-        <sc-if value="{{ ptCounter }}" hint-placeholder-val="{{ true }}">
-        <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:12px;">
-          <sc-for list="{{ prizes }}" as="p" hint-placeholder-count="16">
-            <div style="background:{{ p.tbg }}; border:2px solid {{ p.tc }}; border-radius:14px; padding:10px; display:flex; flex-direction:column; gap:6px; align-items:center; text-align:center;">
-              <div style="font-size:10px; font-weight:700; letter-spacing:0.12em; color:{{ p.tc }};">{{ p.tier }}</div>
-              <img src="{{ p.img }}" alt="" style="width:72px; height:72px;">
-              <div style="font-size:14px; font-weight:700; color:#015640; line-height:1.1;">{{ p.name }}</div>
-              <div style="font-size:12px; font-weight:500; color:#4a4a4a;">Owned: {{ p.owned }}</div>
-              <button onClick="{{ p.buy }}" style="width:100%; border:none; border-radius:999px; padding:8px; font-family:inherit; font-weight:700; font-size:13px; cursor:{{ p.cursor }}; background:{{ p.btnBg }}; color:{{ p.btnFg }};">{{ p.cost }} tix</button>
-            </div>
-          </sc-for>
-        </div>
-        </sc-if>
+        <div ref="{{ pzRef }}"></div>
+      </div>
+    </div>
+  </sc-if>
         <sc-if value="{{ ptShelf }}" hint-placeholder-val="{{ false }}">
           <div style="font-size:13px; font-weight:600; color:#4a4a4a;">{{ shelfCount }}</div>
           <div style="background:linear-gradient(#3b2614,#2a1b0e); border-radius:16px; padding:14px 14px 4px; display:flex; flex-direction:column; gap:6px; box-shadow:inset 0 0 0 4px #5a3a1c;">
@@ -803,7 +799,7 @@ const LEARN_GAMES = ['trace','rootout'];
 const TOPICS = [['add','Add'],['sub','Subtract'],['mult','Multiply'],['div','Divide'],['multi','Two-step'],['skip','Skip-count'],['spell','Spelling'],['mixed','Mix']];
 const PADS = {snake:{d:'udlr',a:[['Start',' ']]}, breakout:{d:'lr',a:[['Launch',' ']]}, flappy:{d:'',a:[['Flap',' ']]}, pong:{d:'ud',a:[['Serve',' ']]}, '2048':{d:'udlr',a:[]}, crossing:{d:'udlr',a:[['Start',' ']]}, stack:{d:'ldr',a:[['Rotate','ArrowUp'],['Drop',' '],['Hold','c'],['Saw','x']]}, connect4:{d:'lr',a:[['Drop',' ']]}};
 const SWIPE = ['snake','2048','crossing','stack'];
-const FW = 1120, FH = 780;
+const FW = 1120, FH = 860;
 const KIOSKS = [{id:'prize',x:850,y:50,w:230,h:200},{id:'daily',x:850,y:290,w:230,h:140},{id:'board',x:850,y:465,w:230,h:110},{id:'learn',x:850,y:605,w:230,h:110},{id:'shop',x:678,y:590,w:140,h:130}];
 const BOARD_KEY = 'wl-arcade-board-v3', UNAME_KEY = 'wl-arcade-usernames';
 const getJSON = (k,d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch(e) { return d; } };
@@ -841,6 +837,8 @@ const NO_TIX = ['2048'];
 const ADMIN_EMAILS = ['jonah@wilderland.academy','hero@wilderland.academy'];
 const TIX_SPEED_GAMES = ['snake','breakout','flappy','pong','whack','simon','td','crossing','stack','rootout'];
 // Fair payout: every game pays ~100 tickets for hitting its target score, scaling smoothly above and below.
+// Big numbers: 12,345 then 12.3K, 4.5M, 6.7B, T, Qa, Qi, Sx … then 1.2e45 style.
+const fmtN = n => (window.WLP ? window.WLP.fmt(n) : (Number(n)||0).toLocaleString());
 // Fair payout: tickets come from TIME played × how well you did, so 10 minutes of any game pays about the same.
 // ~40 tickets per minute at the target score; a weak run pays less, a great one up to 2.5× more.
 const TIX_PER_MIN = 40;
@@ -958,7 +956,28 @@ const ACH = [
   {id:'daily',cat:'Arcade',tier:1,name:'Daily Regular',desc:'Complete a daily challenge',p:s=>[Math.max(sm(s,'daily'),s.daily.done?1:0),1]},
   {id:'daily7',cat:'Arcade',tier:3,name:'Creature of Habit',desc:'Complete 7 daily challenges',p:s=>[sm(s,'daily'),7]},
   {id:'buy',cat:'Arcade',tier:1,name:'Big Spender',desc:'Redeem a prize',p:s=>[Object.keys(s.prizes).length?1:0,1]},
-  {id:'collector',cat:'Arcade',tier:3,name:'Collector',desc:'Own one of every prize',p:s=>[PRIZES.filter(p=>s.prizes[p.id]).length,PRIZES.length]},
+  {id:'collector',cat:'Arcade',tier:3,name:'Classic Collector',desc:'Own all 16 Arcade Classics prizes',p:s=>[PRIZES.filter(p=>s.prizes[p.id]).length,PRIZES.length]},
+  {id:'col1',cat:'Collections',tier:1,name:'Set Starter',desc:'Complete 1 prize collection',p:s=>[Object.keys(s.colDone||{}).length,1]},
+  {id:'col5',cat:'Collections',tier:2,name:'Shelf Filler',desc:'Complete 5 prize collections',p:s=>[Object.keys(s.colDone||{}).length,5]},
+  {id:'col12',cat:'Collections',tier:3,name:'Museum Curator',desc:'Complete 12 prize collections',p:s=>[Object.keys(s.colDone||{}).length,12]},
+  {id:'colAll',cat:'Collections',tier:4,name:'The Whole Wilderland',desc:'Complete every collection',p:s=>[Object.keys(s.colDone||{}).length,window.WLP?window.WLP.cols.length:25]},
+  {id:'own25',cat:'Collections',tier:1,name:'Prize Hoarder',desc:'Own 25 different prizes',p:s=>[window.WLP?window.WLP.ownedCount(s):0,25]},
+  {id:'own100',cat:'Collections',tier:2,name:'Prize Mountain',desc:'Own 100 different prizes',p:s=>[window.WLP?window.WLP.ownedCount(s):0,100]},
+  {id:'own250',cat:'Collections',tier:4,name:'Prize Planet',desc:'Own 250 different prizes',p:s=>[window.WLP?window.WLP.ownedCount(s):0,250]},
+  {id:'rarEpic',cat:'Collections',tier:1,name:'Epic Find',desc:'Own an Epic prize',p:s=>[window.WLP&&window.WLP.rarOwned(s)>=3?1:0,1]},
+  {id:'rarLeg',cat:'Collections',tier:2,name:'Legendary Loot',desc:'Own a Legendary prize',p:s=>[window.WLP&&window.WLP.rarOwned(s)>=4?1:0,1]},
+  {id:'rarMyth',cat:'Collections',tier:3,name:'Myth Made Real',desc:'Own a Mythic prize',p:s=>[window.WLP&&window.WLP.rarOwned(s)>=5?1:0,1]},
+  {id:'rarCos',cat:'Collections',tier:3,name:'Cosmic Owner',desc:'Own a Cosmic prize',p:s=>[window.WLP&&window.WLP.rarOwned(s)>=6?1:0,1]},
+  {id:'rarWild',cat:'Collections',tier:4,name:'Truly Wilderland',desc:'Own a Wilderland prize',p:s=>[window.WLP&&window.WLP.rarOwned(s)>=7?1:0,1]},
+  {id:'reb1',cat:'Rebirth',tier:2,name:'Born Again',desc:'Rebirth once',p:s=>[s.rebirths||0,1]},
+  {id:'reb3',cat:'Rebirth',tier:3,name:'Phoenix',desc:'Rebirth 3 times',p:s=>[s.rebirths||0,3]},
+  {id:'reb10',cat:'Rebirth',tier:4,name:'Eternal',desc:'Rebirth 10 times',p:s=>[s.rebirths||0,10]},
+  {id:'mult10',cat:'Rebirth',tier:1,name:'Multiplying',desc:'Ticket Multiplier level 10',p:s=>[((s.mult||{}).global)|0,10]},
+  {id:'mult50',cat:'Rebirth',tier:2,name:'Exponential',desc:'Ticket Multiplier level 50',p:s=>[((s.mult||{}).global)|0,50]},
+  {id:'mult200',cat:'Rebirth',tier:4,name:'Number Go Up',desc:'Ticket Multiplier level 200',p:s=>[((s.mult||{}).global)|0,200]},
+  {id:'streak7',cat:'Rebirth',tier:2,name:'Regular Visitor',desc:'7-day login streak',p:s=>[(s.login||{}).best||0,7]},
+  {id:'jackpot',cat:'Rebirth',tier:2,name:'Jackpot!',desc:'Hit a Lucky Payout',p:s=>[(s.stats.sum||{}).jackpots||0,1]},
+  {id:'learnTix',cat:'Learning',tier:2,name:'Learning Pays',desc:'Earn 1,000 tickets from Learn-mode answers',p:s=>[s.learnTix||0,1000]},
   {id:'trophy',cat:'Arcade',tier:4,name:'Arcade Legend',desc:'Claim the Golden Trophy',p:s=>[s.prizes.trophy?1:0,1]},
   {id:'hard10',cat:'Arcade',tier:2,name:'Glutton for Punishment',desc:'Finish 10 games on Hard or against a rival',p:s=>[sm(s,'hard'),10]},
   {id:'account',cat:'Arcade',tier:1,name:'Card Carrying',desc:'Sign up for an arcade account',p:s=>[mx(s,'account'),1]},
@@ -1000,10 +1019,10 @@ const ACH = [
   {id:'lifer',cat:'Secret',tier:4,secret:true,name:'Lifer',desc:'Finish 1,000 games',p:s=>[plays(s),1000]},
 ];
 const KEY = 'wl-arcade-v1', ACCT_KEY = 'wl-arcade-accounts', SESSION_KEY = 'wl-arcade-session';
-const DEF = () => ({difficulty:'normal',speed:'normal',tickets:0,best:{},played:{},ach:[],prizes:{},daily:{date:'',done:false},earned:0,saves:{},savesV:2,stats:{max:{},sum:{}},username:'',edu:{on:false,topic:'add'},sessLog:[],days:{},idle:null,upg:{},avatar:{},cursor:'',resetSeen:0});
+const DEF = () => ({difficulty:'normal',speed:'normal',tickets:0,best:{},played:{},ach:[],prizes:{},daily:{date:'',done:false},earned:0,saves:{},savesV:2,stats:{max:{},sum:{}},username:'',edu:{on:false,topic:'add'},sessLog:[],days:{},idle:null,upg:{},avatar:{},cursor:'',resetSeen:0,mult:{},stars:0,rebirths:0,colDone:{},login:{},chal:{},combo:{},capsules:0,skin:'',learnTix:0});
 const PFIELDS = Object.keys(DEF());
 const loadP = key => { let d = {}; try { d = JSON.parse(localStorage.getItem(key)) || {}; } catch(e){} return normP(d); };
-const normP = d => { const P = Object.assign(DEF(), d||{}); P.stats = Object.assign({max:{},sum:{}}, P.stats||{}); P.stats.max = P.stats.max||{}; P.stats.sum = P.stats.sum||{}; P.saves = P.saves||{}; P.ach = Array.isArray(P.ach)?P.ach:[]; P.edu = Object.assign({on:false,topic:'add'}, P.edu||{}); P.sessLog = Array.isArray(P.sessLog)?P.sessLog:[]; P.days = P.days||{}; if (P.savesV !== 2) { P.saves = {}; P.savesV = 2; } return P; };
+const normP = d => { const P = Object.assign(DEF(), d||{}); P.stats = Object.assign({max:{},sum:{}}, P.stats||{}); P.stats.max = P.stats.max||{}; P.stats.sum = P.stats.sum||{}; P.saves = P.saves||{}; P.ach = Array.isArray(P.ach)?P.ach:[]; P.edu = Object.assign({on:false,topic:'add'}, P.edu||{}); P.sessLog = Array.isArray(P.sessLog)?P.sessLog:[]; P.days = P.days||{}; ['mult','colDone','login','chal','combo','upg','prizes','best','played'].forEach(k=>{ if (!P[k] || typeof P[k]!='object') P[k] = {}; }); if (P.savesV !== 2) { P.saves = {}; P.savesV = 2; } return P; };
 const FB_ERR = {'auth/email-already-in-use':'That email already has an account. Switch to Log in.','auth/invalid-email':'That email doesn’t look right.','auth/weak-password':'That password is too weak — use at least 6 characters.','auth/invalid-credential':'Email or password is wrong.','auth/wrong-password':'Email or password is wrong.','auth/user-not-found':'Email or password is wrong.','auth/too-many-requests':'Too many tries. Wait a few minutes and try again.','auth/network-request-failed':'Can’t reach the server. Check your internet connection.','auth/operation-not-allowed':'That sign-in method is turned off in the Firebase console (Authentication → Sign-in method).','auth/user-disabled':'This account has been disabled.','auth/popup-closed-by-user':'The Google window was closed before sign-in finished.','auth/cancelled-popup-request':'The Google window was closed before sign-in finished.','auth/popup-blocked':'Your browser blocked the Google pop-up. Allow pop-ups for this site and try again.','auth/unauthorized-domain':'This website isn’t on Firebase’s list yet. Add it under Authentication → Settings → Authorized domains.','auth/account-exists-with-different-credential':'That email already has a password login. Log in with your email and password instead.','auth/operation-not-supported-in-this-environment':'Google sign-in doesn’t work here. Open the arcade’s own website instead.'};
 const fbErr = e => FB_ERR[e && e.code] || ('Something went wrong'+(e && e.code ? ' ('+e.code+')' : '')+'. Try again.');
 const getAccts = () => { try { return JSON.parse(localStorage.getItem(ACCT_KEY)) || {}; } catch(e) { return {}; } };
@@ -1021,8 +1040,8 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-11-19n';
-const SCRIPTS = ['arcade-core.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-edu.js','games-idle.js'];
+const BUILD = '2026-11-20a';
+const SCRIPTS = ['arcade-core.js','prizes2.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-edu.js','games-idle.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
 class Component extends DCLogic {
@@ -1035,7 +1054,7 @@ class Component extends DCLogic {
       immortal:false,autoHint:true,codeOpen:false,codeVal:'',codeMsg:'',admin:false,px:760,py:745,vw:(typeof window!='undefined'?window.innerWidth:1200),gameH:480,padOn:(typeof window!='undefined'&&(('ontouchstart' in window)||(window.matchMedia&&window.matchMedia('(pointer: coarse)').matches))),learnOpen:false,pinIn:'',pinNew:'',pinNew2:'',pinMsg:'',pinAsk:'',pinFails:0,pinLock:0,pinMode:'',lbOpen:false,lbGame:'_tix',lbMode:'all',uOpen:false,uVal:'',uMsg:'',clearArm:false,dir:[0,1],game:null,liveScore:0,payout:'',prizesOpen:false,toasts:[],scale:1,muted:false,
       authOpen:false,authMode:'signup',aEmail:'',aPass:'',aPass2:'',aName:'',aShow:false,aRemember:true,aBring:true,aMsg:'',aBusy:false,aFails:0,aLock:0,aTouched:false,
       achOpen:false,achFilter:'All'});
-    this.keys = {}; this.gameRef = React.createRef();
+    this.keys = {}; this.gameRef = React.createRef(); this.pzRef = React.createRef();
     this.ro = typeof ResizeObserver != 'undefined' ? new ResizeObserver(()=>this.onResize && this.onResize()) : null;
     this.wrapRef = el => { if (el && el !== this._wrapEl) { this._wrapEl = el; this.ro && this.ro.observe(el); this.onResize && this.onResize(); } };
     this.padHeld = {};
@@ -1182,6 +1201,11 @@ class Component extends DCLogic {
   componentWillUnmount(){ clearInterval(this.actIv); window.removeEventListener('keydown', this._poke, true); window.removeEventListener('pointerdown', this._poke, true); this.onHide && this.onHide(); cancelAnimationFrame(this.raf); clearInterval(this.autoIv); clearInterval(this.saveIv); window.removeEventListener('keydown',this.kd); window.removeEventListener('keyup',this.ku); window.removeEventListener('resize',this.onResize);
     window.removeEventListener('pagehide',this.onHide); window.removeEventListener('beforeunload',this.onHide); document.removeEventListener('visibilitychange',this.onVis); this.ro && this.ro.disconnect(); this.unmountGame(); }
   componentDidUpdate(){
+    if (window.WLP && this._loginFor !== this.profKey()) { this._loginFor = this.profKey(); const W2 = window.WLP; setTimeout(()=>{ const l = W2.login(this.P); const c = W2.ensureChal({...this.P, ...(l||{})}, GAMES); if (l || c) { this.setP({...(l||{}), ...(c||{})}); if (l && l.login.streak > 1) this.toast('DAY '+l.login.streak+' LOGIN STREAK · BONUS ×'+W2.fmt(W2.globalMult(this.P))); } }, 400); }
+    if (this.state.prizesOpen && this.pzRef.current && !this._pzOff && window.WLP) { const P0 = () => this.P;
+      this._pzOff = window.WLP.mount(this.pzRef.current, { P:P0, setP:pt=>this.setP(pt), toast:t=>this.toast(t), sfx:n=>window.Arcade && window.Arcade.sfx(n), admin:()=>!!this.state.admin, lowFx:()=>LOWFX,
+        games:()=>GAMES, icon:id=>ICON(id), classicArt: Object.fromEntries(PRIZES.map(pz=>[pz.id, PZ(pz.art)])) }); }
+    if (!this.state.prizesOpen && this._pzOff) { try { this._pzOff(); } catch(e){} this._pzOff = null; }
     if (this._fx !== LOWFX) { this._fx = LOWFX; applyLowFx(LOWFX); if (window.Arcade) window.Arcade.lowFx = LOWFX; }
     if ((this.P.cursor||'') !== this._cursor) { this._cursor = this.P.cursor||''; applyCursor(this._cursor); }
     const {game} = this.state;
@@ -1197,7 +1221,8 @@ class Component extends DCLogic {
         resume, snap: f => { this.snapFn = f; }, stat: (k,v,m) => this.stat(k,v,m),
         stored: this.state.admin ? null : (this.P.idle || null), store: d => { if (this.state.admin) return; try { this.P = {...this.P, idle: JSON.parse(JSON.stringify(d))}; } catch(e) { return; } this.persist(); },
         tix: (n, score, label) => this.grantTix(game, n, score, label), perfect: () => { this._perfect = true; },
-        edu: ok => { if (this.sess) { if (ok) this.sess.ok++; else this.sess.bad++; } this.stat(ok?'eduRight':'eduWrong',1,'add'); } });
+        edu: ok => { if (this.sess) { if (ok) this.sess.ok++; else this.sess.bad++; } this.stat(ok?'eduRight':'eduWrong',1,'add');
+          const WP = window.WLP; if (ok && WP && !this.state.admin && this.isLearn(game)) { const b = WP.learnBonus(this.P), c = WP.onEdu(this.P) || {}; if (b || c.chal) this.setP({...c, ...(b ? {tickets:this.P.tickets+b, earned:this.P.earned+b, learnTix:(this.P.learnTix||0)+b} : {})}); } } });
       if (this.gro && this.gameRef.current !== this._gEl) { if (this._gEl) this.gro.unobserve(this._gEl); this._gEl = this.gameRef.current; this.gro.observe(this._gEl); }
       if (resume) { this.stat('resumes',1,'add'); this.toast('SAVED GAME LOADED'); }
     }
@@ -1267,18 +1292,18 @@ class Component extends DCLogic {
   toast(text){ const id = Math.random(); this.setState(s=>({toasts:[...s.toasts,{id,text}]})); setTimeout(()=>this.setState(s=>({toasts:s.toasts.filter(t=>t.id!=id)})), 3000); }
   buyUpg(gid, k){ const list = UPG[gid] || [], u = list.find(x=>x.k==k); if (!u) return; const P = this.P, cur = ((P.upg||{})[gid]||{})[k]||0;
     if (cur >= u.c.length) return; const cost = u.c[cur];
-    if (P.tickets < cost) { window.Arcade && window.Arcade.sfx('bad'); this.toast('NEED '+(cost-P.tickets).toLocaleString()+' MORE TICKETS'); return; }
+    if (P.tickets < cost) { window.Arcade && window.Arcade.sfx('bad'); this.toast('NEED '+fmtN(cost-P.tickets)+' MORE TICKETS'); return; }
     const upg = {...(P.upg||{})}; upg[gid] = {...(upg[gid]||{}), [k]:cur+1};
     this.setP({tickets:P.tickets-cost, upg, stats:{...P.stats, sum:{...P.stats.sum, upgrades:(P.stats.sum.upgrades||0)+1}}}); window.Arcade && window.Arcade.sfx('coin'); this.toast(u.n.toUpperCase()+' · LEVEL '+(cur+1)); }
   cashOutGame(){ const g = this.state.game; if (!g || g=='idle') return; const sc = this.state.liveScore || 0;
     if (!(sc > 0)) { this.toast('SCORE SOME POINTS FIRST'); window.Arcade && window.Arcade.sfx('bad'); return; }
     this.snapFn = null; this.finish(g, sc); this.unmountGame(false); this.setState({liveScore:0}); this.toast('CASHED OUT · NEW RUN READY'); }
   grantTix(id, n, score, label){ if (this.state.admin) return 0; const P = this.P, best = {...P.best};
-    let tix = Math.max(0, Math.floor(n)); if (this.isLearn(id)) tix = Math.ceil(tix*1.25); if (!tix) return 0;
+    let tix = Math.max(0, Math.floor(n)); if (this.isLearn(id)) tix = Math.ceil(tix*1.25); if (window.WLP) tix = Math.round(tix * window.WLP.globalMult(P)); if (!tix) return 0;
     const better = score > (best[id]||0); if (better) best[id] = score;
     this.setP({tickets:P.tickets+tix, earned:P.earned+tix, best, played:{...P.played, [id]:(P.played[id]||0)+1}});
     if (better && this.P.username) this.addScore(id, score, this.isLearn(id)); else this.addScore('_none', 0);
-    this.toast((label||'')+' · +'+tix+' TICKETS'); window.Arcade && window.Arcade.sfx('coin'); return tix; }
+    this.toast((label||'')+' · +'+fmtN(tix)+' TICKETS'); window.Arcade && window.Arcade.sfx('coin'); return tix; }
   finish(id, score){
     if (this.state.admin) { const sv = {...this.P.saves}; delete sv[this.saveKey(id)]; this.setP({saves:sv}); this.setState({payout:'Admin mode · no tickets, scores or achievements recorded'}); window.Arcade && window.Arcade.sfx('blip'); return; }
     const g = GAMES.find(x=>x.id==id), mult = this.props.ticketMultiplier ?? 1, P = this.P;
@@ -1297,10 +1322,13 @@ class Component extends DCLogic {
     if (new Date().getHours() < 4) sum.owl = (sum.owl||0)+1;
     const saves = {...P.saves}; delete saves[this.saveKey(id)];
     const learn = this.isLearn(id); if (learn) { tix = Math.ceil(tix*1.25); lines.push('LEARN BONUS ×1.25'); }
-    this.setP({best, played, daily, saves, tickets:P.tickets+tix, earned:P.earned+tix, stats:{...P.stats, sum}});
+    const WP = window.WLP; let extra = {};
+    if (WP && tix > 0) { const r = WP.payout(P, id, tix); tix = r.tix; lines.push(...r.lines); extra = r.patch || {}; if (r.lines.some(l=>/JACKPOT|LUCKY/.test(l))) sum.jackpots = (sum.jackpots||0)+1; }
+    this.setP({best, played, daily, saves, tickets:P.tickets+tix, earned:P.earned+tix, stats:{...P.stats, sum}, ...extra});
+    if (WP) { const c = WP.onFinish(this.P, id, score, tix); if (c) this.setP(c); }
     if (this.P.username) this.addScore(id, score, learn); else if (!this._unameNag) { this._unameNag = true; setTimeout(()=>this.toast('CREATE A USERNAME TO JOIN THE LEADERBOARD'), 1200); }
-    this.setState({payout:'+'+tix+' tickets'+(lines.length?' · '+lines.join(' · '):'')});
-    window.Arcade.sfx('coin'); lines.filter(l=>/HIGH|DAILY|PERFECT/.test(l)).forEach(l=>this.toast(l));
+    this.setState({payout:'+'+fmtN(tix)+' tickets'+(lines.length?' · '+lines.join(' · '):'')});
+    window.Arcade.sfx('coin'); lines.filter(l=>/HIGH|DAILY|PERFECT|JACKPOT|LUCKY/.test(l)).forEach(l=>this.toast(l));
   }
   async submitCode(){ const v = (this.state.codeVal||'').trim().toUpperCase(); let hx = '';
     try { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(v)); hx = [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join(''); } catch(e) {}
@@ -1395,7 +1423,7 @@ class Component extends DCLogic {
     // leaderboard
     const B = s.cloud ? {e:[]} : (s.lbOpen || !s.game) ? getJSON(BOARD_KEY,{e:[]}) : {e:[]}, myK = this.cloudUid || this.profKey();
     const lbRows = (g, mode, n) => { if (s.cloud && (s.lbOpen || !s.game)) this.needBoard(g); let e = s.cloud ? ((this.cloudBoard||{})[g]||[]).slice() : B.e.filter(x=>x.g==g); if (mode=='edu') e = e.filter(x=>x.edu); if (mode=='reg') e = e.filter(x=>!x.edu);
-      return e.sort((a,b)=>b.s-a.s).slice(0,n).map((x,i)=>({rank:i+1, avImg: avSVG(avDec(x.av), x.al||0), name:x.u, score:x.s.toLocaleString(), badge: x.edu?'LEARN':'', hasBadge:!!x.edu, date:x.d||'', bg: x.k==myK ? '#D5F367' : (i%2?'#ffffff':'#f6f3e6'), weight: x.k==myK ? 700 : 500, medal: ['#F9BF01','#B9C4BF','#DD8B03'][i]||'transparent', rankFg: i<3 ? '#121313' : '#ffffff', rankFgDark: '#121313'})); };
+      return e.sort((a,b)=>b.s-a.s).slice(0,n).map((x,i)=>({rank:i+1, avImg: avSVG(avDec(x.av), x.al||0), name:x.u, score:fmtN(x.s), badge: x.edu?'LEARN':'', hasBadge:!!x.edu, date:x.d||'', bg: x.k==myK ? '#D5F367' : (i%2?'#ffffff':'#f6f3e6'), weight: x.k==myK ? 700 : 500, medal: ['#F9BF01','#B9C4BF','#DD8B03'][i]||'transparent', rankFg: i<3 ? '#121313' : '#ffffff', rankFgDark: '#121313'})); };
     const uv = (s.uVal||'').trim(), ureg = s.uOpen ? getJSON(UNAME_KEY,{}) : {}, uOwner = ureg[uv.toLowerCase()];
     const pad = s.game && PADS[s.game];
     const mkPad = key => ({down: e=>{ if (e && e.preventDefault) e.preventDefault(); this.padHeld[key] = 1; fireKey(key,'keydown'); }, up: ()=>{ if (this.padHeld[key]) { this.padHeld[key] = 0; fireKey(key,'keyup'); } }});
@@ -1450,12 +1478,12 @@ class Component extends DCLogic {
       uRules: unameRules(uv, !!uOwner && uOwner!==myK).map(([label,ok])=>({label, color: ok?'#015640':'#4a4a4a', dot: ok?'#00B451':'#b0ab95', mark: ok?'✓':'·'})),
       boardShadow: ni===NG+2?glow:base, learnShadow: ni===NG+3?glow:base, boardIcon: KIOSK_ICONS.board, learnIcon: KIOSK_ICONS.learn,
       lbLeader: (lbRows('_tix','all',1)[0]||{}).name || 'Nobody yet',
-      tickets: P.tickets.toLocaleString(), soundLabel: s.muted ? 'SOUND OFF' : 'SOUND ON',
-      showCash: !!s.game && s.game!='idle', cashOutGame: ()=>this.cashOutGame(), cashLabel: s.admin ? 'Cash out · (admin)' : 'Cash out · '+(s.liveScore||0).toLocaleString(),
+      tickets: fmtN(P.tickets), multLabelHead: '×'+(window.WLP ? window.WLP.fmt(window.WLP.globalMult(P)) : '1')+((P.stars||0) ? ' · ⭐'+P.stars : ''), soundLabel: s.muted ? 'SOUND OFF' : 'SOUND ON',
+      showCash: !!s.game && s.game!='idle', cashOutGame: ()=>this.cashOutGame(), cashLabel: s.admin ? 'Cash out · (admin)' : 'Cash out · '+fmtN(s.liveScore||0),
       fxLabel: LOWFX ? 'ANIMATIONS OFF' : 'ANIMATIONS ON', toggleFx: ()=>{ LOWFX = !LOWFX; try { localStorage.setItem('wl-arcade-lowfx', LOWFX?'1':'0'); } catch(e){} applyLowFx(LOWFX); if (window.Arcade) window.Arcade.lowFx = LOWFX; this.toast(LOWFX ? 'ANIMATIONS OFF · SMOOTHER ON SLOW DEVICES' : 'ANIMATIONS ON'); this.forceUpdate(); },
       toggleSound: ()=>{ const m=!s.muted; this.setState({muted:m}); if (window.Arcade) window.Arcade.muted = m; },
-      wrapRef: this.wrapRef, gameRef: this.gameRef, scale: s.scale, floorTransform: 'scale(' + s.scale + ')', scaledH: Math.round(FH*s.scale),
-      cabinets: GAMES.map((c,i)=>({...c, ...POS[i], icon: ICON(c.id), best:(P.best[c.id]||0).toLocaleString(), daily:i==di, saved:savedOf(c.id), isNew:!!c.isNew && !P.played[c.id] && !savedOf(c.id), learn: !!c.learn || (eduOn && EDU_SWITCH.includes(c.id)), shadow: ni===i?glow:base, open:()=>this.open(c.id)})),
+      wrapRef: this.wrapRef, gameRef: this.gameRef, pzRef: this.pzRef, scale: s.scale, floorTransform: 'scale(' + s.scale + ')', scaledH: Math.round(FH*s.scale),
+      cabinets: GAMES.map((c,i)=>({...c, ...POS[i], icon: ICON(c.id), best:fmtN(P.best[c.id]||0), daily:i==di, saved:savedOf(c.id), isNew:!!c.isNew && !P.played[c.id] && !savedOf(c.id), learn: !!c.learn || (eduOn && EDU_SWITCH.includes(c.id)), shadow: (ni===i?glow:base)+(P.skin && window.WLP ? ', '+window.WLP.skinStyle(P.skin) : ''), open:()=>this.open(c.id)})),
       prizeShadow: ni===NG?glow:base, dailyShadow: ni===NG+1?glow:base,
       prizesOwned: Object.values(P.prizes).reduce((a,b)=>a+b,0),
       daily: {name:dg.title, target:dg.target.toLocaleString(), status: dailyDone?'Completed today':'Not yet cleared'},
@@ -1465,7 +1493,7 @@ class Component extends DCLogic {
       tierCounts: [1,2,3,4].map(t=>({c:TIER[t].c, label:TIER[t].n+' '+achAll.filter((a,i)=>ACH[i].tier==t && a.on).length+'/'+ACH.filter(a=>a.tier==t).length})),
       nextAch: achAll.filter(a=>!a.on && !a.secret).sort((a,b)=>b.pct-a.pct).slice(0,3),
       openAch: ()=>{ this.keys = {}; this.setState({achOpen:true}); }, closeAch: ()=>this.setState({achOpen:false}), achOpen: s.achOpen,
-      achFilters: ['All','Arcade','Machines','Learning','Secret','Unlocked','Locked'].map(f=>({label:f, bg: filt==f?'#015640':'#ffffff', fg: filt==f?'#ffffff':'#015640', pick:()=>this.setState({achFilter:f})})),
+      achFilters: ['All','Arcade','Machines','Learning','Collections','Rebirth','Secret','Unlocked','Locked'].map(f=>({label:f, bg: filt==f?'#015640':'#ffffff', fg: filt==f?'#ffffff':'#015640', pick:()=>this.setState({achFilter:f})})),
       achShown,
       // account
       acctHeadLabel: s.account ? '● '+(me?me.name:s.account) : 'SIGN UP / LOG IN', acctHeadBg: s.account ? 'transparent' : '#D5F367', acctHeadFg: s.account ? '#D5F367' : '#015640',
@@ -1473,7 +1501,7 @@ class Component extends DCLogic {
       acctKicker: s.account ? 'MEMBER' : 'PLAYING AS GUEST', acctName: s.account ? (me?me.name:s.account) : 'Guest',
       acctSub: s.account ? s.account : 'Make an account so your tickets and trophies have a home', acctBtn: s.account ? 'Account' : 'Sign up',
       acctEmail: s.account || '', acctSince: me ? me.created : '',
-      acctStats: [{k:'TICKETS',v:P.tickets.toLocaleString()},{k:'TROPHIES',v:achCount+'/'+ACH.length},{k:'GAMES',v:plays(P).toLocaleString()}],
+      acctStats: [{k:'TICKETS',v:fmtN(P.tickets)},{k:'TROPHIES',v:achCount+'/'+ACH.length},{k:'GAMES',v:plays(P).toLocaleString()}],
       openAccount: ()=>this.openAuth(s.account ? 'account' : 'signup'), closeAuth: ()=>this.setState({authOpen:false}), logout: ()=>this.logout(),
       authOpen: s.authOpen, isAccountView: s.authMode=='account' && !!s.account, isAuthForm: s.authMode!='account' || !s.account,
       authTitle: s.authMode=='account' && s.account ? 'Your account' : isSignup ? 'Create your account' : 'Welcome back',
@@ -1492,8 +1520,8 @@ class Component extends DCLogic {
       toggleBring: ()=>this.setState({aBring:!s.aBring}), toggleRemember: ()=>this.setState({aRemember:!s.aRemember}),
       submitAuth: ()=>this.submitAuth(), submitLabel: s.aBusy ? 'Working…' : isSignup ? 'Create account' : 'Log in',
       // game modal
-      game: g ? {...g, best:(P.best[g.id]||0).toLocaleString(), daily: g.id==dg.id, target: g.target.toLocaleString()} : null,
-      liveScore: s.liveScore.toLocaleString(),
+      game: g ? {...g, best:fmtN(P.best[g.id]||0), daily: g.id==dg.id, target: fmtN(g.target)} : null,
+      liveScore: fmtN(s.liveScore),
       tip: g ? TIPS[g.id] : '',
       showAuto: s.admin && !!s.hint && s.game!='simon',
       autoLabel: s.autoHint ? 'Auto hint · ON' : 'Auto hint · OFF', autoBg: s.autoHint ? '#015640' : '#D9D9D9', autoFg: s.autoHint ? '#D5F367' : '#4a4a4a',
@@ -1513,11 +1541,11 @@ class Component extends DCLogic {
       openCode: ()=>{ this.keys = {}; if (s.admin) return this.setState({adminOpen:true, admArm:'', admMsg:''}); this.setState({codeOpen:true, codeVal:'', codeMsg:''}); },
       adminOpen: !!s.adminOpen, closeAdmin: ()=>this.setState({adminOpen:false, admArm:''}),
       admTix: s.admTix ?? '', inAdmTix: e=>this.setState({admTix:e.target.value.replace(/[^0-9]/g,'').slice(0,10), admArm:''}), admMsg: s.admMsg||'',
-      admNow: 'Tickets '+P.tickets.toLocaleString()+' · lifetime earned '+P.earned.toLocaleString()+' · '+Object.keys(P.best).length+' high scores · '+Object.keys(P.saves).length+' saved games',
+      admNow: 'Tickets '+fmtN(P.tickets)+' · lifetime earned '+fmtN(P.earned)+' · '+Object.keys(P.best).length+' high scores · '+Object.keys(P.saves).length+' saved games',
       admActs: [['tix','Set tickets'],['zero','Reset tickets to 0'],['bests','Clear my high scores'],['saves','Clear my saved games'],['ach','Reset my achievements'],['all','Reset my whole profile']].map(([id,label])=>({label: s.admArm==id ? 'Tap again to confirm' : label, bg: s.admArm==id ? '#B3001B' : (id=='all'?'#ffe1dd':'#ffffff'), fg: s.admArm==id ? '#ffffff' : (id=='all'?'#8f0016':'#015640'), go: ()=>this.adminAct(id)})),
       admGames: [{id:'_tix',title:'Overall · tickets'}, ...GAMES].map(x=>({label:x.title, bg: (s.admGame||'_tix')==x.id ? '#015640' : '#ffffff', fg: (s.admGame||'_tix')==x.id ? '#ffffff' : '#015640', pick: ()=>this.setState({admGame:x.id, admArm:''})})),
       admRows: (()=>{ const g0 = s.admGame||'_tix'; let e; if (s.cloud) { if (s.adminOpen) this.needBoard(g0); e = ((this.cloudBoard||{})[g0]||[]).slice(); } else e = getJSON(BOARD_KEY,{e:[]}).e.filter(x=>x.g==g0);
-        return e.sort((a,b)=>b.s-a.s).slice(0,50).map((x,i)=>({rank:i+1, avImg: avSVG(avDec(x.av), x.al||0), name:x.u, score:x.s.toLocaleString(), date:x.d||'', isTix: g0=='_tix', rm: ()=>this.adminPlayer(x,'tix'), rmLabel: s.admArm=='tix:'+x.k ? 'Confirm' : '− Tickets', upg: ()=>this.adminPlayer(x,'upg'), upgLabel: s.admArm=='upg:'+x.k ? 'Confirm' : 'Take upgrades', full: ()=>this.adminPlayer(x,'full'), fullLabel: s.admArm=='full:'+x.k ? 'Confirm' : 'Full reset', del: ()=>this.adminDelete(g0, x), delLabel: s.admArm=='del:'+(x.id||x.k+x.s) ? 'Confirm' : (g0=='_tix' ? 'Remove player' : 'Delete')})); })(),
+        return e.sort((a,b)=>b.s-a.s).slice(0,50).map((x,i)=>({rank:i+1, avImg: avSVG(avDec(x.av), x.al||0), name:x.u, score:fmtN(x.s), date:x.d||'', isTix: g0=='_tix', rm: ()=>this.adminPlayer(x,'tix'), rmLabel: s.admArm=='tix:'+x.k ? 'Confirm' : '− Tickets', upg: ()=>this.adminPlayer(x,'upg'), upgLabel: s.admArm=='upg:'+x.k ? 'Confirm' : 'Take upgrades', full: ()=>this.adminPlayer(x,'full'), fullLabel: s.admArm=='full:'+x.k ? 'Confirm' : 'Full reset', del: ()=>this.adminDelete(g0, x), delLabel: s.admArm=='del:'+(x.id||x.k+x.s) ? 'Confirm' : (g0=='_tix' ? 'Remove player' : 'Delete')})); })(),
       reloadAll: ()=>this.adminReloadAll(), resetAll: ()=>this.adminResetAll(), resetAllLabel: s.admArm=='resetall' ? 'YES · WIPE EVERYONE' : 'FULL RESET · everyone',
       admIsTix: (s.admGame||'_tix')=='_tix', admRm: s.admRm||'', inAdmRm: e=>this.setState({admRm:e.target.value.slice(0,12)}),
       admEmpty: s.cloud && !this.cloudUid ? 'Log in with an admin account (hero@ or jonah@wilderland.academy) to moderate online players.' : '',
@@ -1538,6 +1566,7 @@ class Component extends DCLogic {
         ups: list.map(u=>{ const lv = ((P.upg||{})[gid]||{})[u.k]||0, max = u.c.length, maxed = lv>=max, cost = maxed?0:u.c[lv], can = !maxed && P.tickets>=cost;
           return {key:gid+u.k, n:u.n, d:u.d, lv:lv+'/'+max, pips:[...Array(max)].map((_,i)=>({k:i, bg:i<lv?'#F9BF01':'#d9d3bd'})), label: maxed?'MAXED':cost.toLocaleString()+' tix', bg: maxed?'#cfc9b3':can?'#015640':'#bdb7a1', fg: maxed?'#4a4a4a':'#ffffff', cur: can?'pointer':'default', buy: ()=>this.buyUpg(gid,u.k)}; }) }; }),
       prizes: !s.prizesOpen ? [] : PRIZES.map(p=>{ const ok = P.tickets>=p.cost; return {...p, img:PZ(p.art), tc:PTIER[p.tier].c, tbg:PTIER[p.tier].bg, owned:P.prizes[p.id]||0, cost:p.cost.toLocaleString(), btnBg: ok?'#015640':'#D9D9D9', btnFg: ok?'#ffffff':'#4a4a4a', cursor: ok?'pointer':'not-allowed', buy:()=>this.buy(p)}; }),
+      floorTrophies: window.WLP ? window.WLP.floorTrophies(P) : [], trophyEmpty: !window.WLP || window.WLP.floorTrophies(P).length==0, trophyPct: window.WLP ? window.WLP.ownedCount(P)+' / '+window.WLP.total()+' prizes owned' : '',
       kioskPrizes: PRIZES.filter((p,i)=>i%2==0).map(p=>({img:PZ(p.art), op: P.prizes[p.id] ? 1 : .55})),
       ptCounter: (s.prizeTab||'counter')=='counter', ptShelf: s.prizeTab=='shelf', ptPlayed: s.prizeTab=='played',
       ptTabs: [['counter','Prize Counter'],['shelf','Trophy Shelves'],['played','Most Played']].map(([id,t])=>({id, t, bg:(s.prizeTab||'counter')==id?'#015640':'#ffffff', fg:(s.prizeTab||'counter')==id?'#ffffff':'#015640', pick:()=>this.setState({prizeTab:id})})),
