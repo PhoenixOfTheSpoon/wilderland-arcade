@@ -316,6 +316,15 @@ button{font-family:inherit;}
           <div><div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#8a6100;">OPERATOR ACCESS · ADMIN ∞</div><div style="font-size:28px; font-weight:700; color:#015640;">Admin tools</div><div style="font-size:13px; font-weight:500; color:#3d3d3d;">Games played in admin mode never save, pay tickets or post scores.</div></div>
           <button onClick="{{ closeAdmin }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer;">Close</button>
         </div>
+        <div style="background:#ffffff; border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:8px; border:2px solid #B3001B;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;"><div style="font-size:12px; font-weight:700; letter-spacing:0.1em; color:#B3001B;">SHUT DOWN THE ARCADE</div><div style="font-size:12px; font-weight:700; color:#015640;">Now: {{ downStatus }}</div></div>
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <label for="wl-downmin" style="font-size:12px; font-weight:700; color:#015640;">Minutes</label><input id="wl-downmin" class="wl-field" inputMode="decimal" value="{{ downMin }}" onChange="{{ inDownMin }}" onKeyDown="{{ stopKey }}" placeholder="15" style="width:80px; font-family:inherit; font-size:15px; font-weight:700; border:1.5px solid #015640; border-radius:10px; padding:6px 10px;">
+            <input class="wl-field" value="{{ downText }}" onChange="{{ inDownText }}" onKeyDown="{{ stopKey }}" placeholder="Message for players (optional)" aria-label="Message for players" style="flex:1 1 200px; min-width:0; font-family:inherit; font-size:14px; border:1.5px solid #015640; border-radius:10px; padding:6px 10px;">
+          </div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;"><button onClick="{{ doShutdown }}" style="border:none; border-radius:999px; padding:7px 14px; font-weight:700; font-size:13px; cursor:pointer; background:#B3001B; color:#ffffff;">{{ shutLabel }}</button><button onClick="{{ doReopen }}" style="border:1.5px solid #015640; border-radius:999px; padding:7px 14px; font-weight:700; font-size:13px; cursor:pointer; background:#ffffff; color:#015640;">Reopen now</button></div>
+          <div style="font-size:11px; color:#4a4a4a;">Every open tab shows a closed screen with a countdown and reopens by itself. Games in progress are saved first. Admins can still play.</div>
+        </div>
         <sc-if value="{{ admMsg }}" hint-placeholder-val="{{ false }}"><div role="status" style="background:#fff4cc; color:#5c4100; border-radius:10px; padding:9px 12px; font-size:13px; font-weight:700;">{{ admMsg }}</div></sc-if>
         <div style="background:#ffffff; border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:10px;">
           <div style="font-size:12px; font-weight:700; letter-spacing:0.1em; color:#015640;">MY PROFILE</div>
@@ -539,6 +548,19 @@ button{font-family:inherit;}
       </div>
     </div>
   </sc-if>
+
+  <sc-if value="{{ downOn }}" hint-placeholder-val="{{ false }}">
+    <div role="alert" style="font-family:'Uncut Sans','Inter',system-ui,sans-serif; position:fixed; inset:0; z-index:500; background:radial-gradient(circle at 50% 35%, #027a5a, #0b2e24 70%); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:24px; box-sizing:border-box; text-align:center; color:#ffffff;">
+      <div style="font-size:56px;">🔧</div>
+      <div style="font-size:13px; font-weight:700; letter-spacing:0.2em; color:#D5F367;">WILDERLAND ARCADE</div>
+      <div style="font-size:34px; font-weight:700;">Closed for maintenance</div>
+      <div style="font-size:16px; font-weight:500; max-width:460px; color:#EDE9D8;">{{ downNote }}</div>
+      <div style="font-size:13px; font-weight:700; letter-spacing:0.14em; color:#D5F367; margin-top:6px;">BACK IN</div>
+      <div style="font-size:64px; font-weight:700; font-variant-numeric:tabular-nums; color:#D5F367; line-height:1;">{{ downLeft }}</div>
+      <div style="font-size:12px; color:#b9cfc5;">Your tickets, prizes and saved games are safe.</div>
+    </div>
+  </sc-if>
+  <sc-if value="{{ adminDownBanner }}" hint-placeholder-val="{{ false }}"><div style="position:fixed; left:50%; bottom:12px; transform:translateX(-50%); z-index:480; background:#B3001B; color:#fff; font-weight:700; font-size:13px; padding:8px 16px; border-radius:999px;">ARCADE IS SHUT DOWN FOR PLAYERS · {{ downLeft }} LEFT · you're in as admin</div></sc-if>
 
   <sc-if value="{{ avOpen }}" hint-placeholder-val="{{ false }}">
     <div style="position:fixed; inset:0; background:rgba(11,46,36,.9); display:flex; align-items:safe center; justify-content:center; z-index:50; overflow-y:auto; padding:16px; box-sizing:border-box;">
@@ -837,6 +859,7 @@ const NO_TIX = ['2048'];
 const ADMIN_EMAILS = ['jonah@wilderland.academy','hero@wilderland.academy'];
 const TIX_SPEED_GAMES = ['snake','breakout','flappy','pong','whack','simon','td','crossing','stack','rootout'];
 // Fair payout: every game pays ~100 tickets for hitting its target score, scaling smoothly above and below.
+const fmtDur2 = sec => { sec = Math.ceil(sec); const h = Math.floor(sec/3600), m = Math.floor(sec%3600/60), ss = sec%60; return (h ? h+':'+String(m).padStart(2,'0') : m)+':'+String(ss).padStart(2,'0'); };
 // Big numbers: 12,345 then 12.3K, 4.5M, 6.7B, T, Qa, Qi, Sx … then 1.2e45 style.
 const fmtN = n => (window.WLP ? window.WLP.fmt(n) : (Number(n)||0).toLocaleString());
 // Fair payout: tickets come from TIME played × how well you did, so 10 minutes of any game pays about the same.
@@ -1040,7 +1063,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-11-20a';
+const BUILD = '2026-11-20b';
 const SCRIPTS = ['arcade-core.js','prizes2.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-edu.js','games-idle.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
@@ -1154,7 +1177,10 @@ class Component extends DCLogic {
     if (mode=='add') this.setP({stats:{...st, sum:{...st.sum, [k]:(st.sum[k]||0)+v}}});
     else { if ((st.max[k]||0) >= v) return; this.setP({stats:{...st, max:{...st.max, [k]:v}}}); } }
   componentDidMount(){
-    this.onCloud = () => this.startCloud(); window.addEventListener('wlcloud-ready', this.onCloud); if (window.WLCloud) this.startCloud();
+    this.onDown = e => { const d = (e && e.detail) || {}; this.setState({downUntil:d.until||0, downMsg:d.msg||''}); if (d.until > Date.now() && !this.state.admin && this.state.game) this.closeAll(); };
+    window.addEventListener('wl-down', this.onDown); if (window.WLCloud && window.WLCloud.down) this.onDown({detail:window.WLCloud.down()});
+    this.downIv = setInterval(()=>{ const u = this.state.downUntil||0; if (u && Date.now() < u + 1500) this.setState({downTick:Date.now()}); else if (u && Date.now() >= u + 1500) this.setState({downUntil:0}); }, 1000);
+    this.onCloud = () => { this.startCloud(); if (window.WLCloud && window.WLCloud.down) this.onDown({detail:window.WLCloud.down()}); }; window.addEventListener('wlcloud-ready', this.onCloud); if (window.WLCloud) this.startCloud();
     try { if (!document.querySelector('script[data-wlcloud]')) { const fm = document.createElement('script'); fm.type = 'module'; fm.src = 'firebase-sync.js?v='+BUILD; fm.dataset.wlcloud = '1'; fm.onerror = () => { if (!this.state.cloud) this.setState({cloudStatus:'off'}); }; document.head.appendChild(fm); } } catch(e){ this.setState({cloudStatus:'off'}); }
     setTimeout(()=>{ if (!this.state.cloud) this.setState({cloudStatus:'off'}); }, 12000);
     (async()=>{ for (const s of SCRIPTS) await new Promise(r=>{ const e=document.createElement('script'); e.src=s+'?v='+BUILD; e.onload=r; e.onerror=r; document.head.appendChild(e); }); this.ready=true; })();
@@ -1198,7 +1224,7 @@ class Component extends DCLogic {
     this.onResize(); setTimeout(this.onResize, 100); setTimeout(this.onResize, 600);
     setTimeout(()=>this.setP({}), 900);
   }
-  componentWillUnmount(){ clearInterval(this.actIv); window.removeEventListener('keydown', this._poke, true); window.removeEventListener('pointerdown', this._poke, true); this.onHide && this.onHide(); cancelAnimationFrame(this.raf); clearInterval(this.autoIv); clearInterval(this.saveIv); window.removeEventListener('keydown',this.kd); window.removeEventListener('keyup',this.ku); window.removeEventListener('resize',this.onResize);
+  componentWillUnmount(){ clearInterval(this.downIv); window.removeEventListener('wl-down', this.onDown); clearInterval(this.actIv); window.removeEventListener('keydown', this._poke, true); window.removeEventListener('pointerdown', this._poke, true); this.onHide && this.onHide(); cancelAnimationFrame(this.raf); clearInterval(this.autoIv); clearInterval(this.saveIv); window.removeEventListener('keydown',this.kd); window.removeEventListener('keyup',this.ku); window.removeEventListener('resize',this.onResize);
     window.removeEventListener('pagehide',this.onHide); window.removeEventListener('beforeunload',this.onHide); document.removeEventListener('visibilitychange',this.onVis); this.ro && this.ro.disconnect(); this.unmountGame(); }
   componentDidUpdate(){
     if (window.WLP && this._loginFor !== this.profKey()) { this._loginFor = this.profKey(); const W2 = window.WLP; setTimeout(()=>{ const l = W2.login(this.P); const c = W2.ensureChal({...this.P, ...(l||{})}, GAMES); if (l || c) { this.setP({...(l||{}), ...(c||{})}); if (l && l.login.streak > 1) this.toast('DAY '+l.login.streak+' LOGIN STREAK · BONUS ×'+W2.fmt(W2.globalMult(this.P))); } }, 400); }
@@ -1275,6 +1301,12 @@ class Component extends DCLogic {
     putJSON(x.k, out); if (x.k === this.profKey()) { this.P = normP(out); this.setState({...this.P}); }
     const B = getJSON(BOARD_KEY,{e:[]}); B.e.forEach(y=>{ if (y.g=='_tix' && y.k==x.k) y.s = out.earned||0; }); putJSON(BOARD_KEY,B);
     this.setState({admArm:'', admMsg:'Removed '+what+' from '+x.u+'.'}); window.Arcade && window.Arcade.sfx('coin'); }
+  async adminShutdown(open){ const s = this.state; if (!s.admin) return; if (!s.cloud || !this.cloudUid) return this.setState({admMsg:'Log in with an admin account (online) first — a shutdown needs the online database.'});
+    const mins = open ? 0 : Math.max(1, Math.min(1440, parseFloat(String(s.downMin||'').replace(/[^0-9.]/g,''))||0));
+    if (!open && !(parseFloat(s.downMin) > 0)) return this.setState({admMsg:'Type how many minutes to shut down for (1–1440).'});
+    if (!open && s.admArm !== 'down') return this.setState({admArm:'down', admMsg:'Press SHUT DOWN again to close the arcade for everyone for '+mins+' minute'+(mins==1?'':'s')+'.'});
+    try { await window.WLCloud.shutdown(mins, (s.downText||'').slice(0,140)); this.setState({admArm:'', admMsg: open ? 'The arcade is open again.' : 'Arcade shut down for '+mins+' minute'+(mins==1?'':'s')+'. Players see a countdown; admins can still play.'}); }
+    catch(e) { this.setState({admArm:'', admMsg: String(e && e.code||'').includes('permission') ? 'Firebase said no: publish the new firestore.rules (the “config” section) and use a verified admin email.' : 'Couldn’t: '+(e && (e.code||e.message))}); } }
   async adminReloadAll(){ const s = this.state; if (!s.admin || !s.cloud || !this.cloudUid) return this.setState({admMsg:'Log in with an admin account (online) first.'});
     try { await window.WLCloud.reloadEveryone(); this.setState({admMsg:'Reloading every open arcade tab…'}); } catch(e) { this.setState({admMsg:'Couldn’t: '+(e && (e.code||e.message))+' · publish the new firestore.rules first.'}); } }
   async adminResetAll(){ const s = this.state; if (!s.admin) return;
@@ -1546,7 +1578,11 @@ class Component extends DCLogic {
       admGames: [{id:'_tix',title:'Overall · tickets'}, ...GAMES].map(x=>({label:x.title, bg: (s.admGame||'_tix')==x.id ? '#015640' : '#ffffff', fg: (s.admGame||'_tix')==x.id ? '#ffffff' : '#015640', pick: ()=>this.setState({admGame:x.id, admArm:''})})),
       admRows: (()=>{ const g0 = s.admGame||'_tix'; let e; if (s.cloud) { if (s.adminOpen) this.needBoard(g0); e = ((this.cloudBoard||{})[g0]||[]).slice(); } else e = getJSON(BOARD_KEY,{e:[]}).e.filter(x=>x.g==g0);
         return e.sort((a,b)=>b.s-a.s).slice(0,50).map((x,i)=>({rank:i+1, avImg: avSVG(avDec(x.av), x.al||0), name:x.u, score:fmtN(x.s), date:x.d||'', isTix: g0=='_tix', rm: ()=>this.adminPlayer(x,'tix'), rmLabel: s.admArm=='tix:'+x.k ? 'Confirm' : '− Tickets', upg: ()=>this.adminPlayer(x,'upg'), upgLabel: s.admArm=='upg:'+x.k ? 'Confirm' : 'Take upgrades', full: ()=>this.adminPlayer(x,'full'), fullLabel: s.admArm=='full:'+x.k ? 'Confirm' : 'Full reset', del: ()=>this.adminDelete(g0, x), delLabel: s.admArm=='del:'+(x.id||x.k+x.s) ? 'Confirm' : (g0=='_tix' ? 'Remove player' : 'Delete')})); })(),
-      reloadAll: ()=>this.adminReloadAll(), resetAll: ()=>this.adminResetAll(), resetAllLabel: s.admArm=='resetall' ? 'YES · WIPE EVERYONE' : 'FULL RESET · everyone',
+      reloadAll: ()=>this.adminReloadAll(), downMin: s.downMin||'', inDownMin: e=>this.setState({downMin:e.target.value.slice(0,6)}), downText: s.downText||'', inDownText: e=>this.setState({downText:e.target.value.slice(0,140)}),
+      doShutdown: ()=>this.adminShutdown(false), doReopen: ()=>this.adminShutdown(true), shutLabel: s.admArm=='down' ? 'YES · SHUT IT DOWN' : 'Shut down',
+      downStatus: (s.downUntil||0) > Date.now() ? 'CLOSED · reopens in '+fmtDur2((s.downUntil-Date.now())/1000) : 'Open',
+      downOn: (s.downUntil||0) > Date.now() && !s.admin, downLeft: fmtDur2(Math.max(0,((s.downUntil||0)-Date.now())/1000)), downNote: s.downMsg || 'The arcade is closed for a little maintenance. Grab a snack — it reopens by itself when the timer hits zero.',
+      adminDownBanner: (s.downUntil||0) > Date.now() && s.admin, resetAll: ()=>this.adminResetAll(), resetAllLabel: s.admArm=='resetall' ? 'YES · WIPE EVERYONE' : 'FULL RESET · everyone',
       admIsTix: (s.admGame||'_tix')=='_tix', admRm: s.admRm||'', inAdmRm: e=>this.setState({admRm:e.target.value.slice(0,12)}),
       admEmpty: s.cloud && !this.cloudUid ? 'Log in with an admin account (hero@ or jonah@wilderland.academy) to moderate online players.' : '',
       closeCode: ()=>this.setState({codeOpen:false}),

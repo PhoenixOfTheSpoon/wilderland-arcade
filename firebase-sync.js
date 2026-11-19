@@ -17,8 +17,9 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 // Season comes from config/global so an admin's FULL RESET can start a brand-new empty leaderboard for everyone.
-let SEASON = 's2', RESET_AT = 0, FROZEN = false;
-try { const c = await Promise.race([getDoc(doc(db, 'config', 'global')), new Promise((_, no) => setTimeout(() => no(new Error('slow')), 4000))]); if (c && c.exists()) { const d = c.data(); if (d.season) SEASON = d.season; RESET_AT = d.resetAt || 0; } } catch (e) {}
+let SEASON = 's2', RESET_AT = 0, FROZEN = false, DOWN = {until:0, msg:''};
+const setDown = d => { DOWN = {until: d.downUntil || 0, msg: d.downMsg || ''}; window.dispatchEvent(new CustomEvent('wl-down', {detail: DOWN})); };
+try { const c = await Promise.race([getDoc(doc(db, 'config', 'global')), new Promise((_, no) => setTimeout(() => no(new Error('slow')), 4000))]); if (c && c.exists()) { const d = c.data(); if (d.season) SEASON = d.season; RESET_AT = d.resetAt || 0; DOWN = {until: d.downUntil || 0, msg: d.downMsg || ''}; } } catch (e) {}
 const board = game => collection(db, 'boards', game + '@' + SEASON, 'scores');
 
 const WLCloud = {
@@ -53,8 +54,11 @@ WLCloud.resetEveryone = async () => { const now = Date.now(), season = 's' + now
 WLCloud.reloadEveryone = () => setDoc(doc(db, 'config', 'global'), { reloadAt: Date.now() }, { merge: true });
 // Live: when an admin does a full reset or presses "Reload everyone", every open arcade tab reloads itself.
 let RELOAD_AT = null;
-try { onSnapshot(doc(db, 'config', 'global'), snap => { const d = snap.exists() ? snap.data() : {};
+try { onSnapshot(doc(db, 'config', 'global'), snap => { const d = snap.exists() ? snap.data() : {}; setDown(d);
   if (RELOAD_AT === null) { RELOAD_AT = d.reloadAt || 0; return; }
   if ((d.resetAt || 0) > RESET_AT || (d.reloadAt || 0) > RELOAD_AT) { if ((d.resetAt || 0) > RESET_AT) FROZEN = true; RELOAD_AT = d.reloadAt || 0; RESET_AT = d.resetAt || 0; setTimeout(() => location.reload(), 600 + Math.random() * 1500); } }, () => {}); } catch (e) {}
+// Maintenance shutdown: admins close the arcade for everyone for N minutes (admins can still get in).
+WLCloud.down = () => DOWN;
+WLCloud.shutdown = (minutes, msg) => setDoc(doc(db, 'config', 'global'), { downUntil: minutes > 0 ? Date.now() + minutes * 60000 : 0, downMsg: msg || '' }, { merge: true });
 window.WLCloud = WLCloud;
 window.dispatchEvent(new Event('wlcloud-ready'));
