@@ -410,14 +410,15 @@ W.mount = (root, api) => {
   const rebirth = () => { const p = P(), box = E('div'), need = W.rebirthNeed(p), stars = W.rebirthStars(p), pct = Math.min(100, (p.tickets||0)/need*100);
     box.appendChild(E('div', {cls:'wlp-box', style:{border:'3px solid #F9BF01'}},
       E('div', {style:{fontWeight:800, fontSize:'20px', color:'#015640'}}, '⭐ Rebirth'),
-      E('div', {cls:'wlp-small'}, 'Reach the milestone, then Rebirth: your tickets and Multiplier upgrades reset, but you get Golden Stars. Each star multiplies every ticket ×1.5 forever, unlocks Golden Hall prizes and cabinet skins. You keep your prizes, collections, achievements and Workshop upgrades.'),
+      E('div', {cls:'wlp-small'}, 'Reach the milestone, then Rebirth: your tickets and Multiplier upgrades reset, every game’s saved run restarts, and The Mines clears its miners, ore and mine upgrades (you keep the depth you reached). In return you get Golden Stars: each multiplies every ticket ×1.5 forever and unlocks Golden Hall prizes and cabinet skins — and The Mines’ max miner level grows 15% (now '+(function(){ let m = 30; for (let i=0;i<(p.rebirths||0);i++) m = Math.floor(m*1.15); return m; })()+'). You keep high scores, prizes, collections, achievements and Workshop upgrades.'),
       E('div', {style:{marginTop:'10px', fontWeight:700}}, 'Rebirths: '+(p.rebirths||0)+' · Golden Stars: '+(p.stars||0)+' · star bonus ×'+W.fmt(starMult(p))),
       E('div', {style:{marginTop:'6px', fontSize:'13px'}}, 'Next milestone: '+W.fmt(need)+' tickets'),
       E('div', {cls:'wlp-small'}, 'Milestones: '+[0,1,2,3,4,5].map(i=>W.fmt(1e7*Math.pow(1000,(p.rebirths||0)+i))).join(' → ')+' → …'),
       E('div', {cls:'wlp-bar', style:{margin:'6px 0'}}, E('div', {style:{width:pct+'%', background:'#F9BF01'}})),
       (() => { const b = E('button', {cls:'wlp-buy', style:{background:'#F9BF01', color:'#121313', fontSize:'15px', padding:'10px'}, onclick:()=>{ if (api.admin()) return api.toast('ADMIN MODE · REBIRTH DISABLED'); if (!stars) return api.sfx('bad');
           if (b.dataset.arm !== '1') { b.dataset.arm = '1'; b.textContent = 'Are you sure? Tap again to Rebirth for '+stars+' ⭐'; return; }
-          const pp = P(); set({tickets:0, mult:{}, stars:(pp.stars||0)+stars, rebirths:(pp.rebirths||0)+1});
+          const pp = P(); const idle = pp.idle && typeof pp.idle=='object' ? {...pp.idle, grid:[1,0,0,0,0,0,0,0,0,0,0,0], up:{}, ore:0, hires:1, last:Date.now()} : pp.idle;
+          set({tickets:0, mult:{}, stars:(pp.stars||0)+stars, rebirths:(pp.rebirths||0)+1, saves:{}, idle});
           reveal({n:'+'+stars+' Golden Star'+(stars>1?'s':''), d:'Every ticket is now worth ×'+W.fmt(Math.pow(1.5,(pp.stars||0)+stars))+'.', e:'⭐', r:7, colName:'Rebirth #'+((pp.rebirths||0)+1)}, 'REBIRTH!'); render(); }},
           stars ? 'Rebirth now for +'+stars+' Golden Star'+(stars>1?'s':'') : 'Need '+W.fmt(need-(p.tickets||0))+' more tickets'); if (!stars) b.disabled = true; return b; })()));
     box.appendChild(E('div', {cls:'wlp-h'}, 'CABINET SKINS (UNLOCK WITH GOLDEN STARS)'));

@@ -8,7 +8,9 @@ const rrect = (g,x,y,w,h,r) => { g.beginPath(); if (g.roundRect) g.roundRect(x,y
 const edu = (api,ok) => { try { api.edu && api.edu(ok); } catch(e){} };
 const stat = (api,k,v,m) => { try { api.stat && api.stat(k,v,m); } catch(e){} };
 
-const MAXL = 30;
+// Max miner level: 30, and +15% (rounded down) for every Rebirth: 30, 34, 39, 45, 51 …
+const maxLevel = rb => { let m = 30; for (let i=0;i<(rb||0);i++) m = Math.floor(m*1.15); return m; };
+const ensureLV = n => { while (LV.length <= n) { const i = LV.length; LV.push({n:'Titan Mk '+(i-29), c:'hsl('+((i*53)%360)+',90%,'+(60+(i%3)*8)+'%)'}); } };
 const LV = [null,
   {n:'Pebble Picker',c:'#b8b8b0'}, {n:'Shovel Scout',c:'#c48a4a'}, {n:'Drill Digger',c:'#00B451'}, {n:'Dynamite Dan',c:'#FF4539'},
   {n:'Steam Borer',c:'#64CDF5'}, {n:'Gold Panner',c:'#F9BF01'}, {n:'Laser Miner',c:'#EA55AB'}, {n:'Crystal Crusher',c:'#E9B9F7'},
@@ -47,6 +49,7 @@ const today = () => { const d = new Date(); return d.getFullYear()+'-'+(d.getMon
 
 
 A.register('idle', { mount(host, api){
+  const MAXL = maxLevel(A.rebirths); ensureLV(MAXL);
   const learn = A.learnOn();
   const fresh = () => ({v:1, ore:0, life:0, grid:[1,0,0,0,0,0,0,0,0,0,0,0], hires:1, up:{}, last:Date.now(), tix:{d:'',n:0}, gems:0, geodes:0, best:1});
   let S = (api.stored && api.stored.v==1) ? JSON.parse(JSON.stringify(api.stored)) : fresh();
