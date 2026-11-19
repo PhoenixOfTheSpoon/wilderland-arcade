@@ -589,7 +589,7 @@ button{font-family:inherit;}
             </div>
           </sc-for>
         </div>
-        <div style="font-size:12px; color:#4a4a4a;">The Mines has its own upgrades inside the game, bought with ore.</div>
+        <div style="font-size:12px; color:#4a4a4a;">The Mines also has its own upgrades inside the game, bought with ore.</div>
       </div>
     </div>
   </sc-if>
@@ -828,6 +828,7 @@ const UPG = {
   td:[{k:'gold',n:'War Chest',d:'+40 starting gold per level',c:[300,800,2000]},{k:'hp',n:'Stockade',d:'+5 camp health per level',c:[400,1200]}],
   crossing:[{k:'life',n:'Extra Life',d:'Start with one more life',c:[300,900]},{k:'slow',n:'Traffic Calming',d:'Traffic moves 10% slower per level',c:[400,1200]}],
   stack:[{k:'saw',n:'Extra Saw',d:'+1 line-clearing saw each game',c:[400,1200,3000]}],
+  idle:[{k:'cheap',n:'Miners’ Union Deal',d:'Hiring miners costs 15% less per level (stacks)',c:[300,800,2000,5000,12000,30000]},{k:'start',n:'Starter Crew',d:'New miners are hired 1 level higher per level',c:[1500,6000,20000]}],
   rootout:[{k:'health',n:'Healthy Soil',d:'+1 ecosystem health',c:[300,900]},{k:'pull',n:'Weed Puller',d:'+1 root-out pull each game',c:[400,1200]}],
 };
 const SPEEDS = {slow:.6, normal:1, fast:1.4, turbo:1.9};
@@ -1013,7 +1014,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-11-19i';
+const BUILD = '2026-11-19j';
 const SCRIPTS = ['arcade-core.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-edu.js','games-idle.js'];
 const fmt = n => Math.round(n).toLocaleString();
 

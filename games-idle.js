@@ -64,8 +64,8 @@ A.register('idle', { mount(host, api){
   const mult = () => (1 + .25*U('cart')) * (1 + .2*depthIdx()) * (1 + .1*U('drill'));
   const rate = () => S.grid.reduce((a,L)=>a+lvRate(L),0) * mult();
   const tapAmt = () => (learn ? 1/3 : 1) * ((2 + 3*U('pick')) + rate()*.03*(1+U('pick')));
-  const hireCost = () => Math.ceil(8*Math.pow(1.09, S.hires) * Math.pow(2.5, U('hire')));
-  const hireLv = () => Math.min(MAXL-1, 1 + U('hire'));
+  const hireCost = () => Math.ceil(8*Math.pow(1.09, S.hires) * Math.pow(2.5, U('hire')) * Math.pow(.85, A.U('cheap')));
+  const hireLv = () => Math.min(MAXL-1, 1 + U('hire') + A.U('start'));
   const give = n => { S.ore += n; S.life += n; };
   const tixFor = ore => Math.floor(Math.sqrt(ore)/3);
   const score = () => Math.min(99999999, Math.floor(Math.sqrt(S.life)));
