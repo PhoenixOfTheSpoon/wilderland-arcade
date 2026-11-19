@@ -134,7 +134,7 @@ A.register('breakout', { mount(host, api){
       const hp=1+(r<Math.floor(level/2)?Math.ceil(level/3):0);
       bricks.push({x:k*bw,y:46+r*(BH+4),r,hp,max:hp,alive:1,tnt:level>=3&&Math.random()<.07,gold:Math.random()<.04,mv:(level>=8&&level%2==0&&r%2)?(40+Math.min(200,level*2))*(r%4==1?1:-1):0}); }
     drops=[]; banner={t:1.6,txt:'LEVEL '+level}; };
-  const reset=()=>{px=w/2;pw=A.D(100,80,64);score=0;lives=A.D(5,3,2);level=1;combo=0;comboT=0;fireT=laserT=catchT=0;bombN=0;wideT=slowT=0;wideN=0;flash=0;build();serve();api.score(0);};
+  const reset=()=>{px=w/2;pw=A.D(100,80,64)+10*A.U('wide');score=0;lives=A.D(5,3,2)+A.U('life');level=1;combo=0;comboT=0;fireT=laserT=catchT=0;bombN=0;wideT=slowT=0;wideN=0;flash=0;build();serve();api.score(0);};
   reset();
   let resumed=false; const RS=api.resume;
   if(RS&&RS.level){ level=RS.level; score=RS.score; lives=RS.lives; build(); if(level%5&&RS.bricks)bricks=RS.bricks.map(k=>Object.assign({},k,{alive:1})); serve(); api.score(score); resumed=true; banner={t:2,txt:'WELCOME BACK',sub:'Level '+level+' · '+lives+' lives'}; }
@@ -377,7 +377,7 @@ A.register('flappy', { mount(host, api){
 }});
 
 A.register('pong', { mount(host, api){
-  const {c,g,w,h}=A.canvas(host), PH=70, WALL=12;
+  const {c,g,w,h}=A.canvas(host), PH=70+10*A.U('paddle'), WALL=12;
   let py,ay,ball,me,ai,state='ready',up=0,dn=0,quizzing=false; const edu=ok=>{try{api.edu&&api.edu(ok);}catch(e){}};
   const serve=d=>{ball={x:w/2,y:h/2,vx:A.D(220,260,320)*d,vy:(Math.random()-.5)*260};};
   let resumed=false;
@@ -390,7 +390,7 @@ A.register('pong', { mount(host, api){
   const mm=e=>{const b=c.getBoundingClientRect();py=Math.max(WALL+PH/2,Math.min(h-WALL-PH/2,(e.clientY-b.top)*h/b.height));};c.addEventListener('mousemove',mm);
   const offL=A.loop(dt=>{
     if(state=='play'&&!quizzing){py+=((dn?1:0)-(up?1:0))*380*dt;py=Math.max(WALL+PH/2,Math.min(h-WALL-PH/2,py));
-      ay+=Math.sign(ball.y-ay)*Math.min(Math.abs(ball.y-ay),A.D(160,250,360)*dt);ay=Math.max(WALL+PH/2,Math.min(h-WALL-PH/2,ay));
+      ay+=Math.sign(ball.y-ay)*Math.min(Math.abs(ball.y-ay),A.D(160,250,360)*(1-.08*A.U('slowai'))*dt);ay=Math.max(WALL+PH/2,Math.min(h-WALL-PH/2,ay));
       ball.x+=ball.vx*dt;ball.y+=ball.vy*dt;ball.vx=Math.sign(ball.vx)*Math.min(Math.abs(ball.vx),A.D(400,500,600));ball.vy=Math.max(-Math.abs(ball.vx)*.8,Math.min(Math.abs(ball.vx)*.8,ball.vy));
       if(ball.y<WALL+6){ball.y=WALL+6;ball.vy=Math.abs(ball.vy);A.sfx('blip');} if(ball.y>h-WALL-6){ball.y=h-WALL-6;ball.vy=-Math.abs(ball.vy);A.sfx('blip');}
       if(ball.x<30&&ball.x>18&&Math.abs(ball.y-py)<PH/2+6&&ball.vx<0){ball.vx=-ball.vx*1.06;ball.vy+=(ball.y-py)*5;A.sfx('hit');}

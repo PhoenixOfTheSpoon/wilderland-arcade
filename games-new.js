@@ -202,7 +202,7 @@ A.register('td', { mount(host, api){
       for (;;) { if (x>=0&&y>=0&&x<COLS&&y<ROWS) pathSet.add(x+','+y); if (x==x2&&y==y2) break; x+=dx; y+=dy; } } };
   const posAt = d => { for (const s of segs) if (d <= s.s+s.L) { const f = (d-s.s)/s.L; return [s.x1+(s.x2-s.x1)*f, s.y1+(s.y2-s.y1)*f]; } const l = segs[segs.length-1]; return [l.x2,l.y2]; };
   let state='menu', wave=0, gold=0, lives=0, score=0, towers=[], enemies=[], shots=[], fx=[], queue=[], spawnT=0, between=0, sel=null, build='archer', aim=null, fast=false, leaked=false, perfect=0, cds={meteor:0,freeze:0,rally:0}, freezeT=0, rallyT=0, hover=null, banner=null, flash=0;
-  const tstat = t => { const D = TW[t.type], L = t.lvl-1; return {range:D.range*(1+.12*L), dmg:D.dmg*(1+.45*L), rate:D.rate*(1-.08*L), slow:D.slow?Math.min(.75,D.slow+.08*L):0, chain:D.chain?D.chain+L:0, splash:D.splash?D.splash*(1+.1*L):0, inc:D.inc?D.inc+12*L:0}; };
+  const tstat = t => { const D = TW[t.type], L = t.lvl-1; return {range:D.range*(1+.12*L), dmg:D.dmg*(1+.45*L)*(1+.05*A.U('power')), rate:D.rate*(1-.08*L), slow:D.slow?Math.min(.75,D.slow+.08*L):0, chain:D.chain?D.chain+L:0, splash:D.splash?D.splash*(1+.1*L):0, inc:D.inc?D.inc+12*L:0}; };
   const upCost = t => Math.round(TW[t.type].cost*.8*t.lvl);
   const sellVal = t => Math.round(t.spent*.7);
   const hpMul = () => (1 + (wave-1)*.17 + Math.pow(Math.max(1,wave),1.7)*.012) * Math.pow(M().grow, Math.max(0,wave-1)) * M().hp * A.D(.8,1,1.25);
@@ -413,7 +413,7 @@ A.register('crossing', { mount(host, api){
       {r:7,dir:-1,sp:70,kind:'truck',len:2,gap:2.6}, {r:8,dir:1,sp:95,kind:'car',len:1,gap:3.2}, {r:9,dir:-1,sp:50,kind:'tractor',len:1.5,gap:2.4}, {r:10,dir:1,sp:135,kind:'racer',len:1,gap:5.5}];
     defs.forEach(d=>{ const lane = Object.assign({},d,{sp:d.sp*s*(.9+Math.random()*.2),objs:[]}); const span = (d.len + d.len*d.gap)*T, n = Math.ceil((w + d.len*T)/span) + 1, off = Math.random()*span;
       for (let i=0;i<n;i++) lane.objs.push({x:i*span+off-span,len:d.len,ph:Math.random()*6.28,dive:i%2==0}); lane.wrap = n*span; L.push(lane); }); return L; };
-  const reset = () => { level = 1; score = 0; lives = A.D(5,4,3)+A.U('life'); dens = [0,0,0,0,0]; shieldN = 0; slowT = 0; pickup = null; fly = null; resumed = false; lanes = mkLanes(); respawn(); api.score(0); newProb(); };
+  const reset = () => { level = 1; score = 0; lives = A.D(5,4,3)+A.U('life'); dens = [0,0,0,0,0]; shieldN = A.U('shield'); slowT = 0; pickup = null; fly = null; resumed = false; lanes = mkLanes(); respawn(); api.score(0); newProb(); };
   const respawn = () => { px = 240; pr = 11; furthest = 11; };
   const submerged = o => level>=2 && o.dive && Math.sin(time*1.1+o.ph) < -.55;
   const sinking = o => level>=2 && o.dive && Math.sin(time*1.1+o.ph) < -.2;

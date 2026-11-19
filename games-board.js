@@ -31,6 +31,7 @@ A.register('memory', { mount(host, api){
           else{lock=true;A.sfx('bad');setTimeout(()=>{[a,d].forEach(k=>{delete k.dataset.o;k.style.background=C.green;k.style.color='transparent';});lock=false;},650/A.speed);} } };
       grid.appendChild(c); cards.push([c,v]); });
     found=matched.size/2;
+    if(!R&&A.U('peek')){ lock=true; cards.forEach(([c,v])=>{ c.style.background=C.cream; c.style.color=probs?C.forest:(cols[v]==C.lime?C.forest:cols[v]); }); setTimeout(()=>{ cards.forEach(([c])=>{ if(!c.dataset.o){ c.style.background=C.green; c.style.color='transparent'; } }); lock=false; }, 600*A.U('peek')); }
     snap=()=>found<NP&&moves>0?{NP,deck,probs,matched:[...matched],moves,el:Math.floor((Date.now()-t0)/1000)}:null;
     api.score(0); hints.reset();
   };

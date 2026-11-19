@@ -66,7 +66,7 @@ button{font-family:inherit;}
           <button onClick="{{ openPrizes }}" style="border:none; border-radius:14px; background:#AB2372; color:#ffffff; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:16px 10px; cursor:pointer; min-height:120px;">PRIZE COUNTER<br><span style="font-size:12px; font-weight:500; letter-spacing:0;">{{ prizesOwned }} claimed</span></button>
           <button onClick="{{ openLb }}" style="border:none; border-radius:14px; background:#121313; color:#F9BF01; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:10px; cursor:pointer; min-height:120px; display:flex; flex-direction:column; align-items:center; gap:4px;"><img src="{{ boardIcon }}" alt="" style="width:48px; height:48px;">LEADERBOARD</button>
           <button onClick="{{ openLearn }}" style="border:none; border-radius:14px; background:#014987; color:#ffffff; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:10px; cursor:pointer; min-height:120px; display:flex; flex-direction:column; align-items:center; gap:4px;"><img src="{{ learnIcon }}" alt="" style="width:48px; height:48px;">LEARNING DESK</button>
-          <button onClick="{{ openShop }}" style="border:none; border-radius:14px; background:#2a1d12; color:#F9BF01; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:10px; cursor:pointer; min-height:120px; display:flex; flex-direction:column; align-items:center; gap:4px;"><img src="{{ shopIcon }}" alt="" style="width:48px; height:48px;">UPGRADE WORKSHOP<span style="font-size:11px; font-weight:500; letter-spacing:0; color:#EDE9D8;">{{ shopOwned }} / {{ shopTotal }} owned</span></button>
+          <button onClick="{{ openShop }}" style="border:none; border-radius:14px; background:#2a1d12; color:#F9BF01; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:10px; cursor:pointer; min-height:120px; display:flex; flex-direction:column; align-items:center; gap:4px;"><img src="{{ shopIcon }}" alt="" style="width:48px; height:48px;">UPGRADE WORKSHOP<span style="font-size:11px; font-weight:500; letter-spacing:0; color:#EDE9D8;">{{ shopOwned }} levels · ∞</span></button>
           <button onClick="{{ openAv }}" style="border:none; border-radius:14px; background:#015640; color:#D5F367; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:10px; cursor:pointer; min-height:120px; display:flex; flex-direction:column; align-items:center; gap:4px;"><img src="{{ avImg }}" alt="" style="width:52px; height:52px;">AVATAR STUDIO</button>
         </div>
       </sc-if>
@@ -108,7 +108,7 @@ button{font-family:inherit;}
           <div onClick="{{ openShop }}" style="position:absolute; left:678px; top:590px; width:140px; height:130px; cursor:pointer; border-radius:12px; overflow:hidden; background:#2a1d12; border:3px solid #F9BF01; box-sizing:border-box; box-shadow:{{ shopShadow }}; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; transition:transform .18s cubic-bezier(.3,1.4,.5,1);" style-hover="transform:translateY(-6px) scale(1.04);">
             <img src="{{ shopIcon }}" alt="" style="width:54px; height:54px;">
             <div style="font-size:11px; font-weight:700; letter-spacing:0.1em; color:#F9BF01; text-align:center; line-height:1.2;">UPGRADE<br>WORKSHOP</div>
-            <div style="font-size:10px; font-weight:600; color:#EDE9D8;">{{ shopOwned }} / {{ shopTotal }} owned</div>
+            <div style="font-size:10px; font-weight:600; color:#EDE9D8;">{{ shopOwned }} levels · ∞</div>
           </div>
 
           <div onClick="{{ openDaily }}" style="position:absolute; left:850px; top:290px; width:230px; height:140px; cursor:pointer; border-radius:14px; background:#121313; border:3px solid #D5F367; box-shadow:{{ dailyShadow }}; padding:14px; box-sizing:border-box; display:flex; flex-direction:column; gap:4px;">
@@ -511,43 +511,6 @@ button{font-family:inherit;}
       </div>
     </div>
   </sc-if>
-        <sc-if value="{{ ptShelf }}" hint-placeholder-val="{{ false }}">
-          <div style="font-size:13px; font-weight:600; color:#4a4a4a;">{{ shelfCount }}</div>
-          <div style="background:linear-gradient(#3b2614,#2a1b0e); border-radius:16px; padding:14px 14px 4px; display:flex; flex-direction:column; gap:6px; box-shadow:inset 0 0 0 4px #5a3a1c;">
-            <sc-for list="{{ shelves }}" as="sh" hint-placeholder-count="4">
-              <div>
-                <div style="font-size:11px; font-weight:700; letter-spacing:0.14em; color:{{ sh.c }}; padding:0 4px 4px;">{{ sh.t }}</div>
-                <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:6px; align-items:end; padding:0 6px;">
-                  <sc-for list="{{ sh.items }}" as="it" hint-placeholder-count="4">
-                    <div style="display:flex; flex-direction:column; align-items:center; gap:2px; position:relative;">
-                      <img src="{{ it.img }}" alt="" style="width:64px; height:64px; filter:drop-shadow(0 6px 4px rgba(0,0,0,.45)) {{ it.filt }};">
-                      <sc-if value="{{ it.multi }}" hint-placeholder-val="{{ false }}"><span style="position:absolute; top:0; right:8px; background:#F9BF01; color:#2a1b0e; font-size:10px; font-weight:700; padding:1px 6px; border-radius:999px;">{{ it.n }}</span></sc-if>
-                      <div style="font-size:10px; font-weight:700; color:#EDE9D8; text-align:center; line-height:1.1; min-height:22px;">{{ it.label }}</div>
-                    </div>
-                  </sc-for>
-                </div>
-                <div style="height:12px; margin-top:2px; border-radius:3px; background:linear-gradient(#a0703f,#7a5230); box-shadow:0 6px 8px rgba(0,0,0,.45);"></div>
-              </div>
-            </sc-for>
-          </div>
-        </sc-if>
-        <sc-if value="{{ ptPlayed }}" hint-placeholder-val="{{ false }}">
-          <div style="font-size:13px; font-weight:600; color:#4a4a4a;">{{ playedTotal }}</div>
-          <div style="display:flex; flex-direction:column; gap:6px;">
-            <sc-for list="{{ mostPlayed }}" as="mp" hint-placeholder-count="8">
-              <div style="display:flex; align-items:center; gap:10px; background:#ffffff; border-radius:12px; padding:6px 10px;">
-                <span style="width:20px; font-weight:700; color:#8a8a8a; font-size:13px;">{{ mp.rank }}</span>
-                <img src="{{ mp.icon }}" alt="" style="width:30px; height:30px; background:#015640; border-radius:7px;">
-                <div style="flex:1; min-width:0;"><div style="display:flex; justify-content:space-between; font-size:13px; font-weight:700; color:#015640;"><span>{{ mp.name }}</span><span>{{ mp.nLabel }}</span></div>
-                  <div style="height:8px; background:#ece8d6; border-radius:4px; margin-top:3px; overflow:hidden;"><div style="height:100%; width:{{ mp.w }}; background:{{ mp.color }}; border-radius:4px;"></div></div></div>
-                <span style="font-size:11px; color:#4a4a4a; min-width:70px; text-align:right;">best {{ mp.best }}</span>
-              </div>
-            </sc-for>
-          </div>
-        </sc-if>
-      </div>
-    </div>
-  </sc-if>
 
   <sc-if value="{{ downOn }}" hint-placeholder-val="{{ false }}">
     <div role="alert" style="font-family:'Uncut Sans','Inter',system-ui,sans-serif; position:fixed; inset:0; z-index:500; background:radial-gradient(circle at 50% 35%, #027a5a, #0b2e24 70%); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:24px; box-sizing:border-box; text-align:center; color:#ffffff;">
@@ -590,7 +553,7 @@ button{font-family:inherit;}
     <div style="position:fixed; inset:0; background:rgba(27,19,12,.9); display:flex; align-items:safe center; justify-content:center; z-index:50; overflow-y:auto; padding:16px; box-sizing:border-box;">
       <div style="background:#EDE9D8; border-radius:20px; padding:22px; width:760px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:14px; color:#121313;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
-          <div><div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#8D5B1D;">UPGRADE WORKSHOP</div><div style="font-size:28px; font-weight:700; color:#015640;">Make your games stronger</div><div style="font-size:13px; font-weight:500; color:#3d3d3d;">Permanent upgrades, paid in tickets. You have <b>{{ tickets }}</b> tickets · {{ shopOwned }} of {{ shopTotal }} upgrades owned.</div></div>
+          <div><div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#8D5B1D;">UPGRADE WORKSHOP</div><div style="font-size:28px; font-weight:700; color:#015640;">Make your games stronger</div><div style="font-size:13px; font-weight:500; color:#3d3d3d;">Permanent upgrades, paid in tickets, levels go on forever (∞). You have <b>{{ tickets }}</b> tickets · {{ shopOwned }} levels bought.</div></div>
           <button onClick="{{ closeShop }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer;">Close · Esc</button>
         </div>
         <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:12px;">
@@ -837,20 +800,33 @@ const TIPS = {idle:'Your miners dig even while you are away. Drag two matching m
 const RIVALS = [['littletimmy','Little Timmy',3],['jimmy','Jimmy',8],['timmy','Timmy',15],['baubau','Lord Emperor Bau Bau',30],['thetimmy','THE TIMMY',60]];
 const RIVAL = id => RIVALS.find(r=>r[0]==id);
 // Upgrade Workshop: permanent per-game upgrades bought with tickets. Games read the level with A.U(key).
-const UPG = {
-  snake:[{k:'life',n:'Extra Life',d:'Start every run with one more life',c:[300,900]},{k:'calm',n:'Calm Start',d:'Snake moves 10% slower per level',c:[200,500,1000]}],
-  flappy:[{k:'shield',n:'Bubble Shield',d:'Survive one crash per shield, each run',c:[400,1000,2500]},{k:'gap',n:'Wider Gaps',d:'Log gaps open 14px wider per level',c:[300,800]}],
-  '2048':[{k:'undo',n:'Undo',d:'Take back a move · one undo per level, each game',c:[300,800,2000]}],
-  whack:[{k:'life',n:'Extra Life',d:'Start with one more life',c:[300,900]},{k:'charge',n:'Power Charges',d:'+1 Quake, Freeze and Shield each game',c:[400,1200]}],
-  tictactoe:[{k:'misere',n:'Misère Mode',d:'Unlock the variant where three in a row LOSES · pays ×1.5',c:[500]},{k:'big4',n:'4×4 Board',d:'Unlock 4-in-a-row on a 4×4 board · pays ×2',c:[1000]},{k:'big5',n:'5×5 Board',d:'Unlock 4-in-a-row on a 5×5 board · pays ×3',c:[2500]}],
-  simon:[{k:'second',n:'Second Chance',d:'Forgive one wrong pad per level, each game',c:[600,1800]}],
-  mines:[{k:'scan',n:'Mine Scanner',d:'Flags 2 mines for you per level at the start',c:[300,800,2000]},{k:'shield',n:'Blast Shield',d:'Survive stepping on a mine',c:[700,2000]}],
-  td:[{k:'gold',n:'War Chest',d:'+40 starting gold per level',c:[300,800,2000]},{k:'hp',n:'Stockade',d:'+5 camp health per level',c:[400,1200]}],
-  crossing:[{k:'life',n:'Extra Life',d:'Start with one more life',c:[300,900]},{k:'slow',n:'Traffic Calming',d:'Traffic moves 10% slower per level',c:[400,1200]}],
-  stack:[{k:'saw',n:'Extra Saw',d:'+1 line-clearing saw each game',c:[400,1200,3000]}],
-  idle:[{k:'cheap',n:'Miners’ Union Deal',d:'Hiring miners costs 15% less per level (stacks)',c:[300,800,2000,5000,12000,30000]},{k:'start',n:'Starter Crew',d:'New miners are hired 1 level higher per level',c:[1500,6000,20000]}],
-  rootout:[{k:'health',n:'Healthy Soil',d:'+1 ecosystem health',c:[300,900]},{k:'pull',n:'Weed Puller',d:'+1 root-out pull each game',c:[400,1200]}],
+// Upgrade Workshop: per-game upgrades bought with tickets. Levels go on forever (∞): prices keep rising.
+// `cap` = the most the game effect can stack (more would break the game); levels past the cap still add +2% tickets each.
+// one:1 = a one-time unlock. Every machine (except 2048) also has an infinite Ticket Booster (+10% tickets per level).
+const UPG_RAW = {
+  snake:[{k:'life',n:'Extra Life',d:'Start every run with +1 life per level',base:300,cap:10},{k:'calm',n:'Calm Start',d:'Snake moves 10% slower per level',base:200,cap:5}],
+  breakout:[{k:'life',n:'Spare Balls',d:'+1 life per level',base:300,cap:8},{k:'wide',n:'Wide Paddle',d:'Paddle 10px wider per level',base:250,cap:6}],
+  flappy:[{k:'shield',n:'Bubble Shield',d:'Survive one crash per level, each run',base:400,cap:10},{k:'gap',n:'Wider Gaps',d:'Log gaps open 14px wider per level',base:300,cap:4}],
+  pong:[{k:'paddle',n:'Big Paddle',d:'Your paddle 10px taller per level',base:250,cap:5},{k:'slowai',n:'Sleepy CPU',d:'The CPU paddle moves 8% slower per level',base:350,cap:6}],
+  memory:[{k:'peek',n:'Sneak Peek',d:'See every card for 0.6 s per level when a game starts',base:300,cap:5}],
+  whack:[{k:'life',n:'Extra Life',d:'+1 starting life per level',base:300,cap:10},{k:'charge',n:'Power Charges',d:'+1 Quake, Freeze and Shield per level',base:400,cap:10}],
+  '2048':[{k:'undo',n:'Undo',d:'+1 undo per game per level (2048 pays no tickets)',base:300,cap:25}],
+  tictactoe:[{k:'misere',n:'Misère Mode',d:'Unlock: three in a row LOSES · pays ×1.5',base:500,one:1},{k:'big4',n:'4×4 Board',d:'Unlock 4-in-a-row on 4×4 · pays ×2',base:1000,one:1},{k:'big5',n:'5×5 Board',d:'Unlock 4-in-a-row on 5×5 · pays ×3',base:2500,one:1}],
+  simon:[{k:'second',n:'Second Chance',d:'Forgive one wrong pad per level, each game',base:600,cap:10},{k:'slow',n:'Slow Motion',d:'Patterns play 12% slower per level',base:300,cap:5}],
+  mines:[{k:'scan',n:'Mine Scanner',d:'Flags 2 mines per level at the start',base:300,cap:6},{k:'shield',n:'Blast Shield',d:'Survive one mine per level',base:700,cap:5}],
+  td:[{k:'gold',n:'War Chest',d:'+40 starting gold per level',base:300,cap:25},{k:'hp',n:'Stockade',d:'+5 camp health per level',base:400,cap:25},{k:'power',n:'Sharp Arrows',d:'Every tower +5% damage per level',base:500,cap:40}],
+  crossing:[{k:'life',n:'Extra Life',d:'+1 starting life per level',base:300,cap:10},{k:'slow',n:'Traffic Calming',d:'Traffic 10% slower per level',base:400,cap:5},{k:'shield',n:'Start Shield',d:'Begin each run with a shield per level',base:500,cap:5}],
+  stack:[{k:'saw',n:'Extra Saw',d:'+1 line-clearing saw per level',base:400,cap:10}],
+  rootout:[{k:'health',n:'Healthy Soil',d:'+1 ecosystem health per level',base:300,cap:10},{k:'pull',n:'Weed Puller',d:'+1 root-out pull per level',base:400,cap:10}],
+  idle:[{k:'cheap',n:'Miners’ Union Deal',d:'Hiring miners costs 15% less per level (stacks)',base:300,cap:40},{k:'start',n:'Starter Crew',d:'New miners hired 1 level higher per level',base:1500,cap:20}],
 };
+const UPG = {}; GAMES.forEach(g => { const list = (UPG_RAW[g.id]||[]).slice(); if (g.id!='2048') list.push({k:'boost',n:'Ticket Booster',d:'+10% tickets from this machine per level, forever',base:200,grow:1.45}); UPG[g.id] = list; });
+const upgCost = (u, L) => { const x = u.base * Math.pow(u.grow||1.55, L); if (x < 100) return Math.round(x); const p = Math.pow(10, Math.floor(Math.log10(x)) - 1); return Math.round(x/p)*p; };
+const upgMax = u => u.one ? 1 : Infinity;
+// Levels the games actually see (capped so nothing breaks)
+const upgFor = (P, gid) => { const own = (P.upg||{})[gid]||{}, out = {}; (UPG[gid]||[]).forEach(u => { const L = own[u.k]|0; out[u.k] = u.cap ? Math.min(L, u.cap) : L; }); return out; };
+// Ticket bonus from the Workshop: Booster +10%/level, and +2% for every level past an effect's cap
+const upgTixMult = (P, gid) => { const own = (P.upg||{})[gid]||{}; let m = 1; (UPG[gid]||[]).forEach(u => { const L = own[u.k]|0; if (u.k=='boost') m += .10*L; else if (u.cap && L > u.cap) m += .02*(L-u.cap); }); return m; };
 const SPEEDS = {slow:.6, normal:1, fast:1.4, turbo:1.9};
 const SPEED_TIX = {slow:.5, normal:1, fast:1.5, turbo:2.5};
 // Speed bonus only counts in real-time games where Turbo actually makes it harder (not 2048, Tic-Tac-Toe, Memory, Minesweeper…).
@@ -1063,7 +1039,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-11-20b';
+const BUILD = '2026-11-20d';
 const SCRIPTS = ['arcade-core.js','prizes2.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-edu.js','games-idle.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
@@ -1237,7 +1213,7 @@ class Component extends DCLogic {
     const {game} = this.state;
     if (game && this.gameRef.current && this.mounted != game && this.ready) {
       this.unmountGame(); this.mounted = game;
-      const A = window.Arcade; A.lowFx = LOWFX; A.upg = {...((this.P.upg||{})[game]||{})}; A.immortal = this.state.admin && this.state.immortal; A.diff = (RIVAL(this.P.difficulty) && game!='connect4') ? 'hard' : this.P.difficulty; A.speed = SPEEDS[this.P.speed] || 1; A.muted = this.state.muted || this.props.sound === false;
+      const A = window.Arcade; A.lowFx = LOWFX; A.upg = upgFor(this.P, game); A.immortal = this.state.admin && this.state.immortal; A.diff = (RIVAL(this.P.difficulty) && game!='connect4') ? 'hard' : this.P.difficulty; A.speed = SPEEDS[this.P.speed] || 1; A.muted = this.state.muted || this.props.sound === false;
       A.edu = {on: !!this.eduOn() && EDU_SWITCH.includes(game), topic: this.P.edu.topic};
       const resume = this.P.saves[this.saveKey(game)] || null;
       this.setState({hint:null});
@@ -1322,8 +1298,8 @@ class Component extends DCLogic {
       catch(e) { this.setState({admArm:'', admMsg: String(e && e.code||'').includes('permission') ? 'Firebase said no: your account isn’t an admin in the database rules yet. Paste the new firestore.rules into Firestore → Rules → Publish.' : 'Couldn’t delete: '+(e && (e.code||e.message))}); } }
     else { const B = getJSON(BOARD_KEY,{e:[]}); B.e = B.e.filter(y=>!(y.g==g && (g=='_tix' ? y.k==x.k : (y.k==x.k && y.s==x.s && y.d==x.d)))); putJSON(BOARD_KEY,B); this.setState({admArm:'', admMsg:'Removed '+x.u+'.'}); } }
   toast(text){ const id = Math.random(); this.setState(s=>({toasts:[...s.toasts,{id,text}]})); setTimeout(()=>this.setState(s=>({toasts:s.toasts.filter(t=>t.id!=id)})), 3000); }
-  buyUpg(gid, k){ const list = UPG[gid] || [], u = list.find(x=>x.k==k); if (!u) return; const P = this.P, cur = ((P.upg||{})[gid]||{})[k]||0;
-    if (cur >= u.c.length) return; const cost = u.c[cur];
+  buyUpg(gid, k){ const list = UPG[gid] || [], u = list.find(x=>x.k==k); if (!u) return; if (this.state.admin) { this.toast('ADMIN MODE · SHOPPING DISABLED'); return; } const P = this.P, cur = ((P.upg||{})[gid]||{})[k]||0;
+    if (cur >= upgMax(u)) return; const cost = upgCost(u, cur);
     if (P.tickets < cost) { window.Arcade && window.Arcade.sfx('bad'); this.toast('NEED '+fmtN(cost-P.tickets)+' MORE TICKETS'); return; }
     const upg = {...(P.upg||{})}; upg[gid] = {...(upg[gid]||{}), [k]:cur+1};
     this.setP({tickets:P.tickets-cost, upg, stats:{...P.stats, sum:{...P.stats.sum, upgrades:(P.stats.sum.upgrades||0)+1}}}); window.Arcade && window.Arcade.sfx('coin'); this.toast(u.n.toUpperCase()+' · LEVEL '+(cur+1)); }
@@ -1331,7 +1307,7 @@ class Component extends DCLogic {
     if (!(sc > 0)) { this.toast('SCORE SOME POINTS FIRST'); window.Arcade && window.Arcade.sfx('bad'); return; }
     this.snapFn = null; this.finish(g, sc); this.unmountGame(false); this.setState({liveScore:0}); this.toast('CASHED OUT · NEW RUN READY'); }
   grantTix(id, n, score, label){ if (this.state.admin) return 0; const P = this.P, best = {...P.best};
-    let tix = Math.max(0, Math.floor(n)); if (this.isLearn(id)) tix = Math.ceil(tix*1.25); if (window.WLP) tix = Math.round(tix * window.WLP.globalMult(P)); if (!tix) return 0;
+    let tix = Math.max(0, Math.floor(n)); if (this.isLearn(id)) tix = Math.ceil(tix*1.25); if (window.WLP) tix = Math.round(tix * window.WLP.globalMult(P)); tix = Math.round(tix * upgTixMult(P, id)); if (!tix) return 0;
     const better = score > (best[id]||0); if (better) best[id] = score;
     this.setP({tickets:P.tickets+tix, earned:P.earned+tix, best, played:{...P.played, [id]:(P.played[id]||0)+1}});
     if (better && this.P.username) this.addScore(id, score, this.isLearn(id)); else this.addScore('_none', 0);
@@ -1354,6 +1330,7 @@ class Component extends DCLogic {
     if (new Date().getHours() < 4) sum.owl = (sum.owl||0)+1;
     const saves = {...P.saves}; delete saves[this.saveKey(id)];
     const learn = this.isLearn(id); if (learn) { tix = Math.ceil(tix*1.25); lines.push('LEARN BONUS ×1.25'); }
+    const wsm = upgTixMult(P, id); if (tix > 0 && wsm > 1.001) { tix = Math.ceil(tix*wsm); lines.push('WORKSHOP +'+fmtN(Math.round((wsm-1)*100))+'%'); }
     const WP = window.WLP; let extra = {};
     if (WP && tix > 0) { const r = WP.payout(P, id, tix); tix = r.tix; lines.push(...r.lines); extra = r.patch || {}; if (r.lines.some(l=>/JACKPOT|LUCKY/.test(l))) sum.jackpots = (sum.jackpots||0)+1; }
     this.setP({best, played, daily, saves, tickets:P.tickets+tix, earned:P.earned+tix, stats:{...P.stats, sum}, ...extra});
@@ -1597,10 +1574,10 @@ class Component extends DCLogic {
       rivalOpts: RIVALS.map(([id,label])=>({label, bg: P.difficulty==id?'#B3001B':'transparent', fg: P.difficulty==id?'#ffffff':'#015640', pick:()=>this.pickDiff(id)})),
       diffNote: {easy:'Easy pays ×0.75 tickets',normal:'',hard:'Hard pays ×1.5 tickets',}[P.difficulty] || (RIVAL(P.difficulty) ? (s.game=='connect4' ? RIVAL(P.difficulty)[1]+' pays ×'+RIVAL(P.difficulty)[2]+' tickets' : 'Rivals are Connect 4 only · playing Hard (×1.5)') : ''), payout: s.payout,
       prizesOpen: s.prizesOpen, shopOpen: !!s.shopOpen, openShop: ()=>{ this.keys = {}; this.setState({shopOpen:true}); }, closeShop: ()=>this.closeAll(), shopShadow: ni===NG+4?glow:base, shopIcon: KIOSK_ICONS.shop,
-      shopOwned: Object.values(P.upg||{}).reduce((a,o)=>a+Object.values(o).reduce((x,y)=>x+y,0),0), shopTotal: Object.values(UPG).reduce((a,l)=>a+l.reduce((x,u)=>x+u.c.length,0),0),
-      shopGames: !s.shopOpen ? [] : Object.entries(UPG).map(([gid,list])=>{ const gm = GAMES.find(x=>x.id==gid); return {id:gid, name:gm.title, color:gm.color, icon:ICON(gid),
-        ups: list.map(u=>{ const lv = ((P.upg||{})[gid]||{})[u.k]||0, max = u.c.length, maxed = lv>=max, cost = maxed?0:u.c[lv], can = !maxed && P.tickets>=cost;
-          return {key:gid+u.k, n:u.n, d:u.d, lv:lv+'/'+max, pips:[...Array(max)].map((_,i)=>({k:i, bg:i<lv?'#F9BF01':'#d9d3bd'})), label: maxed?'MAXED':cost.toLocaleString()+' tix', bg: maxed?'#cfc9b3':can?'#015640':'#bdb7a1', fg: maxed?'#4a4a4a':'#ffffff', cur: can?'pointer':'default', buy: ()=>this.buyUpg(gid,u.k)}; }) }; }),
+      shopOwned: Object.values(P.upg||{}).reduce((a,o)=>a+Object.values(o).reduce((x,y)=>x+y,0),0), shopTotal: '∞',
+      shopGames: !s.shopOpen ? [] : Object.entries(UPG).map(([gid,list])=>{ const gm = GAMES.find(x=>x.id==gid); const tm = upgTixMult(P, gid); return {id:gid, name:gm.title+(tm>1.001?'  ·  +'+fmtN(Math.round((tm-1)*100))+'% tickets':''), color:gm.color, icon:ICON(gid),
+        ups: list.map(u=>{ const lv = ((P.upg||{})[gid]||{})[u.k]||0, max = upgMax(u), maxed = lv>=max, cost = maxed?0:upgCost(u, lv), can = !maxed && P.tickets>=cost, capped = u.cap && lv >= u.cap;
+          return {key:gid+u.k, n:u.n, d:u.d+(capped?' · effect maxed, each level now +2% tickets':''), lv: u.one ? (lv?'unlocked':'locked') : 'lv '+fmtN(lv)+' / ∞', pips: u.one ? [{k:0, bg: lv?'#F9BF01':'#d9d3bd'}] : [...Array(Math.min(10, u.cap||10))].map((_,i)=>({k:i, bg: i < Math.min(lv, u.cap||10) ? (capped?'#00B451':'#F9BF01') : '#d9d3bd'})), label: maxed?'OWNED':fmtN(cost)+' tix', bg: maxed?'#cfc9b3':can?'#015640':'#bdb7a1', fg: maxed?'#4a4a4a':'#ffffff', cur: can?'pointer':'default', buy: ()=>this.buyUpg(gid,u.k)}; }) }; }),
       prizes: !s.prizesOpen ? [] : PRIZES.map(p=>{ const ok = P.tickets>=p.cost; return {...p, img:PZ(p.art), tc:PTIER[p.tier].c, tbg:PTIER[p.tier].bg, owned:P.prizes[p.id]||0, cost:p.cost.toLocaleString(), btnBg: ok?'#015640':'#D9D9D9', btnFg: ok?'#ffffff':'#4a4a4a', cursor: ok?'pointer':'not-allowed', buy:()=>this.buy(p)}; }),
       floorTrophies: window.WLP ? window.WLP.floorTrophies(P) : [], trophyEmpty: !window.WLP || window.WLP.floorTrophies(P).length==0, trophyPct: window.WLP ? window.WLP.ownedCount(P)+' / '+window.WLP.total()+' prizes owned' : '',
       kioskPrizes: PRIZES.filter((p,i)=>i%2==0).map(p=>({img:PZ(p.art), op: P.prizes[p.id] ? 1 : .55})),
