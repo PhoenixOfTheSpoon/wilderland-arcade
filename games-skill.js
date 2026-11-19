@@ -50,6 +50,7 @@ A.register('typing', { mount(host, api){
   return()=>clearInterval(iv);
 }});
 
+const SS = n => Math.min(99999999, 10*(Math.pow(2,Math.max(0,n))-1)); // 1→10, 2→30, 3→70: each round doubles
 A.register('simon', { mount(host, api){
   const b = board(host, C.ink); let tos=[];
   const cols=[C.green,C.red,C.gold,C.sky], freqs=[330,392,494,587];
@@ -62,10 +63,10 @@ A.register('simon', { mount(host, api){
   const playSeq=()=>{busy=true;pos=0;center.textContent=seq.length;const sp=Math.max(A.D(320,220,150),A.D(650,500,380)-seq.length*20)/A.speed;seq.forEach((v,k)=>tos.push(setTimeout(()=>lit(v,sp*.7),600+k*sp)));tos.push(setTimeout(()=>busy=false,600+seq.length*sp));};
   const hints=A.hinter(api,()=>{ if(busy||!seq.length)return false; playSeq(); });
   const next=()=>{retryUsed=false;seq.push(Math.random()*4|0);playSeq();};
-  function press(i){ if(busy)return; lit(i,180); if(i!=seq[pos]){ if(A.learnOn()&&!retryUsed){ retryUsed=true; busy=true; A.quiz(b,'WRONG PAD · ANSWER TO RETRY THE PATTERN',ok=>{ try{api.edu&&api.edu(ok);}catch(e){} busy=false; if(ok) playSeq(); else press(i); }); return; } busy=true;lost=true;A.sfx('over');const sc=(seq.length-1)*50;api.over(sc);tos.push(setTimeout(()=>splash(b,'WRONG PAD','You remembered '+(seq.length-1)+' in a row · score '+sc,'Try again',()=>{seq=[];lost=false;api.score(0);hints.reset();next();}),400));return;}
-    pos++; if(pos==seq.length){api.score(seq.length*50);tos.push(setTimeout(next,500));} }
+  function press(i){ if(busy)return; lit(i,180); if(i!=seq[pos]){ if(A.learnOn()&&!retryUsed){ retryUsed=true; busy=true; A.quiz(b,'WRONG PAD · ANSWER TO RETRY THE PATTERN',ok=>{ try{api.edu&&api.edu(ok);}catch(e){} busy=false; if(ok) playSeq(); else press(i); }); return; } busy=true;lost=true;A.sfx('over');const sc=SS(seq.length-1);api.over(sc);tos.push(setTimeout(()=>splash(b,'WRONG PAD','You remembered '+(seq.length-1)+' in a row · score '+sc,'Try again',()=>{seq=[];lost=false;api.score(0);hints.reset();next();}),400));return;}
+    pos++; if(pos==seq.length){api.score(SS(seq.length));tos.push(setTimeout(next,500));} }
   api.snap&&api.snap(()=>seq.length>1&&!lost?{seq:seq.slice()}:null);
-  if(api.resume&&api.resume.seq) A.ui.choice(b,'WELCOME BACK','Your pattern is '+api.resume.seq.length+' long. Watch it once more.',[['Resume',()=>{seq=api.resume.seq.slice();lost=false;api.score(seq.length*50-50);hints.reset();playSeq();}],['New game',()=>{seq=[];lost=false;api.score(0);hints.reset();next();}]]);
+  if(api.resume&&api.resume.seq) A.ui.choice(b,'WELCOME BACK','Your pattern is '+api.resume.seq.length+' long. Watch it once more.',[['Resume',()=>{seq=api.resume.seq.slice();lost=false;api.score(SS(seq.length-1));hints.reset();playSeq();}],['New game',()=>{seq=[];lost=false;api.score(0);hints.reset();next();}]]);
   else splash(b,'SIMON SAYS','Watch the pattern. Repeat it back. It gets one longer each round.','Start',()=>{seq=[];lost=false;api.score(0);hints.reset();next();});
   return()=>tos.forEach(clearTimeout);
 }});

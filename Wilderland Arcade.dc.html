@@ -636,24 +636,25 @@ button{font-family:inherit;}
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;walkSpeed&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:280,&quot;min&quot;:120,&quot;max&quot;:600,&quot;step&quot;:20,&quot;unit&quot;:&quot;px/s&quot;,&quot;tsType&quot;:&quot;number&quot;},&quot;ticketMultiplier&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:1,&quot;options&quot;:[1,2,5],&quot;tsType&quot;:&quot;number&quot;},&quot;sound&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
 const GAMES = [
-  {id:'snake',title:'Snake',name:'SNAKE',color:'#00B451',glyph:'∿',rate:2,target:25,pitch:'LEVELS, MAZES & PORTALS'},
-  {id:'breakout',title:'Breakout',name:'BREAKOUT',color:'#FF4539',glyph:'▦',rate:.05,target:600,pitch:'BRING DOWN THE WALL'},
-  {id:'flappy',title:'Flapper',name:'FLAPPER',color:'#64CDF5',glyph:'◖',rate:4,target:10,pitch:'MIND THE GAPS'},
-  {id:'pong',title:'Pong',name:'PONG',color:'#E9B9F7',glyph:'▯·▯',rate:.05,target:400,pitch:'THE ORIGINAL RIVALRY'},
-  {id:'memory',title:'Memory Match',name:'MEMORY',color:'#FBB99D',glyph:'◆◆',rate:.03,target:600,pitch:'PAIRS PAY, MISSES COST'},
-  {id:'whack',title:'Whack-a-Gopher',name:'WHACK',color:'#DD8B03',glyph:'• •',rate:.06,target:600,pitch:'LIVES, NOT A CLOCK'},
-  {id:'2048',title:'2048',name:'2048',color:'#F9BF01',glyph:'2048',rate:.01,target:2000,pitch:'SLIDE, MERGE, REPEAT'},
-  {id:'tictactoe',title:'Tic-Tac-Toe',name:'TIC-TAC',color:'#EA55AB',glyph:'✕◯',rate:.15,target:100,pitch:'OUTSMART THE MACHINE'},
-  {id:'reaction',title:'Reaction Test',name:'REFLEX',color:'#D5F367',glyph:'◉',rate:.06,target:300,pitch:'HOW FAST ARE YOU, REALLY'},
-  {id:'typing',title:'Typing Race',name:'TYPE RACE',color:'#C7F1EE',glyph:'Aa',rate:.06,target:300,pitch:'FINGERS ON THE HOME ROW'},
-  {id:'simon',title:'Simon Says',name:'SIMON',color:'#FFF442',glyph:'◐',rate:.06,target:400,pitch:'WATCH. REMEMBER. REPEAT.'},
-  {id:'mines',title:'Minesweeper',name:'MINES',color:'#9a9a9b',glyph:'✹',rate:.03,target:300,pitch:'TREAD CAREFULLY'},
-  {id:'connect4',title:'Connect 4',name:'CONNECT 4',color:'#64CDF5',glyph:'●●●●',rate:.06,target:250,pitch:'FOUR IN A ROW WINS'},
-  {id:'td',title:'Trailhead Defense',name:'DEFENSE',color:'#9fe07a',glyph:'▲◆▲',rate:.01,target:8000,pitch:'HOLD THE CAMP',isNew:true},
-  {id:'crossing',title:'Critter Crossing',name:'CROSSING',color:'#FF8FA3',glyph:'≋',rate:.03,target:1500,pitch:'MIND THE TRAFFIC',isNew:true},
-  {id:'stack',title:'Timber Stack',name:'STACK',color:'#DAD3B1',glyph:'▤',rate:.02,target:3000,pitch:'CLEAR THE LINES',isNew:true},
-  {id:'rootout',title:'Root Out the Corruption',name:'ROOT OUT',color:'#c9a3e0',glyph:'▥',rate:.03,target:1200,pitch:'NATIVES UP · INVASIVES OUT',isNew:true,learn:true},
-  {id:'trace',title:'Trace & Write',name:'TRACE',color:'#fbf8ec',glyph:'✎',rate:.04,target:1600,pitch:'HANDWRITING PRACTICE',isNew:true,learn:true},
+  {id:'snake',title:'Snake',name:'SNAKE',color:'#00B451',glyph:'∿',rate:4,target:25,pitch:'LEVELS, MAZES & PORTALS'},
+  {id:'breakout',title:'Breakout',name:'BREAKOUT',color:'#FF4539',glyph:'▦',rate:0.2,target:600,pitch:'BRING DOWN THE WALL'},
+  {id:'flappy',title:'Flapper',name:'FLAPPER',color:'#64CDF5',glyph:'◖',rate:8,target:10,pitch:'MIND THE GAPS'},
+  {id:'pong',title:'Pong',name:'PONG',color:'#E9B9F7',glyph:'▯·▯',rate:0.1,target:400,pitch:'THE ORIGINAL RIVALRY'},
+  {id:'memory',title:'Memory Match',name:'MEMORY',color:'#FBB99D',glyph:'◆◆',rate:0.06,target:600,pitch:'PAIRS PAY, MISSES COST'},
+  {id:'whack',title:'Whack-a-Gopher',name:'WHACK',color:'#DD8B03',glyph:'• •',rate:0.12,target:600,pitch:'LIVES, NOT A CLOCK'},
+  {id:'2048',title:'2048',name:'2048',color:'#F9BF01',glyph:'2048',rate:0.02,target:2000,pitch:'SLIDE, MERGE, REPEAT'},
+  {id:'tictactoe',title:'Tic-Tac-Toe',name:'TIC-TAC',color:'#EA55AB',glyph:'✕◯',rate:0.3,target:100,pitch:'OUTSMART THE MACHINE'},
+  {id:'reaction',title:'Reaction Test',name:'REFLEX',color:'#D5F367',glyph:'◉',rate:0.12,target:300,pitch:'HOW FAST ARE YOU, REALLY'},
+  {id:'typing',title:'Typing Race',name:'TYPE RACE',color:'#C7F1EE',glyph:'Aa',rate:0.12,target:300,pitch:'FINGERS ON THE HOME ROW'},
+  {id:'simon',title:'Simon Says',name:'SIMON',color:'#FFF442',glyph:'◐',rate:0.05,target:2550,pitch:'WATCH. REMEMBER. REPEAT.'},
+  {id:'mines',title:'Minesweeper',name:'MINES',color:'#9a9a9b',glyph:'✹',rate:0.06,target:300,pitch:'TREAD CAREFULLY'},
+  {id:'connect4',title:'Connect 4',name:'CONNECT 4',color:'#64CDF5',glyph:'●●●●',rate:0.25,target:250,pitch:'FOUR IN A ROW WINS'},
+  {id:'td',title:'Trailhead Defense',name:'DEFENSE',color:'#9fe07a',glyph:'▲◆▲',rate:0.02,target:8000,pitch:'HOLD THE CAMP',isNew:true},
+  {id:'crossing',title:'Critter Crossing',name:'CROSSING',color:'#FF8FA3',glyph:'≋',rate:0.06,target:1500,pitch:'MIND THE TRAFFIC',isNew:true},
+  {id:'stack',title:'Timber Stack',name:'STACK',color:'#DAD3B1',glyph:'▤',rate:0.04,target:3000,pitch:'CLEAR THE LINES',isNew:true},
+  {id:'rootout',title:'Root Out the Corruption',name:'ROOT OUT',color:'#c9a3e0',glyph:'▥',rate:0.06,target:1200,pitch:'NATIVES UP · INVASIVES OUT',isNew:true,learn:true},
+  {id:'trace',title:'Trace & Write',name:'TRACE',color:'#fbf8ec',glyph:'✎',rate:0.08,target:1600,pitch:'HANDWRITING PRACTICE',isNew:true,learn:true},
+  {id:'idle',title:'The Mines',name:'THE MINES',color:'#c48a4a',glyph:'⛏',rate:0,target:0,pitch:'DIG · MERGE · CASH OUT',isNew:true,idle:true},
 ];
 const svgURI = b => 'data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'+b+'</svg>');
 const an = (a,v,d,x) => '<animate attributeName="'+a+'" values="'+v+'" dur="'+d+'s" repeatCount="indefinite" '+(x||'')+'/>';
@@ -678,6 +679,7 @@ const ICONS = {
   stack: '<rect x="10" y="48" width="44" height="10" rx="3" fill="#00B451"/><rect x="10" y="38" width="22" height="10" rx="3" fill="#64CDF5"/><rect x="42" y="38" width="12" height="10" rx="3" fill="#DD8B03"/><g>'+at('translate','0 -26;0 0;0 0',1.6,'keyTimes="0;0.6;1"')+'<rect x="32" y="28" width="10" height="20" rx="3" fill="#E9B9F7"/></g>',
   rootout: '<path d="M4 58H60" stroke="#6e4515" stroke-width="6"/><rect x="18" y="44" width="28" height="10" rx="3" fill="#00B451"/><rect x="20" y="34" width="24" height="10" rx="3" fill="#a9c8ff"/><rect x="22" y="24" width="20" height="10" rx="3" fill="#9fe07a"/><g>'+at('translate','-14 0;14 0;-14 0',2.2,SPLINE)+'<rect x="20" y="8" width="24" height="10" rx="3" fill="#7a3fa0"/><path d="M22 13 q4 -4 8 0 t8 0 t6 0" stroke="#d9a8ff" stroke-width="2" fill="none"/></g>',
   trace: '<path id="tA" d="M14 52L32 12L50 52M21 38H43" fill="none" stroke="#EDE9D8" stroke-opacity=".25" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 52L32 12L50 52M21 38H43" fill="none" stroke="#D5F367" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="120">'+an('stroke-dashoffset','120;0;0',2.4)+'</path><g><animateMotion dur="2.4s" repeatCount="indefinite" keyPoints="0;1;1" keyTimes="0;0.83;1" calcMode="linear" path="M14 52L32 12L50 52M21 38H43"/><path d="M0 0L6 -14L10 -12L4 2Z" fill="#F9BF01"/><path d="M0 0L2 -4L4 -3Z" fill="#121313"/></g>',
+  idle: '<path d="M6 58L14 38L26 34L40 38L52 32L60 58Z" fill="#6b4a2b"/><path d="M14 46l6-2M30 42l5 3M44 44l6-3" stroke="#c48a4a" stroke-width="3" stroke-linecap="round"/><path d="M22 54l4-6l5 6zM40 54l4-5l4 5z" fill="#F9BF01"/><g>'+at('rotate','-30 34 30;20 34 30;-30 34 30',.7,SPLINE)+'<path d="M34 30L46 8" stroke="#8D5B1D" stroke-width="4" stroke-linecap="round"/><path d="M36 6Q46 2 56 12" fill="none" stroke="#c9ccd1" stroke-width="5" stroke-linecap="round"/></g><path d="M50 26l2 -5l2 5l5 2l-5 2l-2 5l-2-5l-5-2z" fill="#9fd8ff">'+an('opacity','0;1;0',1.4)+'</path>',
 };
 const ICON = id => svgURI(ICONS[id] || '');
 const KIOSK_ICONS = {
@@ -699,10 +701,10 @@ const unameRules = (v, taken) => [['3–16 characters', v.length>=3 && v.length<
 const fmtDur = s => s>=3600 ? (s/3600).toFixed(1)+' h' : s>=60 ? Math.round(s/60)+' min' : Math.round(s)+' s';
 const PARENT_KEY = 'wl-arcade-parent';
 const pinRules = (a,b) => [['4–8 digits', /^\d{4,8}$/.test(a)], ['Not all one digit', a.length>0 && !/^(\d)\1+$/.test(a)], ['Not a straight run (1234)', a.length>0 && !'0123456789012345678909876543210987654321'.includes(a)], ['Codes match', a.length>0 && a===b]];
-const LEARN_NOTES = {flappy:'Fly through the gap with the right answer.', snake:'Eat the apple with the right answer.', typing:'Sight words for early readers.', whack:'Whack only gophers holding the right answer.', memory:'Match each problem with its answer.', tictactoe:'Answer a question to claim each square.', crossing:'Hop into the den with the right answer.', td:'Bonus-gold question after every wave.', breakout:'Lose the ball? Answer to keep your life.', pong:'Answer to block points scored against you.', '2048':'Stuck? Answer to clear two tiles (3 per board).', reaction:'Click only when the right answer flashes.', simon:'Wrong pad? Answer for one retry.', mines:'Hit a mine? Answer to defuse it.', connect4:'Answer a question to drop each disc.', stack:'Bonus question every 5 lines; answer for a second chance.', rootout:'This machine always counts as learning time.', trace:'This machine always counts as learning time.'};
+const LEARN_NOTES = {idle:'Math geodes appear in the rock — answer the problem to crack one open for a huge pile of ore. Tapping the rock digs less.', flappy:'Fly through the gap with the right answer.', snake:'Eat the apple with the right answer.', typing:'Sight words for early readers.', whack:'Whack only gophers holding the right answer.', memory:'Match each problem with its answer.', tictactoe:'Answer a question to claim each square.', crossing:'Hop into the den with the right answer.', td:'Bonus-gold question after every wave.', breakout:'Lose the ball? Answer to keep your life.', pong:'Answer to block points scored against you.', '2048':'Stuck? Answer to clear two tiles (3 per board).', reaction:'Click only when the right answer flashes.', simon:'Wrong pad? Answer for one retry.', mines:'Hit a mine? Answer to defuse it.', connect4:'Answer a question to drop each disc.', stack:'Bonus question every 5 lines; answer for a second chance.', rootout:'This machine always counts as learning time.', trace:'This machine always counts as learning time.'};
 const fireKey = (key,type) => { try { window.dispatchEvent(new KeyboardEvent(type,{key, bubbles:true, cancelable:true})); } catch(e){} };
-const TIPS = {snake:'Each level has a new maze. Gold apples are worth 3, mushrooms slow time, blue berries shrink your tail. Purple portals connect — and dashed edges wrap around.',breakout:'Hit with the paddle edge to angle shots. Long combos multiply every brick.',flappy:'Tap in short, steady bursts and aim for the middle of each gap.',pong:'Return off the paddle tip for steep angles the CPU struggles to reach.',memory:'Work row by row so you remember where you have already looked.',whack:'Red bombs cost a life — leave them. Every 15-hit combo earns a Quake, Freeze or Shield. The Gopher King shows up every 5 levels.','2048':'Keep your biggest tile pinned in one corner and avoid the opposite direction.',tictactoe:'Take the centre or a corner. Two threats at once is a guaranteed win.',reaction:'Watch the colour, not the words. Gold is a decoy.',typing:'Accuracy beats speed — a missed word scores nothing.',simon:'Say the colours out loud, or chunk them in threes.',mines:'A 1 touching only one hidden tile means that tile is a mine.',connect4:'The centre column is part of the most fours. Watch the diagonals.',td:'Build where the trail passes twice. Frost + Boulder is a strong pair, and Gold Pans pay for themselves after a few waves. Calling a wave early pays bonus gold.',crossing:'Wait for gaps instead of rushing. Diving turtles fade before they sink, and gators bite at the head end.',stack:'Keep the stack flat and leave one column open for long logs. A saw (X) rescues a messy bottom row.',rootout:'Purple “!” tags mark invasives early on — from level 3 the labels disappear, so read the fact cards. Every 5 perfect drops earns a weed puller.',trace:'Cover the whole grey shape — ink outside the lines costs points (it turns red). Tap Camera to write on real paper and hold it up instead.'};
-const RIVALS = [['littletimmy','Little Timmy',1.25],['jimmy','Jimmy',1.75],['timmy','Timmy',2],['baubau','Lord Emperor Bau Bau',2.5],['thetimmy','THE TIMMY',3]];
+const TIPS = {idle:'Your miners dig even while you are away. Drag two matching miners together to merge them into a stronger one. Sell ore for tickets — up to 400 a day. Spend ore in Upgrades for sharper picks, carts and a Foreman who merges for you.', snake:'Each level has a new maze. Gold apples are worth 3, mushrooms slow time, blue berries shrink your tail. Purple portals connect — and dashed edges wrap around.',breakout:'Hit with the paddle edge to angle shots. Long combos multiply every brick.',flappy:'Tap in short, steady bursts and aim for the middle of each gap.',pong:'Return off the paddle tip for steep angles the CPU struggles to reach.',memory:'Work row by row so you remember where you have already looked.',whack:'Red bombs cost a life — leave them. Every 15-hit combo earns a Quake, Freeze or Shield. The Gopher King shows up every 5 levels.','2048':'Keep your biggest tile pinned in one corner and avoid the opposite direction.',tictactoe:'Take the centre or a corner. Two threats at once is a guaranteed win.',reaction:'Watch the colour, not the words. Gold is a decoy.',typing:'Accuracy beats speed — a missed word scores nothing.',simon:'Say the colours out loud, or chunk them in threes.',mines:'A 1 touching only one hidden tile means that tile is a mine.',connect4:'The centre column is part of the most fours. Watch the diagonals.',td:'Build where the trail passes twice. Frost + Boulder is a strong pair, and Gold Pans pay for themselves after a few waves. Calling a wave early pays bonus gold.',crossing:'Wait for gaps instead of rushing. Diving turtles fade before they sink, and gators bite at the head end.',stack:'Keep the stack flat and leave one column open for long logs. A saw (X) rescues a messy bottom row.',rootout:'Purple “!” tags mark invasives early on — from level 3 the labels disappear, so read the fact cards. Every 5 perfect drops earns a weed puller.',trace:'Cover the whole grey shape — ink outside the lines costs points (it turns red). Tap Camera to write on real paper and hold it up instead.'};
+const RIVALS = [['littletimmy','Little Timmy',3],['jimmy','Jimmy',8],['timmy','Timmy',15],['baubau','Lord Emperor Bau Bau',30],['thetimmy','THE TIMMY',60]];
 const RIVAL = id => RIVALS.find(r=>r[0]==id);
 const SPEEDS = {slow:.6, normal:1, fast:1.4, turbo:1.8};
 const SPEED_GAMES = ['snake','breakout','flappy','pong','whack','simon','memory','connect4','td','crossing','stack','rootout'];
@@ -755,7 +757,7 @@ const ACH = [
   {id:'ttt5',cat:'Machines',tier:2,name:'Unbeatable',desc:'Win 5 Tic-Tac-Toe rounds in a row',p:s=>[mx(s,'tttStreak'),5]},
   {id:'reflex',cat:'Machines',tier:3,name:'Lightning',desc:'Average under 250 ms in Reaction Test',p:s=>[bs(s,'reaction'),350]},
   {id:'wpm',cat:'Machines',tier:3,name:'Speed Typist',desc:'Hit 60 WPM in Typing Race',p:s=>[mx(s,'wpm'),60]},
-  {id:'simon',cat:'Machines',tier:2,name:'Elephant Memory',desc:'Repeat a 15-step Simon pattern',p:s=>[Math.floor(bs(s,'simon')/50),15]},
+  {id:'simon',cat:'Machines',tier:2,name:'Elephant Memory',desc:'Repeat a 15-step Simon pattern',p:s=>[Math.floor(Math.log2((bs(s,'simon')||0)/10+1)+1e-9),15]},
   {id:'mines',cat:'Machines',tier:3,name:'Bomb Squad',desc:'Clear a Minesweeper field on Hard',p:s=>[sm(s,'minesHard'),1]},
   {id:'c4',cat:'Machines',tier:4,name:'Lawn Defender',desc:'Beat Timmy (or someone scarier) at Connect 4',p:s=>[sm(s,'c4Boss'),1]},
   {id:'td10',cat:'Machines',tier:2,name:'Hold the Line',desc:'Survive 10 waves in Trailhead Defense',p:s=>[mx(s,'tdWave'),10]},
@@ -778,7 +780,7 @@ const ACH = [
   {id:'lifer',cat:'Secret',tier:4,secret:true,name:'Lifer',desc:'Finish 1,000 games',p:s=>[plays(s),1000]},
 ];
 const KEY = 'wl-arcade-v1', ACCT_KEY = 'wl-arcade-accounts', SESSION_KEY = 'wl-arcade-session';
-const DEF = () => ({difficulty:'normal',speed:'normal',tickets:0,best:{},played:{},ach:[],prizes:{},daily:{date:'',done:false},earned:0,saves:{},savesV:2,stats:{max:{},sum:{}},username:'',edu:{on:false,topic:'add'},sessLog:[],days:{}});
+const DEF = () => ({difficulty:'normal',speed:'normal',tickets:0,best:{},played:{},ach:[],prizes:{},daily:{date:'',done:false},earned:0,saves:{},savesV:2,stats:{max:{},sum:{}},username:'',edu:{on:false,topic:'add'},sessLog:[],days:{},idle:null,upg:{},avatar:{},cursor:''});
 const PFIELDS = Object.keys(DEF());
 const loadP = key => { let d = {}; try { d = JSON.parse(localStorage.getItem(key)) || {}; } catch(e){} return normP(d); };
 const normP = d => { const P = Object.assign(DEF(), d||{}); P.stats = Object.assign({max:{},sum:{}}, P.stats||{}); P.stats.max = P.stats.max||{}; P.stats.sum = P.stats.sum||{}; P.saves = P.saves||{}; P.ach = Array.isArray(P.ach)?P.ach:[]; P.edu = Object.assign({on:false,topic:'add'}, P.edu||{}); P.sessLog = Array.isArray(P.sessLog)?P.sessLog:[]; P.days = P.days||{}; if (P.savesV !== 2) { P.saves = {}; P.savesV = 2; } return P; };
@@ -798,9 +800,9 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
     const bits = await crypto.subtle.deriveBits({name:'PBKDF2', salt:enc.encode(salt), iterations:120000, hash:'SHA-256'}, key, 256); return 'p2$'+[...new Uint8Array(bits)].map(b=>b.toString(16).padStart(2,'0')).join(''); }
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
-const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; return h % GAMES.length; };
-const BUILD = '2026-11-19e';
-const SCRIPTS = ['arcade-core.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-edu.js'];
+const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle); return GAMES.indexOf(DG[h % DG.length]); };
+const BUILD = '2026-11-19f';
+const SCRIPTS = ['arcade-core.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-edu.js','games-idle.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
 class Component extends DCLogic {
@@ -956,6 +958,8 @@ class Component extends DCLogic {
       this.snapFn = null; this.startSess(game);
       this.cleanup = A.games[game].mount(this.gameRef.current, { score: n => this.setState({liveScore:n}), over: n => this.finish(game, n), hint: h => this.setState({hint:h}),
         resume, snap: f => { this.snapFn = f; }, stat: (k,v,m) => this.stat(k,v,m),
+        stored: this.state.admin ? null : (this.P.idle || null), store: d => { if (this.state.admin) return; try { this.P = {...this.P, idle: JSON.parse(JSON.stringify(d))}; } catch(e) { return; } this.persist(); },
+        tix: (n, score, label) => this.grantTix(game, n, score, label),
         edu: ok => { if (this.sess) { if (ok) this.sess.ok++; else this.sess.bad++; } this.stat(ok?'eduRight':'eduWrong',1,'add'); } });
       if (this.gro && this.gameRef.current !== this._gEl) { if (this._gEl) this.gro.unobserve(this._gEl); this._gEl = this.gameRef.current; this.gro.observe(this._gEl); }
       if (resume) { this.stat('resumes',1,'add'); this.toast('SAVED GAME LOADED'); }
@@ -995,11 +999,17 @@ class Component extends DCLogic {
       catch(e) { this.setState({admArm:'', admMsg: String(e && e.code||'').includes('permission') ? 'Firebase said no: your account isn’t an admin in the database rules yet. Paste the new firestore.rules into Firestore → Rules → Publish.' : 'Couldn’t delete: '+(e && (e.code||e.message))}); } }
     else { const B = getJSON(BOARD_KEY,{e:[]}); B.e = B.e.filter(y=>!(y.g==g && (g=='_tix' ? y.k==x.k : (y.k==x.k && y.s==x.s && y.d==x.d)))); putJSON(BOARD_KEY,B); this.setState({admArm:'', admMsg:'Removed '+x.u+'.'}); } }
   toast(text){ const id = Math.random(); this.setState(s=>({toasts:[...s.toasts,{id,text}]})); setTimeout(()=>this.setState(s=>({toasts:s.toasts.filter(t=>t.id!=id)})), 3000); }
+  grantTix(id, n, score, label){ if (this.state.admin) return 0; const P = this.P, best = {...P.best};
+    let tix = Math.max(0, Math.floor(n)); if (this.isLearn(id)) tix = Math.ceil(tix*1.25); if (!tix) return 0;
+    const better = score > (best[id]||0); if (better) best[id] = score;
+    this.setP({tickets:P.tickets+tix, earned:P.earned+tix, best, played:{...P.played, [id]:(P.played[id]||0)+1}});
+    if (better && this.P.username) this.addScore(id, score, this.isLearn(id)); else this.addScore('_none', 0);
+    this.toast((label||'')+' · +'+tix+' TICKETS'); window.Arcade && window.Arcade.sfx('coin'); return tix; }
   finish(id, score){
     if (this.state.admin) { const sv = {...this.P.saves}; delete sv[this.saveKey(id)]; this.setP({saves:sv}); this.setState({payout:'Admin mode · no tickets, scores or achievements recorded'}); window.Arcade && window.Arcade.sfx('blip'); return; }
     const g = GAMES.find(x=>x.id==id), mult = this.props.ticketMultiplier ?? 1, P = this.P;
     const best = {...P.best}, played = {...P.played, [id]:(P.played[id]||0)+1}, sum = {...P.stats.sum};
-    const dm = RIVAL(P.difficulty) ? (id=='connect4'?RIVAL(P.difficulty)[2]:1.5) : ({easy:.75,normal:1,hard:1.5}[P.difficulty]||1);
+    const dm = RIVAL(P.difficulty) ? (id=='connect4'?RIVAL(P.difficulty)[2]:2) : ({easy:.75,normal:1,hard:2}[P.difficulty]||1);
     let tix = Math.ceil(Math.max(1, Math.ceil(score*g.rate)) * mult * dm), lines = [];
     if (score > (best[id]||0)) { if (best[id]) lines.push('NEW HIGH SCORE'); best[id] = score; }
     const daily = {...(P.daily.date==today() ? P.daily : {date:today(),done:false})};
