@@ -13,7 +13,8 @@
 @font-face{font-family:"Uncut Sans";src:url("fonts/UncutSans-Medium.otf") format("opentype");font-weight:500;}
 @font-face{font-family:"Uncut Sans";src:url("fonts/UncutSans-Bold.otf") format("opentype");font-weight:700;}
 @keyframes wlTicker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
-html,body{margin:0;background:#0b2e24;}
+html,body{margin:0;background:#0b2e24;overflow-x:hidden;}
+button{touch-action:manipulation;}
 a{color:#D5F367;} a:hover{color:#ffffff;}
 button{font-family:inherit;}
 .wl-field:focus{border-color:#00B451 !important; box-shadow:0 0 0 3px rgba(0,180,81,.25);}
@@ -26,13 +27,13 @@ button{font-family:inherit;}
       <img src="assets/logo-mark-ondark.svg" alt="" style="height:30px;">
       <div style="font-weight:700; letter-spacing:0.189em; font-size:18px; color:#ffffff;">WILDERLAND <span style="color:#D5F367;">ARCADE</span></div>
     </div>
-    <div style="flex:1; min-width:160px; overflow:hidden; background:#0b2e24; border-radius:999px; padding:8px 0;">
+    <div style="flex:1; min-width:160px; overflow:hidden; background:#0b2e24; border-radius:999px; padding:8px 0; display:{{ tickerDisp }};">
       <div style="display:flex; gap:48px; width:max-content; white-space:nowrap; font-weight:700; font-size:14px; letter-spacing:0.06em; color:#D5F367; animation:wlTicker 48s linear infinite;">
         <span>STEP RIGHT UP · EIGHTEEN CABINETS, ZERO QUARTERS REQUIRED</span><span>LEARN MODE NOW WORKS ON EVERY MACHINE</span><span>NEW · ROOT OUT THE CORRUPTION · TRACE &amp; WRITE</span><span>LEARN MODE · FLY THROUGH THE RIGHT ANSWER IN FLAPPER MATH</span><span>CREATE A USERNAME AND CLAIM THE LEADERBOARD</span><span>LEAVE ANY GAME MID-RUN — WE SAVE YOUR SPOT</span><span>TODAY'S DAILY CHALLENGE PAYS 100 BONUS TICKETS</span>
         <span>STEP RIGHT UP · EIGHTEEN CABINETS, ZERO QUARTERS REQUIRED</span><span>LEARN MODE NOW WORKS ON EVERY MACHINE</span><span>NEW · ROOT OUT THE CORRUPTION · TRACE &amp; WRITE</span><span>LEARN MODE · FLY THROUGH THE RIGHT ANSWER IN FLAPPER MATH</span><span>CREATE A USERNAME AND CLAIM THE LEADERBOARD</span><span>LEAVE ANY GAME MID-RUN — WE SAVE YOUR SPOT</span><span>TODAY'S DAILY CHALLENGE PAYS 100 BONUS TICKETS</span>
       </div>
     </div>
-    <div style="display:flex; align-items:center; gap:10px; flex-shrink:0; flex-wrap:wrap;">
+    <div style="display:flex; align-items:center; gap:8px; flex:1 1 auto; justify-content:flex-end; min-width:0; max-width:100%; flex-wrap:wrap;">
       <div style="display:flex; align-items:center; gap:8px; background:#D5F367; color:#015640; font-weight:700; font-size:18px; padding:8px 16px; border-radius:999px;">
         <span style="display:inline-block; width:18px; height:12px; background:#015640; border-radius:3px;"></span>{{ tickets }} tickets
       </div>
@@ -90,7 +91,7 @@ button{font-family:inherit;}
               <div style="background:#D5F367; border-radius:8px;"></div><div style="background:#64CDF5; border-radius:50%;"></div><div style="background:#F9BF01; border-radius:8px;"></div><div style="background:#E9B9F7; border-radius:50%;"></div>
               <div style="background:#FBB99D; border-radius:50%;"></div><div style="background:#00B451; border-radius:8px;"></div><div style="background:#FFF442; border-radius:50%;"></div><div style="background:#C7F1EE; border-radius:8px;"></div>
             </div>
-            <div style="background:#8D5B1D; height:26px; font-size:11px; font-weight:700; letter-spacing:0.08em; display:flex; align-items:center; justify-content:center; color:#EDE9D8;">{{ prizesOwned }} PRIZES CLAIMED</div>
+            <div style="background:#8D5B1D; height:26px; font-size:11px; font-weight:700; letter-spacing:0.08em; display:flex; align-items:center; justify-content:center; color:#EDE9D8;">{{ prizesLabel }}</div>
           </div>
 
           <div onClick="{{ openLb }}" style="position:absolute; left:850px; top:465px; width:230px; height:110px; cursor:pointer; border-radius:14px; background:#121313; border:3px solid #F9BF01; box-shadow:{{ boardShadow }}; padding:10px 12px; box-sizing:border-box; display:flex; align-items:center; gap:10px;">
@@ -798,7 +799,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; return h % GAMES.length; };
-const BUILD = '2026-11-19c';
+const BUILD = '2026-11-19d';
 const SCRIPTS = ['arcade-core.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-edu.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
@@ -1116,7 +1117,7 @@ class Component extends DCLogic {
       padActs: pad ? pad.a.map(([l,k],i)=>({...mkPad(k), label:l, bg: i==0 ? '#D5F367' : '#ffffff'})) : [],
       // learn mode
       eduOn: !!eduOn, eduLabel: locked ? 'LEARN MODE · LOCKED ON' : eduOn ? 'LEARN MODE · ON' : 'LEARN MODE · OFF', eduHeadBg: eduOn ? '#64CDF5' : 'transparent', eduHeadFg: eduOn ? '#0b2e24' : '#EDE9D8', eduPressed: eduOn ? 'true' : 'false',
-      noMenu: e=>e.preventDefault(),
+      noMenu: e=>e.preventDefault(), tickerDisp: narrow ? 'none' : 'block', prizesLabel: Object.values(P.prizes).reduce((a,b)=>a+b,0)+' PRIZES CLAIMED',
       showGoogle: s.authMode!='account', googleLabel: isSignup ? 'Sign up with Google' : 'Log in with Google', googleAuth: ()=>{ const st = this.state; if (st.aBusy) return; if (!st.cloud || !window.WLCloud) { window.Arcade && window.Arcade.sfx('bad'); return this.setState({aInfo:'', aMsg: st.cloudStatus=='off' ? 'Google sign-in needs the online account service, and this page can’t reach it. Open the arcade’s website instead — here, accounts stay on this device.' : 'Still connecting to the online account service. Try again in a few seconds.'}); } this.cloudAuth('google'); },
       aInfo: s.aInfo, showForgot: !!s.cloud && !isSignup && s.authMode!='account', forgotPw: ()=>this.forgotPw(),
       acctNote: s.cloud ? '● Online accounts connected — log in from any device. Sign-in is handled by Firebase.' : s.cloudStatus=='off' ? '○ Online accounts unavailable on this page — accounts stay in this browser on this device.' : '… Connecting to online accounts…',
