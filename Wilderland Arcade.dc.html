@@ -65,6 +65,7 @@ button{font-family:inherit;}
           <button onClick="{{ openLb }}" style="border:none; border-radius:14px; background:#121313; color:#F9BF01; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:10px; cursor:pointer; min-height:120px; display:flex; flex-direction:column; align-items:center; gap:4px;"><img src="{{ boardIcon }}" alt="" style="width:48px; height:48px;">LEADERBOARD</button>
           <button onClick="{{ openLearn }}" style="border:none; border-radius:14px; background:#014987; color:#ffffff; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:10px; cursor:pointer; min-height:120px; display:flex; flex-direction:column; align-items:center; gap:4px;"><img src="{{ learnIcon }}" alt="" style="width:48px; height:48px;">LEARNING DESK</button>
           <button onClick="{{ openShop }}" style="border:none; border-radius:14px; background:#2a1d12; color:#F9BF01; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:10px; cursor:pointer; min-height:120px; display:flex; flex-direction:column; align-items:center; gap:4px;"><img src="{{ shopIcon }}" alt="" style="width:48px; height:48px;">UPGRADE WORKSHOP<span style="font-size:11px; font-weight:500; letter-spacing:0; color:#EDE9D8;">{{ shopOwned }} / {{ shopTotal }} owned</span></button>
+          <button onClick="{{ openAv }}" style="border:none; border-radius:14px; background:#015640; color:#D5F367; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:10px; cursor:pointer; min-height:120px; display:flex; flex-direction:column; align-items:center; gap:4px;"><img src="{{ avImg }}" alt="" style="width:52px; height:52px;">AVATAR STUDIO</button>
         </div>
       </sc-if>
       <sc-if value="{{ wide }}" hint-placeholder-val="{{ true }}">
@@ -89,8 +90,7 @@ button{font-family:inherit;}
           <div onClick="{{ openPrizes }}" style="position:absolute; left:850px; top:50px; width:230px; height:200px; cursor:pointer; border-radius:14px; background:#AB2372; box-shadow:{{ prizeShadow }}; display:flex; flex-direction:column; overflow:hidden;">
             <div style="background:#EA55AB; padding:10px; text-align:center; font-weight:700; letter-spacing:0.12em; font-size:15px; color:#ffffff;">PRIZE COUNTER</div>
             <div style="flex:1; display:grid; grid-template-columns:repeat(4,1fr); gap:8px; padding:14px;">
-              <div style="background:#D5F367; border-radius:8px;"></div><div style="background:#64CDF5; border-radius:50%;"></div><div style="background:#F9BF01; border-radius:8px;"></div><div style="background:#E9B9F7; border-radius:50%;"></div>
-              <div style="background:#FBB99D; border-radius:50%;"></div><div style="background:#00B451; border-radius:8px;"></div><div style="background:#FFF442; border-radius:50%;"></div><div style="background:#C7F1EE; border-radius:8px;"></div>
+              <sc-for list="{{ kioskPrizes }}" as="kp" hint-placeholder-count="8"><img src="{{ kp.img }}" alt="" style="width:100%; height:100%; opacity:{{ kp.op }};"></sc-for>
             </div>
             <div style="background:#8D5B1D; height:26px; font-size:11px; font-weight:700; letter-spacing:0.08em; display:flex; align-items:center; justify-content:center; color:#EDE9D8;">{{ prizesLabel }}</div>
           </div>
@@ -115,11 +115,16 @@ button{font-family:inherit;}
             <div style="font-size:13px; font-weight:500; color:#EDE9D8;">Beat {{ daily.target }} · {{ daily.status }}</div>
           </div>
 
-          <div style="position:absolute; left:560px; top:738px; width:170px; height:34px; border-radius:8px; background:#015640; color:#D5F367; font-size:11px; font-weight:700; letter-spacing:0.16em; display:flex; align-items:center; justify-content:center;">ENTRANCE</div>
-
-          <div style="position:absolute; left:{{ player.x }}px; top:{{ player.y }}px; width:34px; height:34px; margin:-17px 0 0 -17px; border-radius:50%; background:#00B451; border:3px solid #015640; box-sizing:border-box; box-shadow:0 6px 10px rgba(0,0,0,.25); z-index:20; pointer-events:none;">
-            <div style="position:absolute; width:8px; height:8px; border-radius:50%; background:#D5F367; left:{{ player.ex }}px; top:{{ player.ey }}px;"></div>
+          <div onClick="{{ openAv }}" style="position:absolute; left:520px; top:732px; width:250px; white-space:nowrap; height:42px; border-radius:10px; background:#015640; color:#D5F367; font-size:11px; font-weight:700; letter-spacing:0.12em; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; border:2px solid #D5F367; box-sizing:border-box;"><img src="{{ avImg }}" alt="" style="width:30px; height:30px;">ENTRANCE · AVATAR STUDIO</div>
+          <div style="position:absolute; left:30px; top:730px; width:480px; height:46px; overflow:hidden; display:flex; align-items:center; gap:8px;">
+            <div style="font-size:10px; font-weight:700; letter-spacing:0.14em; color:#015640; line-height:1.15;">HALL OF<br>PLAYERS</div>
+            <sc-if value="{{ hallEmpty }}" hint-placeholder-val="{{ false }}"><div style="font-size:11px; color:#4a4a4a;">Create a username to join the hall</div></sc-if>
+            <sc-for list="{{ hallPlayers }}" as="hp" hint-placeholder-count="5">
+              <div title="{{ hp.name }}" style="display:flex; align-items:center; gap:4px; background:rgba(255,255,255,.55); border-radius:999px; padding:2px 9px 2px 2px; max-width:110px;"><img src="{{ hp.avImg }}" alt="" style="width:30px; height:30px;"><span style="font-size:11px; font-weight:700; color:#015640; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ hp.name }}</span></div>
+            </sc-for>
           </div>
+
+          <img src="{{ avImg }}" alt="" style="position:absolute; left:{{ player.x }}px; top:{{ player.y }}px; width:46px; height:46px; margin:-23px 0 0 -23px; z-index:20; pointer-events:none; filter:drop-shadow(0 6px 6px rgba(0,0,0,.3));">
 
           <sc-if value="{{ nearLabel }}" hint-placeholder-val="{{ false }}">
             <div style="position:absolute; left:{{ player.x }}px; top:{{ player.y }}px; transform:translate(-50%,-62px); background:#121313; color:#D5F367; font-size:13px; font-weight:700; padding:6px 12px; border-radius:999px; white-space:nowrap; z-index:21; pointer-events:none; letter-spacing:0.04em;">E · {{ nearLabel }}</div>
@@ -132,7 +137,7 @@ button{font-family:inherit;}
 
     <aside style="display:flex; flex-direction:column; gap:16px; min-width:0; flex:1 1 300px; max-width:100%;">
       <section style="background:#121313; border-radius:16px; padding:14px 16px; display:flex; align-items:center; gap:12px; border:1.5px solid rgba(213,243,103,.35);">
-        <div style="width:42px; height:42px; flex-shrink:0; border-radius:50%; background:{{ acctAvatarBg }}; color:#015640; font-weight:700; font-size:18px; display:flex; align-items:center; justify-content:center;">{{ acctInitial }}</div>
+        <img onClick="{{ openAv }}" src="{{ avImg }}" alt="Edit avatar" title="Avatar Studio" style="width:52px; height:52px; flex-shrink:0; cursor:pointer;">
         <div style="flex:1; min-width:0;">
           <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:#D5F367;">{{ acctKicker }}</div>
           <div style="font-size:17px; font-weight:700; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ acctName }}</div>
@@ -159,7 +164,7 @@ button{font-family:inherit;}
         <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;"><span style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#F9BF01;">LEADERBOARD</span><button onClick="{{ openUname }}" style="background:transparent; color:#F9BF01; border:1.5px solid #F9BF01; border-radius:999px; padding:4px 10px; font-weight:700; font-size:12px; cursor:pointer; max-width:60%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ unameLabel }}</button></div>
         <sc-if value="{{ lbTopEmpty }}" hint-placeholder-val="{{ false }}"><div style="font-size:13px; font-weight:500; color:#b9cfc5;">No scores yet. Create a username, then finish a game to post one.</div></sc-if>
         <sc-for list="{{ lbTop }}" as="r" hint-placeholder-count="5">
-          <div style="display:flex; align-items:center; gap:8px; font-size:14px; color:#ffffff;"><span style="width:22px; height:22px; flex-shrink:0; border-radius:50%; background:{{ r.medal }}; color:{{ r.rankFg }}; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; box-shadow:inset 0 0 0 1px rgba(255,255,255,.25);">{{ r.rank }}</span><span style="flex:1; min-width:0; font-weight:{{ r.weight }}; overflow:hidden; text-overflow:ellipsis;">{{ r.name }}</span><span style="font-weight:700;">{{ r.score }}</span></div>
+          <div style="display:flex; align-items:center; gap:8px; font-size:14px; color:#ffffff;"><span style="width:22px; height:22px; flex-shrink:0; border-radius:50%; background:{{ r.medal }}; color:{{ r.rankFg }}; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; box-shadow:inset 0 0 0 1px rgba(255,255,255,.25);">{{ r.rank }}</span><img src="{{ r.avImg }}" alt="" style="width:24px; height:24px; flex-shrink:0;"><span style="flex:1; min-width:0; font-weight:{{ r.weight }}; overflow:hidden; text-overflow:ellipsis;">{{ r.name }}</span><span style="font-weight:700;">{{ r.score }}</span></div>
         </sc-for>
         <button onClick="{{ openLb }}" style="margin-top:2px; background:#F9BF01; color:#121313; border:none; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;">Open leaderboard</button>
       </section>
@@ -478,21 +483,83 @@ button{font-family:inherit;}
 
   <sc-if value="{{ prizesOpen }}" hint-placeholder-val="{{ false }}">
     <div style="position:fixed; inset:0; background:rgba(11,46,36,.88); display:flex; align-items:safe center; justify-content:center; z-index:50; overflow-y:auto; padding:16px 0; box-sizing:border-box;">
-      <div style="background:#EDE9D8; border-radius:20px; padding:24px; width:640px; max-width:92vw; display:flex; flex-direction:column; gap:16px; color:#121313;">
+      <div style="background:#EDE9D8; border-radius:20px; padding:24px; width:760px; max-width:92vw; box-sizing:border-box; display:flex; flex-direction:column; gap:16px; color:#121313;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-          <div><div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#AB2372;">REDEMPTION BOOTH</div><div style="font-size:30px; font-weight:700; color:#015640;">Prize Counter</div><div style="font-size:14px; font-weight:500; color:#4a4a4a;">You have {{ tickets }} tickets to spend.</div></div>
+          <div><div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#AB2372;">REDEMPTION BOOTH</div><div style="font-size:30px; font-weight:700; color:#015640;">Prizes &amp; Trophy Room</div><div style="font-size:14px; font-weight:500; color:#4a4a4a;">You have {{ tickets }} tickets to spend.</div></div>
           <button onClick="{{ closePrizes }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer;">Leave · Esc</button>
         </div>
-        <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:12px;">
-          <sc-for list="{{ prizes }}" as="p" hint-placeholder-count="8">
-            <div style="background:#ffffff; border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:8px; align-items:center; text-align:center;">
-              <div style="width:64px; height:64px; border-radius:{{ p.radius }}; background:{{ p.color }}; display:flex; align-items:center; justify-content:center; font-size:26px; color:#015640; font-weight:700;">{{ p.glyph }}</div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;"><sc-for list="{{ ptTabs }}" as="t" hint-placeholder-count="3"><button onClick="{{ t.pick }}" style="border:none; border-radius:999px; padding:8px 16px; font-family:inherit; font-weight:700; font-size:14px; cursor:pointer; background:{{ t.bg }}; color:{{ t.fg }};">{{ t.t }}</button></sc-for></div>
+        <sc-if value="{{ ptCounter }}" hint-placeholder-val="{{ true }}">
+        <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(140px,1fr)); gap:12px;">
+          <sc-for list="{{ prizes }}" as="p" hint-placeholder-count="16">
+            <div style="background:{{ p.tbg }}; border:2px solid {{ p.tc }}; border-radius:14px; padding:10px; display:flex; flex-direction:column; gap:6px; align-items:center; text-align:center;">
+              <div style="font-size:10px; font-weight:700; letter-spacing:0.12em; color:{{ p.tc }};">{{ p.tier }}</div>
+              <img src="{{ p.img }}" alt="" style="width:72px; height:72px;">
               <div style="font-size:14px; font-weight:700; color:#015640; line-height:1.1;">{{ p.name }}</div>
               <div style="font-size:12px; font-weight:500; color:#4a4a4a;">Owned: {{ p.owned }}</div>
-              <button onClick="{{ p.buy }}" style="width:100%; border:none; border-radius:999px; padding:8px; font-weight:700; font-size:13px; cursor:{{ p.cursor }}; background:{{ p.btnBg }}; color:{{ p.btnFg }};">{{ p.cost }} tix</button>
+              <button onClick="{{ p.buy }}" style="width:100%; border:none; border-radius:999px; padding:8px; font-family:inherit; font-weight:700; font-size:13px; cursor:{{ p.cursor }}; background:{{ p.btnBg }}; color:{{ p.btnFg }};">{{ p.cost }} tix</button>
             </div>
           </sc-for>
         </div>
+        </sc-if>
+        <sc-if value="{{ ptShelf }}" hint-placeholder-val="{{ false }}">
+          <div style="font-size:13px; font-weight:600; color:#4a4a4a;">{{ shelfCount }}</div>
+          <div style="background:linear-gradient(#3b2614,#2a1b0e); border-radius:16px; padding:14px 14px 4px; display:flex; flex-direction:column; gap:6px; box-shadow:inset 0 0 0 4px #5a3a1c;">
+            <sc-for list="{{ shelves }}" as="sh" hint-placeholder-count="4">
+              <div>
+                <div style="font-size:11px; font-weight:700; letter-spacing:0.14em; color:{{ sh.c }}; padding:0 4px 4px;">{{ sh.t }}</div>
+                <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:6px; align-items:end; padding:0 6px;">
+                  <sc-for list="{{ sh.items }}" as="it" hint-placeholder-count="4">
+                    <div style="display:flex; flex-direction:column; align-items:center; gap:2px; position:relative;">
+                      <img src="{{ it.img }}" alt="" style="width:64px; height:64px; filter:drop-shadow(0 6px 4px rgba(0,0,0,.45)) {{ it.filt }};">
+                      <sc-if value="{{ it.multi }}" hint-placeholder-val="{{ false }}"><span style="position:absolute; top:0; right:8px; background:#F9BF01; color:#2a1b0e; font-size:10px; font-weight:700; padding:1px 6px; border-radius:999px;">{{ it.n }}</span></sc-if>
+                      <div style="font-size:10px; font-weight:700; color:#EDE9D8; text-align:center; line-height:1.1; min-height:22px;">{{ it.label }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="height:12px; margin-top:2px; border-radius:3px; background:linear-gradient(#a0703f,#7a5230); box-shadow:0 6px 8px rgba(0,0,0,.45);"></div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ ptPlayed }}" hint-placeholder-val="{{ false }}">
+          <div style="font-size:13px; font-weight:600; color:#4a4a4a;">{{ playedTotal }}</div>
+          <div style="display:flex; flex-direction:column; gap:6px;">
+            <sc-for list="{{ mostPlayed }}" as="mp" hint-placeholder-count="8">
+              <div style="display:flex; align-items:center; gap:10px; background:#ffffff; border-radius:12px; padding:6px 10px;">
+                <span style="width:20px; font-weight:700; color:#8a8a8a; font-size:13px;">{{ mp.rank }}</span>
+                <img src="{{ mp.icon }}" alt="" style="width:30px; height:30px; background:#015640; border-radius:7px;">
+                <div style="flex:1; min-width:0;"><div style="display:flex; justify-content:space-between; font-size:13px; font-weight:700; color:#015640;"><span>{{ mp.name }}</span><span>{{ mp.nLabel }}</span></div>
+                  <div style="height:8px; background:#ece8d6; border-radius:4px; margin-top:3px; overflow:hidden;"><div style="height:100%; width:{{ mp.w }}; background:{{ mp.color }}; border-radius:4px;"></div></div></div>
+                <span style="font-size:11px; color:#4a4a4a; min-width:70px; text-align:right;">best {{ mp.best }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ avOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; inset:0; background:rgba(11,46,36,.9); display:flex; align-items:safe center; justify-content:center; z-index:50; overflow-y:auto; padding:16px; box-sizing:border-box;">
+      <div style="background:#EDE9D8; border-radius:20px; padding:22px; width:720px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:14px; color:#121313;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
+          <div style="display:flex; gap:14px; align-items:center;"><img src="{{ avImg }}" alt="" style="width:96px; height:96px;">
+            <div><div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#AB2372;">AVATAR STUDIO</div><div style="font-size:26px; font-weight:700; color:#015640;">{{ acctName }}</div>
+              <div style="font-size:13px; font-weight:500; color:#3d3d3d;">Level {{ avLevel }} · {{ avFrameName }} · every achievement levels you up</div><div style="font-size:12px; font-weight:600; color:#AB2372; margin-top:2px;">{{ avNext }}</div></div></div>
+          <button onClick="{{ closeAv }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer;">Done · Esc</button>
+        </div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;"><sc-for list="{{ avTabs }}" as="t" hint-placeholder-count="7"><button onClick="{{ t.pick }}" style="border:none; border-radius:999px; padding:7px 14px; font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; background:{{ t.bg }}; color:{{ t.fg }};">{{ t.t }}</button></sc-for></div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:10px;">
+          <sc-for list="{{ avOpts }}" as="o" hint-placeholder-count="8">
+            <button onClick="{{ o.pick }}" style="border:3px solid {{ o.border }}; background:{{ o.bg }}; opacity:{{ o.op }}; border-radius:14px; padding:8px; font-family:inherit; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:4px;">
+              <img src="{{ o.img }}" alt="" style="width:64px; height:64px;">
+              <span style="font-size:13px; font-weight:700; color:#015640;">{{ o.n }}</span>
+              <span style="font-size:10px; font-weight:600; color:#AB2372; min-height:12px;">{{ o.lockTxt }}</span>
+            </button>
+          </sc-for>
+        </div>
+        <div style="font-size:12px; color:#4a4a4a;">Other players see your avatar on the leaderboard and in the Hall of Players at the entrance.</div>
       </div>
     </div>
   </sc-if>
@@ -630,6 +697,7 @@ button{font-family:inherit;}
           <sc-for list="{{ lbList }}" as="r" hint-placeholder-count="8">
             <div style="display:flex; align-items:center; gap:10px; padding:9px 12px; background:{{ r.bg }}; font-size:14px;">
               <span style="width:26px; height:26px; flex-shrink:0; border-radius:50%; background:{{ r.medal }}; color:{{ r.rankFgDark }}; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center;">{{ r.rank }}</span>
+              <img src="{{ r.avImg }}" alt="" style="width:32px; height:32px; flex-shrink:0;">
               <span style="flex:1; min-width:0; font-weight:{{ r.weight }}; color:#015640; overflow:hidden; text-overflow:ellipsis;">{{ r.name }}</span>
               <sc-if value="{{ r.hasBadge }}" hint-placeholder-val="{{ false }}"><span style="background:#64CDF5; color:#0b2e24; font-size:10px; font-weight:700; padding:2px 7px; border-radius:999px;">{{ r.badge }}</span></sc-if>
               <span style="font-size:12px; font-weight:500; color:#4a4a4a;">{{ r.date }}</span>
@@ -738,7 +806,7 @@ const PARENT_KEY = 'wl-arcade-parent';
 const pinRules = (a,b) => [['4–8 digits', /^\d{4,8}$/.test(a)], ['Not all one digit', a.length>0 && !/^(\d)\1+$/.test(a)], ['Not a straight run (1234)', a.length>0 && !'0123456789012345678909876543210987654321'.includes(a)], ['Codes match', a.length>0 && a===b]];
 const LEARN_NOTES = {idle:'Math geodes appear in the rock — answer the problem to crack one open for a huge pile of ore. Tapping the rock digs less.', flappy:'Fly through the gap with the right answer.', snake:'Eat the apple with the right answer.', typing:'Sight words for early readers.', whack:'Whack only gophers holding the right answer.', memory:'Match each problem with its answer.', tictactoe:'Answer a question to claim each square.', crossing:'Hop into the den with the right answer.', td:'Bonus-gold question after every wave.', breakout:'Lose the ball? Answer to keep your life.', pong:'Answer to block points scored against you.', '2048':'Stuck? Answer to clear two tiles (3 per board).', reaction:'Click only when the right answer flashes.', simon:'Wrong pad? Answer for one retry.', mines:'Hit a mine? Answer to defuse it.', connect4:'Answer a question to drop each disc.', stack:'Bonus question every 5 lines; answer for a second chance.', rootout:'This machine always counts as learning time.', trace:'This machine always counts as learning time.'};
 const fireKey = (key,type) => { try { window.dispatchEvent(new KeyboardEvent(type,{key, bubbles:true, cancelable:true})); } catch(e){} };
-const TIPS = {idle:'Your miners dig even while you are away. Drag two matching miners together to merge them into a stronger one. Sell ore for tickets — up to 400 a day. Spend ore in Upgrades for sharper picks, carts and a Foreman who merges for you.', snake:'Each level has a new maze. Gold apples are worth 3, mushrooms slow time, blue berries shrink your tail. Purple portals connect — and dashed edges wrap around.',breakout:'Hit with the paddle edge to angle shots. Long combos multiply every brick.',flappy:'Tap in short, steady bursts and aim for the middle of each gap.',pong:'Return off the paddle tip for steep angles the CPU struggles to reach.',memory:'Work row by row so you remember where you have already looked.',whack:'Red bombs cost a life — leave them. Every 15-hit combo earns a Quake, Freeze or Shield. The Gopher King shows up every 5 levels.','2048':'Keep your biggest tile pinned in one corner and avoid the opposite direction.',tictactoe:'Take the centre or a corner. Two threats at once is a guaranteed win.',reaction:'Watch the colour, not the words. Gold is a decoy.',typing:'Accuracy beats speed — a missed word scores nothing.',simon:'Say the colours out loud, or chunk them in threes.',mines:'A 1 touching only one hidden tile means that tile is a mine.',connect4:'The centre column is part of the most fours. Watch the diagonals.',td:'Build where the trail passes twice. Frost + Boulder is a strong pair, and Gold Pans pay for themselves after a few waves. Calling a wave early pays bonus gold.',crossing:'Wait for gaps instead of rushing. Diving turtles fade before they sink, and gators bite at the head end.',stack:'Keep the stack flat and leave one column open for long logs. A saw (X) rescues a messy bottom row.',rootout:'Purple “!” tags mark invasives early on — from level 3 the labels disappear, so read the fact cards. Every 5 perfect drops earns a weed puller.',trace:'Cover the whole grey shape — ink outside the lines costs points (it turns red). Tap Camera to write on real paper and hold it up instead.'};
+const TIPS = {idle:'Your miners dig even while you are away. Drag two matching miners together to merge them into a stronger one. Sell ore for tickets — up to 400 a day. Spend ore in Upgrades for sharper picks, carts and a Foreman who merges for you.', snake:'Each level has a new maze. Gold apples are worth 3, mushrooms slow time, blue berries shrink your tail. Purple portals connect — and dashed edges wrap around.',breakout:'Hit with the paddle edge to angle shots. Long combos multiply every brick.',flappy:'Tap in short, steady bursts and aim for the middle of each gap.',pong:'Return off the paddle tip for steep angles the CPU struggles to reach.',memory:'Work row by row so you remember where you have already looked.',whack:'Red bombs cost a life — leave them. Every 15-hit combo earns a Quake, Freeze or Shield. The Gopher King shows up every 5 levels.','2048':'Keep your biggest tile pinned in one corner and avoid the opposite direction.',tictactoe:'Take the centre or a corner. Two threats at once is a guaranteed win.',reaction:'Watch the colour, not the words. Gold is a decoy.',typing:'Accuracy beats speed — a missed word scores nothing.',simon:'Say the colours out loud, or chunk them in threes.',mines:'A 1 touching only one hidden tile means that tile is a mine.',connect4:'The centre column is part of the most fours. Watch the diagonals.',td:'Pick a mode — Nightmare pays ×3. Ghosts are invisible unless a Lantern (or a Frost tower, up close) lights them; Boulders can’t hit flying crows; shield beetles shrug off one hit per pip. Only 4 Gold Pans pay out.',crossing:'Wait for gaps instead of rushing. Diving turtles fade before they sink, and gators bite at the head end.',stack:'Keep the stack flat and leave one column open for long logs. A saw (X) rescues a messy bottom row.',rootout:'Purple “!” tags mark invasives early on — from level 3 the labels disappear, so read the fact cards. Every 5 perfect drops earns a weed puller.',trace:'Cover the whole grey shape — ink outside the lines costs points (it turns red). Tap Camera to write on real paper and hold it up instead.'};
 const RIVALS = [['littletimmy','Little Timmy',3],['jimmy','Jimmy',8],['timmy','Timmy',15],['baubau','Lord Emperor Bau Bau',30],['thetimmy','THE TIMMY',60]];
 const RIVAL = id => RIVALS.find(r=>r[0]==id);
 // Upgrade Workshop: permanent per-game upgrades bought with tickets. Games read the level with A.U(key).
@@ -762,16 +830,97 @@ const baseTix = (g, score) => Math.max(1, Math.ceil(100 * Math.pow(Math.max(0, s
 const SPEED_GAMES = ['snake','breakout','flappy','pong','whack','simon','memory','connect4','td','crossing','stack','rootout'];
 const POS = GAMES.map((g,i)=>({x:30+(i%5)*162, y:50+Math.floor(i/5)*180}));
 const NG = GAMES.length;
+// ---------- Prizes (art is SVG; legendary ones animate) ----------
+const PZ = (b) => svgURI(b);
 const PRIZES = [
-  {id:'sticker',name:'Sticker Pack',cost:50,color:'#D5F367',glyph:'▲',radius:'12px'},
-  {id:'bracelet',name:'Glow Bracelet',cost:120,color:'#64CDF5',glyph:'◯',radius:'50%'},
-  {id:'ball',name:'Bouncy Ball',cost:200,color:'#EA55AB',glyph:'●',radius:'50%'},
-  {id:'snake',name:'Rubber Snake',cost:350,color:'#00B451',glyph:'∿',radius:'12px'},
-  {id:'pin',name:'Mountain Pin',cost:500,color:'#EDE9D8',glyph:'⛰',radius:'50%'},
-  {id:'moose',name:'Plush Moose',cost:900,color:'#8D5B1D',glyph:'Ψ',radius:'16px'},
-  {id:'lamp',name:'Lava Lamp',cost:1500,color:'#E9B9F7',glyph:'◖',radius:'24px 24px 8px 8px'},
-  {id:'trophy',name:'Golden Trophy',cost:3000,color:'#F9BF01',glyph:'★',radius:'12px'},
+  {id:'sticker',name:'Sticker Pack',cost:150,tier:'Common',art:'<rect x="12" y="14" width="40" height="36" rx="6" fill="#D5F367" transform="rotate(-8 32 32)"/><path d="M22 34l6-10l6 10z" fill="#015640" transform="rotate(-8 32 32)"/><circle cx="40" cy="28" r="5" fill="#EA55AB"/>'},
+  {id:'bracelet',name:'Glow Bracelet',cost:250,tier:'Common',art:'<ellipse cx="32" cy="34" rx="20" ry="12" fill="none" stroke="#64CDF5" stroke-width="6">'+an('stroke-opacity','1;.5;1',1.6)+'</ellipse><ellipse cx="32" cy="34" rx="20" ry="12" fill="none" stroke="#fff" stroke-width="1.5" stroke-dasharray="4 8"/>'},
+  {id:'ball',name:'Bouncy Ball',cost:400,tier:'Common',art:'<g>'+at('translate','0 4;0 -6;0 4',1,SPLINE)+'<circle cx="32" cy="30" r="15" fill="#EA55AB"/><path d="M18 26q14 10 28 0" stroke="#fff" stroke-width="3" fill="none"/></g><ellipse cx="32" cy="54" rx="12" ry="3" fill="rgba(0,0,0,.2)"/>'},
+  {id:'snake',name:'Rubber Snake',cost:600,tier:'Common',art:'<path d="M10 44q8-16 16-2t16-2t12-14" stroke="#00B451" stroke-width="8" fill="none" stroke-linecap="round"/><circle cx="54" cy="26" r="5" fill="#00B451"/><circle cx="55" cy="25" r="1.5" fill="#121313"/>'},
+  {id:'pin',name:'Mountain Pin',cost:900,tier:'Rare',art:'<circle cx="32" cy="32" r="22" fill="#EDE9D8" stroke="#F9BF01" stroke-width="3"/><path d="M14 42l12-16l8 10l6-6l10 12z" fill="#015640"/><path d="M26 26l4 5l-8 0z" fill="#fff"/>'},
+  {id:'moose',name:'Plush Moose',cost:1500,tier:'Rare',art:'<path d="M14 18q4 8 12 8M50 18q-4 8-12 8M16 14l2 6M48 14l-2 6" stroke="#c48a4a" stroke-width="4" fill="none" stroke-linecap="round"/><ellipse cx="32" cy="34" rx="12" ry="14" fill="#8D5B1D"/><ellipse cx="32" cy="42" rx="8" ry="6" fill="#c48a4a"/><circle cx="27" cy="30" r="2" fill="#121313"/><circle cx="37" cy="30" r="2" fill="#121313"/>'},
+  {id:'lamp',name:'Lava Lamp',cost:2500,tier:'Rare',art:'<path d="M24 52h16l-3-6H27z" fill="#121313"/><path d="M26 46l-4-30h20l-4 30z" fill="#E9B9F7" fill-opacity=".5"/><circle cx="32" r="5" fill="#EA55AB">'+an('cy','40;22;40',4,SPLINE)+'</circle><circle cx="30" r="3.5" fill="#FF4539">'+an('cy','24;42;24',3.4,SPLINE)+'</circle><path d="M24 16h16l-2-6H26z" fill="#121313"/>'},
+  {id:'robot',name:'Pinecone Robot',cost:3500,tier:'Rare',art:'<rect x="20" y="22" width="24" height="24" rx="6" fill="#8D5B1D"/><path d="M20 30h24M20 38h24" stroke="#5a3a1c" stroke-width="2"/><rect x="24" y="10" width="16" height="12" rx="4" fill="#c9ccd1"/><circle cx="29" cy="16" r="2" fill="#64CDF5">'+an('fill','#64CDF5;#D5F367;#64CDF5',1)+'</circle><circle cx="35" cy="16" r="2" fill="#64CDF5"/><path d="M32 10V4" stroke="#c9ccd1" stroke-width="2"/><circle cx="32" cy="4" r="2" fill="#FF4539"/><path d="M20 30l-6 6M44 30l6 6" stroke="#c9ccd1" stroke-width="3" stroke-linecap="round"/>'},
+  {id:'geode',name:'Crystal Geode',cost:5000,tier:'Epic',art:'<ellipse cx="32" cy="36" rx="22" ry="18" fill="#6b6f80"/><ellipse cx="32" cy="36" rx="15" ry="11" fill="#2f3a5a"/><path d="M22 40l4-12l4 10l3-14l4 14l3-9l4 11z" fill="#9fd8ff"/><path d="M33 24l2 6" stroke="#fff" stroke-width="2"><animate attributeName="stroke-opacity" values="0;1;0" dur="1.8s" repeatCount="indefinite"/></path>'},
+  {id:'fox',name:'Neon Fox',cost:7500,tier:'Epic',art:'<path d="M16 16l8 12h16l8-12l-4 20q-4 12-12 14q-8-2-12-14z" fill="#FF8A3C" stroke="#FFD08A" stroke-width="2"><animate attributeName="stroke-opacity" values="1;.3;1" dur="1.2s" repeatCount="indefinite"/></path><path d="M26 44l6 6l6-6z" fill="#fff"/><circle cx="26" cy="34" r="2.5" fill="#121313"/><circle cx="38" cy="34" r="2.5" fill="#121313"/>'},
+  {id:'pickaxe',name:'Golden Pickaxe',cost:10000,tier:'Epic',art:'<g>'+at('rotate','-10 32 32;10 32 32;-10 32 32',1.6,SPLINE)+'<path d="M24 52L42 18" stroke="#8D5B1D" stroke-width="5" stroke-linecap="round"/><path d="M26 12q16-6 28 10" stroke="#F9BF01" stroke-width="7" fill="none" stroke-linecap="round"/></g><path d="M48 44l2-4l2 4l4 2l-4 2l-2 4l-2-4l-4-2z" fill="#fff">'+an('opacity','0;1;0',1.3)+'</path>'},
+  {id:'globe',name:'Aurora Globe',cost:15000,tier:'Epic',art:'<path d="M22 54h20l-3-6H25z" fill="#8D5B1D"/><circle cx="32" cy="30" r="18" fill="#014987"/><path d="M16 26q8-8 16 0t16 0" stroke="#00B451" stroke-width="4" fill="none"><animate attributeName="stroke" values="#00B451;#64CDF5;#E9B9F7;#00B451" dur="3s" repeatCount="indefinite"/></path><path d="M18 34q8-6 14 0t14 0" stroke="#D5F367" stroke-width="2" fill="none" opacity=".7"/><circle cx="26" cy="20" r="1.2" fill="#fff"/><circle cx="40" cy="38" r="1" fill="#fff"/>'},
+  {id:'trophy',name:'Golden Trophy',cost:25000,tier:'Legendary',art:'<path d="M20 10h24v14a12 12 0 0 1-24 0z" fill="#F9BF01"/><path d="M20 14h-6a7 7 0 0 0 7 10M44 14h6a7 7 0 0 1-7 10" stroke="#F9BF01" stroke-width="3" fill="none"/><rect x="29" y="34" width="6" height="8" fill="#DD8B03"/><rect x="22" y="42" width="20" height="8" rx="2" fill="#8D5B1D"/><path d="M26 14l4 4" stroke="#fff" stroke-width="3" stroke-linecap="round">'+an('opacity','1;.2;1',1.4)+'</path>'},
+  {id:'egg',name:'Dragon Egg',cost:40000,tier:'Legendary',art:'<g>'+at('rotate','-6 32 50;6 32 50;-6 32 50',.9,SPLINE)+'<ellipse cx="32" cy="34" rx="15" ry="19" fill="#5B2A86"/><path d="M20 30l6 4l6-6l6 6l6-4" stroke="#E9B9F7" stroke-width="2.5" fill="none"/><circle cx="26" cy="42" r="3" fill="#EA55AB"/><circle cx="38" cy="22" r="2.5" fill="#64CDF5"/></g><path d="M30 16l2-4l2 4" stroke="#F9BF01" stroke-width="2" fill="none">'+an('opacity','0;1;0',1)+'</path>'},
+  {id:'moon',name:'Moon Rock',cost:60000,tier:'Legendary',art:'<circle cx="32" cy="32" r="22" fill="#121313"/><circle cx="32" cy="32" r="16" fill="#c9ccd1"/><circle cx="26" cy="28" r="4" fill="#9a9a9b"/><circle cx="37" cy="37" r="3" fill="#9a9a9b"/><circle cx="36" cy="25" r="1.8" fill="#9a9a9b"/><circle cx="12" cy="14" r="1.2" fill="#fff">'+an('opacity','0;1;0',1.5)+'</circle><circle cx="52" cy="50" r="1.2" fill="#fff">'+an('opacity','1;0;1',1.7)+'</circle>'},
+  {id:'crown',name:'Crown of Wilderland',cost:100000,tier:'Legendary',art:'<path d="M12 44l4-24l10 12l6-16l6 16l10-12l4 24z" fill="#F9BF01"/><rect x="12" y="44" width="40" height="8" rx="2" fill="#DD8B03"/><circle cx="32" cy="36" r="4" fill="#EA55AB">'+an('r','3.5;4.5;3.5',1.2,SPLINE)+'</circle><circle cx="20" cy="38" r="2.5" fill="#64CDF5"/><circle cx="44" cy="38" r="2.5" fill="#00B451"/>'},
 ];
+const PTIER = {Common:{c:'#9a9a9b',bg:'#f6f3e6'},Rare:{c:'#64CDF5',bg:'#e6f6fd'},Epic:{c:'#AB2372',bg:'#fbe6f2'},Legendary:{c:'#DD8B03',bg:'#fff4d6'}};
+
+// ---------- Avatars: looks unlock as you earn achievements ----------
+const AVP = {
+  skin:{t:'Skin',o:[{n:'Peach',c:'#f2c9a0'},{n:'Tan',c:'#d9a066'},{n:'Brown',c:'#a86b3c'},{n:'Deep',c:'#6b4226'},{n:'Mint',c:'#9fe0c0',r:10},{n:'Lavender',c:'#d7b8f3',r:20},{n:'Gold',c:'#F9BF01',r:40}]},
+  shirt:{t:'Shirt',o:[{n:'Forest',c:'#00B451'},{n:'Lime',c:'#D5F367'},{n:'Sky',c:'#64CDF5'},{n:'Pink',c:'#EA55AB'},{n:'Gold',c:'#F9BF01',r:3},{n:'Ember',c:'#FF8A3C',r:6},{n:'Navy',c:'#014987',r:9},{n:'Midnight',c:'#121313',r:14},{n:'Rainbow',c:'rainbow',r:30}]},
+  hat:{t:'Hat',o:[{n:'None'},{n:'Cap'},{n:'Beanie',r:3},{n:'Headband',r:5},{n:'Ranger',r:8},{n:'Miner',r:12},{n:'Wizard',r:18},{n:'Astronaut',r:24},{n:'Crown',r:32},{n:'Halo',r:45}]},
+  face:{t:'Face',o:[{n:'Smile'},{n:'Grin',r:2},{n:'Wink',r:6},{n:'Shades',r:10},{n:'Star eyes',r:16},{n:'Visor',r:26}]},
+  gear:{t:'Back',o:[{n:'None'},{n:'Scarf',r:4},{n:'Backpack',r:9},{n:'Cape',r:15},{n:'Wings',r:22},{n:'Jetpack',r:30}]},
+  pet:{t:'Pet',o:[{n:'None'},{n:'Frog',r:5},{n:'Fox',r:13},{n:'Owl',r:20},{n:'Turtle',r:28},{n:'Dragon',r:40}]},
+};
+const AVK = ['skin','shirt','hat','face','gear','pet'];
+const avNorm = a => { const o = {}; AVK.forEach(k=>{ const v = a && a[k]|0; o[k] = v>=0 && v<AVP[k].o.length ? v : 0; }); if (!a || a.hat==null) o.hat = 1; return o; };
+const avEnc = a => AVK.map(k=>avNorm(a)[k]).join('.');
+const avDec = s => { const p = String(s||'').split('.').map(Number); const o = {}; AVK.forEach((k,i)=>o[k]=p[i]||0); return avNorm(o); };
+const avFrame = n => n>=45 ? {c:'#EA55AB',n:'Legend'} : n>=30 ? {c:'#F9BF01',n:'Gold'} : n>=15 ? {c:'#B9C4BF',n:'Silver'} : n>=5 ? {c:'#DD8B03',n:'Bronze'} : null;
+const avSVG = (a, lvl) => { a = avNorm(a); const sk = AVP.skin.o[a.skin].c, sc = AVP.shirt.o[a.shirt].c, fr = avFrame(lvl||0); let o = '';
+  if (sc=='rainbow') o += '<defs><linearGradient id="rb" x1="0" x2="1"><stop offset="0" stop-color="#FF4539"/><stop offset=".33" stop-color="#F9BF01"/><stop offset=".66" stop-color="#00B451"/><stop offset="1" stop-color="#64CDF5"/></linearGradient></defs>';
+  o += '<circle cx="32" cy="32" r="31" fill="#015640"/>';
+  if (fr) o += '<circle cx="32" cy="32" r="29.5" fill="none" stroke="'+fr.c+'" stroke-width="3">'+(lvl>=45?an('stroke','#EA55AB;#64CDF5;#F9BF01;#EA55AB',3):'')+'</circle>';
+  const G = a.gear; // behind body
+  if (G==3) o += '<path d="M18 40q-6 16 0 22h28q6-6 0-22z" fill="#FF4539"/>';
+  if (G==4) o += '<g>'+at('rotate','-6 32 42;6 32 42;-6 32 42',.8,SPLINE)+'<path d="M24 42q-16-14-20-2q4 10 20 8zM40 42q16-14 20-2q-4 10-20 8z" fill="#fff" stroke="#c9e8f5" stroke-width="1.5"/></g>';
+  if (G==5) o += '<rect x="20" y="40" width="7" height="14" rx="3" fill="#c9ccd1"/><rect x="37" y="40" width="7" height="14" rx="3" fill="#c9ccd1"/><path d="M21 54l2.5 6l2.5-6M38 54l2.5 6l2.5-6" fill="#FF8A3C">'+an('opacity','1;.4;1',.3)+'</path>';
+  if (G==2) o += '<rect x="19" y="40" width="26" height="16" rx="5" fill="#8D5B1D"/>';
+  o += '<path d="M16 64q0-22 16-22t16 22z" fill="'+(sc=='rainbow'?'url(#rb)':sc)+'"/>';
+  o += '<circle cx="32" cy="28" r="13" fill="'+sk+'"/>';
+  if (G==1) o += '<path d="M21 40q11 6 22 0v4q-11 6-22 0z" fill="#EA55AB"/><path d="M38 43l3 9l4-2z" fill="#EA55AB"/>';
+  const F = a.face;
+  if (F==3) o += '<rect x="21" y="24" width="9" height="6" rx="2" fill="#121313"/><rect x="34" y="24" width="9" height="6" rx="2" fill="#121313"/><path d="M30 26h4" stroke="#121313" stroke-width="2"/>';
+  else if (F==4) o += '<path d="M26 23l1.3 2.7l3 .4l-2.2 2l.5 3l-2.6-1.4l-2.6 1.4l.5-3l-2.2-2l3-.4zM38 23l1.3 2.7l3 .4l-2.2 2l.5 3l-2.6-1.4l-2.6 1.4l.5-3l-2.2-2l3-.4z" fill="#F9BF01"/>';
+  else if (F==5) o += '<rect x="20" y="23" width="24" height="7" rx="3.5" fill="#64CDF5"><animate attributeName="fill" values="#64CDF5;#D5F367;#64CDF5" dur="2s" repeatCount="indefinite"/></rect>';
+  else if (F==2) o += '<circle cx="27" cy="27" r="2" fill="#121313"/><path d="M35 27h5" stroke="#121313" stroke-width="2" stroke-linecap="round"/>';
+  else o += '<circle cx="27" cy="27" r="2" fill="#121313"/><circle cx="37" cy="27" r="2" fill="#121313"/>';
+  o += F==1 ? '<path d="M26 33q6 6 12 0z" fill="#fff" stroke="#121313" stroke-width="1.5"/>' : '<path d="M27 33q5 4 10 0" stroke="#121313" stroke-width="2" fill="none" stroke-linecap="round"/>';
+  const H = a.hat;
+  if (H==1) o += '<path d="M19 24a13 12 0 0 1 26 0z" fill="#FF4539"/><path d="M42 23h9q0 3-9 3z" fill="#FF4539"/>';
+  if (H==2) o += '<path d="M19 25a13 13 0 0 1 26 0z" fill="#64CDF5"/><rect x="18" y="22" width="28" height="5" rx="2" fill="#014987"/><circle cx="32" cy="12" r="3.5" fill="#fff"/>';
+  if (H==3) o += '<rect x="18" y="19" width="28" height="5" rx="2.5" fill="#EA55AB"/><path d="M45 21l6-3v7z" fill="#EA55AB"/>';
+  if (H==4) o += '<ellipse cx="32" cy="20" rx="20" ry="4" fill="#8D5B1D"/><path d="M22 20q2-12 10-12t10 12z" fill="#c48a4a"/><rect x="22" y="16" width="20" height="3" fill="#5a3a1c"/>';
+  if (H==5) o += '<path d="M18 23a14 13 0 0 1 28 0z" fill="#F9BF01"/><rect x="17" y="21" width="30" height="4" rx="2" fill="#DD8B03"/><circle cx="32" cy="15" r="3.5" fill="#fffbe0">'+an('opacity','1;.5;1',1)+'</circle>';
+  if (H==6) o += '<path d="M18 21l14-20l14 20z" fill="#5B2A86"/><ellipse cx="32" cy="21" rx="16" ry="3" fill="#5B2A86"/><circle cx="30" cy="10" r="1.5" fill="#F9BF01"/><circle cx="35" cy="15" r="1.2" fill="#F9BF01"/>';
+  if (H==7) o += '<circle cx="32" cy="28" r="17" fill="#c9f0ff" fill-opacity=".35" stroke="#fff" stroke-width="3"/><path d="M22 20q4-5 9-5" stroke="#fff" stroke-width="2" fill="none"/>';
+  if (H==8) o += '<path d="M19 20l3-10l5 6l5-9l5 9l5-6l3 10z" fill="#F9BF01"/><circle cx="32" cy="15" r="2" fill="#EA55AB"/>';
+  if (H==9) o += '<ellipse cx="32" cy="8" rx="11" ry="3.5" fill="none" stroke="#F9BF01" stroke-width="2.5">'+an('cy','8;6;8',1.6,SPLINE)+'</ellipse>';
+  const PT = a.pet, px = 50, py = 52;
+  if (PT==1) o += '<ellipse cx="'+px+'" cy="'+py+'" rx="8" ry="6" fill="#00B451"/><circle cx="'+(px-3)+'" cy="'+(py-5)+'" r="2.5" fill="#00B451"/><circle cx="'+(px+3)+'" cy="'+(py-5)+'" r="2.5" fill="#00B451"/><circle cx="'+(px-3)+'" cy="'+(py-5)+'" r="1" fill="#121313"/><circle cx="'+(px+3)+'" cy="'+(py-5)+'" r="1" fill="#121313"/>';
+  if (PT==2) o += '<path d="M'+(px-8)+' '+(py-7)+'l3 6h10l3-6l-2 10q-3 6-6 6q-3 0-6-6z" fill="#FF8A3C"/><circle cx="'+(px-3)+'" cy="'+(py)+'" r="1.2" fill="#121313"/><circle cx="'+(px+3)+'" cy="'+(py)+'" r="1.2" fill="#121313"/>';
+  if (PT==3) o += '<ellipse cx="'+px+'" cy="'+py+'" rx="7" ry="8" fill="#8D5B1D"/><circle cx="'+(px-3)+'" cy="'+(py-2)+'" r="3" fill="#fff"/><circle cx="'+(px+3)+'" cy="'+(py-2)+'" r="3" fill="#fff"/><circle cx="'+(px-3)+'" cy="'+(py-2)+'" r="1.3" fill="#121313"/><circle cx="'+(px+3)+'" cy="'+(py-2)+'" r="1.3" fill="#121313"/>';
+  if (PT==4) o += '<ellipse cx="'+px+'" cy="'+(py+1)+'" rx="9" ry="6" fill="#00B451" stroke="#015640" stroke-width="2"/><circle cx="'+(px+9)+'" cy="'+(py-1)+'" r="3" fill="#9fe07a"/>';
+  if (PT==5) o += '<g>'+at('translate','0 1;0 -2;0 1',1,SPLINE)+'<ellipse cx="'+px+'" cy="'+py+'" rx="8" ry="7" fill="#5B2A86"/><path d="M'+(px-8)+' '+(py-4)+'l-5-6l7 2zM'+(px+8)+' '+(py-4)+'l5-6l-7 2z" fill="#E9B9F7"/><circle cx="'+(px-3)+'" cy="'+(py-2)+'" r="1.4" fill="#F9BF01"/><circle cx="'+(px+3)+'" cy="'+(py-2)+'" r="1.4" fill="#F9BF01"/></g>';
+  return svgURI(o); };
+
+// ---------- Cursors: unlocked with achievements ----------
+const CURSORS = [
+  {id:'',n:'Normal',r:0},
+  {id:'leaf',n:'Leaf',r:1,x:4,y:4,s:'<path d="M4 4q24 0 24 24q-24 0-24-24z" fill="#00B451" stroke="#015640" stroke-width="2"/><path d="M4 4l20 20" stroke="#015640" stroke-width="2"/>'},
+  {id:'star',n:'Star',r:4,x:16,y:16,s:'<path d="M16 2l4 9l10 1l-8 7l3 10l-9-5l-9 5l3-10l-8-7l10-1z" fill="#F9BF01" stroke="#121313" stroke-width="1.5"/>'},
+  {id:'paw',n:'Paw',r:8,x:16,y:16,s:'<ellipse cx="16" cy="21" rx="7" ry="6" fill="#8D5B1D" stroke="#fff" stroke-width="1.5"/><circle cx="8" cy="12" r="3" fill="#8D5B1D"/><circle cx="14" cy="8" r="3" fill="#8D5B1D"/><circle cx="20" cy="8" r="3" fill="#8D5B1D"/><circle cx="25" cy="12" r="3" fill="#8D5B1D"/>'},
+  {id:'pick',n:'Pickaxe',r:12,x:3,y:3,s:'<path d="M28 28L12 12" stroke="#8D5B1D" stroke-width="4" stroke-linecap="round"/><path d="M3 3q10-4 18 6M3 3q-2 10 6 18" stroke="#c9ccd1" stroke-width="4" fill="none" stroke-linecap="round"/>'},
+  {id:'wand',n:'Magic Wand',r:16,x:3,y:3,s:'<path d="M28 28L8 8" stroke="#121313" stroke-width="4" stroke-linecap="round"/><path d="M6 1l1.5 3.5l3.5 1.5l-3.5 1.5l-1.5 3.5l-1.5-3.5l-3.5-1.5l3.5-1.5z" fill="#E9B9F7"/><circle cx="14" cy="4" r="1.3" fill="#F9BF01"/>'},
+  {id:'rocket',n:'Rocket',r:22,x:3,y:3,s:'<path d="M3 3l16 4l6 6l-6 6l-6-6z" fill="#EDE9D8" stroke="#121313" stroke-width="1.5"/><circle cx="12" cy="10" r="2" fill="#64CDF5"/><path d="M19 19l8 8M22 16l6 4M16 22l4 6" stroke="#FF8A3C" stroke-width="3" stroke-linecap="round"/>'},
+  {id:'bolt',n:'Lightning',r:28,x:12,y:2,s:'<path d="M12 2l-6 16h8l-4 12l14-18h-8l6-10z" fill="#D5F367" stroke="#015640" stroke-width="1.5"/>'},
+  {id:'crown',n:'Crown',r:36,x:16,y:4,s:'<path d="M4 24l2-16l6 8l4-10l4 10l6-8l2 16z" fill="#F9BF01" stroke="#121313" stroke-width="1.5"/>'},
+  {id:'comet',n:'Comet',r:48,x:4,y:4,s:'<path d="M8 8L30 22M10 12L26 30" stroke="#E9B9F7" stroke-width="3" stroke-linecap="round" opacity=".7"/><circle cx="8" cy="8" r="6" fill="#64CDF5" stroke="#fff" stroke-width="2"/>'},
+];
+const cursorURL = c => 'url("data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">'+c.s+'</svg>')+'") '+c.x+' '+c.y+', auto';
+const applyCursor = id => { if (typeof document=='undefined') return; let el = document.getElementById('wl-cursor'); const c = CURSORS.find(x=>x.id==id);
+  if (!c || !c.id) { if (el) el.remove(); return; } if (!el) { el = document.createElement('style'); el.id = 'wl-cursor'; document.head.appendChild(el); }
+  el.textContent = 'html, body, body * { cursor: '+cursorURL(c)+' !important; }'; };
+
 const TIER = [null,{n:'Bronze',s:'B',c:'#DD8B03',r:25},{n:'Silver',s:'S',c:'#B9C4BF',r:75},{n:'Gold',s:'G',c:'#F9BF01',r:200},{n:'Legend',s:'L',c:'#EA55AB',r:500}];
 const mx = (s,k) => (s.stats.max||{})[k]||0, sm = (s,k) => (s.stats.sum||{})[k]||0, bs = (s,id) => s.best[id]||0;
 const plays = s => Object.values(s.played||{}).reduce((a,b)=>a+b,0);
@@ -853,7 +1002,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-11-19g';
+const BUILD = '2026-11-19h';
 const SCRIPTS = ['arcade-core.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-edu.js','games-idle.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
@@ -904,11 +1053,11 @@ class Component extends DCLogic {
   setEdu(patch){ const g = this.state.game, remount = g && EDU_SWITCH.includes(g); if (remount) this.unmountGame(true);
     this.setP({edu:{...this.P.edu, ...patch}}); window.Arcade && window.Arcade.sfx('blip'); if (remount) this.setState({liveScore:0, payout:''}); }
   addScore(g, s, edu){ if (!this.P.username || (g!='_none' && !(s>0))) return;
-    if (this.state.cloud) { const C = window.WLCloud; if (!this.cloudUid || !C) return; const row = {uid:this.cloudUid, u:this.P.username, s:Math.max(0,Math.round(s)), edu:!!edu, d:today()};
+    if (this.state.cloud) { const C = window.WLCloud; if (!this.cloudUid || !C) return; const row = {uid:this.cloudUid, u:this.P.username, s:Math.max(0,Math.round(s)), edu:!!edu, d:today(), av:avEnc(this.P.avatar), al:(this.P.ach||[]).length};
       if (g!='_none') C.postScore(g, row).catch(()=>{}); C.setTix(this.cloudUid, {...row, s:Math.max(0,Math.round(this.P.earned)), edu:false}).catch(()=>{});
       this._bAt = {}; return; } const B = getJSON(BOARD_KEY,{e:[]}), k = this.profKey(), u = this.P.username;
-    if (g!='_none') { B.e.push({u, k, g, s, edu:!!edu, d:today()}); const mine = B.e.filter(x=>x.g==g).sort((a,b)=>b.s-a.s).slice(0,60); B.e = B.e.filter(x=>x.g!=g).concat(mine); }
-    B.e = B.e.filter(x=>!(x.g=='_tix' && x.k==k)); B.e.push({u, k, g:'_tix', s:this.P.earned, edu:false, d:today()}); putJSON(BOARD_KEY, B); }
+    const av = avEnc(this.P.avatar), al = (this.P.ach||[]).length; if (g!='_none') { B.e.push({u, k, g, s, edu:!!edu, d:today(), av, al}); const mine = B.e.filter(x=>x.g==g).sort((a,b)=>b.s-a.s).slice(0,60); B.e = B.e.filter(x=>x.g!=g).concat(mine); }
+    B.e = B.e.filter(x=>!(x.g=='_tix' && x.k==k)); B.e.push({u, k, g:'_tix', s:this.P.earned, edu:false, d:today(), av, al}); putJSON(BOARD_KEY, B); }
   async saveUsername(){ if (this.state.cloud) { const v = (this.state.uVal||'').trim(), C = window.WLCloud;
       if (!this.cloudUid) { this.setState({uMsg:'Sign up or log in first — leaderboard names need an online account.'}); return; }
       const bad = unameRules(v, false).find(r=>!r[1]); if (bad) { this.setState({uMsg:'Username check failed: '+bad[0].toLowerCase()+'.'}); window.Arcade && window.Arcade.sfx('bad'); return; }
@@ -945,7 +1094,7 @@ class Component extends DCLogic {
     try { await window.WLCloud.reset(email); this.setState({aInfo:'If that email has an account, a reset link is on its way. Check your inbox and spam folder.', aMsg:''}); } catch(e) { this.setState({aMsg:fbErr(e), aInfo:''}); } }
   needBoard(g){ if (!this.state.cloud || !window.WLCloud) return; this.cloudBoard = this.cloudBoard || {}; this._bAt = this._bAt || {}; this._bBusy = this._bBusy || {};
     if (this._bBusy[g] || (this._bAt[g] && Date.now()-this._bAt[g] < 30000)) return; this._bBusy[g] = true;
-    window.WLCloud.top(g, 100).then(rows=>{ this.cloudBoard[g] = rows.map(r=>({u:r.u, k:r.uid, id:r.id, g, s:r.s, edu:!!r.edu, d:r.d})); this._bAt[g] = Date.now(); this._bBusy[g] = false; this.setState({lbTick:Date.now()}); })
+    window.WLCloud.top(g, 100).then(rows=>{ this.cloudBoard[g] = rows.map(r=>({u:r.u, k:r.uid, id:r.id, g, s:r.s, edu:!!r.edu, d:r.d, av:r.av||'', al:r.al||0})); this._bAt[g] = Date.now(); this._bBusy[g] = false; this.setState({lbTick:Date.now()}); })
       .catch(()=>{ this._bBusy[g] = false; this._bAt[g] = Date.now(); }); }
   evalAch(P){ let s = {...P}; const has = new Set(s.ach), newly = []; let changed = true;
     while (changed) { changed = false; for (const a of ACH) { if (has.has(a.id)) continue; let pr; try { pr = a.p(s); } catch(e) { continue; } if (pr[0] >= pr[1]) { has.add(a.id); newly.push(a); const r = TIER[a.tier].r; s = {...s, tickets:s.tickets+r, earned:s.earned+r}; changed = true; } } }
@@ -963,7 +1112,7 @@ class Component extends DCLogic {
     this.kd = e => {
       const k = e.key.length==1 ? e.key.toLowerCase() : e.key;
       if (k=='Escape') { this.closeAll(); this.setState({codeOpen:false}); return; }
-      const S = this.state; if (S.game || S.shopOpen || S.prizesOpen || S.codeOpen || S.authOpen || S.achOpen || S.learnOpen || S.lbOpen || S.uOpen) return;
+      const S = this.state; if (S.game || S.shopOpen || S.avOpen || S.prizesOpen || S.codeOpen || S.authOpen || S.achOpen || S.learnOpen || S.lbOpen || S.uOpen) return;
       if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k)) e.preventDefault();
       this.keys[k] = true;
       if ((k=='e'||k=='Enter') && this.near) this.near.act();
@@ -978,7 +1127,7 @@ class Component extends DCLogic {
     let last = performance.now(), stepT = 0;
     const tick = now => {
       const dt = Math.min(.05,(now-last)/1000); last = now; const s = this.state;
-      if (!s.game && !s.shopOpen && !s.prizesOpen && !s.codeOpen && !s.authOpen && !s.achOpen && !s.learnOpen && !s.lbOpen && !s.uOpen) {
+      if (!s.game && !s.shopOpen && !s.avOpen && !s.prizesOpen && !s.codeOpen && !s.authOpen && !s.achOpen && !s.learnOpen && !s.lbOpen && !s.uOpen) {
         const K = this.keys, dx = (K.ArrowRight||K.d?1:0)-(K.ArrowLeft||K.a?1:0), dy = (K.ArrowDown||K.s?1:0)-(K.ArrowUp||K.w?1:0);
         if (dx||dy) {
           const sp = (this.props.walkSpeed ?? 280) * dt / Math.hypot(dx,dy);
@@ -1000,6 +1149,7 @@ class Component extends DCLogic {
   componentWillUnmount(){ this.onHide && this.onHide(); cancelAnimationFrame(this.raf); clearInterval(this.autoIv); clearInterval(this.saveIv); window.removeEventListener('keydown',this.kd); window.removeEventListener('keyup',this.ku); window.removeEventListener('resize',this.onResize);
     window.removeEventListener('pagehide',this.onHide); window.removeEventListener('beforeunload',this.onHide); document.removeEventListener('visibilitychange',this.onVis); this.ro && this.ro.disconnect(); this.unmountGame(); }
   componentDidUpdate(){
+    if ((this.P.cursor||'') !== this._cursor) { this._cursor = this.P.cursor||''; applyCursor(this._cursor); }
     const {game} = this.state;
     if (game && this.gameRef.current && this.mounted != game && this.ready) {
       this.unmountGame(); this.mounted = game;
@@ -1090,7 +1240,7 @@ class Component extends DCLogic {
     else { window.Arcade && window.Arcade.sfx('bad'); this.setState({codeMsg:'Code not recognised', codeVal:''}); } }
   open(id){ this.keys = {}; this.setState({game:id, liveScore:0, payout:''}); }
   closeAll(){ const saved = this.unmountGame(); this.keys = {}; Object.keys(this.padHeld).forEach(k=>{ if (this.padHeld[k]) fireKey(k,'keyup'); }); this.padHeld = {};
-    this.setState({game:null, shopOpen:false, prizesOpen:false, payout:'', authOpen:false, achOpen:false, learnOpen:false, lbOpen:false, uOpen:false, clearArm:false}); if (saved) this.toast('GAME SAVED · PICK IT UP ANY TIME'); }
+    this.setState({game:null, shopOpen:false, avOpen:false, prizesOpen:false, payout:'', authOpen:false, achOpen:false, learnOpen:false, lbOpen:false, uOpen:false, clearArm:false}); if (saved) this.toast('GAME SAVED · PICK IT UP ANY TIME'); }
   buy(p){
     const P = this.P; if (P.tickets < p.cost) { window.Arcade && window.Arcade.sfx('bad'); return; }
     const left = P.tickets - p.cost, patch = {tickets:left, prizes:{...P.prizes,[p.id]:(P.prizes[p.id]||0)+1}};
@@ -1177,7 +1327,7 @@ class Component extends DCLogic {
     // leaderboard
     const B = s.cloud ? {e:[]} : (s.lbOpen || !s.game) ? getJSON(BOARD_KEY,{e:[]}) : {e:[]}, myK = this.cloudUid || this.profKey();
     const lbRows = (g, mode, n) => { if (s.cloud && (s.lbOpen || !s.game)) this.needBoard(g); let e = s.cloud ? ((this.cloudBoard||{})[g]||[]).slice() : B.e.filter(x=>x.g==g); if (mode=='edu') e = e.filter(x=>x.edu); if (mode=='reg') e = e.filter(x=>!x.edu);
-      return e.sort((a,b)=>b.s-a.s).slice(0,n).map((x,i)=>({rank:i+1, name:x.u, score:x.s.toLocaleString(), badge: x.edu?'LEARN':'', hasBadge:!!x.edu, date:x.d||'', bg: x.k==myK ? '#D5F367' : (i%2?'#ffffff':'#f6f3e6'), weight: x.k==myK ? 700 : 500, medal: ['#F9BF01','#B9C4BF','#DD8B03'][i]||'transparent', rankFg: i<3 ? '#121313' : '#ffffff', rankFgDark: '#121313'})); };
+      return e.sort((a,b)=>b.s-a.s).slice(0,n).map((x,i)=>({rank:i+1, avImg: avSVG(avDec(x.av), x.al||0), name:x.u, score:x.s.toLocaleString(), badge: x.edu?'LEARN':'', hasBadge:!!x.edu, date:x.d||'', bg: x.k==myK ? '#D5F367' : (i%2?'#ffffff':'#f6f3e6'), weight: x.k==myK ? 700 : 500, medal: ['#F9BF01','#B9C4BF','#DD8B03'][i]||'transparent', rankFg: i<3 ? '#121313' : '#ffffff', rankFgDark: '#121313'})); };
     const uv = (s.uVal||'').trim(), ureg = s.uOpen ? getJSON(UNAME_KEY,{}) : {}, uOwner = ureg[uv.toLowerCase()];
     const pad = s.game && PADS[s.game];
     const mkPad = key => ({down: e=>{ if (e && e.preventDefault) e.preventDefault(); this.padHeld[key] = 1; fireKey(key,'keydown'); }, up: ()=>{ if (this.padHeld[key]) { this.padHeld[key] = 0; fireKey(key,'keyup'); } }});
@@ -1297,7 +1447,7 @@ class Component extends DCLogic {
       admActs: [['tix','Set tickets'],['zero','Reset tickets to 0'],['bests','Clear my high scores'],['saves','Clear my saved games'],['ach','Reset my achievements'],['all','Reset my whole profile']].map(([id,label])=>({label: s.admArm==id ? 'Tap again to confirm' : label, bg: s.admArm==id ? '#B3001B' : (id=='all'?'#ffe1dd':'#ffffff'), fg: s.admArm==id ? '#ffffff' : (id=='all'?'#8f0016':'#015640'), go: ()=>this.adminAct(id)})),
       admGames: [{id:'_tix',title:'Overall · tickets'}, ...GAMES].map(x=>({label:x.title, bg: (s.admGame||'_tix')==x.id ? '#015640' : '#ffffff', fg: (s.admGame||'_tix')==x.id ? '#ffffff' : '#015640', pick: ()=>this.setState({admGame:x.id, admArm:''})})),
       admRows: (()=>{ const g0 = s.admGame||'_tix'; let e; if (s.cloud) { if (s.adminOpen) this.needBoard(g0); e = ((this.cloudBoard||{})[g0]||[]).slice(); } else e = getJSON(BOARD_KEY,{e:[]}).e.filter(x=>x.g==g0);
-        return e.sort((a,b)=>b.s-a.s).slice(0,50).map((x,i)=>({rank:i+1, name:x.u, score:x.s.toLocaleString(), date:x.d||'', del: ()=>this.adminDelete(g0, x), delLabel: s.admArm=='del:'+(x.id||x.k+x.s) ? 'Confirm' : (g0=='_tix' ? 'Remove player' : 'Delete')})); })(),
+        return e.sort((a,b)=>b.s-a.s).slice(0,50).map((x,i)=>({rank:i+1, avImg: avSVG(avDec(x.av), x.al||0), name:x.u, score:x.s.toLocaleString(), date:x.d||'', del: ()=>this.adminDelete(g0, x), delLabel: s.admArm=='del:'+(x.id||x.k+x.s) ? 'Confirm' : (g0=='_tix' ? 'Remove player' : 'Delete')})); })(),
       admEmpty: s.cloud && !this.cloudUid ? 'Log in to your online account to moderate the global leaderboard.' : 'No entries on this board.',
       closeCode: ()=>this.setState({codeOpen:false}),
       codeInput: e=>this.setState({codeVal:e.target.value}),
@@ -1315,7 +1465,22 @@ class Component extends DCLogic {
       shopGames: Object.entries(UPG).map(([gid,list])=>{ const gm = GAMES.find(x=>x.id==gid); return {id:gid, name:gm.title, color:gm.color, icon:ICON(gid),
         ups: list.map(u=>{ const lv = ((P.upg||{})[gid]||{})[u.k]||0, max = u.c.length, maxed = lv>=max, cost = maxed?0:u.c[lv], can = !maxed && P.tickets>=cost;
           return {key:gid+u.k, n:u.n, d:u.d, lv:lv+'/'+max, pips:[...Array(max)].map((_,i)=>({k:i, bg:i<lv?'#F9BF01':'#d9d3bd'})), label: maxed?'MAXED':cost.toLocaleString()+' tix', bg: maxed?'#cfc9b3':can?'#015640':'#bdb7a1', fg: maxed?'#4a4a4a':'#ffffff', cur: can?'pointer':'default', buy: ()=>this.buyUpg(gid,u.k)}; }) }; }),
-      prizes: PRIZES.map(p=>{ const ok = P.tickets>=p.cost; return {...p, owned:P.prizes[p.id]||0, cost:p.cost.toLocaleString(), btnBg: ok?'#015640':'#D9D9D9', btnFg: ok?'#ffffff':'#4a4a4a', cursor: ok?'pointer':'not-allowed', buy:()=>this.buy(p)}; }),
+      prizes: PRIZES.map(p=>{ const ok = P.tickets>=p.cost; return {...p, img:PZ(p.art), tc:PTIER[p.tier].c, tbg:PTIER[p.tier].bg, owned:P.prizes[p.id]||0, cost:p.cost.toLocaleString(), btnBg: ok?'#015640':'#D9D9D9', btnFg: ok?'#ffffff':'#4a4a4a', cursor: ok?'pointer':'not-allowed', buy:()=>this.buy(p)}; }),
+      kioskPrizes: PRIZES.filter((p,i)=>i%2==0).map(p=>({img:PZ(p.art), op: P.prizes[p.id] ? 1 : .55})),
+      ptCounter: (s.prizeTab||'counter')=='counter', ptShelf: s.prizeTab=='shelf', ptPlayed: s.prizeTab=='played',
+      ptTabs: [['counter','Prize Counter'],['shelf','Trophy Shelves'],['played','Most Played']].map(([id,t])=>({id, t, bg:(s.prizeTab||'counter')==id?'#015640':'#ffffff', fg:(s.prizeTab||'counter')==id?'#ffffff':'#015640', pick:()=>this.setState({prizeTab:id})})),
+      shelves: ['Common','Rare','Epic','Legendary'].map(t=>({t, c:PTIER[t].c, items: PRIZES.filter(p=>p.tier==t).map(p=>{ const n = P.prizes[p.id]||0; return {id:p.id, name:p.name, img:PZ(p.art), n:'×'+n, has:n>0, multi:n>1, filt:n?'':'grayscale(1) brightness(.3)', label:n?p.name:'???'}; })})),
+      shelfCount: PRIZES.filter(p=>P.prizes[p.id]).length+' / '+PRIZES.length+' prizes on display',
+      mostPlayed: (()=>{ const rows = GAMES.map(gm=>({id:gm.id, name:gm.title, color:gm.color, icon:ICON(gm.id), n:P.played[gm.id]||0, best:(P.best[gm.id]||0).toLocaleString()})).sort((a,b)=>b.n-a.n); const mxp = Math.max(1, ...rows.map(r=>r.n)); return rows.map((r,i)=>({...r, rank:i+1, w:Math.round(r.n/mxp*100)+'%', nLabel:r.n+(r.n==1?' play':' plays')})); })(),
+      playedTotal: plays(P).toLocaleString()+' games finished in total · kept with your profile across every update',
+      avImg: avSVG(P.avatar, (P.ach||[]).length), avLevel: (P.ach||[]).length, avFrameName: (avFrame((P.ach||[]).length)||{n:'No'}).n+' frame',
+      avOpen: !!s.avOpen, openAv: ()=>{ this.keys = {}; this.setState({avOpen:true, avTab:s.avTab||'hat'}); }, closeAv: ()=>this.closeAll(),
+      avTabs: [...AVK.map(k=>[k,AVP[k].t]),['cursor','Cursor']].map(([id,t])=>({id, t, bg:(s.avTab||'hat')==id?'#015640':'#ffffff', fg:(s.avTab||'hat')==id?'#ffffff':'#015640', pick:()=>this.setState({avTab:id})})),
+      avOpts: (()=>{ const tab = s.avTab||'hat', n = (P.ach||[]).length, adm = s.admin, cur = avNorm(P.avatar);
+        if (tab=='cursor') return CURSORS.map(c=>{ const ok = adm || n>=c.r, on = (P.cursor||'')==c.id; return {key:'c'+c.id, n:c.n, img: c.id ? svgURI('<g transform="translate(16 16)">'+c.s+'</g>') : svgURI('<path d="M20 12l0 34l9-9l6 14l6-3l-6-13l12 0z" fill="#fff" stroke="#121313" stroke-width="3"/>'), lockTxt: ok?(on?'Selected':''):'🔒 '+c.r+' achievements', border: on?'#015640':'transparent', bg: ok?'#ffffff':'#e8e4d4', op: ok?1:.55, pick:()=>{ if (!ok) { window.Arcade && window.Arcade.sfx('bad'); return; } this.setP({cursor:c.id}); applyCursor(c.id); window.Arcade && window.Arcade.sfx('blip'); }}; });
+        return AVP[tab].o.map((o,i)=>{ const ok = adm || n>=(o.r||0), on = cur[tab]==i; return {key:tab+i, n:o.n, img: avSVG({...cur, [tab]:i}, n), lockTxt: ok?(on?'Wearing':''):'🔒 '+o.r+' achievements', border: on?'#015640':'transparent', bg: ok?'#ffffff':'#e8e4d4', op: ok?1:.55, pick:()=>{ if (!ok) { window.Arcade && window.Arcade.sfx('bad'); return; } this.setP({avatar:{...cur, [tab]:i}}); window.Arcade && window.Arcade.sfx('blip'); }}; }); })(),
+      avNext: (()=>{ const n = (P.ach||[]).length; const all = [...AVK.flatMap(k=>AVP[k].o.map(o=>({r:o.r||0,n:o.n+' '+AVP[k].t.toLowerCase()}))), ...CURSORS.map(c=>({r:c.r,n:c.n+' cursor'}))].filter(x=>x.r>n).sort((a,b)=>a.r-b.r)[0]; return all ? 'Next unlock: '+all.n+' at '+all.r+' achievements ('+(all.r-n)+' to go)' : 'Everything unlocked. Legend!'; })(),
+      hallPlayers: lbRows('_tix','all',6), hallEmpty: lbRows('_tix','all',1).length==0,
       toasts: s.toasts,
     };
   }
