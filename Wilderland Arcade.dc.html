@@ -42,6 +42,7 @@ button{font-family:inherit;}
       <button onClick="{{ openAccount }}" style="background:{{ acctHeadBg }}; color:{{ acctHeadFg }}; border:1.5px solid #D5F367; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ acctHeadLabel }}</button>
       <button onClick="{{ openCode }}" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">{{ adminLabel }}</button>
       <button onClick="{{ toggleSound }}" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">{{ soundLabel }}</button>
+      <button onClick="{{ toggleFx }}" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">{{ fxLabel }}</button>
     </div>
   </header>
 
@@ -218,7 +219,8 @@ button{font-family:inherit;}
             <div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#007a37;">{{ game.pitch }}</div>
             <div style="font-size:30px; font-weight:700; color:#015640; line-height:1.05;">{{ game.title }}</div>
           </div>
-          <button onClick="{{ closeGame }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;">Save &amp; leave · Esc</button>
+          <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;"><sc-if value="{{ showCash }}" hint-placeholder-val="{{ true }}"><button onClick="{{ cashOutGame }}" title="End this run now and collect tickets for your score so far" style="background:#F9BF01; color:#121313; border:none; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;">{{ cashLabel }}</button></sc-if>
+<button onClick="{{ closeGame }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;">Save &amp; leave · Esc</button></div>
         </div>
         <div style="display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-size:14px; font-weight:700;">
           <div style="background:#ffffff; border-radius:999px; padding:6px 14px;">Score <span style="color:#015640;">{{ liveScore }}</span></div>
@@ -744,7 +746,7 @@ const GAMES = [
   {id:'pong',title:'Pong',name:'PONG',color:'#E9B9F7',glyph:'▯·▯',rate:0.1,target:400,pitch:'THE ORIGINAL RIVALRY'},
   {id:'memory',title:'Memory Match',name:'MEMORY',color:'#FBB99D',glyph:'◆◆',rate:0.06,target:600,pitch:'PAIRS PAY, MISSES COST'},
   {id:'whack',title:'Whack-a-Gopher',name:'WHACK',color:'#DD8B03',glyph:'• •',rate:0.12,target:600,pitch:'LIVES, NOT A CLOCK'},
-  {id:'2048',title:'2048',name:'2048',color:'#F9BF01',glyph:'2048',rate:0.02,target:2000,pitch:'SLIDE, MERGE, REPEAT'},
+  {id:'2048',title:'2048',name:'2048',color:'#F9BF01',glyph:'2048',rate:0.02,target:16000,pitch:'SLIDE, MERGE, REPEAT'},
   {id:'tictactoe',title:'Tic-Tac-Toe',name:'TIC-TAC',color:'#EA55AB',glyph:'✕◯',rate:0.3,target:100,pitch:'OUTSMART THE MACHINE'},
   {id:'reaction',title:'Reaction Test',name:'REFLEX',color:'#D5F367',glyph:'◉',rate:0.12,target:300,pitch:'HOW FAST ARE YOU, REALLY'},
   {id:'typing',title:'Typing Race',name:'TYPE RACE',color:'#C7F1EE',glyph:'Aa',rate:0.12,target:300,pitch:'FINGERS ON THE HOME ROW'},
@@ -758,7 +760,12 @@ const GAMES = [
   {id:'trace',title:'Trace & Write',name:'TRACE',color:'#fbf8ec',glyph:'✎',rate:0.08,target:1600,pitch:'HANDWRITING PRACTICE',isNew:true,learn:true},
   {id:'idle',title:'The Mines',name:'THE MINES',color:'#c48a4a',glyph:'⛏',rate:0,target:0,pitch:'DIG · MERGE · CASH OUT',isNew:true,idle:true},
 ];
-const svgURI = b => 'data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'+b+'</svg>');
+// Animations switch (saved per device). Off = static icons, no CSS motion, games draw fewer effects.
+let LOWFX = false; try { LOWFX = localStorage.getItem('wl-arcade-lowfx') === '1'; } catch(e){}
+const stripAnim = b => b.replace(/<animate(Transform)?\b[^>]*\/>/g, '').replace(/<animate(Transform)?\b[^>]*>[\s\S]*?<\/animate(Transform)?>/g, '');
+const svgURI = b => 'data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'+(LOWFX ? stripAnim(b) : b)+'</svg>');
+const applyLowFx = on => { if (typeof document=='undefined') return; let el = document.getElementById('wl-lowfx'); if (!on) { if (el) el.remove(); return; }
+  if (!el) { el = document.createElement('style'); el.id = 'wl-lowfx'; document.head.appendChild(el); } el.textContent = '*, *::before, *::after { animation: none !important; transition: none !important; }'; };
 const an = (a,v,d,x) => '<animate attributeName="'+a+'" values="'+v+'" dur="'+d+'s" repeatCount="indefinite" '+(x||'')+'/>';
 const at = (t,v,d,x) => '<animateTransform attributeName="transform" type="'+t+'" values="'+v+'" dur="'+d+'s" repeatCount="indefinite" '+(x||'')+'/>';
 const SPLINE = 'calcMode="spline" keySplines="0.4 0 0.2 1;0.4 0 0.2 1" keyTimes="0;0.5;1"';
@@ -783,7 +790,7 @@ const ICONS = {
   trace: '<path id="tA" d="M14 52L32 12L50 52M21 38H43" fill="none" stroke="#EDE9D8" stroke-opacity=".25" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 52L32 12L50 52M21 38H43" fill="none" stroke="#D5F367" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="120">'+an('stroke-dashoffset','120;0;0',2.4)+'</path><g><animateMotion dur="2.4s" repeatCount="indefinite" keyPoints="0;1;1" keyTimes="0;0.83;1" calcMode="linear" path="M14 52L32 12L50 52M21 38H43"/><path d="M0 0L6 -14L10 -12L4 2Z" fill="#F9BF01"/><path d="M0 0L2 -4L4 -3Z" fill="#121313"/></g>',
   idle: '<path d="M6 58L14 38L26 34L40 38L52 32L60 58Z" fill="#6b4a2b"/><path d="M14 46l6-2M30 42l5 3M44 44l6-3" stroke="#c48a4a" stroke-width="3" stroke-linecap="round"/><path d="M22 54l4-6l5 6zM40 54l4-5l4 5z" fill="#F9BF01"/><g>'+at('rotate','-30 34 30;20 34 30;-30 34 30',.7,SPLINE)+'<path d="M34 30L46 8" stroke="#8D5B1D" stroke-width="4" stroke-linecap="round"/><path d="M36 6Q46 2 56 12" fill="none" stroke="#c9ccd1" stroke-width="5" stroke-linecap="round"/></g><path d="M50 26l2 -5l2 5l5 2l-5 2l-2 5l-2-5l-5-2z" fill="#9fd8ff">'+an('opacity','0;1;0',1.4)+'</path>',
 };
-const ICON = id => svgURI(ICONS[id] || '');
+const _iconCache = {}; const ICON = id => { const k = id+(LOWFX?'~':''); return _iconCache[k] || (_iconCache[k] = svgURI(ICONS[id] || '')); };
 const KIOSK_ICONS = {
   shop: svgURI('<g>'+at('rotate','-20 26 38;10 26 38;-20 26 38',.9,SPLINE)+'<rect x="22" y="14" width="8" height="34" rx="3" fill="#8D5B1D"/><rect x="10" y="8" width="32" height="12" rx="4" fill="#c9ccd1"/></g><circle cx="44" cy="44" r="12" fill="none" stroke="#F9BF01" stroke-width="6" stroke-dasharray="6 3.4">'+at('rotate','0 44 44;360 44 44',3)+'</circle><circle cx="44" cy="44" r="4" fill="#F9BF01"/>'),
   board: svgURI('<path d="M20 10H44V26A12 12 0 0 1 20 26Z" fill="#F9BF01"/><path d="M20 14H12A8 8 0 0 0 20 26M44 14H52A8 8 0 0 1 44 26" fill="none" stroke="#F9BF01" stroke-width="3"/><rect x="28" y="36" width="8" height="10" fill="#F9BF01"/><rect x="20" y="46" width="24" height="7" rx="2" fill="#DD8B03"/><circle cx="26" cy="16" r="2" fill="#fff">'+an('opacity','0;1;0',1.6)+'</circle>'),
@@ -806,7 +813,7 @@ const PARENT_KEY = 'wl-arcade-parent';
 const pinRules = (a,b) => [['4–8 digits', /^\d{4,8}$/.test(a)], ['Not all one digit', a.length>0 && !/^(\d)\1+$/.test(a)], ['Not a straight run (1234)', a.length>0 && !'0123456789012345678909876543210987654321'.includes(a)], ['Codes match', a.length>0 && a===b]];
 const LEARN_NOTES = {idle:'Math geodes appear in the rock — answer the problem to crack one open for a huge pile of ore. Tapping the rock digs less.', flappy:'Fly through the gap with the right answer.', snake:'Eat the apple with the right answer.', typing:'Sight words for early readers.', whack:'Whack only gophers holding the right answer.', memory:'Match each problem with its answer.', tictactoe:'Answer a question to claim each square.', crossing:'Hop into the den with the right answer.', td:'Bonus-gold question after every wave.', breakout:'Lose the ball? Answer to keep your life.', pong:'Answer to block points scored against you.', '2048':'Stuck? Answer to clear two tiles (3 per board).', reaction:'Click only when the right answer flashes.', simon:'Wrong pad? Answer for one retry.', mines:'Hit a mine? Answer to defuse it.', connect4:'Answer a question to drop each disc.', stack:'Bonus question every 5 lines; answer for a second chance.', rootout:'This machine always counts as learning time.', trace:'This machine always counts as learning time.'};
 const fireKey = (key,type) => { try { window.dispatchEvent(new KeyboardEvent(type,{key, bubbles:true, cancelable:true})); } catch(e){} };
-const TIPS = {idle:'Your miners dig even while you are away. Drag two matching miners together to merge them into a stronger one. Sell ore for tickets — up to 400 a day. Spend ore in Upgrades for sharper picks, carts and a Foreman who merges for you.', snake:'Each level has a new maze. Gold apples are worth 3, mushrooms slow time, blue berries shrink your tail. Purple portals connect — and dashed edges wrap around.',breakout:'Hit with the paddle edge to angle shots. Long combos multiply every brick.',flappy:'Tap in short, steady bursts and aim for the middle of each gap.',pong:'Return off the paddle tip for steep angles the CPU struggles to reach.',memory:'Work row by row so you remember where you have already looked.',whack:'Red bombs cost a life — leave them. Every 15-hit combo earns a Quake, Freeze or Shield. The Gopher King shows up every 5 levels.','2048':'Keep your biggest tile pinned in one corner and avoid the opposite direction.',tictactoe:'Take the centre or a corner. Two threats at once is a guaranteed win.',reaction:'Watch the colour, not the words. Gold is a decoy.',typing:'Accuracy beats speed — a missed word scores nothing.',simon:'Say the colours out loud, or chunk them in threes.',mines:'A 1 touching only one hidden tile means that tile is a mine.',connect4:'The centre column is part of the most fours. Watch the diagonals.',td:'Pick a mode — Nightmare pays ×3. Ghosts are invisible unless a Lantern (or a Frost tower, up close) lights them; Boulders can’t hit flying crows; shield beetles shrug off one hit per pip. Only 4 Gold Pans pay out.',crossing:'Wait for gaps instead of rushing. Diving turtles fade before they sink, and gators bite at the head end.',stack:'Keep the stack flat and leave one column open for long logs. A saw (X) rescues a messy bottom row.',rootout:'Purple “!” tags mark invasives early on — from level 3 the labels disappear, so read the fact cards. Every 5 perfect drops earns a weed puller.',trace:'Cover the whole grey shape — ink outside the lines costs points (it turns red). Tap Camera to write on real paper and hold it up instead.'};
+const TIPS = {idle:'Your miners dig even while you are away. Drag two matching miners together to merge them into a stronger one. Tap a miner to sell it. Keep tapping the rock for a combo, hit the white crack for ×5, and tap golden carts as they roll by. Cash out ore for tickets any time — no limit.', snake:'Each level has a new maze. Gold apples are worth 3, mushrooms slow time, blue berries shrink your tail. Purple portals connect — and dashed edges wrap around.',breakout:'Hit with the paddle edge to angle shots. Long combos multiply every brick.',flappy:'Tap in short, steady bursts and aim for the middle of each gap.',pong:'Return off the paddle tip for steep angles the CPU struggles to reach.',memory:'Work row by row so you remember where you have already looked.',whack:'Red bombs cost a life — leave them. Every 15-hit combo earns a Quake, Freeze or Shield. The Gopher King shows up every 5 levels.','2048':'Keep your biggest tile pinned in one corner and avoid the opposite direction.',tictactoe:'Take the centre or a corner. Two threats at once is a guaranteed win.',reaction:'Watch the colour, not the words. Gold is a decoy.',typing:'Accuracy beats speed — a missed word scores nothing.',simon:'Say the colours out loud, or chunk them in threes.',mines:'A 1 touching only one hidden tile means that tile is a mine.',connect4:'The centre column is part of the most fours. Watch the diagonals.',td:'Pick a mode — Nightmare pays ×3. Ghosts are invisible unless a Lantern (or a Frost tower, up close) lights them; Boulders can’t hit flying crows; shield beetles shrug off one hit per pip. Only 4 Gold Pans pay out.',crossing:'Wait for gaps instead of rushing. Diving turtles fade before they sink, and gators bite at the head end.',stack:'Keep the stack flat and leave one column open for long logs. A saw (X) rescues a messy bottom row.',rootout:'Purple “!” tags mark invasives early on — from level 3 the labels disappear, so read the fact cards. Every 5 perfect drops earns a weed puller.',trace:'Cover the whole grey shape — ink outside the lines costs points (it turns red). Tap Camera to write on real paper and hold it up instead.'};
 const RIVALS = [['littletimmy','Little Timmy',3],['jimmy','Jimmy',8],['timmy','Timmy',15],['baubau','Lord Emperor Bau Bau',30],['thetimmy','THE TIMMY',60]];
 const RIVAL = id => RIVALS.find(r=>r[0]==id);
 // Upgrade Workshop: permanent per-game upgrades bought with tickets. Games read the level with A.U(key).
@@ -826,7 +833,11 @@ const UPG = {
 const SPEEDS = {slow:.6, normal:1, fast:1.4, turbo:1.9};
 const SPEED_TIX = {slow:.5, normal:1, fast:1.5, turbo:2.5};
 // Fair payout: every game pays ~100 tickets for hitting its target score, scaling smoothly above and below.
-const baseTix = (g, score) => Math.max(1, Math.ceil(100 * Math.pow(Math.max(0, score) / Math.max(1, g.target), 0.85)));
+// Fair payout: tickets come from TIME played × how well you did, so 10 minutes of any game pays about the same.
+// ~40 tickets per minute at the target score; a weak run pays less, a great one up to 2.5× more.
+const TIX_PER_MIN = 40;
+const baseTix = (g, score, mins) => { if (!(score > 0)) return 1; const perf = Math.max(.25, Math.min(2.5, Math.pow(score / Math.max(1, g.target), 0.5)));
+  return Math.max(1, Math.ceil(TIX_PER_MIN * Math.max(.25, Math.min(20, mins)) * perf)); };
 const SPEED_GAMES = ['snake','breakout','flappy','pong','whack','simon','memory','connect4','td','crossing','stack','rootout'];
 const POS = GAMES.map((g,i)=>({x:30+(i%5)*162, y:50+Math.floor(i/5)*180}));
 const NG = GAMES.length;
@@ -1002,7 +1013,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-11-19h';
+const BUILD = '2026-11-19i';
 const SCRIPTS = ['arcade-core.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-edu.js','games-idle.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
@@ -1149,17 +1160,18 @@ class Component extends DCLogic {
   componentWillUnmount(){ this.onHide && this.onHide(); cancelAnimationFrame(this.raf); clearInterval(this.autoIv); clearInterval(this.saveIv); window.removeEventListener('keydown',this.kd); window.removeEventListener('keyup',this.ku); window.removeEventListener('resize',this.onResize);
     window.removeEventListener('pagehide',this.onHide); window.removeEventListener('beforeunload',this.onHide); document.removeEventListener('visibilitychange',this.onVis); this.ro && this.ro.disconnect(); this.unmountGame(); }
   componentDidUpdate(){
+    if (this._fx !== LOWFX) { this._fx = LOWFX; applyLowFx(LOWFX); if (window.Arcade) window.Arcade.lowFx = LOWFX; }
     if ((this.P.cursor||'') !== this._cursor) { this._cursor = this.P.cursor||''; applyCursor(this._cursor); }
     const {game} = this.state;
     if (game && this.gameRef.current && this.mounted != game && this.ready) {
       this.unmountGame(); this.mounted = game;
-      const A = window.Arcade; A.upg = {...((this.P.upg||{})[game]||{})}; A.immortal = this.state.admin && this.state.immortal; A.diff = (RIVAL(this.P.difficulty) && game!='connect4') ? 'hard' : this.P.difficulty; A.speed = SPEEDS[this.P.speed] || 1; A.muted = this.state.muted || this.props.sound === false;
+      const A = window.Arcade; A.lowFx = LOWFX; A.upg = {...((this.P.upg||{})[game]||{})}; A.immortal = this.state.admin && this.state.immortal; A.diff = (RIVAL(this.P.difficulty) && game!='connect4') ? 'hard' : this.P.difficulty; A.speed = SPEEDS[this.P.speed] || 1; A.muted = this.state.muted || this.props.sound === false;
       A.edu = {on: !!this.eduOn() && EDU_SWITCH.includes(game), topic: this.P.edu.topic};
       const resume = this.P.saves[this.saveKey(game)] || null;
       this.setState({hint:null});
-      this.snapFn = null; this._perfect = false; this.startSess(game);
+      this.snapFn = null; this._perfect = false; this._roundT0 = Date.now(); this.startSess(game);
       const am = n => this.state.admin ? Math.round(n*(this.state.adminMult||1)) : n;
-      this.cleanup = A.games[game].mount(this.gameRef.current, { score: n => this.setState({liveScore:am(n)}), over: n => this.finish(game, am(n)), hint: h => this.setState({hint:h}),
+      this.cleanup = A.games[game].mount(this.gameRef.current, { score: n => { const v = am(n); if (v === this.state.liveScore) return; const now = performance.now(); clearTimeout(this._sTo); if (now - (this._sT||0) < 150) { this._sTo = setTimeout(()=>{ this._sT = performance.now(); this.setState({liveScore:v}); }, 160); return; } this._sT = now; this.setState({liveScore:v}); }, over: n => this.finish(game, am(n)), hint: h => this.setState({hint:h}),
         resume, snap: f => { this.snapFn = f; }, stat: (k,v,m) => this.stat(k,v,m),
         stored: this.state.admin ? null : (this.P.idle || null), store: d => { if (this.state.admin) return; try { this.P = {...this.P, idle: JSON.parse(JSON.stringify(d))}; } catch(e) { return; } this.persist(); },
         tix: (n, score, label) => this.grantTix(game, n, score, label), perfect: () => { this._perfect = true; },
@@ -1207,6 +1219,9 @@ class Component extends DCLogic {
     if (P.tickets < cost) { window.Arcade && window.Arcade.sfx('bad'); this.toast('NEED '+(cost-P.tickets).toLocaleString()+' MORE TICKETS'); return; }
     const upg = {...(P.upg||{})}; upg[gid] = {...(upg[gid]||{}), [k]:cur+1};
     this.setP({tickets:P.tickets-cost, upg, stats:{...P.stats, sum:{...P.stats.sum, upgrades:(P.stats.sum.upgrades||0)+1}}}); window.Arcade && window.Arcade.sfx('coin'); this.toast(u.n.toUpperCase()+' · LEVEL '+(cur+1)); }
+  cashOutGame(){ const g = this.state.game; if (!g || g=='idle') return; const sc = this.state.liveScore || 0;
+    if (!(sc > 0)) { this.toast('SCORE SOME POINTS FIRST'); window.Arcade && window.Arcade.sfx('bad'); return; }
+    this.snapFn = null; this.finish(g, sc); this.unmountGame(false); this.setState({liveScore:0}); this.toast('CASHED OUT · NEW RUN READY'); }
   grantTix(id, n, score, label){ if (this.state.admin) return 0; const P = this.P, best = {...P.best};
     let tix = Math.max(0, Math.floor(n)); if (this.isLearn(id)) tix = Math.ceil(tix*1.25); if (!tix) return 0;
     const better = score > (best[id]||0); if (better) best[id] = score;
@@ -1218,7 +1233,8 @@ class Component extends DCLogic {
     const g = GAMES.find(x=>x.id==id), mult = this.props.ticketMultiplier ?? 1, P = this.P;
     const best = {...P.best}, played = {...P.played, [id]:(P.played[id]||0)+1}, sum = {...P.stats.sum};
     const dm = RIVAL(P.difficulty) ? (id=='connect4'?RIVAL(P.difficulty)[2]:2) : ({easy:.75,normal:1,hard:2}[P.difficulty]||1);
-    let tix = Math.ceil(baseTix(g, score) * mult * dm), lines = [];
+    const mins = (Date.now() - (this._roundT0 || Date.now())) / 60000; this._roundT0 = Date.now();
+    let tix = Math.ceil(baseTix(g, score, mins) * mult * dm), lines = [mins < 1 ? Math.max(1,Math.round(mins*60))+' SEC PLAYED' : Math.round(mins)+' MIN PLAYED'];
     if (dm != 1) lines.push((RIVAL(P.difficulty) ? RIVAL(P.difficulty)[1].toUpperCase() : P.difficulty.toUpperCase())+' ×'+dm);
     const spm = SPEED_TIX[P.speed] || 1; if (spm != 1) { tix = Math.max(1, Math.ceil(tix*spm)); lines.push(P.speed.toUpperCase()+' SPEED ×'+spm); }
     if (this._perfect) { tix *= 3; lines.push('PERFECT ×3'); sum.perfect = (sum.perfect||0)+1; } this._perfect = false;
@@ -1383,6 +1399,8 @@ class Component extends DCLogic {
       boardShadow: ni===NG+2?glow:base, learnShadow: ni===NG+3?glow:base, boardIcon: KIOSK_ICONS.board, learnIcon: KIOSK_ICONS.learn,
       lbLeader: (lbRows('_tix','all',1)[0]||{}).name || 'Nobody yet',
       tickets: P.tickets.toLocaleString(), soundLabel: s.muted ? 'SOUND OFF' : 'SOUND ON',
+      showCash: !!s.game && s.game!='idle', cashOutGame: ()=>this.cashOutGame(), cashLabel: s.admin ? 'Cash out · (admin)' : 'Cash out · '+(s.liveScore||0).toLocaleString(),
+      fxLabel: LOWFX ? 'ANIMATIONS OFF' : 'ANIMATIONS ON', toggleFx: ()=>{ LOWFX = !LOWFX; try { localStorage.setItem('wl-arcade-lowfx', LOWFX?'1':'0'); } catch(e){} applyLowFx(LOWFX); if (window.Arcade) window.Arcade.lowFx = LOWFX; this.toast(LOWFX ? 'ANIMATIONS OFF · SMOOTHER ON SLOW DEVICES' : 'ANIMATIONS ON'); this.forceUpdate(); },
       toggleSound: ()=>{ const m=!s.muted; this.setState({muted:m}); if (window.Arcade) window.Arcade.muted = m; },
       wrapRef: this.wrapRef, gameRef: this.gameRef, scale: s.scale, floorTransform: 'scale(' + s.scale + ')', scaledH: Math.round(FH*s.scale),
       cabinets: GAMES.map((c,i)=>({...c, ...POS[i], icon: ICON(c.id), best:(P.best[c.id]||0).toLocaleString(), daily:i==di, saved:savedOf(c.id), isNew:!!c.isNew && !P.played[c.id] && !savedOf(c.id), learn: !!c.learn || (eduOn && EDU_SWITCH.includes(c.id)), shadow: ni===i?glow:base, open:()=>this.open(c.id)})),
@@ -1462,21 +1480,21 @@ class Component extends DCLogic {
       diffNote: {easy:'Easy pays ×0.75 tickets',normal:'',hard:'Hard pays ×1.5 tickets',}[P.difficulty] || (RIVAL(P.difficulty) ? (s.game=='connect4' ? RIVAL(P.difficulty)[1]+' pays ×'+RIVAL(P.difficulty)[2]+' tickets' : 'Rivals are Connect 4 only · playing Hard (×1.5)') : ''), payout: s.payout,
       prizesOpen: s.prizesOpen, shopOpen: !!s.shopOpen, openShop: ()=>{ this.keys = {}; this.setState({shopOpen:true}); }, closeShop: ()=>this.closeAll(), shopShadow: ni===NG+4?glow:base, shopIcon: KIOSK_ICONS.shop,
       shopOwned: Object.values(P.upg||{}).reduce((a,o)=>a+Object.values(o).reduce((x,y)=>x+y,0),0), shopTotal: Object.values(UPG).reduce((a,l)=>a+l.reduce((x,u)=>x+u.c.length,0),0),
-      shopGames: Object.entries(UPG).map(([gid,list])=>{ const gm = GAMES.find(x=>x.id==gid); return {id:gid, name:gm.title, color:gm.color, icon:ICON(gid),
+      shopGames: !s.shopOpen ? [] : Object.entries(UPG).map(([gid,list])=>{ const gm = GAMES.find(x=>x.id==gid); return {id:gid, name:gm.title, color:gm.color, icon:ICON(gid),
         ups: list.map(u=>{ const lv = ((P.upg||{})[gid]||{})[u.k]||0, max = u.c.length, maxed = lv>=max, cost = maxed?0:u.c[lv], can = !maxed && P.tickets>=cost;
           return {key:gid+u.k, n:u.n, d:u.d, lv:lv+'/'+max, pips:[...Array(max)].map((_,i)=>({k:i, bg:i<lv?'#F9BF01':'#d9d3bd'})), label: maxed?'MAXED':cost.toLocaleString()+' tix', bg: maxed?'#cfc9b3':can?'#015640':'#bdb7a1', fg: maxed?'#4a4a4a':'#ffffff', cur: can?'pointer':'default', buy: ()=>this.buyUpg(gid,u.k)}; }) }; }),
-      prizes: PRIZES.map(p=>{ const ok = P.tickets>=p.cost; return {...p, img:PZ(p.art), tc:PTIER[p.tier].c, tbg:PTIER[p.tier].bg, owned:P.prizes[p.id]||0, cost:p.cost.toLocaleString(), btnBg: ok?'#015640':'#D9D9D9', btnFg: ok?'#ffffff':'#4a4a4a', cursor: ok?'pointer':'not-allowed', buy:()=>this.buy(p)}; }),
+      prizes: !s.prizesOpen ? [] : PRIZES.map(p=>{ const ok = P.tickets>=p.cost; return {...p, img:PZ(p.art), tc:PTIER[p.tier].c, tbg:PTIER[p.tier].bg, owned:P.prizes[p.id]||0, cost:p.cost.toLocaleString(), btnBg: ok?'#015640':'#D9D9D9', btnFg: ok?'#ffffff':'#4a4a4a', cursor: ok?'pointer':'not-allowed', buy:()=>this.buy(p)}; }),
       kioskPrizes: PRIZES.filter((p,i)=>i%2==0).map(p=>({img:PZ(p.art), op: P.prizes[p.id] ? 1 : .55})),
       ptCounter: (s.prizeTab||'counter')=='counter', ptShelf: s.prizeTab=='shelf', ptPlayed: s.prizeTab=='played',
       ptTabs: [['counter','Prize Counter'],['shelf','Trophy Shelves'],['played','Most Played']].map(([id,t])=>({id, t, bg:(s.prizeTab||'counter')==id?'#015640':'#ffffff', fg:(s.prizeTab||'counter')==id?'#ffffff':'#015640', pick:()=>this.setState({prizeTab:id})})),
-      shelves: ['Common','Rare','Epic','Legendary'].map(t=>({t, c:PTIER[t].c, items: PRIZES.filter(p=>p.tier==t).map(p=>{ const n = P.prizes[p.id]||0; return {id:p.id, name:p.name, img:PZ(p.art), n:'×'+n, has:n>0, multi:n>1, filt:n?'':'grayscale(1) brightness(.3)', label:n?p.name:'???'}; })})),
+      shelves: !s.prizesOpen ? [] : ['Common','Rare','Epic','Legendary'].map(t=>({t, c:PTIER[t].c, items: PRIZES.filter(p=>p.tier==t).map(p=>{ const n = P.prizes[p.id]||0; return {id:p.id, name:p.name, img:PZ(p.art), n:'×'+n, has:n>0, multi:n>1, filt:n?'':'grayscale(1) brightness(.3)', label:n?p.name:'???'}; })})),
       shelfCount: PRIZES.filter(p=>P.prizes[p.id]).length+' / '+PRIZES.length+' prizes on display',
-      mostPlayed: (()=>{ const rows = GAMES.map(gm=>({id:gm.id, name:gm.title, color:gm.color, icon:ICON(gm.id), n:P.played[gm.id]||0, best:(P.best[gm.id]||0).toLocaleString()})).sort((a,b)=>b.n-a.n); const mxp = Math.max(1, ...rows.map(r=>r.n)); return rows.map((r,i)=>({...r, rank:i+1, w:Math.round(r.n/mxp*100)+'%', nLabel:r.n+(r.n==1?' play':' plays')})); })(),
+      mostPlayed: !s.prizesOpen ? [] : (()=>{ const rows = GAMES.map(gm=>({id:gm.id, name:gm.title, color:gm.color, icon:ICON(gm.id), n:P.played[gm.id]||0, best:(P.best[gm.id]||0).toLocaleString()})).sort((a,b)=>b.n-a.n); const mxp = Math.max(1, ...rows.map(r=>r.n)); return rows.map((r,i)=>({...r, rank:i+1, w:Math.round(r.n/mxp*100)+'%', nLabel:r.n+(r.n==1?' play':' plays')})); })(),
       playedTotal: plays(P).toLocaleString()+' games finished in total · kept with your profile across every update',
       avImg: avSVG(P.avatar, (P.ach||[]).length), avLevel: (P.ach||[]).length, avFrameName: (avFrame((P.ach||[]).length)||{n:'No'}).n+' frame',
       avOpen: !!s.avOpen, openAv: ()=>{ this.keys = {}; this.setState({avOpen:true, avTab:s.avTab||'hat'}); }, closeAv: ()=>this.closeAll(),
       avTabs: [...AVK.map(k=>[k,AVP[k].t]),['cursor','Cursor']].map(([id,t])=>({id, t, bg:(s.avTab||'hat')==id?'#015640':'#ffffff', fg:(s.avTab||'hat')==id?'#ffffff':'#015640', pick:()=>this.setState({avTab:id})})),
-      avOpts: (()=>{ const tab = s.avTab||'hat', n = (P.ach||[]).length, adm = s.admin, cur = avNorm(P.avatar);
+      avOpts: !s.avOpen ? [] : (()=>{ const tab = s.avTab||'hat', n = (P.ach||[]).length, adm = s.admin, cur = avNorm(P.avatar);
         if (tab=='cursor') return CURSORS.map(c=>{ const ok = adm || n>=c.r, on = (P.cursor||'')==c.id; return {key:'c'+c.id, n:c.n, img: c.id ? svgURI('<g transform="translate(16 16)">'+c.s+'</g>') : svgURI('<path d="M20 12l0 34l9-9l6 14l6-3l-6-13l12 0z" fill="#fff" stroke="#121313" stroke-width="3"/>'), lockTxt: ok?(on?'Selected':''):'🔒 '+c.r+' achievements', border: on?'#015640':'transparent', bg: ok?'#ffffff':'#e8e4d4', op: ok?1:.55, pick:()=>{ if (!ok) { window.Arcade && window.Arcade.sfx('bad'); return; } this.setP({cursor:c.id}); applyCursor(c.id); window.Arcade && window.Arcade.sfx('blip'); }}; });
         return AVP[tab].o.map((o,i)=>{ const ok = adm || n>=(o.r||0), on = cur[tab]==i; return {key:tab+i, n:o.n, img: avSVG({...cur, [tab]:i}, n), lockTxt: ok?(on?'Wearing':''):'🔒 '+o.r+' achievements', border: on?'#015640':'transparent', bg: ok?'#ffffff':'#e8e4d4', op: ok?1:.55, pick:()=>{ if (!ok) { window.Arcade && window.Arcade.sfx('bad'); return; } this.setP({avatar:{...cur, [tab]:i}}); window.Arcade && window.Arcade.sfx('blip'); }}; }); })(),
       avNext: (()=>{ const n = (P.ach||[]).length; const all = [...AVK.flatMap(k=>AVP[k].o.map(o=>({r:o.r||0,n:o.n+' '+AVP[k].t.toLowerCase()}))), ...CURSORS.map(c=>({r:c.r,n:c.n+' cursor'}))].filter(x=>x.r>n).sort((a,b)=>a.r-b.r)[0]; return all ? 'Next unlock: '+all.n+' at '+all.r+' achievements ('+(all.r-n)+' to go)' : 'Everything unlocked. Legend!'; })(),
