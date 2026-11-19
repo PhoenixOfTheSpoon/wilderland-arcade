@@ -5,7 +5,7 @@ service cloud.firestore {
     // Admin accounts (can remove leaderboard scores). Add more emails to the list if needed.
     function isAdmin() {
       return request.auth != null && request.auth.token.email_verified == true
-        && request.auth.token.email in ['jonah@wilderland.academy'];
+        && request.auth.token.email in ['jonah@wilderland.academy', 'hero@wilderland.academy'];
     }
 
     // Each player's saved progress: only they can read or write it.
@@ -29,6 +29,12 @@ service cloud.firestore {
     match /adjust/{uid} {
       allow read, delete: if request.auth != null && request.auth.uid == uid;
       allow create, update: if isAdmin();
+    }
+
+    // Global settings (current leaderboard season, full-reset time): everyone reads, only admins write.
+    match /config/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
     }
 
     // Leaderboards: anyone can read; signed-in players can post their own scores.

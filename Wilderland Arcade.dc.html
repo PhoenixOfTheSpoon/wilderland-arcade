@@ -318,19 +318,19 @@ button{font-family:inherit;}
           <div style="display:flex; flex-wrap:wrap; gap:6px;"><sc-for list="{{ admActs }}" as="a" hint-placeholder-count="6"><button onClick="{{ a.go }}" style="border:1.5px solid #015640; border-radius:999px; padding:7px 13px; font-weight:700; font-size:13px; cursor:pointer; background:{{ a.bg }}; color:{{ a.fg }};">{{ a.label }}</button></sc-for></div>
         </div>
         <div style="background:#ffffff; border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:10px;">
-          <div style="font-size:12px; font-weight:700; letter-spacing:0.1em; color:#015640;">LEADERBOARD MODERATION</div>
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;"><div style="font-size:12px; font-weight:700; letter-spacing:0.1em; color:#015640;">PLAYERS &amp; LEADERBOARD</div><div style="display:flex; gap:6px;"><button onClick="{{ reloadAll }}" style="border:none; border-radius:999px; padding:6px 12px; font-weight:700; font-size:12px; cursor:pointer; background:#014987; color:#ffffff;">Reload everyone</button><button onClick="{{ resetAll }}" style="border:none; border-radius:999px; padding:6px 12px; font-weight:700; font-size:12px; cursor:pointer; background:#B3001B; color:#ffffff;">{{ resetAllLabel }}</button></div></div>
           <div style="display:flex; flex-wrap:wrap; gap:4px;"><sc-for list="{{ admGames }}" as="f" hint-placeholder-count="8"><button onClick="{{ f.pick }}" style="border:1.5px solid #015640; border-radius:999px; padding:4px 10px; font-weight:700; font-size:12px; cursor:pointer; background:{{ f.bg }}; color:{{ f.fg }};">{{ f.label }}</button></sc-for></div>
           <sc-if value="{{ admIsTix }}" hint-placeholder-val="{{ true }}"><div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;"><label for="wl-admrm" style="font-size:12px; font-weight:700; color:#015640;">Tickets to remove per click</label><input id="wl-admrm" class="wl-field" value="{{ admRm }}" onChange="{{ inAdmRm }}" onKeyDown="{{ stopKey }}" placeholder="all" style="width:120px; font-family:inherit; font-size:14px; font-weight:700; border:1.5px solid #015640; border-radius:10px; padding:6px 10px;"><span style="font-size:11px; color:#4a4a4a;">Leave empty for all. Then press “− Tickets” on a player.</span></div></sc-if>
           <div style="display:flex; flex-direction:column; max-height:320px; overflow-y:auto; border-radius:10px; border:1px solid #e6e2cf;">
             <sc-for list="{{ admRows }}" as="r" hint-placeholder-count="5">
-              <div style="display:flex; align-items:center; gap:10px; padding:7px 10px; border-bottom:1px solid #f1eedf; font-size:13px;">
+              <div style="display:flex; align-items:center; gap:6px 10px; padding:7px 10px; border-bottom:1px solid #f1eedf; font-size:13px; flex-wrap:wrap;">
                 <span style="width:24px; font-weight:700; color:#4a4a4a;">{{ r.rank }}</span><span style="flex:1; min-width:0; font-weight:700; color:#015640; overflow:hidden; text-overflow:ellipsis;">{{ r.name }}</span><span style="font-size:12px; color:#4a4a4a;">{{ r.date }}</span><span style="font-weight:700; min-width:70px; text-align:right;">{{ r.score }}</span>
-                <sc-if value="{{ r.isTix }}" hint-placeholder-val="{{ true }}"><button onClick="{{ r.rm }}" style="border:none; border-radius:999px; padding:5px 11px; font-weight:700; font-size:12px; cursor:pointer; background:#DD8B03; color:#ffffff;">{{ r.rmLabel }}</button></sc-if>
+                <sc-if value="{{ r.isTix }}" hint-placeholder-val="{{ true }}"><button onClick="{{ r.rm }}" style="border:none; border-radius:999px; padding:5px 11px; font-weight:700; font-size:12px; cursor:pointer; background:#DD8B03; color:#ffffff;">{{ r.rmLabel }}</button><button onClick="{{ r.upg }}" style="border:none; border-radius:999px; padding:5px 11px; font-weight:700; font-size:12px; cursor:pointer; background:#5B2A86; color:#ffffff;">{{ r.upgLabel }}</button><button onClick="{{ r.full }}" style="border:none; border-radius:999px; padding:5px 11px; font-weight:700; font-size:12px; cursor:pointer; background:#121313; color:#ffffff;">{{ r.fullLabel }}</button></sc-if>
                 <button onClick="{{ r.del }}" style="border:none; border-radius:999px; padding:5px 11px; font-weight:700; font-size:12px; cursor:pointer; background:#B3001B; color:#ffffff;">{{ r.delLabel }}</button>
               </div>
             </sc-for>
           </div>
-          <div style="font-size:12px; font-weight:500; color:#4a4a4a;">{{ admEmpty }} Deleting online scores only works for the admin email in the database rules.</div>
+          <div style="font-size:12px; font-weight:500; color:#4a4a4a;">{{ admEmpty }} Online actions only work for admin emails listed in the database rules.</div>
         </div>
       </div>
     </div>
@@ -748,7 +748,7 @@ const GAMES = [
   {id:'pong',title:'Pong',name:'PONG',color:'#E9B9F7',glyph:'▯·▯',rate:0.1,target:400,pitch:'THE ORIGINAL RIVALRY'},
   {id:'memory',title:'Memory Match',name:'MEMORY',color:'#FBB99D',glyph:'◆◆',rate:0.06,target:600,pitch:'PAIRS PAY, MISSES COST'},
   {id:'whack',title:'Whack-a-Gopher',name:'WHACK',color:'#DD8B03',glyph:'• •',rate:0.12,target:600,pitch:'LIVES, NOT A CLOCK'},
-  {id:'2048',title:'2048',name:'2048',color:'#F9BF01',glyph:'2048',rate:0.02,target:16000,pitch:'SLIDE, MERGE, REPEAT'},
+  {id:'2048',title:'2048',name:'2048',color:'#F9BF01',glyph:'2048',rate:0.02,target:16000,pitch:'JUST FOR FUN · NO TICKETS'},
   {id:'tictactoe',title:'Tic-Tac-Toe',name:'TIC-TAC',color:'#EA55AB',glyph:'✕◯',rate:0.3,target:100,pitch:'OUTSMART THE MACHINE'},
   {id:'reaction',title:'Reaction Test',name:'REFLEX',color:'#D5F367',glyph:'◉',rate:0.12,target:300,pitch:'HOW FAST ARE YOU, REALLY'},
   {id:'typing',title:'Typing Race',name:'TYPE RACE',color:'#C7F1EE',glyph:'Aa',rate:0.12,target:300,pitch:'FINGERS ON THE HOME ROW'},
@@ -836,6 +836,9 @@ const UPG = {
 const SPEEDS = {slow:.6, normal:1, fast:1.4, turbo:1.9};
 const SPEED_TIX = {slow:.5, normal:1, fast:1.5, turbo:2.5};
 // Speed bonus only counts in real-time games where Turbo actually makes it harder (not 2048, Tic-Tac-Toe, Memory, Minesweeper…).
+// Games that pay no tickets (scores still go on the leaderboard).
+const NO_TIX = ['2048'];
+const ADMIN_EMAILS = ['jonah@wilderland.academy','hero@wilderland.academy'];
 const TIX_SPEED_GAMES = ['snake','breakout','flappy','pong','whack','simon','td','crossing','stack','rootout'];
 // Fair payout: every game pays ~100 tickets for hitting its target score, scaling smoothly above and below.
 // Fair payout: tickets come from TIME played × how well you did, so 10 minutes of any game pays about the same.
@@ -997,7 +1000,7 @@ const ACH = [
   {id:'lifer',cat:'Secret',tier:4,secret:true,name:'Lifer',desc:'Finish 1,000 games',p:s=>[plays(s),1000]},
 ];
 const KEY = 'wl-arcade-v1', ACCT_KEY = 'wl-arcade-accounts', SESSION_KEY = 'wl-arcade-session';
-const DEF = () => ({difficulty:'normal',speed:'normal',tickets:0,best:{},played:{},ach:[],prizes:{},daily:{date:'',done:false},earned:0,saves:{},savesV:2,stats:{max:{},sum:{}},username:'',edu:{on:false,topic:'add'},sessLog:[],days:{},idle:null,upg:{},avatar:{},cursor:''});
+const DEF = () => ({difficulty:'normal',speed:'normal',tickets:0,best:{},played:{},ach:[],prizes:{},daily:{date:'',done:false},earned:0,saves:{},savesV:2,stats:{max:{},sum:{}},username:'',edu:{on:false,topic:'add'},sessLog:[],days:{},idle:null,upg:{},avatar:{},cursor:'',resetSeen:0});
 const PFIELDS = Object.keys(DEF());
 const loadP = key => { let d = {}; try { d = JSON.parse(localStorage.getItem(key)) || {}; } catch(e){} return normP(d); };
 const normP = d => { const P = Object.assign(DEF(), d||{}); P.stats = Object.assign({max:{},sum:{}}, P.stats||{}); P.stats.max = P.stats.max||{}; P.stats.sum = P.stats.sum||{}; P.saves = P.saves||{}; P.ach = Array.isArray(P.ach)?P.ach:[]; P.edu = Object.assign({on:false,topic:'add'}, P.edu||{}); P.sessLog = Array.isArray(P.sessLog)?P.sessLog:[]; P.days = P.days||{}; if (P.savesV !== 2) { P.saves = {}; P.savesV = 2; } return P; };
@@ -1017,8 +1020,8 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
     const bits = await crypto.subtle.deriveBits({name:'PBKDF2', salt:enc.encode(salt), iterations:120000, hash:'SHA-256'}, key, 256); return 'p2$'+[...new Uint8Array(bits)].map(b=>b.toString(16).padStart(2,'0')).join(''); }
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
-const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-11-19l';
+const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
+const BUILD = '2026-11-19n';
 const SCRIPTS = ['arcade-core.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-edu.js','games-idle.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
@@ -1096,7 +1099,17 @@ class Component extends DCLogic {
     let P = rec && rec.P ? normP(rec.P) : (carry ? normP({...this.P, saves:{}}) : normP(getJSON(KEY+':cloud:'+u.uid, {})));
     this.cloudUid = u.uid; this.acct = null; this.cloudMeta = {name: (rec && rec.name) || name || (u.email||'player').split('@')[0].slice(0,16), created: (rec && rec.created) || today(), email: u.email};
     this.P = P; this.setState({...P, account:u.email||u.displayName||'Player', authOpen:false, aBusy:false, aPass:'', aPass2:'', aMsg:'', aInfo:''}); this.persist(true);
-    try { const adj = await window.WLCloud.takeAdjust(u.uid); if (adj && (adj.all || adj.rm > 0)) { const cut = adj.all ? this.P.tickets : Math.min(this.P.tickets, adj.rm|0); this.setP({tickets:this.P.tickets-cut, earned:Math.max(0, this.P.earned-cut)}); this.persist(true); this.addScore('_none',0); this.toast('AN ADMIN REMOVED '+cut.toLocaleString()+' TICKETS'); } } catch(e){}
+    try { const C = window.WLCloud, ra = C.resetAt ? C.resetAt() : 0;
+      if (ra && rec && rec.P && (rec.updated||0) < ra && (this.P.resetSeen||0) < ra) { this.P = normP({username:this.P.username, avatar:this.P.avatar, savesV:2, resetSeen:ra}); this.setState({...this.P}); this.persist(true); this.toast('THE ARCADE WAS RESET · FRESH START FOR EVERYONE'); }
+      if (ra && (this.P.resetSeen||0) < ra) { this.P = {...this.P, resetSeen:ra}; }
+      const adj = await C.takeAdjust(u.uid);
+      if (adj) { const msgs = [];
+        if (adj.full) { this.P = normP({username:this.P.username, avatar:this.P.avatar, savesV:2, resetSeen:this.P.resetSeen||0}); msgs.push('YOUR PROFILE WAS RESET BY AN ADMIN'); }
+        else { if (adj.upg) { this.P = {...this.P, upg:{}}; msgs.push('AN ADMIN REMOVED YOUR UPGRADES'); }
+          if (adj.all || adj.rm > 0) { const cut = adj.all ? this.P.tickets : Math.min(this.P.tickets, adj.rm|0); this.P = {...this.P, tickets:this.P.tickets-cut, earned:Math.max(0, this.P.earned-cut)}; msgs.push('AN ADMIN REMOVED '+cut.toLocaleString()+' TICKETS'); } }
+        this.setP({}); this.setState({...this.P}); this.persist(true); this.addScore('_none',0); msgs.forEach(m=>this.toast(m)); }
+      if (ADMIN_EMAILS.includes(String(u.email||'').toLowerCase()) && !this.state.admin) { if (window.Arcade) window.Arcade.infiniteHints = true; this.setState({admin:true}); this.toast('ADMIN ACCOUNT · ADMIN MODE ON'); }
+    } catch(e){}
     if (carry) { try { localStorage.removeItem(KEY); } catch(e){} }
     try { localStorage.removeItem(SESSION_KEY); sessionStorage.removeItem(SESSION_KEY); } catch(e){}
     this.cloudBoard = {}; this.stat('account',1); }
@@ -1217,20 +1230,35 @@ class Component extends DCLogic {
     if (id=='ach') { this.P = {...this.P, ach:[], stats:{max:{},sum:{}}}; this.persist(true); this.setState({...this.P, admArm:'', admMsg:'Achievements and stats reset. Ones you still qualify for will unlock again.'}); }
     if (id=='all') { this.P = normP({username:P.username, edu:P.edu, savesV:2}); this.persist(true); this.setState({...this.P, admArm:'', admMsg:'Your profile is reset to a fresh start (username and learn settings kept).'}); await fixTix(); }
     this.persist(true); window.Arcade && window.Arcade.sfx('coin'); }
-  async adminRemoveTix(x){ const s = this.state; if (!s.admin) return; const key = 'rm:'+(x.k||x.uid);
+  async adminPlayer(x, kind){ const s = this.state; if (!s.admin) return; const key = kind+':'+x.k;
     if (s.admArm !== key) return this.setState({admArm:key, admMsg:''});
-    const raw = String(s.admRm||'').trim().toLowerCase(), all = raw=='' || raw=='all', amt = all ? -1 : Math.max(0, parseInt(raw.replace(/[^0-9]/g,''),10)||0);
-    if (!all && !amt) return this.setState({admArm:'', admMsg:'Type how many tickets to remove (or leave it empty / "all").'});
-    if (s.cloud && !this.cloudUid) return this.setState({admArm:'', admMsg:'Log in with your admin account (jonah@wilderland.academy) first, then try again.'});
+    let amt = 0, all = false;
+    if (kind=='tix') { const raw = String(s.admRm||'').trim().toLowerCase(); all = raw=='' || raw=='all'; amt = all ? -1 : Math.max(0, parseInt(raw.replace(/[^0-9]/g,''),10)||0);
+      if (!all && !amt) return this.setState({admArm:'', admMsg:'Type how many tickets to remove (or leave it empty for all).'}); }
+    const what = kind=='tix' ? (all?'all':amt.toLocaleString())+' tickets' : kind=='upg' ? 'every Workshop upgrade' : 'EVERYTHING (full reset)';
     if (s.cloud) { const C = window.WLCloud;
-      try { await C.adjust(x.k, amt); try { await C.deleteUserScores('_tix', x.k); } catch(e){} this._bAt = {}; this.cloudBoard = {};
-        this.setState({admArm:'', admMsg:(all?'All':amt.toLocaleString())+' tickets will be removed from '+x.u+' the next time their game loads. Their tickets row is off the board until then.'}); }
-      catch(e) { this.setState({admArm:'', admMsg: String(e && e.code||'').includes('permission') ? 'Firebase said no: paste the new firestore.rules into Firestore → Rules → Publish (it adds the “adjust” section).' : 'Couldn’t do that: '+(e && (e.code||e.message))}); } return; }
+      if (!this.cloudUid) return this.setState({admArm:'', admMsg:'Log in with an admin account (hero@ or jonah@wilderland.academy) first.'});
+      try { if (kind=='tix') await C.adjust(x.k, amt); else await C.adminFlag(x.k, kind=='upg' ? {upg:true} : {full:true});
+        if (kind!='upg') { try { await C.deleteUserScores('_tix', x.k); } catch(e){} } this._bAt = {}; this.cloudBoard = {};
+        this.setState({admArm:'', admMsg:'Removing '+what+' from '+x.u+'. It happens the next time their game loads.'}); }
+      catch(e) { this.setState({admArm:'', admMsg: String(e && e.code||'').includes('permission') ? 'Firebase said no: paste the new firestore.rules into Firestore → Rules → Publish, and make sure you’re logged in with a verified admin email.' : 'Couldn’t do that: '+(e && (e.code||e.message))}); } return; }
     const P2 = getJSON(x.k, null); if (!P2) return this.setState({admArm:'', admMsg:'That player’s profile isn’t on this device.'});
-    const cut = all ? (P2.tickets||0) : Math.min(P2.tickets||0, amt); P2.tickets = (P2.tickets||0)-cut; P2.earned = Math.max(0,(P2.earned||0)-cut); putJSON(x.k, P2);
-    if (x.k === this.profKey()) { this.P = normP(P2); this.setState({...this.P}); }
-    const B = getJSON(BOARD_KEY,{e:[]}); B.e.forEach(y=>{ if (y.g=='_tix' && y.k==x.k) y.s = P2.earned; }); putJSON(BOARD_KEY,B);
-    this.setState({admArm:'', admMsg:'Removed '+cut.toLocaleString()+' tickets from '+x.u+'.'}); window.Arcade && window.Arcade.sfx('coin'); }
+    let out = P2;
+    if (kind=='tix') { const cut = all ? (P2.tickets||0) : Math.min(P2.tickets||0, amt); out = {...P2, tickets:(P2.tickets||0)-cut, earned:Math.max(0,(P2.earned||0)-cut)}; }
+    if (kind=='upg') out = {...P2, upg:{}};
+    if (kind=='full') out = {username:P2.username, avatar:P2.avatar, savesV:2};
+    putJSON(x.k, out); if (x.k === this.profKey()) { this.P = normP(out); this.setState({...this.P}); }
+    const B = getJSON(BOARD_KEY,{e:[]}); B.e.forEach(y=>{ if (y.g=='_tix' && y.k==x.k) y.s = out.earned||0; }); putJSON(BOARD_KEY,B);
+    this.setState({admArm:'', admMsg:'Removed '+what+' from '+x.u+'.'}); window.Arcade && window.Arcade.sfx('coin'); }
+  async adminReloadAll(){ const s = this.state; if (!s.admin || !s.cloud || !this.cloudUid) return this.setState({admMsg:'Log in with an admin account (online) first.'});
+    try { await window.WLCloud.reloadEveryone(); this.setState({admMsg:'Reloading every open arcade tab…'}); } catch(e) { this.setState({admMsg:'Couldn’t: '+(e && (e.code||e.message))+' · publish the new firestore.rules first.'}); } }
+  async adminResetAll(){ const s = this.state; if (!s.admin) return;
+    if (s.admArm !== 'resetall') return this.setState({admArm:'resetall', admMsg:'Press FULL RESET again to wipe every player’s tickets, upgrades, prizes and scores and start an empty leaderboard. This can’t be undone.'});
+    if (s.cloud) { if (!this.cloudUid) return this.setState({admArm:'', admMsg:'Log in with an admin account first.'});
+      try { await window.WLCloud.resetEveryone(); this.setState({admArm:'', admMsg:'Full reset done. Every open arcade tab reloads now and starts fresh with an empty leaderboard.'}); }
+      catch(e) { this.setState({admArm:'', admMsg: String(e && e.code||'').includes('permission') ? 'Firebase said no: publish the new firestore.rules (it adds the “config” section) and log in with a verified admin email.' : 'Couldn’t reset: '+(e && (e.code||e.message))}); } return; }
+    try { Object.keys(localStorage).filter(k=>k.startsWith(KEY)).forEach(k=>{ const P2 = getJSON(k, null); if (P2 && typeof P2=='object') putJSON(k, {username:P2.username, avatar:P2.avatar, savesV:2}); }); } catch(e){}
+    putJSON(BOARD_KEY, {e:[]}); this.P = normP({username:this.P.username, avatar:this.P.avatar, savesV:2}); this.persist(true); this.setState({...this.P, admArm:'', admMsg:'Full reset done on this device.'}); }
   async adminDelete(g, x){ const s = this.state, key = 'del:'+(x.id||x.k+x.s); if (!s.admin) return;
     if (s.admArm !== key) return this.setState({admArm:key, admMsg:''});
     if (s.cloud) { const C = window.WLCloud; try { if (g=='_tix') await C.deleteUserScores('_tix', x.k); else await C.deleteScore(g, x.id); this._bAt = {}; this.cloudBoard = {}; this.setState({admArm:'', admMsg:'Removed '+x.u+' ('+x.s.toLocaleString()+').'}); }
@@ -1260,7 +1288,8 @@ class Component extends DCLogic {
     let tix = Math.ceil(baseTix(g, score, mins) * mult * dm), lines = [mins < 1 ? Math.max(1,Math.round(mins*60))+' SEC PLAYED' : Math.round(mins)+' MIN PLAYED'];
     if (dm != 1) lines.push((RIVAL(P.difficulty) ? RIVAL(P.difficulty)[1].toUpperCase() : P.difficulty.toUpperCase())+' ×'+dm);
     const spm = TIX_SPEED_GAMES.includes(id) ? (SPEED_TIX[P.speed] || 1) : 1; if (spm != 1) { tix = Math.max(1, Math.ceil(tix*spm)); lines.push(P.speed.toUpperCase()+' SPEED ×'+spm); }
-    if (this._perfect) { tix *= 3; lines.push('PERFECT ×3'); sum.perfect = (sum.perfect||0)+1; } this._perfect = false;
+    if (NO_TIX.includes(id)) { tix = 0; lines.push('2048 PAYS NO TICKETS'); }
+    if (this._perfect && tix) { tix *= 3; lines.push('PERFECT ×3'); sum.perfect = (sum.perfect||0)+1; } this._perfect = false;
     if (score > (best[id]||0)) { if (best[id]) lines.push('NEW HIGH SCORE'); best[id] = score; }
     const daily = {...(P.daily.date==today() ? P.daily : {date:today(),done:false})};
     if (GAMES[dailyIdx()].id==id && !daily.done && score >= g.target) { daily.done = true; tix += 100; sum.daily = (sum.daily||0)+1; lines.push('DAILY CHALLENGE COMPLETE · +100'); }
@@ -1488,9 +1517,10 @@ class Component extends DCLogic {
       admActs: [['tix','Set tickets'],['zero','Reset tickets to 0'],['bests','Clear my high scores'],['saves','Clear my saved games'],['ach','Reset my achievements'],['all','Reset my whole profile']].map(([id,label])=>({label: s.admArm==id ? 'Tap again to confirm' : label, bg: s.admArm==id ? '#B3001B' : (id=='all'?'#ffe1dd':'#ffffff'), fg: s.admArm==id ? '#ffffff' : (id=='all'?'#8f0016':'#015640'), go: ()=>this.adminAct(id)})),
       admGames: [{id:'_tix',title:'Overall · tickets'}, ...GAMES].map(x=>({label:x.title, bg: (s.admGame||'_tix')==x.id ? '#015640' : '#ffffff', fg: (s.admGame||'_tix')==x.id ? '#ffffff' : '#015640', pick: ()=>this.setState({admGame:x.id, admArm:''})})),
       admRows: (()=>{ const g0 = s.admGame||'_tix'; let e; if (s.cloud) { if (s.adminOpen) this.needBoard(g0); e = ((this.cloudBoard||{})[g0]||[]).slice(); } else e = getJSON(BOARD_KEY,{e:[]}).e.filter(x=>x.g==g0);
-        return e.sort((a,b)=>b.s-a.s).slice(0,50).map((x,i)=>({rank:i+1, avImg: avSVG(avDec(x.av), x.al||0), name:x.u, score:x.s.toLocaleString(), date:x.d||'', isTix: g0=='_tix', rm: ()=>this.adminRemoveTix(x), rmLabel: s.admArm=='rm:'+x.k ? 'Confirm' : '− Tickets', del: ()=>this.adminDelete(g0, x), delLabel: s.admArm=='del:'+(x.id||x.k+x.s) ? 'Confirm' : (g0=='_tix' ? 'Remove player' : 'Delete')})); })(),
+        return e.sort((a,b)=>b.s-a.s).slice(0,50).map((x,i)=>({rank:i+1, avImg: avSVG(avDec(x.av), x.al||0), name:x.u, score:x.s.toLocaleString(), date:x.d||'', isTix: g0=='_tix', rm: ()=>this.adminPlayer(x,'tix'), rmLabel: s.admArm=='tix:'+x.k ? 'Confirm' : '− Tickets', upg: ()=>this.adminPlayer(x,'upg'), upgLabel: s.admArm=='upg:'+x.k ? 'Confirm' : 'Take upgrades', full: ()=>this.adminPlayer(x,'full'), fullLabel: s.admArm=='full:'+x.k ? 'Confirm' : 'Full reset', del: ()=>this.adminDelete(g0, x), delLabel: s.admArm=='del:'+(x.id||x.k+x.s) ? 'Confirm' : (g0=='_tix' ? 'Remove player' : 'Delete')})); })(),
+      reloadAll: ()=>this.adminReloadAll(), resetAll: ()=>this.adminResetAll(), resetAllLabel: s.admArm=='resetall' ? 'YES · WIPE EVERYONE' : 'FULL RESET · everyone',
       admIsTix: (s.admGame||'_tix')=='_tix', admRm: s.admRm||'', inAdmRm: e=>this.setState({admRm:e.target.value.slice(0,12)}),
-      admEmpty: s.cloud && !this.cloudUid ? 'Log in to your online account to moderate the global leaderboard.' : 'No entries on this board.',
+      admEmpty: s.cloud && !this.cloudUid ? 'Log in with an admin account (hero@ or jonah@wilderland.academy) to moderate online players.' : '',
       closeCode: ()=>this.setState({codeOpen:false}),
       codeInput: e=>this.setState({codeVal:e.target.value}),
       codeKey: e=>{ e.stopPropagation(); if (e.key=='Enter') this.submitCode(); if (e.key=='Escape') this.setState({codeOpen:false}); },
