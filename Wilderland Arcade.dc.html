@@ -289,6 +289,37 @@ button{font-family:inherit;}
     </div>
   </sc-if>
 
+  <sc-if value="{{ adminOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; inset:0; background:rgba(11,46,36,.9); display:flex; align-items:safe center; justify-content:center; z-index:58; overflow-y:auto; padding:16px; box-sizing:border-box;">
+      <div style="background:#EDE9D8; border-radius:20px; padding:22px; width:680px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:14px; color:#121313;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+          <div><div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#8a6100;">OPERATOR ACCESS · ADMIN ∞</div><div style="font-size:28px; font-weight:700; color:#015640;">Admin tools</div><div style="font-size:13px; font-weight:500; color:#3d3d3d;">Games played in admin mode never save, pay tickets or post scores.</div></div>
+          <button onClick="{{ closeAdmin }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer;">Close</button>
+        </div>
+        <sc-if value="{{ admMsg }}" hint-placeholder-val="{{ false }}"><div role="status" style="background:#fff4cc; color:#5c4100; border-radius:10px; padding:9px 12px; font-size:13px; font-weight:700;">{{ admMsg }}</div></sc-if>
+        <div style="background:#ffffff; border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:10px;">
+          <div style="font-size:12px; font-weight:700; letter-spacing:0.1em; color:#015640;">MY PROFILE</div>
+          <div style="font-size:13px; font-weight:500; color:#3d3d3d;">{{ admNow }}</div>
+          <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;"><label for="wl-admtix" style="font-size:12px; font-weight:700; color:#015640;">New ticket amount</label><input id="wl-admtix" class="wl-field" inputMode="numeric" value="{{ admTix }}" onChange="{{ inAdmTix }}" onKeyDown="{{ stopKey }}" placeholder="0" style="width:140px; font-family:inherit; font-size:15px; font-weight:700; padding:7px 10px; border-radius:10px; border:2px solid #9aa79f; outline:none;"></div>
+          <div style="display:flex; flex-wrap:wrap; gap:6px;"><sc-for list="{{ admActs }}" as="a" hint-placeholder-count="6"><button onClick="{{ a.go }}" style="border:1.5px solid #015640; border-radius:999px; padding:7px 13px; font-weight:700; font-size:13px; cursor:pointer; background:{{ a.bg }}; color:{{ a.fg }};">{{ a.label }}</button></sc-for></div>
+        </div>
+        <div style="background:#ffffff; border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:10px;">
+          <div style="font-size:12px; font-weight:700; letter-spacing:0.1em; color:#015640;">LEADERBOARD MODERATION</div>
+          <div style="display:flex; flex-wrap:wrap; gap:4px;"><sc-for list="{{ admGames }}" as="f" hint-placeholder-count="8"><button onClick="{{ f.pick }}" style="border:1.5px solid #015640; border-radius:999px; padding:4px 10px; font-weight:700; font-size:12px; cursor:pointer; background:{{ f.bg }}; color:{{ f.fg }};">{{ f.label }}</button></sc-for></div>
+          <div style="display:flex; flex-direction:column; max-height:320px; overflow-y:auto; border-radius:10px; border:1px solid #e6e2cf;">
+            <sc-for list="{{ admRows }}" as="r" hint-placeholder-count="5">
+              <div style="display:flex; align-items:center; gap:10px; padding:7px 10px; border-bottom:1px solid #f1eedf; font-size:13px;">
+                <span style="width:24px; font-weight:700; color:#4a4a4a;">{{ r.rank }}</span><span style="flex:1; min-width:0; font-weight:700; color:#015640; overflow:hidden; text-overflow:ellipsis;">{{ r.name }}</span><span style="font-size:12px; color:#4a4a4a;">{{ r.date }}</span><span style="font-weight:700; min-width:70px; text-align:right;">{{ r.score }}</span>
+                <button onClick="{{ r.del }}" style="border:none; border-radius:999px; padding:5px 11px; font-weight:700; font-size:12px; cursor:pointer; background:#B3001B; color:#ffffff;">{{ r.delLabel }}</button>
+              </div>
+            </sc-for>
+          </div>
+          <div style="font-size:12px; font-weight:500; color:#4a4a4a;">{{ admEmpty }} Deleting online scores only works for the admin email in the database rules.</div>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
   <sc-if value="{{ codeOpen }}" hint-placeholder-val="{{ false }}">
     <div style="position:fixed; inset:0; background:rgba(11,46,36,.88); display:flex; align-items:center; justify-content:center; z-index:55;">
       <div style="background:#EDE9D8; border-radius:20px; padding:24px; width:360px; max-width:90vw; display:flex; flex-direction:column; gap:12px; color:#121313;">
@@ -767,7 +798,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; return h % GAMES.length; };
-const BUILD = '2026-11-19b';
+const BUILD = '2026-11-19c';
 const SCRIPTS = ['arcade-core.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-edu.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
@@ -859,7 +890,7 @@ class Component extends DCLogic {
     try { await window.WLCloud.reset(email); this.setState({aInfo:'If that email has an account, a reset link is on its way. Check your inbox and spam folder.', aMsg:''}); } catch(e) { this.setState({aMsg:fbErr(e), aInfo:''}); } }
   needBoard(g){ if (!this.state.cloud || !window.WLCloud) return; this.cloudBoard = this.cloudBoard || {}; this._bAt = this._bAt || {}; this._bBusy = this._bBusy || {};
     if (this._bBusy[g] || (this._bAt[g] && Date.now()-this._bAt[g] < 30000)) return; this._bBusy[g] = true;
-    window.WLCloud.top(g, 100).then(rows=>{ this.cloudBoard[g] = rows.map(r=>({u:r.u, k:r.uid, g, s:r.s, edu:!!r.edu, d:r.d})); this._bAt[g] = Date.now(); this._bBusy[g] = false; this.setState({lbTick:Date.now()}); })
+    window.WLCloud.top(g, 100).then(rows=>{ this.cloudBoard[g] = rows.map(r=>({u:r.u, k:r.uid, id:r.id, g, s:r.s, edu:!!r.edu, d:r.d})); this._bAt[g] = Date.now(); this._bBusy[g] = false; this.setState({lbTick:Date.now()}); })
       .catch(()=>{ this._bBusy[g] = false; this._bAt[g] = Date.now(); }); }
   evalAch(P){ let s = {...P}; const has = new Set(s.ach), newly = []; let changed = true;
     while (changed) { changed = false; for (const a of ACH) { if (has.has(a.id)) continue; let pr; try { pr = a.p(s); } catch(e) { continue; } if (pr[0] >= pr[1]) { has.add(a.id); newly.push(a); const r = TIER[a.tier].r; s = {...s, tickets:s.tickets+r, earned:s.earned+r}; changed = true; } } }
@@ -947,6 +978,21 @@ class Component extends DCLogic {
   pickDiff(id){ if (this.P.difficulty==id) return; const g = this.state.game; this.unmountGame(false);
     const saves = {...this.P.saves}; if (g) delete saves[this.saveKey(g)];
     this.setP({difficulty:id, saves}); this.setState({liveScore:0, payout:''}); window.Arcade && window.Arcade.sfx('blip'); }
+  async adminAct(id){ const s = this.state; if (!s.admin) return;
+    if (s.admArm !== id) return this.setState({admArm:id, admMsg:''});
+    const P = this.P, C = window.WLCloud, fixTix = async () => { if (s.cloud && C && this.cloudUid) { try { await C.deleteUserScores('_tix', this.cloudUid); } catch(e){} this.addScore('_none',0); this._bAt = {}; } };
+    if (id=='tix') { const n = Math.min(1e9, parseInt(s.admTix||'0',10)||0); this.setP({tickets:n, earned:Math.min(P.earned, Math.max(n, 0))}); await fixTix(); this.setState({admArm:'', admMsg:'Tickets set to '+n.toLocaleString()+'.'}); }
+    if (id=='zero') { this.setP({tickets:0, earned:0}); await fixTix(); this.setState({admArm:'', admMsg:'Tickets and lifetime earnings reset to 0.'}); }
+    if (id=='bests') { this.setP({best:{}}); this.setState({admArm:'', admMsg:'All your high scores are cleared.'}); }
+    if (id=='saves') { this.setP({saves:{}}); this.setState({admArm:'', admMsg:'All your saved games are cleared.'}); }
+    if (id=='ach') { this.P = {...this.P, ach:[], stats:{max:{},sum:{}}}; this.persist(true); this.setState({...this.P, admArm:'', admMsg:'Achievements and stats reset. Ones you still qualify for will unlock again.'}); }
+    if (id=='all') { this.P = normP({username:P.username, edu:P.edu, savesV:2}); this.persist(true); this.setState({...this.P, admArm:'', admMsg:'Your profile is reset to a fresh start (username and learn settings kept).'}); await fixTix(); }
+    this.persist(true); window.Arcade && window.Arcade.sfx('coin'); }
+  async adminDelete(g, x){ const s = this.state, key = 'del:'+(x.id||x.k+x.s); if (!s.admin) return;
+    if (s.admArm !== key) return this.setState({admArm:key, admMsg:''});
+    if (s.cloud) { const C = window.WLCloud; try { if (g=='_tix') await C.deleteUserScores('_tix', x.k); else await C.deleteScore(g, x.id); this._bAt = {}; this.cloudBoard = {}; this.setState({admArm:'', admMsg:'Removed '+x.u+' ('+x.s.toLocaleString()+').'}); }
+      catch(e) { this.setState({admArm:'', admMsg: String(e && e.code||'').includes('permission') ? 'Firebase said no: your account isn’t an admin in the database rules yet. Paste the new firestore.rules into Firestore → Rules → Publish.' : 'Couldn’t delete: '+(e && (e.code||e.message))}); } }
+    else { const B = getJSON(BOARD_KEY,{e:[]}); B.e = B.e.filter(y=>!(y.g==g && (g=='_tix' ? y.k==x.k : (y.k==x.k && y.s==x.s && y.d==x.d)))); putJSON(BOARD_KEY,B); this.setState({admArm:'', admMsg:'Removed '+x.u+'.'}); } }
   toast(text){ const id = Math.random(); this.setState(s=>({toasts:[...s.toasts,{id,text}]})); setTimeout(()=>this.setState(s=>({toasts:s.toasts.filter(t=>t.id!=id)})), 3000); }
   finish(id, score){
     if (this.state.admin) { const sv = {...this.P.saves}; delete sv[this.saveKey(id)]; this.setP({saves:sv}); this.setState({payout:'Admin mode · no tickets, scores or achievements recorded'}); window.Arcade && window.Arcade.sfx('blip'); return; }
@@ -1171,7 +1217,15 @@ class Component extends DCLogic {
       immortalLabel: s.immortal ? 'Immortal · ON' : 'Immortal · OFF', immortalBg: s.immortal ? '#F9BF01' : '#D9D9D9', immortalFg: s.immortal ? '#015640' : '#4a4a4a',
       toggleImmortal: ()=>{ const v=!s.immortal; if (window.Arcade) window.Arcade.immortal = v; this.setState({immortal:v}); window.Arcade && window.Arcade.sfx(v?'coin':'blip'); },
       codeOpen: s.codeOpen, codeVal: s.codeVal, codeMsg: s.codeMsg, adminLabel: s.admin ? 'ADMIN ∞' : 'CODE',
-      openCode: ()=>{ this.keys = {}; this.setState({codeOpen:true, codeVal:'', codeMsg:''}); },
+      openCode: ()=>{ this.keys = {}; if (s.admin) return this.setState({adminOpen:true, admArm:'', admMsg:''}); this.setState({codeOpen:true, codeVal:'', codeMsg:''}); },
+      adminOpen: !!s.adminOpen, closeAdmin: ()=>this.setState({adminOpen:false, admArm:''}),
+      admTix: s.admTix ?? '', inAdmTix: e=>this.setState({admTix:e.target.value.replace(/[^0-9]/g,'').slice(0,10), admArm:''}), admMsg: s.admMsg||'',
+      admNow: 'Tickets '+P.tickets.toLocaleString()+' · lifetime earned '+P.earned.toLocaleString()+' · '+Object.keys(P.best).length+' high scores · '+Object.keys(P.saves).length+' saved games',
+      admActs: [['tix','Set tickets'],['zero','Reset tickets to 0'],['bests','Clear my high scores'],['saves','Clear my saved games'],['ach','Reset my achievements'],['all','Reset my whole profile']].map(([id,label])=>({label: s.admArm==id ? 'Tap again to confirm' : label, bg: s.admArm==id ? '#B3001B' : (id=='all'?'#ffe1dd':'#ffffff'), fg: s.admArm==id ? '#ffffff' : (id=='all'?'#8f0016':'#015640'), go: ()=>this.adminAct(id)})),
+      admGames: [{id:'_tix',title:'Overall · tickets'}, ...GAMES].map(x=>({label:x.title, bg: (s.admGame||'_tix')==x.id ? '#015640' : '#ffffff', fg: (s.admGame||'_tix')==x.id ? '#ffffff' : '#015640', pick: ()=>this.setState({admGame:x.id, admArm:''})})),
+      admRows: (()=>{ const g0 = s.admGame||'_tix'; let e; if (s.cloud) { if (s.adminOpen) this.needBoard(g0); e = ((this.cloudBoard||{})[g0]||[]).slice(); } else e = getJSON(BOARD_KEY,{e:[]}).e.filter(x=>x.g==g0);
+        return e.sort((a,b)=>b.s-a.s).slice(0,50).map((x,i)=>({rank:i+1, name:x.u, score:x.s.toLocaleString(), date:x.d||'', del: ()=>this.adminDelete(g0, x), delLabel: s.admArm=='del:'+(x.id||x.k+x.s) ? 'Confirm' : (g0=='_tix' ? 'Remove player' : 'Delete')})); })(),
+      admEmpty: s.cloud && !this.cloudUid ? 'Log in to your online account to moderate the global leaderboard.' : 'No entries on this board.',
       closeCode: ()=>this.setState({codeOpen:false}),
       codeInput: e=>this.setState({codeVal:e.target.value}),
       codeKey: e=>{ e.stopPropagation(); if (e.key=='Enter') this.submitCode(); if (e.key=='Escape') this.setState({codeOpen:false}); },

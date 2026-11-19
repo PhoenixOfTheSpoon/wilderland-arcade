@@ -2,7 +2,7 @@
 // Loaded as an ES module. If it can't load (offline, blocked), the arcade keeps working in on-device mode.
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
 import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, setPersistence, GoogleAuthProvider, signInWithPopup, browserLocalPersistence, browserSessionPersistence } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { getFirestore, doc, getDoc, setDoc, collection, addDoc, query, orderBy, limit, getDocs, runTransaction, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, where, collection, addDoc, query, orderBy, limit, getDocs, runTransaction, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCVBNMAm4oDibHmWru9LIYnnT898NXFNu0",
@@ -37,7 +37,10 @@ const WLCloud = {
   postScore(game, row) { return addDoc(board(game), row); },
   setTix(uid, row) { return addDoc(board('_tix'), row); },
   async top(game, n = 100) { const r = await getDocs(query(board(game), orderBy('s', 'desc'), limit(game == '_tix' ? 300 : n)));
-    let rows = r.docs.map(d => d.data()); if (game == '_tix') { const seen = new Set(); rows = rows.filter(x => !seen.has(x.uid) && seen.add(x.uid)); } return rows.slice(0, n); },
+    let rows = r.docs.map(d => ({ ...d.data(), id: d.id })); if (game == '_tix') { const seen = new Set(); rows = rows.filter(x => !seen.has(x.uid) && seen.add(x.uid)); } return rows.slice(0, n); },
 };
+// Admin moderation (the database rules only allow this for admin accounts).
+WLCloud.deleteScore = (game, id) => deleteDoc(doc(db, 'boards', game + '@' + SEASON, 'scores', id));
+WLCloud.deleteUserScores = async (game, uid) => { const r = await getDocs(query(board(game), where('uid', '==', uid))); await Promise.all(r.docs.map(d => deleteDoc(d.ref))); return r.size; };
 window.WLCloud = WLCloud;
 window.dispatchEvent(new Event('wlcloud-ready'));
