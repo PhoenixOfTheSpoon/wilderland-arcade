@@ -1,0 +1,35 @@
+{
+  "v": 1,
+  "mode": "omelette",
+  "root": "project/",
+  "title": "Arcade creation planning",
+  "entry": "Wilderland Arcade.dc.html",
+  "pages": [
+    {
+      "path": "Wilderland Arcade.dc.html",
+      "title": "Wilderland Arcade",
+      "kind": "page"
+    }
+  ],
+  "migratorVersion": "artifact-migrator (claude-design-backend ed667f7ac9c1)",
+  "createdAt": "2026-11-17T15:03:45.587Z",
+  "source": {
+    "v": 1,
+    "app": "claude-design",
+    "url": "https://claude.ai/design/p/26714838-e7d2-4a25-bbb0-7981719ff8d6",
+    "projectId": "26714838-e7d2-4a25-bbb0-7981719ff8d6",
+    "exportedAt": "2026-11-17T15:03:45.587Z"
+  },
+  "report": {
+    "itemsVersion": 2,
+    "pages": {
+      "total": 1,
+      "ok": 1,
+      "partial": 0,
+      "notMigrated": 0
+    },
+    "items": [],
+    "truncated": 0,
+    "truncatedLeftOut": 0
+  }
+}
