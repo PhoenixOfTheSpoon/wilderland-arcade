@@ -16,6 +16,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const SEASON = 's2';
+const board = game => collection(db, 'boards', game + '@' + SEASON, 'scores');
 
 const WLCloud = {
   ready: true,
@@ -31,9 +33,11 @@ const WLCloud = {
     return runTransaction(db, async tx => { const ref = doc(db, 'usernames', key), s = await tx.get(ref);
       if (s.exists() && s.data().uid !== uid) throw Object.assign(new Error('taken'), { code: 'taken' });
       tx.set(ref, { uid, name }); if (old && old.toLowerCase() !== key) tx.delete(doc(db, 'usernames', old.toLowerCase())); }); },
-  postScore(game, row) { return addDoc(collection(db, 'boards', game, 'scores'), row); },
-  setTix(uid, row) { return setDoc(doc(db, 'boards', '_tix', 'scores', uid), row); },
-  async top(game, n = 100) { const r = await getDocs(query(collection(db, 'boards', game, 'scores'), orderBy('s', 'desc'), limit(n))); return r.docs.map(d => d.data()); },
+  // Leaderboard season: bump SEASON to start a fresh, empty leaderboard.
+  postScore(game, row) { return addDoc(board(game), row); },
+  setTix(uid, row) { return addDoc(board('_tix'), row); },
+  async top(game, n = 100) { const r = await getDocs(query(board(game), orderBy('s', 'desc'), limit(game == '_tix' ? 300 : n)));
+    let rows = r.docs.map(d => d.data()); if (game == '_tix') { const seen = new Set(); rows = rows.filter(x => !seen.has(x.uid) && seen.add(x.uid)); } return rows.slice(0, n); },
 };
 window.WLCloud = WLCloud;
 window.dispatchEvent(new Event('wlcloud-ready'));

@@ -604,7 +604,7 @@ button{font-family:inherit;}
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props="{&quot;walkSpeed&quot;:{&quot;editor&quot;:&quot;range&quot;,&quot;default&quot;:280,&quot;min&quot;:120,&quot;max&quot;:600,&quot;step&quot;:20,&quot;unit&quot;:&quot;px/s&quot;,&quot;tsType&quot;:&quot;number&quot;},&quot;ticketMultiplier&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:1,&quot;options&quot;:[1,2,5],&quot;tsType&quot;:&quot;number&quot;},&quot;sound&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
 const GAMES = [
-  {id:'snake',title:'Snake',name:'SNAKE',color:'#00B451',glyph:'∿',rate:3,target:15,pitch:'ONE APPLE AT A TIME'},
+  {id:'snake',title:'Snake',name:'SNAKE',color:'#00B451',glyph:'∿',rate:2,target:25,pitch:'LEVELS, MAZES & PORTALS'},
   {id:'breakout',title:'Breakout',name:'BREAKOUT',color:'#FF4539',glyph:'▦',rate:.05,target:600,pitch:'BRING DOWN THE WALL'},
   {id:'flappy',title:'Flapper',name:'FLAPPER',color:'#64CDF5',glyph:'◖',rate:4,target:10,pitch:'MIND THE GAPS'},
   {id:'pong',title:'Pong',name:'PONG',color:'#E9B9F7',glyph:'▯·▯',rate:.05,target:400,pitch:'THE ORIGINAL RIVALRY'},
@@ -659,7 +659,7 @@ const PADS = {snake:{d:'udlr',a:[['Start',' ']]}, breakout:{d:'lr',a:[['Launch',
 const SWIPE = ['snake','2048','crossing','stack'];
 const FW = 1120, FH = 780;
 const KIOSKS = [{id:'prize',x:850,y:50,w:230,h:200},{id:'daily',x:850,y:290,w:230,h:140},{id:'board',x:850,y:465,w:230,h:110},{id:'learn',x:850,y:605,w:230,h:110}];
-const BOARD_KEY = 'wl-arcade-board-v2', UNAME_KEY = 'wl-arcade-usernames';
+const BOARD_KEY = 'wl-arcade-board-v3', UNAME_KEY = 'wl-arcade-usernames';
 const getJSON = (k,d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch(e) { return d; } };
 const putJSON = (k,v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} };
 const BADW = ['fuck','shit','bitch','cunt','dick','nigg','fag','slut','whore','porn','nazi','rape'];
@@ -669,7 +669,7 @@ const PARENT_KEY = 'wl-arcade-parent';
 const pinRules = (a,b) => [['4–8 digits', /^\d{4,8}$/.test(a)], ['Not all one digit', a.length>0 && !/^(\d)\1+$/.test(a)], ['Not a straight run (1234)', a.length>0 && !'0123456789012345678909876543210987654321'.includes(a)], ['Codes match', a.length>0 && a===b]];
 const LEARN_NOTES = {flappy:'Fly through the gap with the right answer.', snake:'Eat the apple with the right answer.', typing:'Sight words for early readers.', whack:'Whack only gophers holding the right answer.', memory:'Match each problem with its answer.', tictactoe:'Answer a question to claim each square.', crossing:'Hop into the den with the right answer.', td:'Bonus-gold question after every wave.', breakout:'Lose the ball? Answer to keep your life.', pong:'Answer to block points scored against you.', '2048':'Stuck? Answer to clear two tiles (3 per board).', reaction:'Click only when the right answer flashes.', simon:'Wrong pad? Answer for one retry.', mines:'Hit a mine? Answer to defuse it.', connect4:'Answer a question to drop each disc.', stack:'Bonus question every 5 lines; answer for a second chance.', rootout:'This machine always counts as learning time.', trace:'This machine always counts as learning time.'};
 const fireKey = (key,type) => { try { window.dispatchEvent(new KeyboardEvent(type,{key, bubbles:true, cancelable:true})); } catch(e){} };
-const TIPS = {snake:'Leave yourself an exit lane — the snake speeds up as it grows.',breakout:'Hit with the paddle edge to angle shots. Long combos multiply every brick.',flappy:'Tap in short, steady bursts and aim for the middle of each gap.',pong:'Return off the paddle tip for steep angles the CPU struggles to reach.',memory:'Work row by row so you remember where you have already looked.',whack:'Red bombs cost a life — leave them. Every 15-hit combo earns a Quake, Freeze or Shield. The Gopher King shows up every 5 levels.','2048':'Keep your biggest tile pinned in one corner and avoid the opposite direction.',tictactoe:'Take the centre or a corner. Two threats at once is a guaranteed win.',reaction:'Watch the colour, not the words. Gold is a decoy.',typing:'Accuracy beats speed — a missed word scores nothing.',simon:'Say the colours out loud, or chunk them in threes.',mines:'A 1 touching only one hidden tile means that tile is a mine.',connect4:'The centre column is part of the most fours. Watch the diagonals.',td:'Build where the trail passes twice. Frost + Boulder is a strong pair, and Gold Pans pay for themselves after a few waves. Calling a wave early pays bonus gold.',crossing:'Wait for gaps instead of rushing. Diving turtles fade before they sink, and gators bite at the head end.',stack:'Keep the stack flat and leave one column open for long logs. A saw (X) rescues a messy bottom row.',rootout:'Purple “!” tags mark invasives early on — from level 3 the labels disappear, so read the fact cards. Every 5 perfect drops earns a weed puller.',trace:'Go slowly and cover the whole grey shape. Staying inside the lines earns the third star. Works great with a finger or stylus.'};
+const TIPS = {snake:'Each level has a new maze. Gold apples are worth 3, mushrooms slow time, blue berries shrink your tail. Purple portals connect — and dashed edges wrap around.',breakout:'Hit with the paddle edge to angle shots. Long combos multiply every brick.',flappy:'Tap in short, steady bursts and aim for the middle of each gap.',pong:'Return off the paddle tip for steep angles the CPU struggles to reach.',memory:'Work row by row so you remember where you have already looked.',whack:'Red bombs cost a life — leave them. Every 15-hit combo earns a Quake, Freeze or Shield. The Gopher King shows up every 5 levels.','2048':'Keep your biggest tile pinned in one corner and avoid the opposite direction.',tictactoe:'Take the centre or a corner. Two threats at once is a guaranteed win.',reaction:'Watch the colour, not the words. Gold is a decoy.',typing:'Accuracy beats speed — a missed word scores nothing.',simon:'Say the colours out loud, or chunk them in threes.',mines:'A 1 touching only one hidden tile means that tile is a mine.',connect4:'The centre column is part of the most fours. Watch the diagonals.',td:'Build where the trail passes twice. Frost + Boulder is a strong pair, and Gold Pans pay for themselves after a few waves. Calling a wave early pays bonus gold.',crossing:'Wait for gaps instead of rushing. Diving turtles fade before they sink, and gators bite at the head end.',stack:'Keep the stack flat and leave one column open for long logs. A saw (X) rescues a messy bottom row.',rootout:'Purple “!” tags mark invasives early on — from level 3 the labels disappear, so read the fact cards. Every 5 perfect drops earns a weed puller.',trace:'Go slowly and cover the whole grey shape. Staying inside the lines earns the third star. Works great with a finger or stylus.'};
 const RIVALS = [['littletimmy','Little Timmy',1.25],['jimmy','Jimmy',1.75],['timmy','Timmy',2],['baubau','Lord Emperor Bau Bau',2.5],['thetimmy','THE TIMMY',3]];
 const RIVAL = id => RIVALS.find(r=>r[0]==id);
 const SPEEDS = {slow:.6, normal:1, fast:1.4, turbo:1.8};
@@ -709,7 +709,8 @@ const ACH = [
   {id:'hard10',cat:'Arcade',tier:2,name:'Glutton for Punishment',desc:'Finish 10 games on Hard or against a rival',p:s=>[sm(s,'hard'),10]},
   {id:'account',cat:'Arcade',tier:1,name:'Card Carrying',desc:'Sign up for an arcade account',p:s=>[mx(s,'account'),1]},
   {id:'resume',cat:'Arcade',tier:1,name:'Unfinished Business',desc:'Pick a saved game back up',p:s=>[sm(s,'resumes'),1]},
-  {id:'snake30',cat:'Machines',tier:2,name:'Long Boi',desc:'Eat 30 apples in one Snake run',p:s=>[bs(s,'snake'),30]},
+  {id:'snake30',cat:'Machines',tier:2,name:'Long Boi',desc:'Score 30 in one Snake run',p:s=>[bs(s,'snake'),30]},
+  {id:'snakeLv',cat:'Machines',tier:3,name:'Serpent Master',desc:'Reach level 8 in Snake',p:s=>[mx(s,'snakeLevel'),8]},
   {id:'brk10',cat:'Machines',tier:3,name:'Wall Breaker',desc:'Reach level 10 in Breakout',p:s=>[mx(s,'brkLevel'),10]},
   {id:'boss',cat:'Machines',tier:2,name:'Boss Buster',desc:'Defeat a Breakout boss',p:s=>[sm(s,'bossKills'),1]},
   {id:'flap25',cat:'Machines',tier:3,name:'Featherweight',desc:'Clear 25 pipes in Flapper',p:s=>[bs(s,'flappy'),25]},
@@ -745,10 +746,10 @@ const ACH = [
   {id:'lifer',cat:'Secret',tier:4,secret:true,name:'Lifer',desc:'Finish 1,000 games',p:s=>[plays(s),1000]},
 ];
 const KEY = 'wl-arcade-v1', ACCT_KEY = 'wl-arcade-accounts', SESSION_KEY = 'wl-arcade-session';
-const DEF = () => ({difficulty:'normal',speed:'normal',tickets:0,best:{},played:{},ach:[],prizes:{},daily:{date:'',done:false},earned:0,saves:{},stats:{max:{},sum:{}},username:'',edu:{on:false,topic:'add'},sessLog:[],days:{}});
+const DEF = () => ({difficulty:'normal',speed:'normal',tickets:0,best:{},played:{},ach:[],prizes:{},daily:{date:'',done:false},earned:0,saves:{},savesV:2,stats:{max:{},sum:{}},username:'',edu:{on:false,topic:'add'},sessLog:[],days:{}});
 const PFIELDS = Object.keys(DEF());
 const loadP = key => { let d = {}; try { d = JSON.parse(localStorage.getItem(key)) || {}; } catch(e){} return normP(d); };
-const normP = d => { const P = Object.assign(DEF(), d||{}); P.stats = Object.assign({max:{},sum:{}}, P.stats||{}); P.stats.max = P.stats.max||{}; P.stats.sum = P.stats.sum||{}; P.saves = P.saves||{}; P.ach = Array.isArray(P.ach)?P.ach:[]; P.edu = Object.assign({on:false,topic:'add'}, P.edu||{}); P.sessLog = Array.isArray(P.sessLog)?P.sessLog:[]; P.days = P.days||{}; return P; };
+const normP = d => { const P = Object.assign(DEF(), d||{}); P.stats = Object.assign({max:{},sum:{}}, P.stats||{}); P.stats.max = P.stats.max||{}; P.stats.sum = P.stats.sum||{}; P.saves = P.saves||{}; P.ach = Array.isArray(P.ach)?P.ach:[]; P.edu = Object.assign({on:false,topic:'add'}, P.edu||{}); P.sessLog = Array.isArray(P.sessLog)?P.sessLog:[]; P.days = P.days||{}; if (P.savesV !== 2) { P.saves = {}; P.savesV = 2; } return P; };
 const FB_ERR = {'auth/email-already-in-use':'That email already has an account. Switch to Log in.','auth/invalid-email':'That email doesn’t look right.','auth/weak-password':'That password is too weak — use at least 6 characters.','auth/invalid-credential':'Email or password is wrong.','auth/wrong-password':'Email or password is wrong.','auth/user-not-found':'Email or password is wrong.','auth/too-many-requests':'Too many tries. Wait a few minutes and try again.','auth/network-request-failed':'Can’t reach the server. Check your internet connection.','auth/operation-not-allowed':'That sign-in method is turned off in the Firebase console (Authentication → Sign-in method).','auth/user-disabled':'This account has been disabled.','auth/popup-closed-by-user':'The Google window was closed before sign-in finished.','auth/cancelled-popup-request':'The Google window was closed before sign-in finished.','auth/popup-blocked':'Your browser blocked the Google pop-up. Allow pop-ups for this site and try again.','auth/unauthorized-domain':'This website isn’t on Firebase’s list yet. Add it under Authentication → Settings → Authorized domains.','auth/account-exists-with-different-credential':'That email already has a password login. Log in with your email and password instead.','auth/operation-not-supported-in-this-environment':'Google sign-in doesn’t work here. Open the arcade’s own website instead.'};
 const fbErr = e => FB_ERR[e && e.code] || ('Something went wrong'+(e && e.code ? ' ('+e.code+')' : '')+'. Try again.');
 const getAccts = () => { try { return JSON.parse(localStorage.getItem(ACCT_KEY)) || {}; } catch(e) { return {}; } };
@@ -766,7 +767,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; return h % GAMES.length; };
-const BUILD = '2026-11-19a';
+const BUILD = '2026-11-19b';
 const SCRIPTS = ['arcade-core.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-edu.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
@@ -929,7 +930,8 @@ class Component extends DCLogic {
     }
     if (game && !this.ready) setTimeout(()=>this.forceUpdate(), 150);
   }
-  saveGame(){ const id = this.mounted && this.saveKey(this.mounted); if (!id || !this.snapFn) return false; let d = null; try { d = this.snapFn(); } catch(e){ d = null; }
+  saveGame(){ const id = this.mounted && this.saveKey(this.mounted); if (!id || !this.snapFn) return false;
+    if (this.state.admin) { if (this.P.saves[id]) { const sv = {...this.P.saves}; delete sv[id]; this.setP({saves:sv}); } return false; } let d = null; try { d = this.snapFn(); } catch(e){ d = null; }
     const saves = {...this.P.saves}, had = !!saves[id];
     if (d) { try { saves[id] = JSON.parse(JSON.stringify(d)); } catch(e) { return false; } } else delete saves[id];
     if (d || had) this.setP({saves}); return !!d; }
