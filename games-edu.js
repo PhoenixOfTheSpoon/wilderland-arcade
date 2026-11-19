@@ -90,72 +90,155 @@ A.snakeMath = (host, api) => {
 };
 
 // ================= TRACE & WRITE (handwriting) =================
+// Scoring: points for covering the letter, MINUS points for ink outside the lines.
+// Camera mode: write on paper, hold it up, the camera reads it and scores it the same way.
 A.register('trace', { mount(host, api){
-  const wrap = el('div',{width:'480px',fontFamily:A.font,userSelect:'none',background:C.forest,borderRadius:'12px',overflow:'hidden'}); host.appendChild(wrap);
+  const wrap = el('div',{width:'480px',fontFamily:A.font,userSelect:'none',background:C.forest,borderRadius:'12px',overflow:'hidden',position:'relative'}); host.appendChild(wrap);
   const top = el('div',{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'8px',padding:'8px 10px',flexWrap:'wrap'}); wrap.appendChild(top);
   const setBox = el('div',{display:'flex',background:'rgba(255,255,255,.15)',borderRadius:'999px',padding:'3px',gap:'2px'}); top.appendChild(setBox);
   const info = el('div',{color:'#fff',fontWeight:700,fontSize:'14px'}); top.appendChild(info);
   const {c,g,w,h} = A.canvas(wrap,480,370); c.style.borderRadius = '0'; c.style.touchAction = 'none'; c.style.cursor = 'crosshair';
-  const bot = el('div',{display:'grid',gridTemplateColumns:'1fr 1fr 1.4fr',gap:'8px',padding:'8px 10px'}); wrap.appendChild(bot);
-  const mkb = (t,fn,main) => { const x = el('button',{fontFamily:A.font,fontWeight:700,fontSize:'15px',border:'none',borderRadius:'999px',padding:'11px',cursor:'pointer',background:main?C.lime:'rgba(255,255,255,.18)',color:main?C.forest:'#fff'},t); x.onclick = () => { fn(); x.blur(); }; return x; };
+  const bot = el('div',{display:'grid',gridTemplateColumns:'1fr 1fr 1fr 1.3fr',gap:'8px',padding:'8px 10px'}); wrap.appendChild(bot);
+  const mkb = (t,fn,main) => { const x = el('button',{fontFamily:A.font,fontWeight:700,fontSize:'15px',border:'none',borderRadius:'999px',padding:'11px 6px',cursor:'pointer',background:main?C.lime:'rgba(255,255,255,.18)',color:main?C.forest:'#fff',whiteSpace:'nowrap'},t); x.onclick = () => { fn(); x.blur(); }; return x; };
   const SETS = {upper:['ABC','ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')], lower:['abc','abcdefghijklmnopqrstuvwxyz'.split('')], digits:['123','0123456789'.split('')], words:['Words',['cat','dog','sun','map','owl','fox','bee','elk','pine','moss','lake','fern','bug','hat','tree','fish']]};
   let set = 'upper', round = [], idx = 0, strokes = [], cur = null, score = 0, stars = [], guide = null, feedback = null, done = false, live = true, adv = null;
+  let cam = false, stream = null, video = null, camMsg = '', countdown = 0, cdTimer = null, inkC = null, badC = null;
   const segBtns = {};
   Object.entries(SETS).forEach(([k,[label]])=>{ const x = el('button',{fontFamily:A.font,fontWeight:700,fontSize:'13px',border:'none',borderRadius:'999px',padding:'5px 11px',cursor:'pointer'},label); x.onclick = () => { if (set==k) return; set = k; paintSeg(); newRound(); A.sfx('blip'); }; segBtns[k] = x; setBox.appendChild(x); });
   const paintSeg = () => Object.entries(segBtns).forEach(([k,x])=>{ x.style.background = set==k ? C.lime : 'transparent'; x.style.color = set==k ? C.forest : '#fff'; });
   const fontSize = t => t.length>1 ? Math.min(230, 430/(t.length*.62)) : 250;
-  const BASE = 290, CELL = 6, GW = Math.ceil(w/CELL), GH = Math.ceil(h/CELL);
-  const makeGuide = t => { const o = document.createElement('canvas'); o.width = w; o.height = h; const x = o.getContext('2d'), fs = fontSize(t);
-    x.font = '700 '+fs+'px '+A.font; x.textAlign = 'center'; x.textBaseline = 'alphabetic'; x.fillStyle = '#000'; x.fillText(t, w/2, BASE);
-    const d = x.getImageData(0,0,w,h).data, cells = new Set();
-    for (let gy=0; gy<GH; gy++) for (let gx=0; gx<GW; gx++) { const px = Math.min(w-1,gx*CELL+3), py = Math.min(h-1,gy*CELL+3); if (d[(py*w+px)*4+3] > 120) cells.add(gy*GW+gx); }
-    return {t, fs, cells}; };
-  const dilate = (set,r) => { const out = new Set(); set.forEach(i=>{ const gx = i%GW, gy = i/GW|0; for (let dy=-r;dy<=r;dy++) for (let dx=-r;dx<=r;dx++) { const X = gx+dx, Y = gy+dy; if (X>=0&&Y>=0&&X<GW&&Y<GH) out.add(Y*GW+X); } }); return out; };
-  const inkCells = () => { const o = document.createElement('canvas'); o.width = w; o.height = h; const x = o.getContext('2d'); x.strokeStyle = '#000'; x.lineWidth = 18; x.lineCap = 'round'; x.lineJoin = 'round';
-    strokes.forEach(s=>{ x.beginPath(); s.forEach((p,i)=>i?x.lineTo(p.x,p.y):x.moveTo(p.x,p.y)); if (s.length==1) x.lineTo(s[0].x+.1,s[0].y); x.stroke(); });
-    const d = x.getImageData(0,0,w,h).data, cells = new Set();
-    for (let gy=0; gy<GH; gy++) for (let gx=0; gx<GW; gx++) { const px = Math.min(w-1,gx*CELL+3), py = Math.min(h-1,gy*CELL+3); if (d[(py*w+px)*4+3] > 120) cells.add(gy*GW+gx); }
-    return cells; };
-  const load = () => { strokes = []; cur = null; feedback = null; guide = makeGuide(round[idx]); paintInfo(); };
+  const BASE = 290, CELL = 4, GW = Math.ceil(w/CELL), GH = Math.ceil(h/CELL), TOL = 9, INK = 12;
+  const mk = () => { const o = document.createElement('canvas'); o.width = w; o.height = h; return o; };
+  const toGrid = (o, thr) => { const s = document.createElement('canvas'); s.width = GW; s.height = GH; const x = s.getContext('2d'); x.drawImage(o,0,0,GW,GH);
+    const d = x.getImageData(0,0,GW,GH).data, m = new Uint8Array(GW*GH); for (let i=0;i<m.length;i++) m[i] = d[i*4+3] > thr ? 1 : 0; return m; };
+  const dil = (m,r) => { const out = new Uint8Array(m.length); for (let y=0;y<GH;y++) for (let x=0;x<GW;x++) if (m[y*GW+x]) for (let dy=-r;dy<=r;dy++) for (let dx=-r;dx<=r;dx++) { const X = x+dx, Y = y+dy; if (X>=0&&Y>=0&&X<GW&&Y<GH) out[Y*GW+X] = 1; } return out; };
+  const makeGuide = t => { const fs = fontSize(t), font = '700 '+fs+'px '+A.font;
+    const o = mk(), x = o.getContext('2d'); x.font = font; x.textAlign = 'center'; x.textBaseline = 'alphabetic'; x.fillStyle = '#000'; x.fillText(t, w/2, BASE);
+    const tc = mk(), y = tc.getContext('2d'); y.font = font; y.textAlign = 'center'; y.textBaseline = 'alphabetic'; y.fillStyle = '#000'; y.strokeStyle = '#000'; y.lineWidth = TOL*2; y.lineJoin = 'round'; y.fillText(t, w/2, BASE); y.strokeText(t, w/2, BASE);
+    const G = toGrid(o,140), T = toGrid(tc,40);
+    let x0 = GW, x1 = 0, y0 = GH, y1 = 0; for (let i=0;i<G.length;i++) if (G[i]) { const gx = i%GW, gy = i/GW|0; if (gx<x0) x0 = gx; if (gx>x1) x1 = gx; if (gy<y0) y0 = gy; if (gy>y1) y1 = gy; }
+    return {t, fs, G, T, tc, box:{x:x0*CELL, y:y0*CELL, w:(x1-x0+1)*CELL, h:(y1-y0+1)*CELL}}; };
+  const strokesCanvas = () => { const o = mk(), x = o.getContext('2d'); x.strokeStyle = C.forest; x.lineWidth = INK; x.lineCap = 'round'; x.lineJoin = 'round';
+    strokes.forEach(s=>{ x.beginPath(); s.forEach((p,i)=>i?x.lineTo(p.x,p.y):x.moveTo(p.x,p.y)); if (s.length==1) x.lineTo(s[0].x+.1,s[0].y); x.stroke(); }); return o; };
+  // red copy of the ink that sits outside the allowed band
+  const outsideOf = ink => { const o = mk(), x = o.getContext('2d'); x.drawImage(ink,0,0); x.globalCompositeOperation = 'source-in'; x.fillStyle = C.red; x.fillRect(0,0,w,h); x.globalCompositeOperation = 'destination-out'; x.drawImage(guide.tc,0,0); return o; };
+  const grade = (ink, lenient) => { const I = toGrid(ink,60), ID = dil(I,2);
+    let gN = 0, cov = 0, iN = 0, out = 0;
+    for (let i=0;i<I.length;i++) { if (guide.G[i]) { gN++; if (ID[i]) cov++; } if (I[i]) { iN++; if (!guide.T[i]) out++; } }
+    const covF = cov/Math.max(1,gN), outF = out/Math.max(1,iN), q = Math.max(0, covF - outF*1.2), th = lenient ? [.74,.58,.42] : [.8,.62,.45];
+    const st = q>=th[0] ? 3 : q>=th[1] ? 2 : q>=th[2] ? 1 : 0;
+    return {st, q, cov:Math.round(covF*100), out:Math.round(outF*120)}; };
+  const load = () => { strokes = []; cur = null; feedback = null; inkC = null; badC = null; camMsg = ''; guide = makeGuide(round[idx]); paintInfo(); };
   const paintInfo = () => { info.textContent = (done ? 'Round done' : (idx+1)+' / '+round.length) + '  ·  ' + '★'.repeat(stars.reduce((a,b)=>a+b,0)); };
   const newRound = () => { clearTimeout(adv); const pool = SETS[set][1].slice().sort(()=>Math.random()-.5); round = pool.slice(0, set=='digits'?10:8); idx = 0; score = 0; stars = []; done = false; api.score(0); load(); };
-  const check = () => { if (done || feedback) return; if (!strokes.length) { feedback = {s:-1,msg:'Trace the letter first'}; setTimeout(()=>{ if (feedback && feedback.s<0) feedback = null; },1200); return; }
-    const ink = inkCells(), gd = dilate(guide.cells,1), gd3 = dilate(guide.cells,3), inkD = dilate(ink,2);
-    let cov = 0; guide.cells.forEach(i=>{ if (inkD.has(i)) cov++; }); cov /= Math.max(1,guide.cells.size);
-    let prec = 0; ink.forEach(i=>{ if (gd3.has(i)) prec++; }); prec /= Math.max(1,ink.size);
-    const q = cov*.65 + prec*.35, st = cov<.45 ? 0 : q>=.82 ? 3 : q>=.66 ? 2 : q>=.5 ? 1 : 0;
-    stars.push(st); score += st*100 + (st==3?50:0); api.score(score); edu(api, st>=2); if (st==3) stat(api,'traceStars',3);
-    feedback = {s:st, msg:['Try that one again next time','Good start','Nice writing!','Perfect!'][st], cov:Math.round(cov*100), prec:Math.round(prec*100)};
-    A.sfx(st>=2?'point':'bad'); paintInfo();
-    adv = setTimeout(()=>{ if (!live) return; if (idx+1 < round.length) { idx++; load(); } else finishRound(); }, 1500); };
+  const award = (r) => { stars.push(r.st); const pts = Math.round(r.q*200) + r.st*50; score += pts; api.score(score); edu(api, r.st>=2); if (r.st==3) stat(api,'traceStars',3);
+    feedback = {s:r.st, msg:['Try that one again next time','Good start','Nice writing!','Perfect!'][r.st], cov:r.cov, out:r.out, pts};
+    A.sfx(r.st>=2?'point':'bad'); paintInfo();
+    adv = setTimeout(()=>{ if (!live) return; if (idx+1 < round.length) { idx++; load(); } else finishRound(); }, 2200); };
+  const flash = m => { feedback = {s:-1,msg:m}; setTimeout(()=>{ if (feedback && feedback.s<0) feedback = null; },1600); };
+  const check = () => { if (done || feedback) return; if (cam) return snap(); if (!strokes.length) return flash('Trace the letter first');
+    inkC = strokesCanvas(); badC = outsideOf(inkC); award(grade(inkC,false)); };
   const finishRound = () => { done = true; const total = stars.reduce((a,b)=>a+b,0); stat(api,'traceRound',total); paintInfo(); A.sfx('win'); api.over(score);
-    choice(wrap.parentNode ? wrap : wrap, 'ROUND DONE', total+' stars · '+score+' points', [['New round',()=>{ newRound(); }]]); };
-  wrap.style.position = 'relative';
-  bot.append(mkb('Clear',()=>{ if (!feedback) { strokes = []; A.sfx('flip'); } }), mkb('Skip',()=>{ if (done || feedback) return; stars.push(0); edu(api,false); if (idx+1<round.length) { idx++; load(); } else finishRound(); }), mkb('Check ✓',check,true));
+    choice(wrap, 'ROUND DONE', total+' stars · '+score+' points', [['New round',()=>{ newRound(); }]]); };
+
+  // ---------- camera ----------
+  const stopCam = () => { if (stream) stream.getTracks().forEach(t=>t.stop()); stream = null; if (video) { video.srcObject = null; } clearInterval(cdTimer); countdown = 0; };
+  const startCam = async () => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { flash('No camera on this device or browser'); return; }
+    camMsg = 'Starting camera…'; cam = true; paintBtns();
+    try { stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}, width:{ideal:1280}, height:{ideal:720}}, audio:false}); }
+    catch(e) { cam = false; paintBtns(); flash(e && e.name=='NotAllowedError' ? 'Camera permission was blocked' : 'Camera not available here — try arcade.wilderland.academy'); return; }
+    if (!live || !cam) { stopCam(); return; }
+    video = video || Object.assign(document.createElement('video'), {muted:true, playsInline:true}); video.setAttribute('playsinline',''); video.srcObject = stream;
+    try { await video.play(); } catch(e){}
+    camMsg = ''; };
+  const FR = {x:90, y:30, w:300, h:300};  // on-screen frame the paper should fill
+  const vidRect = () => { const vw = video.videoWidth, vh = video.videoHeight, s = Math.max(w/vw, h/vh); return {s, ox:(w-vw*s)/2, oy:(h-vh*s)/2}; };
+  const snap = () => { if (!video || !video.videoWidth || countdown) return; countdown = 3; A.sfx('blip');
+    cdTimer = setInterval(()=>{ countdown--; if (countdown>0) { A.sfx('blip'); return; } clearInterval(cdTimer); capture(); }, 800); };
+  const capture = () => {
+    const {s, ox, oy} = vidRect(), sx = (FR.x-ox)/s, sy = (FR.y-oy)/s, sw = FR.w/s, sh = FR.h/s, N = 220;
+    const cc = document.createElement('canvas'); cc.width = N; cc.height = N; const x = cc.getContext('2d', {willReadFrequently:true}); x.drawImage(video, sx, sy, sw, sh, 0, 0, N, N);
+    const id = x.getImageData(0,0,N,N), d = id.data, gray = new Float32Array(N*N);
+    for (let i=0;i<N*N;i++) gray[i] = d[i*4]*.3 + d[i*4+1]*.59 + d[i*4+2]*.11;
+    // local background (box blur) so shadows on the paper don't count as ink
+    const R = 14, bg = new Float32Array(N*N), sat = new Float64Array((N+1)*(N+1));
+    for (let y=0;y<N;y++) { let row = 0; for (let xx=0;xx<N;xx++) { row += gray[y*N+xx]; sat[(y+1)*(N+1)+xx+1] = sat[y*(N+1)+xx+1] + row; } }
+    for (let y=0;y<N;y++) for (let xx=0;xx<N;xx++) { const a = Math.max(0,xx-R), b = Math.max(0,y-R), e = Math.min(N,xx+R+1), f = Math.min(N,y+R+1);
+      bg[y*N+xx] = (sat[f*(N+1)+e] - sat[b*(N+1)+e] - sat[f*(N+1)+a] + sat[b*(N+1)+a]) / ((e-a)*(f-b)); }
+    const dark = new Uint8Array(N*N), M = 8; let cnt = 0;
+    for (let y=M;y<N-M;y++) for (let xx=M;xx<N-M;xx++) { const i = y*N+xx; if (bg[i]-gray[i] > Math.max(18, bg[i]*.16)) { dark[i] = 1; cnt++; } }
+    // drop specks
+    const clean = new Uint8Array(N*N); let x0 = N, x1 = 0, y0 = N, y1 = 0, n = 0;
+    for (let y=1;y<N-1;y++) for (let xx=1;xx<N-1;xx++) { const i = y*N+xx; if (!dark[i]) continue; let k = 0; for (let dy=-1;dy<=1;dy++) for (let dx=-1;dx<=1;dx++) k += dark[i+dy*N+dx]; if (k>=4) { clean[i] = 1; n++; if (xx<x0) x0 = xx; if (xx>x1) x1 = xx; if (y<y0) y0 = y; if (y>y1) y1 = y; } }
+    if (n < 40 || (x1-x0) < 14 && (y1-y0) < 14) { flash('I couldn’t see any writing — use a dark marker and fill the frame'); return; }
+    if (n > N*N*.35) { flash('Too dark — hold plain white paper in the frame'); return; }
+    const ic = document.createElement('canvas'); ic.width = N; ic.height = N; const ix = ic.getContext('2d'), od = ix.createImageData(N,N);
+    for (let i=0;i<N*N;i++) if (clean[i]) { od.data[i*4] = 1; od.data[i*4+1] = 86; od.data[i*4+2] = 64; od.data[i*4+3] = 255; }
+    ix.putImageData(od,0,0);
+    // fit the writing onto the guide letter
+    const bw = x1-x0+1, bh = y1-y0+1, B = guide.box, k = Math.min(B.w/bw, B.h/bh), dw = bw*k, dh = bh*k, dx0 = B.x + (B.w-dw)/2, dy0 = B.y + (B.h-dh)/2;
+    inkC = mk(); const ox2 = inkC.getContext('2d'); ox2.imageSmoothingEnabled = true;
+    const thick = Math.max(1, Math.min(5, Math.round(INK/2 - k*1.2)));
+    for (let a=0;a<8;a++) ox2.drawImage(ic, x0, y0, bw, bh, dx0+Math.cos(a*Math.PI/4)*thick, dy0+Math.sin(a*Math.PI/4)*thick, dw, dh);
+    ox2.drawImage(ic, x0, y0, bw, bh, dx0, dy0, dw, dh);
+    badC = outsideOf(inkC); A.sfx('flip'); award(grade(inkC,true)); };
+
+  const btns = {};
+  const paintBtns = () => { bot.innerHTML = '';
+    if (cam) bot.append(btns.exit, btns.skip, btns.flip, btns.snap); else bot.append(btns.clear, btns.skip, btns.cam, btns.check); };
+  btns.clear = mkb('Clear',()=>{ if (!feedback) { strokes = []; A.sfx('flip'); } });
+  btns.skip = mkb('Skip',()=>{ if (done || feedback || countdown) return; stars.push(0); edu(api,false); if (idx+1<round.length) { idx++; load(); } else finishRound(); });
+  btns.cam = mkb('📷 Camera',()=>{ if (!feedback) startCam(); });
+  btns.check = mkb('Check ✓',check,true);
+  btns.exit = mkb('✏️ Trace',()=>{ cam = false; stopCam(); paintBtns(); });
+  btns.flip = mkb('🔄 Flip',async ()=>{ if (!stream) return; const f = (stream.getVideoTracks()[0].getSettings().facingMode=='user') ? 'environment' : 'user'; stopCam();
+    try { stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:f},audio:false}); video.srcObject = stream; await video.play(); } catch(e) { flash('Only one camera here'); startCam(); } });
+  btns.snap = mkb('📸 Snap',check,true);
+  paintBtns();
+
   const pt = e => { const r = c.getBoundingClientRect(); return {x:(e.clientX-r.left)*w/r.width, y:(e.clientY-r.top)*h/r.height}; };
-  c.addEventListener('pointerdown', e=>{ if (done || feedback) return; e.preventDefault(); try { c.setPointerCapture(e.pointerId); } catch(_){} cur = [pt(e)]; strokes.push(cur); });
+  c.addEventListener('pointerdown', e=>{ if (done || feedback || cam) return; e.preventDefault(); try { c.setPointerCapture(e.pointerId); } catch(_){} cur = [pt(e)]; strokes.push(cur); });
   c.addEventListener('pointermove', e=>{ if (!cur) return; e.preventDefault(); const p = pt(e), l = cur[cur.length-1]; if (Math.hypot(p.x-l.x,p.y-l.y)>2) cur.push(p); });
   const up = () => { cur = null; }; c.addEventListener('pointerup', up); c.addEventListener('pointercancel', up);
-  const offK = A.keys(e=>{ if (e.key=='Enter' || e.key==' ') check(); else if (e.key=='Backspace' || e.key=='c') strokes = []; else return false; });
+  const offK = A.keys(e=>{ if (e.key=='Enter' || e.key==' ') check(); else if ((e.key=='Backspace' || e.key=='c') && !cam) strokes = []; else return false; });
+
+  const drawGuide = (alpha) => { const fs = guide.fs; g.save(); g.globalAlpha = alpha;
+    g.strokeStyle = '#9fb8d6'; g.lineWidth = 2; [BASE-fs*.72, BASE].forEach(y=>{ g.beginPath(); g.moveTo(16,y); g.lineTo(w-16,y); g.stroke(); });
+    g.setLineDash([10,8]); g.strokeStyle = '#c9a3c9'; g.beginPath(); g.moveTo(16,BASE-fs*.5); g.lineTo(w-16,BASE-fs*.5); g.stroke(); g.setLineDash([]);
+    g.font = '700 '+fs+'px '+A.font; g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+    // the allowed band, faint, so kids can see where "inside the lines" ends
+    g.strokeStyle = feedback && feedback.s>=0 ? 'rgba(0,180,81,.16)' : 'rgba(1,86,64,.07)'; g.lineWidth = TOL*2; g.lineJoin = 'round'; g.strokeText(guide.t, w/2, BASE);
+    g.fillStyle = feedback && feedback.s>=0 ? '#cfe9d6' : '#e3e0d0'; g.fillText(guide.t, w/2, BASE);
+    g.setLineDash([3,7]); g.strokeStyle = '#9a9a9b'; g.lineWidth = 2; g.strokeText(guide.t, w/2, BASE); g.setLineDash([]); g.restore(); };
   const draw = () => { g.fillStyle = '#fbf8ec'; g.fillRect(0,0,w,h);
-    if (guide) { const fs = guide.fs; g.strokeStyle = '#9fb8d6'; g.lineWidth = 2; [BASE-fs*.72, BASE].forEach(y=>{ g.beginPath(); g.moveTo(16,y); g.lineTo(w-16,y); g.stroke(); });
-      g.setLineDash([10,8]); g.strokeStyle = '#c9a3c9'; g.beginPath(); g.moveTo(16,BASE-fs*.5); g.lineTo(w-16,BASE-fs*.5); g.stroke(); g.setLineDash([]);
-      g.font = '700 '+fs+'px '+A.font; g.textAlign = 'center'; g.textBaseline = 'alphabetic'; g.fillStyle = feedback && feedback.s>=0 ? '#cfe9d6' : '#e3e0d0'; g.fillText(guide.t, w/2, BASE);
-      g.setLineDash([3,7]); g.strokeStyle = '#9a9a9b'; g.lineWidth = 2; g.strokeText(guide.t, w/2, BASE); g.setLineDash([]); }
-    g.strokeStyle = C.forest; g.lineWidth = 12; g.lineCap = 'round'; g.lineJoin = 'round';
-    strokes.forEach(s=>{ g.beginPath(); s.forEach((p,i)=>i?g.lineTo(p.x,p.y):g.moveTo(p.x,p.y)); if (s.length==1) g.lineTo(s[0].x+.1,s[0].y); g.stroke(); });
-    g.textBaseline = 'alphabetic';
-    if (!strokes.length && !feedback) { g.fillStyle = '#4a4a4a'; g.font = '500 14px '+A.font; g.textAlign = 'center'; g.fillText('Trace over the grey shape with your finger or mouse', w/2, h-14); }
-    if (feedback) { g.fillStyle = 'rgba(1,86,64,.9)'; rrect(g,70,20,340,feedback.s>=0?92:50,16); g.fill(); g.textAlign = 'center';
-      if (feedback.s>=0) { g.fillStyle = C.gold; g.font = '700 34px '+A.font; g.fillText('★'.repeat(feedback.s)+'☆'.repeat(3-feedback.s), w/2, 60); g.fillStyle = '#fff'; g.font = '700 16px '+A.font; g.fillText(feedback.msg+' · covered '+feedback.cov+'%', w/2, 92); }
-      else { g.fillStyle = '#fff'; g.font = '700 16px '+A.font; g.fillText(feedback.msg, w/2, 52); } } };
+    const camLive = cam && !feedback && video && video.videoWidth;
+    if (camLive) { const {s, ox, oy} = vidRect(); g.drawImage(video, ox, oy, video.videoWidth*s, video.videoHeight*s);
+      g.fillStyle = 'rgba(1,86,64,.55)'; g.fillRect(0,0,w,FR.y); g.fillRect(0,FR.y+FR.h,w,h-FR.y-FR.h); g.fillRect(0,FR.y,FR.x,FR.h); g.fillRect(FR.x+FR.w,FR.y,w-FR.x-FR.w,FR.h);
+      g.strokeStyle = C.lime; g.lineWidth = 4; rrect(g,FR.x,FR.y,FR.w,FR.h,14); g.stroke();
+      g.fillStyle = '#fff'; g.textAlign = 'center'; g.font = '700 15px '+A.font; g.fillText('Write  “'+guide.t+'”  big on paper · fill the frame', w/2, 22);
+      g.font = '700 50px '+A.font; g.textAlign = 'left'; g.fillStyle = C.lime; g.fillText(guide.t.length>3?'':guide.t, 14, 80);
+      g.textAlign = 'center'; g.font = '500 13px '+A.font; g.fillStyle = '#fff'; g.fillText('Dark marker on white paper works best · tap Snap', w/2, h-10);
+      if (countdown) { g.fillStyle = 'rgba(0,0,0,.35)'; g.beginPath(); g.arc(w/2,h/2,52,0,7); g.fill(); g.fillStyle = '#fff'; g.font = '700 64px '+A.font; g.textBaseline = 'middle'; g.fillText(countdown, w/2, h/2+2); g.textBaseline = 'alphabetic'; } }
+    else if (cam && !feedback) { drawGuide(.5); g.fillStyle = C.forest; g.textAlign = 'center'; g.font = '700 16px '+A.font; g.fillText(camMsg || 'Waiting for the camera…', w/2, 40); }
+    else if (guide) drawGuide(1);
+    if (!camLive) {
+      if (inkC) { g.drawImage(inkC,0,0,w,h); if (badC) g.drawImage(badC,0,0,w,h); }
+      else if (!cam) { g.strokeStyle = C.forest; g.lineWidth = INK; g.lineCap = 'round'; g.lineJoin = 'round';
+        strokes.forEach(s=>{ g.beginPath(); s.forEach((p,i)=>i?g.lineTo(p.x,p.y):g.moveTo(p.x,p.y)); if (s.length==1) g.lineTo(s[0].x+.1,s[0].y); g.stroke(); }); }
+      if (!cam && !strokes.length && !feedback) { g.fillStyle = '#4a4a4a'; g.font = '500 14px '+A.font; g.textAlign = 'center'; g.fillText('Trace inside the grey shape · ink outside the lines costs points', w/2, h-14); } }
+    if (feedback) { const big = feedback.s>=0, by = big ? h-74 : h-58; g.fillStyle = 'rgba(1,86,64,.93)'; rrect(g,40,by,400,big?66:46,16); g.fill(); g.textAlign = 'center';
+      if (big) { g.font = '700 22px '+A.font; const st = '★'.repeat(feedback.s)+'☆'.repeat(3-feedback.s), msg = '  '+feedback.msg+'  +'+feedback.pts, sw = g.measureText(st).width; g.font = '700 16px '+A.font; const mw = g.measureText(msg).width, x0 = w/2-(sw+mw)/2;
+        g.textAlign = 'left'; g.font = '700 22px '+A.font; g.fillStyle = C.gold; g.fillText(st, x0, by+28); g.font = '700 16px '+A.font; g.fillStyle = '#fff'; g.fillText(msg, x0+sw, by+27);
+        g.textAlign = 'center'; g.font = '600 14px '+A.font; g.fillStyle = C.lime; g.fillText('Covered '+feedback.cov+'%', w/2-80, by+52); g.fillStyle = feedback.out>0 ? '#ff9a8a' : C.lime; g.fillText('Outside the lines −'+feedback.out, w/2+70, by+52); }
+      else { g.fillStyle = '#fff'; g.font = '700 15px '+A.font; g.fillText(feedback.msg, w/2, by+29); } } };
   const offL = A.loop(draw);
   paintSeg();
-  const R = api.resume;
-  if (R && R.round && R.idx < R.round.length) { set = R.set; paintSeg(); round = R.round; idx = R.idx; score = R.score; stars = R.stars; api.score(score); load(); }
+  const RS = api.resume;
+  if (RS && RS.round && RS.idx < RS.round.length) { set = RS.set; paintSeg(); round = RS.round; idx = RS.idx; score = RS.score; stars = RS.stars; api.score(score); load(); }
   else newRound();
   api.snap && api.snap(()=> !done && (idx>0 || stars.length) ? {set, round, idx: feedback ? Math.min(idx+1, round.length) : idx, score, stars} : null);
-  return () => { live = false; clearTimeout(adv); offK(); offL(); };
+  return () => { live = false; clearTimeout(adv); stopCam(); offK(); offL(); };
 }});
 
 // ================= ROOT OUT THE CORRUPTION (invasive-species tower stacker) =================
