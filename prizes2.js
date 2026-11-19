@@ -194,7 +194,8 @@ const rollCap = (c, P) => { const r = Math.random()*100; let acc = 0, tier = 0; 
   const pool = CAT.filter(it => it.r === tier && !it.season && !it.stars && !it.repeat); return pool[Math.floor(Math.random()*pool.length)] || CAT[0]; };
 
 // ---------------- rebirth ----------------
-W.rebirthNeed = P => 1e7 * Math.pow(100, P.rebirths||0);
+// 10M → 10B → 10T → 10Qa → 10Qi (10 quintillion) → 10Sx … ×1,000 each Rebirth
+W.rebirthNeed = P => 1e7 * Math.pow(1000, P.rebirths||0);
 W.rebirthStars = P => { const need = W.rebirthNeed(P); if ((P.tickets||0) < need) return 0; return 1 + Math.floor(Math.log10(P.tickets/need)); };
 const SKINS = [{id:'',n:'Classic',stars:0},{id:'gold',n:'Gold Trim',stars:1},{id:'neon',n:'Neon Glow',stars:3},{id:'galaxy',n:'Galaxy',stars:6},{id:'rainbow',n:'Wilderland Rainbow',stars:10}];
 W.SKINS = SKINS;
@@ -412,6 +413,7 @@ W.mount = (root, api) => {
       E('div', {cls:'wlp-small'}, 'Reach the milestone, then Rebirth: your tickets and Multiplier upgrades reset, but you get Golden Stars. Each star multiplies every ticket ×1.5 forever, unlocks Golden Hall prizes and cabinet skins. You keep your prizes, collections, achievements and Workshop upgrades.'),
       E('div', {style:{marginTop:'10px', fontWeight:700}}, 'Rebirths: '+(p.rebirths||0)+' · Golden Stars: '+(p.stars||0)+' · star bonus ×'+W.fmt(starMult(p))),
       E('div', {style:{marginTop:'6px', fontSize:'13px'}}, 'Next milestone: '+W.fmt(need)+' tickets'),
+      E('div', {cls:'wlp-small'}, 'Milestones: '+[0,1,2,3,4,5].map(i=>W.fmt(1e7*Math.pow(1000,(p.rebirths||0)+i))).join(' → ')+' → …'),
       E('div', {cls:'wlp-bar', style:{margin:'6px 0'}}, E('div', {style:{width:pct+'%', background:'#F9BF01'}})),
       (() => { const b = E('button', {cls:'wlp-buy', style:{background:'#F9BF01', color:'#121313', fontSize:'15px', padding:'10px'}, onclick:()=>{ if (api.admin()) return api.toast('ADMIN MODE · REBIRTH DISABLED'); if (!stars) return api.sfx('bad');
           if (b.dataset.arm !== '1') { b.dataset.arm = '1'; b.textContent = 'Are you sure? Tap again to Rebirth for '+stars+' ⭐'; return; }
