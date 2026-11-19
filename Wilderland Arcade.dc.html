@@ -322,7 +322,7 @@ button{font-family:inherit;}
             <label for="wl-downmin" style="font-size:12px; font-weight:700; color:#015640;">Minutes</label><input id="wl-downmin" class="wl-field" inputMode="decimal" value="{{ downMin }}" onChange="{{ inDownMin }}" onKeyDown="{{ stopKey }}" placeholder="15" style="width:80px; font-family:inherit; font-size:15px; font-weight:700; border:1.5px solid #015640; border-radius:10px; padding:6px 10px;">
             <input class="wl-field" value="{{ downText }}" onChange="{{ inDownText }}" onKeyDown="{{ stopKey }}" placeholder="Message for players (optional)" aria-label="Message for players" style="flex:1 1 200px; min-width:0; font-family:inherit; font-size:14px; border:1.5px solid #015640; border-radius:10px; padding:6px 10px;">
           </div>
-          <div style="display:flex; gap:6px; flex-wrap:wrap;"><button onClick="{{ doShutdown }}" style="border:none; border-radius:999px; padding:7px 14px; font-weight:700; font-size:13px; cursor:pointer; background:#B3001B; color:#ffffff;">{{ shutLabel }}</button><button onClick="{{ doReopen }}" style="border:1.5px solid #015640; border-radius:999px; padding:7px 14px; font-weight:700; font-size:13px; cursor:pointer; background:#ffffff; color:#015640;">Reopen now</button></div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;"><button onClick="{{ doShutdown }}" style="border:none; border-radius:999px; padding:7px 14px; font-weight:700; font-size:13px; cursor:pointer; background:#B3001B; color:#ffffff;">{{ shutLabel }}</button><button onClick="{{ doReopen }}" style="border:1.5px solid #015640; border-radius:999px; padding:7px 14px; font-weight:700; font-size:13px; cursor:pointer; background:#ffffff; color:#015640;">Reopen now</button><button onClick="{{ doPreview }}" style="border:1.5px solid #015640; border-radius:999px; padding:7px 14px; font-weight:700; font-size:13px; cursor:pointer; background:#ffffff; color:#015640;">Preview (8 s)</button></div>
           <div style="font-size:11px; color:#4a4a4a;">Every open tab shows a closed screen with a countdown and reopens by itself. Games in progress are saved first. Admins can still play.</div>
         </div>
         <sc-if value="{{ admMsg }}" hint-placeholder-val="{{ false }}"><div role="status" style="background:#fff4cc; color:#5c4100; border-radius:10px; padding:9px 12px; font-size:13px; font-weight:700;">{{ admMsg }}</div></sc-if>
@@ -832,7 +832,7 @@ const SPEED_TIX = {slow:.5, normal:1, fast:1.5, turbo:2.5};
 // Speed bonus only counts in real-time games where Turbo actually makes it harder (not 2048, Tic-Tac-Toe, Memory, Minesweeper…).
 // Games that pay no tickets (scores still go on the leaderboard).
 const NO_TIX = ['2048'];
-const ADMIN_EMAILS = ['jonah@wilderland.academy','hero@wilderland.academy'];
+const ADMIN_EMAILS = ['jonah@wilderland.academy'];
 const TIX_SPEED_GAMES = ['snake','breakout','flappy','pong','whack','simon','td','crossing','stack','rootout'];
 // Fair payout: every game pays ~100 tickets for hitting its target score, scaling smoothly above and below.
 const fmtDur2 = sec => { sec = Math.ceil(sec); const h = Math.floor(sec/3600), m = Math.floor(sec%3600/60), ss = sec%60; return (h ? h+':'+String(m).padStart(2,'0') : m)+':'+String(ss).padStart(2,'0'); };
@@ -1039,7 +1039,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-11-20d';
+const BUILD = '2026-11-20e';
 const SCRIPTS = ['arcade-core.js','prizes2.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-edu.js','games-idle.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
@@ -1264,7 +1264,7 @@ class Component extends DCLogic {
       if (!all && !amt) return this.setState({admArm:'', admMsg:'Type how many tickets to remove (or leave it empty for all).'}); }
     const what = kind=='tix' ? (all?'all':amt.toLocaleString())+' tickets' : kind=='upg' ? 'every Workshop upgrade' : 'EVERYTHING (full reset)';
     if (s.cloud) { const C = window.WLCloud;
-      if (!this.cloudUid) return this.setState({admArm:'', admMsg:'Log in with an admin account (hero@ or jonah@wilderland.academy) first.'});
+      if (!this.cloudUid) return this.setState({admArm:'', admMsg:'Log in as jonah@wilderland.academy first.'});
       try { if (kind=='tix') await C.adjust(x.k, amt); else await C.adminFlag(x.k, kind=='upg' ? {upg:true} : {full:true});
         if (kind!='upg') { try { await C.deleteUserScores('_tix', x.k); } catch(e){} } this._bAt = {}; this.cloudBoard = {};
         this.setState({admArm:'', admMsg:'Removing '+what+' from '+x.u+'. It happens the next time their game loads.'}); }
@@ -1277,12 +1277,18 @@ class Component extends DCLogic {
     putJSON(x.k, out); if (x.k === this.profKey()) { this.P = normP(out); this.setState({...this.P}); }
     const B = getJSON(BOARD_KEY,{e:[]}); B.e.forEach(y=>{ if (y.g=='_tix' && y.k==x.k) y.s = out.earned||0; }); putJSON(BOARD_KEY,B);
     this.setState({admArm:'', admMsg:'Removed '+what+' from '+x.u+'.'}); window.Arcade && window.Arcade.sfx('coin'); }
-  async adminShutdown(open){ const s = this.state; if (!s.admin) return; if (!s.cloud || !this.cloudUid) return this.setState({admMsg:'Log in with an admin account (online) first — a shutdown needs the online database.'});
+  async adminShutdown(open){ const s = this.state; if (!s.admin) return;
+    if (!s.cloud || !window.WLCloud) return this.setState({admMsg:'The online database isn’t connected on this page, so a shutdown can’t reach other players. Use the real site (arcade.wilderland.academy) and reload.'});
+    if (!this.cloudUid) return this.setState({admMsg:'Log in as jonah@wilderland.academy first (Sign up / Log in at the top), then try again.'});
+    const em = String((this.cloudMeta && this.cloudMeta.email) || '').toLowerCase();
+    if (em && !ADMIN_EMAILS.includes(em)) return this.setState({admMsg:'You’re logged in as '+em+'. Log out and log in as jonah@wilderland.academy to shut the arcade down.'});
     const mins = open ? 0 : Math.max(1, Math.min(1440, parseFloat(String(s.downMin||'').replace(/[^0-9.]/g,''))||0));
     if (!open && !(parseFloat(s.downMin) > 0)) return this.setState({admMsg:'Type how many minutes to shut down for (1–1440).'});
     if (!open && s.admArm !== 'down') return this.setState({admArm:'down', admMsg:'Press SHUT DOWN again to close the arcade for everyone for '+mins+' minute'+(mins==1?'':'s')+'.'});
-    try { await window.WLCloud.shutdown(mins, (s.downText||'').slice(0,140)); this.setState({admArm:'', admMsg: open ? 'The arcade is open again.' : 'Arcade shut down for '+mins+' minute'+(mins==1?'':'s')+'. Players see a countdown; admins can still play.'}); }
-    catch(e) { this.setState({admArm:'', admMsg: String(e && e.code||'').includes('permission') ? 'Firebase said no: publish the new firestore.rules (the “config” section) and use a verified admin email.' : 'Couldn’t: '+(e && (e.code||e.message))}); } }
+    try { await window.WLCloud.shutdown(mins, (s.downText||'').slice(0,140)); this.setState({admArm:'', admMsg: open ? 'The arcade is open again for everyone.' : 'Done! The arcade is closed for '+mins+' minute'+(mins==1?'':'s')+'. Every other player sees the countdown now. You won’t see it because admins can still play — press “Preview” to see what they see, or open the site in a private window.'}); }
+    catch(e) { const code = String(e && (e.code||e.message) || 'unknown');
+      this.setState({admArm:'', admMsg: code.includes('permission') ? 'Firebase refused (permission-denied). Open console.firebase.google.com → Firestore Database → Rules, paste the newest rules (they allow jonah@wilderland.academy to write “config”), and click Publish. Then try again.' : 'Couldn’t shut down: '+code}); } }
+  previewDown(){ this.setState({downPreview:Date.now()+8000}); setTimeout(()=>this.setState({downPreview:0}), 8100); }
   async adminReloadAll(){ const s = this.state; if (!s.admin || !s.cloud || !this.cloudUid) return this.setState({admMsg:'Log in with an admin account (online) first.'});
     try { await window.WLCloud.reloadEveryone(); this.setState({admMsg:'Reloading every open arcade tab…'}); } catch(e) { this.setState({admMsg:'Couldn’t: '+(e && (e.code||e.message))+' · publish the new firestore.rules first.'}); } }
   async adminResetAll(){ const s = this.state; if (!s.admin) return;
@@ -1556,12 +1562,12 @@ class Component extends DCLogic {
       admRows: (()=>{ const g0 = s.admGame||'_tix'; let e; if (s.cloud) { if (s.adminOpen) this.needBoard(g0); e = ((this.cloudBoard||{})[g0]||[]).slice(); } else e = getJSON(BOARD_KEY,{e:[]}).e.filter(x=>x.g==g0);
         return e.sort((a,b)=>b.s-a.s).slice(0,50).map((x,i)=>({rank:i+1, avImg: avSVG(avDec(x.av), x.al||0), name:x.u, score:fmtN(x.s), date:x.d||'', isTix: g0=='_tix', rm: ()=>this.adminPlayer(x,'tix'), rmLabel: s.admArm=='tix:'+x.k ? 'Confirm' : '− Tickets', upg: ()=>this.adminPlayer(x,'upg'), upgLabel: s.admArm=='upg:'+x.k ? 'Confirm' : 'Take upgrades', full: ()=>this.adminPlayer(x,'full'), fullLabel: s.admArm=='full:'+x.k ? 'Confirm' : 'Full reset', del: ()=>this.adminDelete(g0, x), delLabel: s.admArm=='del:'+(x.id||x.k+x.s) ? 'Confirm' : (g0=='_tix' ? 'Remove player' : 'Delete')})); })(),
       reloadAll: ()=>this.adminReloadAll(), downMin: s.downMin||'', inDownMin: e=>this.setState({downMin:e.target.value.slice(0,6)}), downText: s.downText||'', inDownText: e=>this.setState({downText:e.target.value.slice(0,140)}),
-      doShutdown: ()=>this.adminShutdown(false), doReopen: ()=>this.adminShutdown(true), shutLabel: s.admArm=='down' ? 'YES · SHUT IT DOWN' : 'Shut down',
+      doShutdown: ()=>this.adminShutdown(false), doReopen: ()=>this.adminShutdown(true), doPreview: ()=>this.previewDown(), shutLabel: s.admArm=='down' ? 'YES · SHUT IT DOWN' : 'Shut down',
       downStatus: (s.downUntil||0) > Date.now() ? 'CLOSED · reopens in '+fmtDur2((s.downUntil-Date.now())/1000) : 'Open',
-      downOn: (s.downUntil||0) > Date.now() && !s.admin, downLeft: fmtDur2(Math.max(0,((s.downUntil||0)-Date.now())/1000)), downNote: s.downMsg || 'The arcade is closed for a little maintenance. Grab a snack — it reopens by itself when the timer hits zero.',
+      downOn: ((s.downUntil||0) > Date.now() && !s.admin) || (s.downPreview||0) > Date.now(), downLeft: fmtDur2(Math.max(0,(((s.downUntil||0) > Date.now() ? s.downUntil : (s.downPreview ? Date.now() + (parseFloat(s.downMin)||15)*60000 : 0))-Date.now())/1000)), downNote: s.downMsg || 'The arcade is closed for a little maintenance. Grab a snack — it reopens by itself when the timer hits zero.',
       adminDownBanner: (s.downUntil||0) > Date.now() && s.admin, resetAll: ()=>this.adminResetAll(), resetAllLabel: s.admArm=='resetall' ? 'YES · WIPE EVERYONE' : 'FULL RESET · everyone',
       admIsTix: (s.admGame||'_tix')=='_tix', admRm: s.admRm||'', inAdmRm: e=>this.setState({admRm:e.target.value.slice(0,12)}),
-      admEmpty: s.cloud && !this.cloudUid ? 'Log in with an admin account (hero@ or jonah@wilderland.academy) to moderate online players.' : '',
+      admEmpty: s.cloud && !this.cloudUid ? 'Log in as jonah@wilderland.academy to moderate online players.' : '',
       closeCode: ()=>this.setState({codeOpen:false}),
       codeInput: e=>this.setState({codeVal:e.target.value}),
       codeKey: e=>{ e.stopPropagation(); if (e.key=='Enter') this.submitCode(); if (e.key=='Escape') this.setState({codeOpen:false}); },

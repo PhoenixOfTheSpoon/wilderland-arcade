@@ -2,10 +2,9 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Admin accounts (can remove leaderboard scores). Add more emails to the list if needed.
+    // The admin account. Firebase allows only one account per email, so this email can't be claimed by anyone else.
     function isAdmin() {
-      return request.auth != null && request.auth.token.email_verified == true
-        && request.auth.token.email in ['jonah@wilderland.academy', 'hero@wilderland.academy'];
+      return request.auth != null && request.auth.token.email == 'jonah@wilderland.academy';
     }
 
     // Each player's saved progress: only they can read or write it.
