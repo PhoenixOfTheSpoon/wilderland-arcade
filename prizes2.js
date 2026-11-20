@@ -337,10 +337,14 @@ const E = (tag, props, ...kids) => { const e = document.createElement(tag); if (
 const icon = (it, owned=true, big=false) => { const r = R[it.r]; const d = E('div', {cls:'wlp-ic'+(owned?'':' off'), style:{'--rc':r.c, '--rg':r.glow, '--rbg': r.c+'33'}});
   if (it.art) d.appendChild(E('img', {src:it.art, alt:''})); else d.appendChild(E('span', null, it.e)); if (!owned) d.title = '???'; return d; };
 
-W.reveal = (it, label, low, sfx) => { ensureCss(); sfx = sfx || (n => window.Arcade && window.Arcade.sfx && window.Arcade.sfx(n)); const r = R[it.r], big = it.r >= 6, wild = it.r == 7;
+// Buy pop-ups can be switched off (remembered on this device). Rebirths and other big moments always show.
+W.popsOn = () => { try { return localStorage.getItem('wl-prize-pops') !== 'off'; } catch(e) { return true; } };
+W.setPops = on => { try { localStorage.setItem('wl-prize-pops', on ? 'on' : 'off'); } catch(e) {} };
+W.reveal = (it, label, low, sfx, opts) => { ensureCss(); sfx = sfx || (n => window.Arcade && window.Arcade.sfx && window.Arcade.sfx(n)); const r = R[it.r], big = it.r >= 6, wild = it.r == 7;
   const o = E('div', {cls:'wlp-reveal'+(big?' big':'')+(wild?' wild':''), style:{'--rc':r.c, '--rg':r.glow}});
   const card = E('div', {cls:'card'}, E('div', {cls:'ttl'+(wild?' wlp-rain':'')}, label || (r.n.toUpperCase()+'!')), icon(it), E('div', {style:{fontWeight:800, fontSize:'20px', color:'#015640'}}, it.n), E('div', {cls:'wlp-small'}, it.d), E('div', {style:{fontSize:'11px', fontWeight:700, color:'#8a8a8a'}}, it.colName),
     E('button', {cls:'wlp-buy', style:{marginTop:'6px', maxWidth:'200px'}, onclick:()=>o.remove()}, 'Awesome!'));
+  if (opts && opts.buy) card.appendChild(E('button', {cls:'wlp-chip', style:{marginTop:'4px', fontSize:'11px'}, onclick:()=>{ W.setPops(false); o.remove(); opts.onOff && opts.onOff(); }}, '🔕 Turn off these pop-ups'));
   o.appendChild(card);
   if (!low && it.r >= 2) { const n = it.r >= 6 ? 70 : it.r >= 4 ? 40 : 18; for (let i=0;i<n;i++) { const a = Math.random()*Math.PI*2, d = 120 + Math.random()*(big?420:220);
       const p = E('div', {cls:'wlp-p', style:{background: wild ? ['#ff4539','#f9bf01','#00b451','#64cdf5','#a64be0'][i%5] : (i%3? r.c : '#fff'), animationDelay:(Math.random()*.25)+'s'}}); p.style.setProperty('--dx', Math.cos(a)*d+'px'); p.style.setProperty('--dy', Math.sin(a)*d+'px'); o.appendChild(p); } }
@@ -360,18 +364,28 @@ W.mount = (root, api) => {
   // keep challenges current
   { const p = W.ensureChal(P(), games); if (p) set(p); }
 
-  const reveal = (it, label) => W.reveal(it, label, api.lowFx(), api.sfx);
+  // Buying shows the big pop-up only if pop-ups are on; otherwise a quick note so you can keep shopping.
+  const reveal = (it, label) => { if (W.popsOn()) return W.reveal(it, label, api.lowFx(), api.sfx, {buy:true, onOff:()=>{ api.toast('BUY POP-UPS OFF · TURN THEM BACK ON AT THE TOP'); render(); }});
+    api.sfx(it.r >= 4 ? 'win' : 'coin'); api.toast((label ? label+' · ' : 'GOT ')+it.n.toUpperCase()); };
+  let qty = 1; try { qty = JSON.parse(localStorage.getItem('wl-prize-qty')) || 1; } catch(e) {}
+  // How many copies the bulk-buy setting buys right now, and what they cost in total.
+  const bulk = (it, price) => { const p = P(), want = qty === 'max' ? 1e4 : qty;
+    if (isStar(it)) { if (!it.repeat) return {n:1, cost:starPrice(it, p)}; let n = 0, cost = 0, own = (p.prizes||{})[it.id]||0;
+      while (n < want) { const c = 100 * Math.pow(2, own+n); if (cost + c > freeStars(p) && n > 0) break; cost += c; n++; if (cost > freeStars(p)) break; } return {n, cost}; }
+    const can = Math.floor((p.tickets||0) / price); return {n: Math.max(1, Math.min(want, can)), cost: price * Math.max(1, Math.min(want, can))}; };
 
   const checkCols = () => { const st = W.colStatus(P()), done = {...(P().colDone||{})}; let newly = null;
     st.forEach(c => { if (c.done && !done[c.id]) { done[c.id] = true; newly = c; } });
     if (newly) { set({colDone:done}); api.toast('COLLECTION COMPLETE · '+newly.n.toUpperCase()+' · PERMANENT ×1.2'); } };
 
   const buy = (it, price) => { const p = P(); if (api.admin()) { api.toast('ADMIN MODE · SHOPPING DISABLED'); return; }
-    const prizes = {...(p.prizes||{}), [it.id]: ((p.prizes||{})[it.id]||0)+1};
-    if (isStar(it)) { const sp = starPrice(it, p); if (freeStars(p) < sp) { api.sfx('bad'); api.toast('NEED '+(sp - freeStars(p))+' MORE GOLDEN STARS'); return; }
-      set({starsSpent:(p.starsSpent||0)+sp, prizes, ...(W.onBuy({...p, prizes})||{})}); const hd = W.applyHead(P()); if (hd) set(hd); reveal(it); const pk = W.perkOf(it); if (pk) api.toast('PERMANENT POWER · '+pk.t.toUpperCase()); checkCols(); render(); return; }
-    if ((p.tickets||0) < price) { api.sfx('bad'); api.toast('NEED '+W.fmt(price - p.tickets)+' MORE TICKETS'); return; }
-    set({tickets:p.tickets-price, prizes, ...(W.onBuy({...p, prizes})||{})}); reveal(it); checkCols(); render(); };
+    const {n, cost} = bulk(it, price); const lbl = n > 1 ? 'BOUGHT ×'+n : null;
+    const prizes = {...(p.prizes||{}), [it.id]: ((p.prizes||{})[it.id]||0)+n};
+    let pp = {...p, prizes}, ch = {}; for (let i = 0; i < Math.min(n, 200); i++) { const c = W.onBuy(pp); if (!c) break; pp = {...pp, ...c}; ch = c; }
+    if (isStar(it)) { if (freeStars(p) < cost) { api.sfx('bad'); api.toast('NEED '+(cost - freeStars(p))+' MORE GOLDEN STARS'); return; }
+      set({starsSpent:(p.starsSpent||0)+cost, prizes, ...ch}); const hd = W.applyHead(P()); if (hd) set(hd); reveal(it, lbl); const pk = W.perkOf(it); if (pk) api.toast('PERMANENT POWER · '+pk.t.toUpperCase()); checkCols(); render(); return; }
+    if ((p.tickets||0) < cost) { api.sfx('bad'); api.toast('NEED '+W.fmt(cost - p.tickets)+' MORE TICKETS'); return; }
+    set({tickets:p.tickets-cost, prizes, ...ch}); reveal(it, lbl); checkCols(); render(); };
 
   const head = E('div'); const body = E('div'); wrap.append(head, body);
   const renderHead = () => { head.innerHTML = ''; const p = P();
@@ -380,8 +394,11 @@ W.mount = (root, api) => {
       E('div', {style:{background:'#015640', color:'#D5F367', borderRadius:'999px', padding:'7px 14px', fontWeight:800}, title:'Total multiplier on every game'}, '×'+W.fmt(W.totalMult(p))+' total multiplier'),
       E('div', {style:{background:'#F9BF01', color:'#121313', borderRadius:'999px', padding:'7px 14px', fontWeight:800}}, '⭐ '+freeStars(p)+' to spend · '+(p.stars||0)+' earned'),
       E('div', {cls:'wlp-small'}, W.ownedCount(p)+' / '+W.total()+' prizes · '+Object.keys(p.colDone||{}).length+' / '+COLS.length+' collections'));
+    const opt = E('div', {style:{display:'flex', gap:'6px', flexWrap:'wrap', alignItems:'center', marginBottom:'8px'}}, E('span', {style:{fontSize:'12px', fontWeight:700, color:'#015640'}}, 'BUY'));
+    [1, 10, 100, 'max'].forEach(q => opt.appendChild(E('button', {cls:'wlp-chip'+(qty===q?' on':''), onclick:()=>{ qty = q; try { localStorage.setItem('wl-prize-qty', JSON.stringify(q)); } catch(e) {} render(); }}, q === 'max' ? 'Max' : '×'+q)));
+    opt.appendChild(E('button', {cls:'wlp-chip'+(W.popsOn()?' on':''), style:{marginLeft:'6px'}, title:'The big pop-up when you buy a prize or open a capsule', onclick:()=>{ W.setPops(!W.popsOn()); api.toast(W.popsOn() ? 'BUY POP-UPS ON' : 'BUY POP-UPS OFF'); render(); }}, W.popsOn() ? '🔔 Pop-ups on' : '🔕 Pop-ups off'));
     const tb = E('div', {cls:'wlp-tabs'}); tabs.forEach(([id,t]) => tb.appendChild(E('button', {cls:'wlp-tab'+(tab==id?' on':''), onclick:()=>{ tab = id; render(); }}, t)));
-    head.append(top, tb); };
+    head.append(top, opt, tb); };
 
   const prizeCard = (it, opts={}) => { const p = P(), own = (p.prizes||{})[it.id]||0, r = R[it.r];
     let price = opts.price || priceOf(it, p); const season = it.season && it.season !== seasonNow(), star = isStar(it), sp = star ? starPrice(it, p) : 0;
@@ -390,7 +407,7 @@ W.mount = (root, api) => {
     if (own) card.appendChild(E('div', {style:{position:'absolute', top:'6px', right:'6px', background:'#015640', color:'#D5F367', fontSize:'10px', fontWeight:800, borderRadius:'999px', padding:'2px 7px'}}, '×'+own));
     if (opts.badge) card.appendChild(E('div', {style:{position:'absolute', top:'6px', left:'6px', background:'#FF4539', color:'#fff', fontSize:'10px', fontWeight:800, borderRadius:'999px', padding:'2px 7px'}}, opts.badge));
     const need = W.rebirthNeed(p), can = !season && (star ? freeStars(p) >= sp : (p.tickets||0) >= price && price < need);
-    const b = E('button', {cls:'wlp-buy', style: star ? {background:'#F9BF01', color:'#121313'} : null, onclick:()=>buy(it, price)}, season ? 'Back in '+SEASON_NAME[it.season] : star ? W.fmt(sp)+' ⭐' : W.fmt(price)+' 🎟');
+    const b = E('button', {cls:'wlp-buy', style: star ? {background:'#F9BF01', color:'#121313'} : null, onclick:()=>buy(it, price)}, season ? 'Back in '+SEASON_NAME[it.season] : (()=>{ const bk = bulk(it, price); return (bk.n > 1 ? '×'+bk.n+' · ' : '')+(star ? W.fmt(bk.cost)+' ⭐' : W.fmt(bk.cost)+' 🎟'); })());
     const pk = star && W.perkOf(it); if (pk) card.appendChild(E('div', {cls:'wlp-perk'+(own?' on':''), title:'Permanent — survives every Rebirth'}, (own?'✅ ':'✨ ')+pk.t));
     if (!can) b.disabled = true; card.appendChild(b); return card; };
 
