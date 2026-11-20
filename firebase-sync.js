@@ -106,5 +106,9 @@ WLCloud.kickedUntil = uid => ((C.kicks || {})[uid]) || 0;
 const ACT = collection(db, 'boards', '_activity', 'scores');
 WLCloud.logAct = row => addDoc(ACT, { ...row, s: 0, d: new Date().toISOString().slice(0, 10), at: serverTimestamp() });
 WLCloud.actListen = (cb, n = 200) => onSnapshot(query(ACT, orderBy('at', 'desc'), limit(n)), snap => cb(snap.docs.map(d => ({ id: d.id, ...d.data(), at: d.data().at && d.data().at.toMillis ? d.data().at.toMillis() : Date.now() }))), () => cb(null));
+// Suggestion box (used when no Google Form link is set): stored with the boards, read in Admin tools.
+const SUG = collection(db, 'boards', '_suggest', 'scores');
+WLCloud.suggest = row => addDoc(SUG, { ...row, s: 0, d: new Date().toISOString().slice(0, 10), at: serverTimestamp() });
+WLCloud.sugListen = cb => onSnapshot(query(SUG, orderBy('at', 'desc'), limit(100)), snap => cb(snap.docs.map(d => ({ id: d.id, ...d.data(), at: d.data().at && d.data().at.toMillis ? d.data().at.toMillis() : Date.now() }))), () => cb(null));
 window.WLCloud = WLCloud;
 window.dispatchEvent(new Event('wlcloud-ready'));

@@ -26,8 +26,8 @@ const T_BONUS = [0, 0, 0, .01, .02];              // Platinum +1% · Diamond +2%
 
 let FAM = [], BY = {};
 const add = (id, cat, e, name, desc, v, goals, x) => { const f = {id, cat, e, name, desc, v, goals: goals.map(Math.round), ...(x||{})}; FAM.push(f); BY[id] = f; };
-const GE = {snake:'🐍',breakout:'🧱',flappy:'🐦',pong:'🏓',memory:'🃏',whack:'🐹','2048':'🔢',tictactoe:'❌',reaction:'⚡',typing:'⌨️',simon:'🎵',mines:'💣',connect4:'🔴',td:'🏰',crossing:'🐸',stack:'🪵',rootout:'🌱',trace:'✏️',idle:'⛏️'};
-const GT = {snake:'Snake Charmer',breakout:'Brick Smasher',flappy:'Sky Flapper',pong:'Paddle Pro',memory:'Elephant Brain',whack:'Gopher Hunter','2048':'Tile Tamer',tictactoe:'X Marks the Spot',reaction:'Quick Draw',typing:'Keyboard Kid',simon:'Echo Master',mines:'Bomb Squad',connect4:'Four in a Row',td:'Trail Guardian',crossing:'Road Ranger',stack:'Lumberjack',rootout:'Weed Warrior',trace:'Neat Writer',idle:'Deep Digger'};
+const GE = {space:'✦',snake:'🐍',breakout:'🧱',flappy:'🐦',pong:'🏓',memory:'🃏',whack:'🐹','2048':'🔢',tictactoe:'❌',reaction:'⚡',typing:'⌨️',simon:'🎵',mines:'💣',connect4:'🔴',td:'🏰',crossing:'🐸',stack:'🪵',rootout:'🌱',trace:'✏️',idle:'⛏️'};
+const GT = {space:'Space Ace',snake:'Snake Charmer',breakout:'Brick Smasher',flappy:'Sky Flapper',pong:'Paddle Pro',memory:'Elephant Brain',whack:'Gopher Hunter','2048':'Tile Tamer',tictactoe:'X Marks the Spot',reaction:'Quick Draw',typing:'Keyboard Kid',simon:'Echo Master',mines:'Bomb Squad',connect4:'Four in a Row',td:'Trail Guardian',crossing:'Road Ranger',stack:'Lumberjack',rootout:'Weed Warrior',trace:'Neat Writer',idle:'Deep Digger'};
 
 A.init = ctx => { if (FAM.length) return; const G = ctx.games || [], NG = G.length;
   // ---------- Games: one set per cabinet ----------
@@ -55,6 +55,11 @@ A.init = ctx => { if (FAM.length) return; const G = ctx.games || [], NG = G.leng
   sp('stackMulti','🪓','Four Logs', n => 'Clear '+n+' lines at once in Timber Stack', s => mx(s,'stackMulti'), [2,3,4]);
   sp('rootHeight','🌳','Canopy Builder', n => 'Stack a '+n+'-layer tower in Root Out', s => mx(s,'rootHeight'), [5,10,25,40,60]);
   sp('rootPulled','🧤','Root Remover', n => 'Root out '+n+' invasive species', s => sm(s,'rootPulled'), [10,50,200,500,1000]);
+  sp('spaceWave','✦','Star Ranger', n => 'Reach wave '+n+' in Star Ranger', s => mx(s,'spaceWave'), [5,10,20,30,50], {titles:{3:'Star Ranger'}});
+  sp('spaceBoss','🛸','Boss Blaster', n => 'Defeat '+n+' Star Ranger boss'+(n==1?'':'es'), s => sm(s,'spaceBoss'), [1,3,10,25,50]);
+  sp('rootBoss','👑','King Uprooter', n => 'Defeat the Kudzu King '+n+' time'+(n==1?'':'s'), s => sm(s,'rootBoss'), [1,3,10,25,50]);
+  sp('mineGolem','🪨','Golem Crusher', n => 'Defeat '+n+' Cave Golem'+(n==1?'':'s')+' in The Mines', s => sm(s,'mineGolem'), [1,5,20,50,100]);
+  sp('tdBoss','👻','Boss Hunter', n => 'Defeat '+n+' Trailhead Defense boss'+(n==1?'':'es'), s => sm(s,'tdBoss'), [1,5,15,40,100], {titles:{2:'Ghostbuster'}});
   sp('minerLevel','⛏️','Miner Boss', n => 'Merge a level '+n+' miner in The Mines', s => mx(s,'minerLevel'), [5,10,15,20,30]);
   // ---------- Learning ----------
   const L = (id, e, name, desc, v, goals, x) => add(id, 'Learning', e, name, desc, v, goals, x);

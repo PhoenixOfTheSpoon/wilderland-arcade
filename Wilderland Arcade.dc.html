@@ -65,6 +65,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
       <button onClick="{{ openCode }}" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">{{ adminLabel }}</button>
       <button onClick="{{ toggleSound }}" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">{{ soundLabel }}</button>
       <button onClick="{{ openAv }}" style="background:#D5F367; color:#015640; border:none; border-radius:999px; padding:8px 14px; font-weight:800; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:6px;"><img src="{{ avImg }}" alt="" style="width:22px; height:22px; margin:-3px 0;">AVATAR</button>
+      <button onClick="{{ openSug }}" title="Submit a suggestion" style="background:transparent; color:#D5F367; border:1.5px solid #D5F367; border-radius:999px; padding:7px 12px; font-weight:700; font-size:13px; cursor:pointer;">💡 SUGGEST</button>
       <button onClick="{{ openChat }}" title="Chat (T)" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">CHAT · T</button>
       <button onClick="{{ toggleFx }}" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">{{ fxLabel }}</button>
     </div>
@@ -133,7 +134,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
             <img src="{{ learnIcon }}" alt="" style="width:56px; height:56px; flex-shrink:0;">
             <div style="min-width:0;"><div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:#a9e2fb;">LEARNING DESK</div><div style="font-size:16px; font-weight:700; color:#ffffff;">{{ eduLabel }}</div><div style="font-size:12px; font-weight:500; color:#EDE9D8;">Report &amp; settings</div></div>
           </div>
-          <div onClick="{{ openShop }}" style="position:absolute; left:678px; top:590px; width:140px; height:130px; cursor:pointer; border-radius:12px; overflow:hidden; background:#2a1d12; border:3px solid #F9BF01; box-sizing:border-box; box-shadow:{{ shopShadow }}; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; transition:transform .18s cubic-bezier(.3,1.4,.5,1);" style-hover="transform:translateY(-6px) scale(1.04);">
+          <div onClick="{{ openShop }}" style="position:absolute; left:850px; top:745px; width:230px; height:110px; cursor:pointer; border-radius:12px; overflow:hidden; background:#2a1d12; border:3px solid #F9BF01; box-sizing:border-box; box-shadow:{{ shopShadow }}; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; transition:transform .18s cubic-bezier(.3,1.4,.5,1);" style-hover="transform:translateY(-6px) scale(1.04);">
             <img src="{{ shopIcon }}" alt="" style="width:54px; height:54px;">
             <div style="font-size:11px; font-weight:700; letter-spacing:0.1em; color:#F9BF01; text-align:center; line-height:1.2;">UPGRADE<br>WORKSHOP</div>
             <div style="font-size:10px; font-weight:600; color:#EDE9D8;">{{ shopOwned }} levels · ∞</div>
@@ -145,18 +146,18 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
             <div style="font-size:13px; font-weight:500; color:#EDE9D8;">Beat {{ daily.target }} · {{ daily.status }}</div>
           </div>
 
-          <div onClick="{{ openExp }}" style="position:absolute; left:30px; top:858px; width:1060px; height:58px; border-radius:12px; background:linear-gradient(#123d31,#0b2e24); box-shadow:inset 0 -5px 0 #071f18; display:flex; align-items:center; gap:8px; padding:0 12px; box-sizing:border-box; cursor:pointer; overflow:hidden;">
+          <div onClick="{{ openExp }}" style="position:absolute; left:30px; top:1018px; width:1060px; height:58px; border-radius:12px; background:linear-gradient(#123d31,#0b2e24); box-shadow:inset 0 -5px 0 #071f18; display:flex; align-items:center; gap:8px; padding:0 12px; box-sizing:border-box; cursor:pointer; overflow:hidden;">
             <div style="font-size:10px; font-weight:700; letter-spacing:0.14em; color:#D5F367; line-height:1.15; flex-shrink:0;">ARCADE<br>EXPANSIONS</div>
             <sc-if value="{{ expEmpty }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px; color:#b9cfc5;">Buy Arcade Expansions in the Prize Counter — they fill up this space</div></sc-if>
             <sc-for list="{{ expFloor }}" as="xf" hint-placeholder-count="4"><div title="{{ xf.n }}" class="wl-pop" style="position:relative; width:44px; height:44px; flex-shrink:0; border-radius:12px; background:radial-gradient(circle at 35% 30%, #fff, #D5F367 55%, #00B451); box-shadow:inset 0 -4px 0 rgba(0,0,0,.18), 0 3px 6px rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; font-size:24px;">{{ xf.e }}<span style="position:absolute; right:-4px; bottom:-4px; background:#015640; color:#D5F367; font-size:9px; font-weight:800; padding:1px 5px; border-radius:999px;">{{ xf.lv }}</span></div></sc-for>
           </div>
-          <div onClick="{{ openPrizes }}" style="position:absolute; left:30px; top:790px; width:1060px; height:56px; border-radius:12px; background:linear-gradient(#5a3a1c,#3b2614); box-shadow:inset 0 -6px 0 #2a1b0e; display:flex; align-items:center; gap:8px; padding:0 12px; box-sizing:border-box; cursor:pointer; overflow:hidden;">
+          <div onClick="{{ openPrizes }}" style="position:absolute; left:30px; top:950px; width:1060px; height:56px; border-radius:12px; background:linear-gradient(#5a3a1c,#3b2614); box-shadow:inset 0 -6px 0 #2a1b0e; display:flex; align-items:center; gap:8px; padding:0 12px; box-sizing:border-box; cursor:pointer; overflow:hidden;">
             <div style="font-size:10px; font-weight:700; letter-spacing:0.14em; color:#F9BF01; line-height:1.15; flex-shrink:0;">TROPHY<br>WALK</div>
             <sc-if value="{{ trophyEmpty }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px; color:#cfc6a8;">Complete a prize collection to put its trophy here · {{ trophyPct }}</div></sc-if>
             <sc-for list="{{ floorTrophies }}" as="ft" hint-placeholder-count="4"><div title="{{ ft.n }}" style="width:40px; height:40px; flex-shrink:0; border-radius:10px; background:radial-gradient(circle at 50% 35%, #fff6b0, {{ ft.col }}); box-shadow:0 0 0 2px #F9BF01, 0 4px 6px rgba(0,0,0,.4); display:flex; align-items:center; justify-content:center; font-size:22px;">{{ ft.e }}</div></sc-for>
           </div>
-          <div onClick="{{ openAv }}" style="position:absolute; left:520px; top:732px; width:250px; white-space:nowrap; height:42px; border-radius:10px; background:#015640; color:#D5F367; font-size:11px; font-weight:700; letter-spacing:0.12em; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; border:2px solid #D5F367; box-sizing:border-box;"><img src="{{ avImg }}" alt="" style="width:30px; height:30px;">ENTRANCE · AVATAR STUDIO</div>
-          <div style="position:absolute; left:30px; top:730px; width:480px; height:46px; overflow:hidden; display:flex; align-items:center; gap:8px;">
+          <div onClick="{{ openAv }}" style="position:absolute; left:520px; top:892px; width:250px; white-space:nowrap; height:42px; border-radius:10px; background:#015640; color:#D5F367; font-size:11px; font-weight:700; letter-spacing:0.12em; display:flex; align-items:center; justify-content:center; gap:8px; cursor:pointer; border:2px solid #D5F367; box-sizing:border-box;"><img src="{{ avImg }}" alt="" style="width:30px; height:30px;">ENTRANCE · AVATAR STUDIO</div>
+          <div style="position:absolute; left:30px; top:890px; width:480px; height:46px; overflow:hidden; display:flex; align-items:center; gap:8px;">
             <div style="font-size:10px; font-weight:700; letter-spacing:0.14em; color:#015640; line-height:1.15;">HALL OF<br>PLAYERS</div>
             <sc-if value="{{ hallEmpty }}" hint-placeholder-val="{{ false }}"><div style="font-size:11px; color:#4a4a4a;">Create a username to join the hall</div></sc-if>
             <sc-for list="{{ hallPlayers }}" as="hp" hint-placeholder-count="5">
@@ -263,7 +264,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
             <div style="font-size:30px; font-weight:700; color:#015640; line-height:1.05;">{{ game.title }}</div>
           </div>
           <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;"><sc-if value="{{ showCash }}" hint-placeholder-val="{{ true }}"><button onClick="{{ cashOutGame }}" title="End this run now and collect tickets for your score so far" style="background:#F9BF01; color:#121313; border:none; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;">{{ cashLabel }}</button></sc-if>
-<button onClick="{{ closeGame }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;">Save &amp; leave · Esc</button></div>
+<button onClick="{{ toggleFs }}" title="Full screen (Y)" style="background:#ffffff; color:#015640; border:1.5px solid #015640; border-radius:999px; padding:7px 12px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;">{{ fsLabel }}</button><button onClick="{{ closeGame }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;">Save &amp; leave · Esc</button></div>
         </div>
         <div style="display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-size:14px; font-weight:700;">
           <div style="background:#ffffff; border-radius:999px; padding:6px 14px;">Score <span style="color:#015640;">{{ liveScore }}</span></div>
@@ -326,8 +327,9 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
             </div>
           </div>
         </sc-if>
-        <div ref="{{ boxRef }}" style="width:{{ gameBoxW }}px; height:{{ gameBoxH }}px; position:relative; align-self:center; touch-action:{{ boxTouch }};">
-          <div ref="{{ gameRef }}" style="position:absolute; left:0; top:0; width:480px; min-height:480px; transform:scale({{ gameScale }}); transform-origin:0 0;"></div>
+        <div ref="{{ boxRef }}" style="width:{{ boxWcss }}; height:{{ boxHcss }}; position:{{ boxPos }}; inset:{{ boxInset }}; z-index:{{ boxZ }}; background:{{ boxBg }}; align-self:center; touch-action:{{ boxTouch }};">
+          <sc-if value="{{ fsOn }}" hint-placeholder-val="{{ false }}"><div style="position:absolute; left:0; right:0; top:0; height:48px; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:0 12px; box-sizing:border-box; color:#D5F367; font-weight:700; font-size:14px;"><span>{{ game.title }} · score {{ liveScoreFmt }}</span><span style="display:flex; gap:6px;"><sc-if value="{{ showCash }}" hint-placeholder-val="{{ true }}"><button onClick="{{ cashOutGame }}" style="background:#F9BF01; color:#121313; border:none; border-radius:999px; padding:7px 12px; font-weight:700; font-size:13px; cursor:pointer;">{{ cashLabel }}</button></sc-if><button onClick="{{ toggleFs }}" style="background:#D5F367; color:#015640; border:none; border-radius:999px; padding:7px 12px; font-weight:800; font-size:13px; cursor:pointer;">{{ fsExit }}</button></span></div></sc-if>
+          <div ref="{{ gameRef }}" style="position:absolute; left:{{ gameLeft }}px; top:{{ gameTop }}px; width:{{ gameW }}px; min-height:480px; transform:scale({{ gameScale }}); transform-origin:0 0;"></div>
         </div>
         <sc-if value="{{ padShow }}" hint-placeholder-val="{{ false }}">
           <div onContextMenu="{{ noMenu }}" style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; touch-action:none; user-select:none; -webkit-user-select:none;">
@@ -368,6 +370,11 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
             <sc-for list="{{ actList }}" as="ar" hint-placeholder-count="6"><div style="display:flex; gap:8px; align-items:baseline; font-size:13px; padding:3px 2px; border-bottom:1px dashed #eee8d2;"><span style="width:20px; text-align:center;">{{ ar.ico }}</span><button onClick="{{ ar.pick }}" title="Show only this player" style="border:none; background:none; padding:0; font-weight:800; color:#015640; cursor:pointer; font-size:13px;">{{ ar.who }}</button><span style="font-size:11px; color:#AB2372; font-weight:700;">{{ ar.rb }}</span><span style="flex:1; min-width:0; color:#3d3d3d;">{{ ar.what }}</span><span style="font-size:11px; color:#8a8a8a; white-space:nowrap;">{{ ar.when }}</span></div></sc-for>
           </div>
           <div style="font-size:11px; color:#4a4a4a;">Shows signed-in players only: coming online, games finished, rebirths and big prize buys. Click a name to see just that player.</div>
+        </div>
+        <div style="background:#ffffff; border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:6px; border:2px solid #AB2372;">
+          <div style="font-size:12px; font-weight:700; letter-spacing:0.1em; color:#AB2372;">SUGGESTION BOX</div>
+          <sc-if value="{{ sugEmpty }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px; color:#6a6a6a;">No suggestions yet. (When you paste a Google Form link into SUGGEST_FORM, ideas go to your form instead.)</div></sc-if>
+          <div style="max-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:4px;"><sc-for list="{{ sugList }}" as="sg" hint-placeholder-count="3"><div style="font-size:13px; border-bottom:1px dashed #eee8d2; padding:4px 0;"><b style="color:#015640;">{{ sg.who }}</b> <span style="font-size:11px; color:#8a8a8a;">{{ sg.when }}</span><div style="color:#3d3d3d; white-space:pre-wrap;">{{ sg.what }}</div></div></sc-for></div>
         </div>
         <div style="background:#ffffff; border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:8px; border:2px solid #B3001B;">
           <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;"><div style="font-size:12px; font-weight:700; letter-spacing:0.1em; color:#B3001B;">MAINTENANCE · CLOSE OR REOPEN</div><div style="font-size:12px; font-weight:700; color:#015640;">Now: {{ downStatus }}</div></div>
@@ -620,6 +627,31 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
     </div>
   </sc-if>
 
+  <sc-if value="{{ sugOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; inset:0; background:rgba(11,46,36,.9); display:flex; align-items:safe center; justify-content:center; z-index:60; overflow-y:auto; padding:16px; box-sizing:border-box;">
+      <div style="background:#EDE9D8; border-radius:20px; padding:20px; width:480px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:10px; color:#121313;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+          <div><div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#AB2372;">SUGGESTION BOX</div><div style="font-size:26px; font-weight:700; color:#015640;">Got an idea?</div></div>
+          <button onClick="{{ closeSug }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer;">Close · Esc</button>
+        </div>
+        <sc-if value="{{ sugForm }}" hint-placeholder-val="{{ true }}">
+          <div style="font-size:13px; color:#3d3d3d;">New games, prizes, avatar ideas, bugs you found — tell us! Please don’t include your full name, address, school or phone number.</div>
+          <textarea class="wl-field" value="{{ sugText }}" onChange="{{ inSugText }}" onKeyDown="{{ stopKey }}" placeholder="My idea is…" aria-label="Your suggestion" style="width:100%; min-height:120px; box-sizing:border-box; font-family:inherit; font-size:15px; border:1.5px solid #015640; border-radius:12px; padding:10px 12px; resize:vertical;"></textarea>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <input class="wl-field" value="{{ sugName }}" onChange="{{ inSugName }}" onKeyDown="{{ stopKey }}" placeholder="Name or username (optional)" aria-label="Your name (optional)" style="flex:1 1 180px; min-width:0; font-family:inherit; font-size:14px; border:1.5px solid #015640; border-radius:10px; padding:8px 10px;">
+            <span style="font-size:11px; color:#6a6a6a;">{{ sugCount }}</span>
+          </div>
+          <sc-if value="{{ sugMsg }}" hint-placeholder-val="{{ false }}"><div style="font-size:13px; font-weight:700; color:#B3001B;">{{ sugMsg }}</div></sc-if>
+          <button onClick="{{ sendSug }}" style="align-self:flex-start; background:#00B451; color:#ffffff; border:none; border-radius:999px; padding:10px 20px; font-weight:700; font-size:14px; cursor:pointer;">Send my idea</button>
+        </sc-if>
+        <sc-if value="{{ sugDone }}" hint-placeholder-val="{{ false }}">
+          <div style="text-align:center; padding:16px 6px; display:flex; flex-direction:column; gap:8px; align-items:center;"><div style="font-size:48px;">💡</div><div style="font-size:24px; font-weight:700; color:#015640;">Thanks for your idea!</div><div style="font-size:14px; color:#3d3d3d;">The arcade team reads every suggestion.</div>
+            <button onClick="{{ openSug }}" style="background:#ffffff; color:#015640; border:1.5px solid #015640; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer;">Send another</button></div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
   <sc-if value="{{ shopOpen }}" hint-placeholder-val="{{ false }}">
     <div style="position:fixed; inset:0; background:rgba(27,19,12,.9); display:flex; align-items:safe center; justify-content:center; z-index:50; overflow-y:auto; padding:16px; box-sizing:border-box;">
       <div style="background:#EDE9D8; border-radius:20px; padding:22px; width:760px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:14px; color:#121313;">
@@ -812,6 +844,7 @@ const GAMES = [
   {id:'stack',title:'Timber Stack',name:'STACK',color:'#DAD3B1',glyph:'▤',rate:0.04,target:3000,pitch:'CLEAR THE LINES',isNew:true},
   {id:'rootout',title:'Root Out the Corruption',name:'ROOT OUT',color:'#c9a3e0',glyph:'▥',rate:0.06,target:1200,pitch:'NATIVES UP · INVASIVES OUT',isNew:true,learn:true},
   {id:'trace',title:'Trace & Write',name:'TRACE',color:'#fbf8ec',glyph:'✎',rate:0.08,target:1600,pitch:'HANDWRITING PRACTICE',isNew:true,learn:true},
+  {id:'space',title:'Star Ranger',name:'STAR RANGER',color:'#8a4be0',glyph:'✦',rate:0.03,target:15000,pitch:'SAVE THE GALAXY',isNew:true},
   {id:'idle',title:'The Mines',name:'THE MINES',color:'#c48a4a',glyph:'⛏',rate:0,target:0,pitch:'DIG · MERGE · CASH OUT',isNew:true,idle:true},
 ];
 // Animations switch (saved per device). Off = static icons, no CSS motion, games draw fewer effects.
@@ -842,6 +875,7 @@ const ICONS = {
   stack: '<rect x="10" y="48" width="44" height="10" rx="3" fill="#00B451"/><rect x="10" y="38" width="22" height="10" rx="3" fill="#64CDF5"/><rect x="42" y="38" width="12" height="10" rx="3" fill="#DD8B03"/><g>'+at('translate','0 -26;0 0;0 0',1.6,'keyTimes="0;0.6;1"')+'<rect x="32" y="28" width="10" height="20" rx="3" fill="#E9B9F7"/></g>',
   rootout: '<path d="M4 58H60" stroke="#6e4515" stroke-width="6"/><rect x="18" y="44" width="28" height="10" rx="3" fill="#00B451"/><rect x="20" y="34" width="24" height="10" rx="3" fill="#a9c8ff"/><rect x="22" y="24" width="20" height="10" rx="3" fill="#9fe07a"/><g>'+at('translate','-14 0;14 0;-14 0',2.2,SPLINE)+'<rect x="20" y="8" width="24" height="10" rx="3" fill="#7a3fa0"/><path d="M22 13 q4 -4 8 0 t8 0 t6 0" stroke="#d9a8ff" stroke-width="2" fill="none"/></g>',
   trace: '<path id="tA" d="M14 52L32 12L50 52M21 38H43" fill="none" stroke="#EDE9D8" stroke-opacity=".25" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 52L32 12L50 52M21 38H43" fill="none" stroke="#D5F367" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="120">'+an('stroke-dashoffset','120;0;0',2.4)+'</path><g><animateMotion dur="2.4s" repeatCount="indefinite" keyPoints="0;1;1" keyTimes="0;0.83;1" calcMode="linear" path="M14 52L32 12L50 52M21 38H43"/><path d="M0 0L6 -14L10 -12L4 2Z" fill="#F9BF01"/><path d="M0 0L2 -4L4 -3Z" fill="#121313"/></g>',
+  space: '<rect x="0" y="0" width="64" height="64" fill="#0b1030"/><circle cx="12" cy="10" r="1.2" fill="#fff"/><circle cx="50" cy="20" r="1" fill="#fff"/><circle cx="30" cy="6" r="1" fill="#9fb8ff"/><g>'+at('translate','-6 0;6 0;-6 0',2,SPLINE)+'<ellipse cx="22" cy="20" rx="7" ry="5" fill="#7be08a"/><ellipse cx="42" cy="20" rx="7" ry="5" fill="#EA55AB"/><circle cx="20" cy="19" r="1.6" fill="#fff"/><circle cx="24" cy="19" r="1.6" fill="#fff"/><circle cx="40" cy="19" r="1.6" fill="#fff"/><circle cx="44" cy="19" r="1.6" fill="#fff"/></g><rect x="31" y="24" width="2" height="7" fill="#D5F367">'+an('y','40;14;40',.8)+'</rect><path d="M32 38l6 12l7 4v3H19v-3l7-4z" fill="#00B451"/><path d="M32 41l3 8h-6z" fill="#D5F367"/><path d="M28 57l4 5l4-5z" fill="#FF8A3C">'+an('opacity','1;.4;1',.3)+'</path>',
   idle: '<path d="M6 58L14 38L26 34L40 38L52 32L60 58Z" fill="#6b4a2b"/><path d="M14 46l6-2M30 42l5 3M44 44l6-3" stroke="#c48a4a" stroke-width="3" stroke-linecap="round"/><path d="M22 54l4-6l5 6zM40 54l4-5l4 5z" fill="#F9BF01"/><g>'+at('rotate','-30 34 30;20 34 30;-30 34 30',.7,SPLINE)+'<path d="M34 30L46 8" stroke="#8D5B1D" stroke-width="4" stroke-linecap="round"/><path d="M36 6Q46 2 56 12" fill="none" stroke="#c9ccd1" stroke-width="5" stroke-linecap="round"/></g><path d="M50 26l2 -5l2 5l5 2l-5 2l-2 5l-2-5l-5-2z" fill="#9fd8ff">'+an('opacity','0;1;0',1.4)+'</path>',
 };
 const GLOSS = b => '<defs><filter id="ds" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2.2" stdDeviation="1.6" flood-color="#000" flood-opacity=".45"/></filter><linearGradient id="sh" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".38"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/></linearGradient><radialGradient id="gl" cx=".5" cy=".42" r=".6"><stop offset="0" stop-color="#D5F367" stop-opacity=".22"/><stop offset="1" stop-color="#D5F367" stop-opacity="0"/></radialGradient></defs><circle cx="32" cy="30" r="31" fill="url(#gl)"/><g filter="url(#ds)">'+b+'</g><ellipse cx="30" cy="15" rx="17" ry="7" fill="url(#sh)" opacity=".7"/>';
@@ -854,10 +888,10 @@ const KIOSK_ICONS = {
 const EDU_SWITCH = GAMES.map(g=>g.id).filter(id=>!['rootout','trace'].includes(id));
 const LEARN_GAMES = ['trace','rootout'];
 const TOPICS = [['add','Add'],['sub','Subtract'],['mult','Multiply'],['div','Divide'],['multi','Two-step'],['skip','Skip-count'],['spell','Spelling'],['mixed','Mix']];
-const PADS = {snake:{d:'udlr',a:[['Start',' ']]}, breakout:{d:'lr',a:[['Launch',' ']]}, flappy:{d:'',a:[['Flap',' ']]}, pong:{d:'ud',a:[['Serve',' ']]}, '2048':{d:'udlr',a:[]}, crossing:{d:'udlr',a:[['Start',' ']]}, stack:{d:'ldr',a:[['Rotate','ArrowUp'],['Drop',' '],['Hold','c'],['Saw','x']]}, connect4:{d:'lr',a:[['Drop',' ']]}};
+const PADS = {space:{d:'lr',a:[['Fire',' ']]}, snake:{d:'udlr',a:[['Start',' ']]}, breakout:{d:'lr',a:[['Launch',' ']]}, flappy:{d:'',a:[['Flap',' ']]}, pong:{d:'ud',a:[['Serve',' ']]}, '2048':{d:'udlr',a:[]}, crossing:{d:'udlr',a:[['Start',' ']]}, stack:{d:'ldr',a:[['Rotate','ArrowUp'],['Drop',' '],['Hold','c'],['Saw','x']]}, connect4:{d:'lr',a:[['Drop',' ']]}};
 const SWIPE = ['snake','2048','crossing','stack'];
-const FW = 1120, FH = 930;
-const KIOSKS = [{id:'prize',x:850,y:50,w:230,h:200},{id:'daily',x:850,y:290,w:230,h:140},{id:'board',x:850,y:465,w:230,h:110},{id:'learn',x:850,y:605,w:230,h:110},{id:'shop',x:678,y:590,w:140,h:130}];
+const FW = 1120, FH = 1090;
+const KIOSKS = [{id:'prize',x:850,y:50,w:230,h:200},{id:'daily',x:850,y:290,w:230,h:140},{id:'board',x:850,y:465,w:230,h:110},{id:'learn',x:850,y:605,w:230,h:110},{id:'shop',x:850,y:745,w:230,h:110}];
 const BOARD_KEY = 'wl-arcade-board-v3', UNAME_KEY = 'wl-arcade-usernames';
 const getJSON = (k,d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch(e) { return d; } };
 const putJSON = (k,v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} };
@@ -866,9 +900,9 @@ const unameRules = (v, taken) => [['3–16 characters', v.length>=3 && v.length<
 const fmtDur = s => s>=3600 ? (s/3600).toFixed(1)+' h' : s>=60 ? Math.round(s/60)+' min' : Math.round(s)+' s';
 const PARENT_KEY = 'wl-arcade-parent';
 const pinRules = (a,b) => [['4–8 digits', /^\d{4,8}$/.test(a)], ['Not all one digit', a.length>0 && !/^(\d)\1+$/.test(a)], ['Not a straight run (1234)', a.length>0 && !'0123456789012345678909876543210987654321'.includes(a)], ['Codes match', a.length>0 && a===b]];
-const LEARN_NOTES = {idle:'Math geodes appear in the rock — answer the problem to crack one open for a huge pile of ore. Tapping the rock digs less.', flappy:'Fly through the gap with the right answer.', snake:'Eat the apple with the right answer.', typing:'Sight words for early readers.', whack:'Whack only gophers holding the right answer.', memory:'Match each problem with its answer.', tictactoe:'Answer a question to claim each square.', crossing:'Hop into the den with the right answer.', td:'Bonus-gold question after every wave.', breakout:'Lose the ball? Answer to keep your life.', pong:'Answer to block points scored against you.', '2048':'Stuck? Answer to clear two tiles (3 per board).', reaction:'Click only when the right answer flashes.', simon:'Wrong pad? Answer for one retry.', mines:'Hit a mine? Answer to defuse it.', connect4:'Answer a question to drop each disc.', stack:'Bonus question every 5 lines; answer for a second chance.', rootout:'This machine always counts as learning time.', trace:'This machine always counts as learning time.'};
+const LEARN_NOTES = {space:'Answer a question between waves for a free power-up and bonus points.', idle:'Math geodes appear in the rock — answer the problem to crack one open for a huge pile of ore. Tapping the rock digs less.', flappy:'Fly through the gap with the right answer.', snake:'Eat the apple with the right answer.', typing:'Sight words for early readers.', whack:'Whack only gophers holding the right answer.', memory:'Match each problem with its answer.', tictactoe:'Answer a question to claim each square.', crossing:'Hop into the den with the right answer.', td:'Bonus-gold question after every wave.', breakout:'Lose the ball? Answer to keep your life.', pong:'Answer to block points scored against you.', '2048':'Stuck? Answer to clear two tiles (3 per board).', reaction:'Click only when the right answer flashes.', simon:'Wrong pad? Answer for one retry.', mines:'Hit a mine? Answer to defuse it.', connect4:'Answer a question to drop each disc.', stack:'Bonus question every 5 lines; answer for a second chance.', rootout:'This machine always counts as learning time.', trace:'This machine always counts as learning time.'};
 const fireKey = (key,type) => { try { window.dispatchEvent(new KeyboardEvent(type,{key, bubbles:true, cancelable:true})); } catch(e){} };
-const TIPS = {idle:'Your miners dig even while you are away. Drag two matching miners together to merge them into a stronger one. Tap a miner to sell it. Keep tapping the rock for a combo, hit the white crack for ×3, and tap golden carts as they roll by. Cash out ore for tickets any time — no limit.', snake:'Each level has a new maze. Gold apples are worth 3, mushrooms slow time, blue berries shrink your tail. Purple portals connect — and dashed edges wrap around.',breakout:'Hit with the paddle edge to angle shots. Long combos multiply every brick.',flappy:'Tap in short, steady bursts and aim for the middle of each gap.',pong:'Return off the paddle tip for steep angles the CPU struggles to reach.',memory:'Work row by row so you remember where you have already looked.',whack:'Red bombs cost a life — leave them. Every 15-hit combo earns a Quake, Freeze or Shield. The Gopher King shows up every 5 levels.','2048':'Keep your biggest tile pinned in one corner and avoid the opposite direction.',tictactoe:'Take the centre or a corner. Two threats at once is a guaranteed win.',reaction:'Watch the colour, not the words. Gold is a decoy.',typing:'Accuracy beats speed — a missed word scores nothing.',simon:'Say the colours out loud, or chunk them in threes.',mines:'A 1 touching only one hidden tile means that tile is a mine.',connect4:'The centre column is part of the most fours. Watch the diagonals.',td:'Pick a mode — Nightmare pays ×3. Ghosts are invisible unless a Lantern (or a Frost tower, up close) lights them; Boulders can’t hit flying crows; shield beetles shrug off one hit per pip. Only 4 Gold Pans pay out.',crossing:'Wait for gaps instead of rushing. Diving turtles fade before they sink, and gators bite at the head end.',stack:'Keep the stack flat and leave one column open for long logs. A saw (X) rescues a messy bottom row.',rootout:'Purple “!” tags mark invasives early on — from level 3 the labels disappear, so read the fact cards. Every 5 perfect drops earns a weed puller.',trace:'Cover the whole grey shape — ink outside the lines costs points (it turns red). Tap Camera to write on real paper and hold it up instead.'};
+const TIPS = {space:'Move with ← → (or A/D, or drag on a phone) and hold Space to fire. Catch falling power-ups: II double shot, ≋ spread, » rapid fire, ◯ shield and ✈ a rescued wing mate. Diving critters are worth double. Bosses have a boss bar — the Grand Hive Mother’s glowing core takes triple damage.',idle:'Your miners dig even while you are away. Drag two matching miners together to merge them into a stronger one. Tap a miner to sell it. Keep tapping the rock for a combo, hit the white crack for ×3, and tap golden carts as they roll by. Cash out ore for tickets any time — no limit.', snake:'Each level has a new maze. Gold apples are worth 3, mushrooms slow time, blue berries shrink your tail. Purple portals connect — and dashed edges wrap around.',breakout:'Hit with the paddle edge to angle shots. Long combos multiply every brick.',flappy:'Tap in short, steady bursts and aim for the middle of each gap.',pong:'Return off the paddle tip for steep angles the CPU struggles to reach.',memory:'Work row by row so you remember where you have already looked.',whack:'Red bombs cost a life — leave them. Every 15-hit combo earns a Quake, Freeze or Shield. The Gopher King shows up every 5 levels.','2048':'Keep your biggest tile pinned in one corner and avoid the opposite direction.',tictactoe:'Take the centre or a corner. Two threats at once is a guaranteed win.',reaction:'Watch the colour, not the words. Gold is a decoy.',typing:'Accuracy beats speed — a missed word scores nothing.',simon:'Say the colours out loud, or chunk them in threes.',mines:'A 1 touching only one hidden tile means that tile is a mine.',connect4:'The centre column is part of the most fours. Watch the diagonals.',td:'Pick a trail — the big maps have several entrances. 14 towers, each with 5 levels that change how they look; Gold Pans level forever and every pan pays. The Phantom King turns invisible: only Lanterns, Spirit Bells, Frost (close up), level-3 Totems or the R · Reveal ability can hit it then. X changes speed (½× to 5×); turn on Performance mode on slower computers.',crossing:'Wait for gaps instead of rushing. Diving turtles fade before they sink, and gators bite at the head end.',stack:'Keep the stack flat and leave one column open for long logs. A saw (X) rescues a messy bottom row.',rootout:'Purple “!” tags mark invasives early on — from level 3 the labels disappear, so read the fact cards. Every 5 perfect drops earns a weed puller.',trace:'Cover the whole grey shape — ink outside the lines costs points (it turns red). Tap Camera to write on real paper and hold it up instead.'};
 const RIVALS = [['littletimmy','Little Timmy',3],['jimmy','Jimmy',8],['timmy','Timmy',15],['baubau','Lord Emperor Bau Bau',30],['thetimmy','THE TIMMY',60]];
 const RIVAL = id => RIVALS.find(r=>r[0]==id);
 // Upgrade Workshop: permanent per-game upgrades bought with tickets. Games read the level with A.U(key).
@@ -889,8 +923,9 @@ const UPG_RAW = {
   td:[{k:'gold',n:'War Chest',d:'+40 starting gold per level',base:300,cap:25},{k:'hp',n:'Stockade',d:'+5 camp health per level',base:400,cap:25},{k:'power',n:'Sharp Arrows',d:'Every tower +5% damage per level',base:500,cap:40}],
   crossing:[{k:'life',n:'Extra Life',d:'+1 starting life per level',base:300,cap:10},{k:'slow',n:'Traffic Calming',d:'Traffic 10% slower per level',base:400,cap:5},{k:'shield',n:'Start Shield',d:'Begin each run with a shield per level',base:500,cap:5}],
   stack:[{k:'saw',n:'Extra Saw',d:'+1 line-clearing saw per level',base:400,cap:10}],
+  space:[{k:'life',n:'Extra Ship',d:'Start with +1 ship per level',base:350,cap:10},{k:'shield',n:'Deflector',d:'Start every run with a shield charge per level',base:500,cap:3},{k:'power',n:'Twin Cannons',d:'Start with Double Shot for 20 seconds',base:900,one:1}],
   rootout:[{k:'health',n:'Healthy Soil',d:'+1 ecosystem health per level',base:300,cap:10},{k:'pull',n:'Weed Puller',d:'+1 root-out pull per level',base:400,cap:10}],
-  idle:[{k:'cheap',n:'Miners’ Union Deal',d:'Hiring miners costs 15% less per level (stacks)',base:300,cap:40},{k:'start',n:'Starter Crew',d:'New miners hired 1 level higher per level',base:1500,cap:20}],
+  idle:[{k:'cheap',n:'Miners’ Union Deal',d:'Hiring miners costs 15% less per level (stacks)',base:300,cap:40},{k:'start',n:'Starter Crew',d:'New miners hired 1 level higher per level · past the top miner level, +15% Mines ore per level',base:1500}],
 };
 const UPG = {}; GAMES.forEach(g => { const list = (UPG_RAW[g.id]||[]).slice(); if (g.id!='2048') list.push({k:'boost',n:'Ticket Booster',d:'+10% tickets from this machine per level, forever',base:200,grow:1.45}); UPG[g.id] = list; });
 const upgCost = (u, L) => { const x = u.base * Math.pow(u.grow||1.55, L); if (x < 100) return Math.round(x); const p = Math.pow(10, Math.floor(Math.log10(x)) - 1); return Math.round(x/p)*p; };
@@ -905,7 +940,7 @@ const SPEED_TIX = {slow:.5, normal:1, fast:1.5, turbo:2.5};
 // Games that pay no tickets (scores still go on the leaderboard).
 const NO_TIX = ['2048'];
 const ADMIN_EMAILS = ['jonah@wilderland.academy'];
-const TIX_SPEED_GAMES = ['snake','breakout','flappy','pong','whack','simon','td','crossing','stack','rootout'];
+const TIX_SPEED_GAMES = ['snake','breakout','flappy','pong','whack','simon','crossing','stack','rootout','space'];
 // Fair payout: every game pays ~100 tickets for hitting its target score, scaling smoothly above and below.
 // ---------- chat safety (kids use this) ----------
 const CHAT_BAD = ['fuck','shit','bitch','bastard','dick','cock','pussy','cunt','whore','slut','fag','retard','nigg','nazi','porn','sex','asshole','damn','crap','piss','kill yourself','kys','stupid idiot','dumbass','wtf','stfu','hell no'];
@@ -922,9 +957,16 @@ const fmtN = n => (window.WLP ? window.WLP.fmt(n) : (Number(n)||0).toLocaleStrin
 const TIX_PER_MIN = 40;
 const baseTix = (g, score, mins) => { if (!(score > 0)) return 1; const perf = Math.max(.25, Math.min(2.5, Math.pow(score / Math.max(1, g.target), 0.5)));
   return Math.max(1, Math.ceil(TIX_PER_MIN * Math.max(.25, Math.min(20, mins)) * perf)); };
-const SPEED_GAMES = ['snake','breakout','flappy','pong','whack','simon','memory','connect4','td','crossing','stack','rootout'];
+const SPEED_GAMES = ['snake','breakout','flappy','pong','whack','simon','memory','connect4','crossing','stack','rootout','space'];
 const POS = GAMES.map((g,i)=>({x:30+(i%5)*162, y:50+Math.floor(i/5)*180}));
 const NG = GAMES.length;
+// SUGGESTION BOX: paste your Google Form link here (the normal "…/viewform" link). To pre-fill the text, also paste the
+// entry id of the form's text question (looks like "entry.123456789" — get it from the form's “Get pre-filled link”).
+// While the link is empty, suggestions are saved online and show up in Admin tools instead.
+const SUGGEST_FORM = '';
+const SUGGEST_ENTRY = '';
+const SUGGEST_NAME_ENTRY = '';
+const GAMEW = {td:720}; // games wider than the usual 480
 // ---------- Prizes (art is SVG; legendary ones animate) ----------
 const PZ = (b) => svgURI(b);
 const PRIZES = [
@@ -963,7 +1005,7 @@ const AVP = {
   hair:{t:'Hair',kidOnly:1,o:[{n:'None'},{n:'Short'},{n:'Spiky',r:2},{n:'Swoop',r:4},{n:'Long'},{n:'Bob',r:3},{n:'Curly',r:6},{n:'Bun',r:8},{n:'Pigtails',r:10},{n:'Afro',r:12},{n:'Mohawk',r:18},{n:'Ponytail',r:22}]},
   hairc:{t:'Hair color',kidOnly:1,o:[{n:'Brown',c:'#6b4226'},{n:'Black',c:'#1d1a17'},{n:'Blonde',c:'#f1cc5a'},{n:'Ginger',c:'#d9622b'},{n:'Silver',c:'#c9ccd1',r:6},{n:'Blue',c:'#2f7de0',r:9},{n:'Pink',c:'#EA55AB',r:13},{n:'Lime',c:'#B6E64A',r:19},{n:'Purple',c:'#8a4be0',r:26},{n:'Rainbow',c:'rainbow',a:'combo:3'},{n:'Golden',c:'#F9BF01',rb:2},{n:'Diamond',c:'#9fe8ff',pr:1}]},
   face:{t:'Face',o:[{n:'Happy'},{n:'Grin',r:2},{n:'Wink',r:6},{n:'Shades',r:10},{n:'Star eyes',a:'targets:0'},{n:'Visor',a:'reaction_score:2'},
-    {n:'Surprised',r:1},{n:'Sleepy',r:4},{n:'Silly',r:8},{n:'Heart eyes',r:14},{n:'Determined',a:'hard:0'},{n:'Robot',a:'typing_plays:2'},{n:'Laser eyes',rb:4},{n:'Cool'},{n:'Goggles',a:'mines_plays:1'}]},
+    {n:'Surprised',r:1},{n:'Sleepy',r:4},{n:'Silly',r:8},{n:'Heart eyes',r:14},{n:'Determined',a:'hard:0'},{n:'Robot',a:'typing_plays:2'},{n:'Laser eyes',rb:4},{n:'Cool'},{n:'Goggles',a:'mines_plays:1'},{n:'Frowny',ac:10}]},
   acc:{t:'Extras',o:[{n:'None'},{n:'Freckles'},{n:'Rosy cheeks',r:2},{n:'Glasses',r:4},{n:'Round glasses',a:'eduRight:1'},{n:'Mustache',r:12},{n:'Bandage',a:'whack_plays:0'},{n:'Earrings',r:15},{n:'Face paint',r:19},{n:'Monocle',r:25},{n:'Gold chain',a:'earned:2'},{n:'Bow tie',r:7},{n:'Headphones',r:16},{n:'Diamond earrings',pr:1},
     {n:'Sheriff badge',a:'td_score:1'},{n:'Ranger patch',a:'rootSpecies:1'}]},
   gear:{t:'Back',o:[{n:'None'},{n:'Scarf',r:4},{n:'Backpack'},{n:'Cape',a:'hard:1'},{n:'Wings',a:'flappy_plays:2'},{n:'Jetpack',a:'rebirths:0'},
@@ -1010,7 +1052,8 @@ const critterHead = (B, M, C) => { const sh = '<ellipse cx="27" cy="20" rx="6" r
     case 9: return '<circle cx="21" cy="18" r="5.5" fill="'+C+'"/><circle cx="43" cy="18" r="5.5" fill="'+C+'"/><circle cx="32" cy="29" r="14" fill="'+M+'"/><ellipse cx="26.5" cy="27.5" rx="4.2" ry="5" fill="'+C+'" transform="rotate(-20 26.5 27.5)"/><ellipse cx="37.5" cy="27.5" rx="4.2" ry="5" fill="'+C+'" transform="rotate(20 37.5 27.5)"/><ellipse cx="32" cy="32.5" rx="2.2" ry="1.5" fill="#121313"/>'+sh;
     case 10: return '<circle cx="32" cy="29" r="14" fill="'+M+'"/><path d="M21 31q0-10 11-9q11-1 11 9q0 8-11 8t-11-8z" fill="'+C+'"/><path d="M29 31l3 3l3-3z" fill="#F9BF01"/>'+sh;
     case 11: return '<path d="M32 15v-6" stroke="#7d7d7d" stroke-width="1.8"/><circle cx="32" cy="8" r="2.4" fill="#FF4539">'+an('opacity','1;.3;1',1)+'</circle><rect x="18" y="15" width="28" height="26" rx="7" fill="'+M+'" stroke="#7d7d7d" stroke-width="1.2"/><rect x="21" y="22" width="22" height="10" rx="3" fill="#121313"/><circle cx="16.5" cy="28" r="2.5" fill="'+C+'"/><circle cx="47.5" cy="28" r="2.5" fill="'+C+'"/><path d="M25 36h14" stroke="#7d7d7d" stroke-width="1.4" stroke-dasharray="2 1.5"/>';
-    case 12: return '<path d="M22 19q-6-8-3-13q2 6 7 9zM42 19q6-8 3-13q-2 6-7 9z" fill="'+C+'"/><path d="M30 14l2-5l2 5z" fill="'+C+'"/><ellipse cx="32" cy="29" rx="14" ry="13" fill="'+M+'"/><ellipse cx="32" cy="35" rx="8" ry="5" fill="'+M+'" stroke="'+C+'" stroke-width="1" opacity=".9"/><circle cx="29.5" cy="35" r="1" fill="#121313"/><circle cx="34.5" cy="35" r="1" fill="#121313"/>'+sh;
+    case 12: { const sc = '<path d="M24 34q2-2 4 0M30 37q2-2 4 0M36 34q2-2 4 0M22 25q2-2 4 0M38 25q2-2 4 0" stroke="'+C+'" stroke-width="1" fill="none" opacity=".55"/>';
+      return '<path d="M21 20q-9-10-5-17q2 7 9 11z" fill="'+C+'" stroke="#5a3a1c" stroke-width=".7"/><path d="M43 20q9-10 5-17q-2 7-9 11z" fill="'+C+'" stroke="#5a3a1c" stroke-width=".7"/><path d="M17 26l-5-3l4 6zM47 26l5-3l-4 6z" fill="'+M+'"/><path d="M27 15l2-5l2 4l1-5l2 5l2-4l2 5" fill="'+C+'"/><ellipse cx="32" cy="28" rx="14" ry="13" fill="'+M+'"/><ellipse cx="32" cy="22" rx="9" ry="4" fill="#fff" opacity=".12"/>'+sc+'<ellipse cx="32" cy="37.5" rx="8.5" ry="4.6" fill="#fff" opacity=".18"/><ellipse cx="29.5" cy="38.6" rx="1" ry=".7" fill="#121313"/><ellipse cx="34.5" cy="38.6" rx="1" ry=".7" fill="#121313"/>'; }
     case 13: return '<path d="M20 18q-9-2-11-10q4 2 6 0q1 4 5 3q-2-4 1-6q2 5 3 9zM44 18q9-2 11-10q-4 2-6 0q-1 4-5 3q2-4-1-6q-2 5-3 9z" fill="'+C+'"/><ellipse cx="32" cy="29" rx="12.5" ry="13" fill="'+M+'"/><ellipse cx="32" cy="36" rx="7.5" ry="5.5" fill="'+M+'" stroke="#5a3a1c" stroke-width=".6"/><circle cx="29.5" cy="36" r="1.1" fill="#121313"/><circle cx="34.5" cy="36" r="1.1" fill="#121313"/>'+sh;
   } return ''; };
 const FRAMES = [null, null, {c:'#8D5B1D', w:4, d:'2 0'}, {c:'#00B451', w:3, leaf:1}, {c:'#F9BF01', w:3.5}, {c:'#D5F367', w:3, neon:1}, {c:'url(#rb)', w:3.5}, {c:'#9fe8e3', w:3.5}, {c:'#64CDF5', w:4, dia:1}];
@@ -1054,6 +1097,10 @@ const avSVG = (a, lvl, opts) => { a = avNorm(a); opts = opts || {}; const B = a.
   if (G==10) o += '<path d="M26 42l-22-10l4 8l-6 2l6 4l-4 6zM38 42l22-10l-4 8l6 2l-6 4l4 6z" fill="#3b2a4a"/>';
   if (G==11) o += '<g transform="rotate(20 46 40)"><rect x="42" y="26" width="9" height="24" rx="4.5" fill="#EDE9D8" stroke="#121313" stroke-width="1"/><path d="M42 30q4.5-10 9 0z" fill="#FF4539"/><circle cx="46.5" cy="36" r="2.4" fill="#64CDF5"/><path d="M43 50l3.5 8l3.5-8z" fill="#FF8A3C">'+an('opacity','1;.4;1',.25)+'</path></g>';
   if (G==12) o += '<g>'+at('rotate','-5 32 42;5 32 42;-5 32 42',.8,SPLINE)+'<path d="M24 42l-18-12l4 12l-6 6l14-2zM40 42l18-12l-4 12l6 6l-14-2z" fill="#9fe8ff" stroke="#fff" stroke-width="1.5"/></g>';
+  if (B==12) { const rare = a.main >= 10 || AVP.accent.o[a.accent].c == 'rainbow';
+    if (rare) o += '<circle cx="32" cy="34" r="27" fill="none" stroke="'+(AVP.main.o[a.main].c||'#F9BF01')+'" stroke-width="4" opacity=".35">'+an('r','25;28;25',1.6,SPLINE)+an('opacity','.15;.45;.15',1.6)+'</circle>';
+    o += '<path d="M44 58q12 2 14-8q1-5-3-6q2 6-4 9q-4 2-9 0z" fill="'+M+'" stroke="'+C+'" stroke-width="1"/><path d="M55 44l3-4l1 5z" fill="'+C+'"/>';
+    o += '<g>'+at('rotate','-4 32 44;4 32 44;-4 32 44',1.4,SPLINE)+'<path d="M24 44q-14-16-21-10q4 2 2 6q5-1 6 4q4-1 6 4q3-3 7-4z" fill="'+M+'" stroke="'+C+'" stroke-width="1.3"/><path d="M40 44q14-16 21-10q-4 2-2 6q-5-1-6 4q-4-1-6 4q-3-3-7-4z" fill="'+M+'" stroke="'+C+'" stroke-width="1.3"/><path d="M22 41l-14-6M42 41l14-6" stroke="'+C+'" stroke-width=".8" opacity=".6"/></g>'; }
   // long hair goes behind the body and head
   if (HR==4) o += '<path d="M18 28q0 18 4 24h20q4-6 4-24z" fill="'+hc+'"/>';
   if (HR==8) o += '<circle cx="15" cy="34" r="5" fill="'+hc+'"/><circle cx="49" cy="34" r="5" fill="'+hc+'"/>';
@@ -1104,8 +1151,12 @@ const avSVG = (a, lvl, opts) => { a = avNorm(a); opts = opts || {}; const B = a.
   else if (F==8) o += '<path d="M27 33q5 4 10 0" stroke="#121313" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M30 34.5q2 5 4 0z" fill="#ff7aa8"/>';
   else if (F==10) o += '<path d="M28 34h8" stroke="#121313" stroke-width="2" stroke-linecap="round"/>';
   else if (F==13) o += '<path d="M28 34q5 2 9-1.5" stroke="#121313" stroke-width="2" fill="none" stroke-linecap="round"/>';
+  else if (F==15) o += '<path d="M27 35.5q5-4 10 0" stroke="#121313" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M23.5 23.5l5 1.5M40.5 23.5l-5 1.5" stroke="#121313" stroke-width="1.6" stroke-linecap="round"/>';
   else if (F==11) o += '<rect x="26" y="32.5" width="12" height="3" rx="1" fill="#c9ccd1" stroke="#121313" stroke-width="1"/>';
   else o += '<path d="M27 33q5 4 10 0" stroke="#121313" stroke-width="2" fill="none" stroke-linecap="round"/>';
+  if (B==12) { const rare = a.main >= 10 || AVP.accent.o[a.accent].c == 'rainbow';
+    o += '<circle cx="27" cy="27" r="3.4" fill="#F9BF01" opacity=".35"/><circle cx="37" cy="27" r="3.4" fill="#F9BF01" opacity=".35"/><ellipse cx="27" cy="27" rx="2.4" ry="2.1" fill="#ffd23a"/><ellipse cx="37" cy="27" rx="2.4" ry="2.1" fill="#ffd23a"/><ellipse cx="27" cy="27" rx=".7" ry="1.9" fill="#121313"/><ellipse cx="37" cy="27" rx=".7" ry="1.9" fill="#121313"/>';
+    if (rare) o += '<g opacity=".9">'+an('opacity','0;.95;0',1.3)+'<path d="M32 41q-4 6 0 11q4-5 0-11z" fill="#FF8A3C"/><path d="M32 44q-2 4 0 7q2-3 0-7z" fill="#F9BF01"/><circle cx="27" cy="50" r="1.5" fill="#FF4539"/><circle cx="37" cy="51" r="1.2" fill="#F9BF01"/></g>'; }
   // extras over the face
   if (X==3) o += '<rect x="22" y="24" width="8" height="6" rx="1.5" fill="none" stroke="#121313" stroke-width="1.6"/><rect x="34" y="24" width="8" height="6" rx="1.5" fill="none" stroke="#121313" stroke-width="1.6"/><path d="M30 26.5h4" stroke="#121313" stroke-width="1.6"/>';
   if (X==4) o += '<circle cx="27" cy="27" r="4" fill="none" stroke="#DD8B03" stroke-width="1.5"/><circle cx="37" cy="27" r="4" fill="none" stroke="#DD8B03" stroke-width="1.5"/><path d="M31 27h2" stroke="#DD8B03" stroke-width="1.5"/>';
@@ -1292,8 +1343,8 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-11-23a';
-const SCRIPTS = ['arcade-core.js','prizes2.js','economy.js','achievements.js','avatar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-edu.js','games-idle.js'];
+const BUILD = '2026-11-24a';
+const SCRIPTS = ['arcade-core.js','prizes2.js','economy.js','achievements.js','avatar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
 class Component extends DCLogic {
@@ -1303,7 +1354,7 @@ class Component extends DCLogic {
     if (acct && !getAccts()[acct]) acct = null;
     this.acct = acct; this.P = loadP(this.profKey());
     this.state = Object.assign({}, this.P, {account:acct,
-      immortal:false,autoHint:true,codeOpen:false,codeVal:'',codeMsg:'',admin:false,px:760,py:745,vw:(typeof window!='undefined'?window.innerWidth:1200),gameH:480,padOn:(typeof window!='undefined'&&(('ontouchstart' in window)||(window.matchMedia&&window.matchMedia('(pointer: coarse)').matches))),learnOpen:false,pinIn:'',pinNew:'',pinNew2:'',pinMsg:'',pinAsk:'',pinFails:0,pinLock:0,pinMode:'',lbOpen:false,lbGame:'_tix',lbMode:'all',uOpen:false,uVal:'',uMsg:'',clearArm:false,dir:[0,1],game:null,liveScore:0,payout:'',prizesOpen:false,toasts:[],scale:1,muted:false,
+      immortal:false,autoHint:true,codeOpen:false,codeVal:'',codeMsg:'',admin:false,px:760,py:905,vw:(typeof window!='undefined'?window.innerWidth:1200),gameH:480,padOn:(typeof window!='undefined'&&(('ontouchstart' in window)||(window.matchMedia&&window.matchMedia('(pointer: coarse)').matches))),learnOpen:false,pinIn:'',pinNew:'',pinNew2:'',pinMsg:'',pinAsk:'',pinFails:0,pinLock:0,pinMode:'',lbOpen:false,lbGame:'_tix',lbMode:'all',uOpen:false,uVal:'',uMsg:'',clearArm:false,dir:[0,1],game:null,liveScore:0,payout:'',prizesOpen:false,toasts:[],scale:1,muted:false,
       authOpen:false,authMode:'signup',aEmail:'',aPass:'',aPass2:'',aName:'',aShow:false,aRemember:true,aBring:true,aMsg:'',aBusy:false,aFails:0,aLock:0,aTouched:false,
       achOpen:false,achFilter:'All'});
     this.keys = {}; this.gameRef = React.createRef(); this.pzRef = React.createRef(); this.achRef = React.createRef(); this.avRef = React.createRef();
@@ -1418,12 +1469,13 @@ class Component extends DCLogic {
     (async()=>{ for (const s of SCRIPTS) await new Promise(r=>{ const e=document.createElement('script'); e.src=s+'?v='+BUILD; e.onload=r; e.onerror=r; document.head.appendChild(e); }); this.ready=true; })();
     this.kd = e => {
       const k = e.key.length==1 ? e.key.toLowerCase() : e.key;
-      if (k=='Escape') { if (this.state.chatOpen) { this.closeChat(); return; } this.closeAll(); this.setState({codeOpen:false}); return; }
+      if (k=='Escape') { if (this.state.fs) { this.setFs(false); return; } if (this.state.chatOpen) { this.closeChat(); return; } this.closeAll(); this.setState({codeOpen:false}); return; }
+      if (k=='y' && this.state.game && !(e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) && !(this.state.game=='typing' && !e.shiftKey)) { e.preventDefault(); this.setFs(!this.state.fs); return; }
       const tg = e.target && e.target.tagName; if (tg=='INPUT' || tg=='TEXTAREA' || tg=='SELECT') return;
       if (this.state.kickUntil > Date.now() && !this.state.admin) return;
       if (k=='t' && !this.state.chatOpen && !this.state.game && !this.state.codeOpen && !this.state.authOpen) { e.preventDefault(); this.openChat(); return; }
       if (this.state.chatOpen) return;
-      const S = this.state; if (S.game || S.shopOpen || S.avOpen || S.prizesOpen || S.codeOpen || S.authOpen || S.achOpen || S.learnOpen || S.lbOpen || S.uOpen) return;
+      const S = this.state; if (S.game || S.sugOpen || S.shopOpen || S.avOpen || S.prizesOpen || S.codeOpen || S.authOpen || S.achOpen || S.learnOpen || S.lbOpen || S.uOpen) return;
       if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k)) e.preventDefault();
       this.keys[k] = true;
       if ((k=='e'||k=='Enter') && this.near) this.near.act();
@@ -1442,7 +1494,7 @@ class Component extends DCLogic {
     let last = performance.now(), stepT = 0;
     const tick = now => {
       const dt = Math.min(.05,(now-last)/1000); last = now; const s = this.state;
-      if (!s.game && !s.shopOpen && !s.avOpen && !s.prizesOpen && !s.codeOpen && !s.authOpen && !s.achOpen && !s.learnOpen && !s.lbOpen && !s.uOpen) {
+      if (!s.game && !s.sugOpen && !s.shopOpen && !s.avOpen && !s.prizesOpen && !s.codeOpen && !s.authOpen && !s.achOpen && !s.learnOpen && !s.lbOpen && !s.uOpen) {
         const K = this.keys, dx = (K.ArrowRight||K.d?1:0)-(K.ArrowLeft||K.a?1:0), dy = (K.ArrowDown||K.s?1:0)-(K.ArrowUp||K.w?1:0);
         if (dx||dy) {
           const sp = (this.props.walkSpeed ?? 280) * dt / Math.hypot(dx,dy);
@@ -1463,7 +1515,8 @@ class Component extends DCLogic {
       this.raf = requestAnimationFrame(tick);
     };
     this.raf = requestAnimationFrame(tick);
-    this.onResize = () => { const vw = window.innerWidth; if (vw !== this.state.vw) this.setState({vw}); const el = this._wrapEl; const w = el && el.clientWidth; if (w) { const sc = Math.min(1.25, w/FW); if (Math.abs(sc - this.state.scale) > 0.002) this.setState({scale: sc}); } };
+    this.onFsc = () => { if (!document.fullscreenElement && this.state.fs && this._fsReal) this.setState({fs:false}); this._fsReal = !!document.fullscreenElement; }; document.addEventListener('fullscreenchange', this.onFsc);
+    this.onResize = () => { const vw = window.innerWidth; if (vw !== this.state.vw || window.innerHeight !== this.state.vh) this.setState({vw, vh:window.innerHeight}); const el = this._wrapEl; const w = el && el.clientWidth; if (w) { const sc = Math.min(1.25, w/FW); if (Math.abs(sc - this.state.scale) > 0.002) this.setState({scale: sc}); } };
     window.addEventListener('resize', this.onResize);
     this.onResize(); setTimeout(this.onResize, 100); setTimeout(this.onResize, 600);
     setTimeout(()=>this.setP({}), 900);
@@ -1472,6 +1525,8 @@ class Component extends DCLogic {
     window.removeEventListener('pagehide',this.onHide); window.removeEventListener('beforeunload',this.onHide); document.removeEventListener('visibilitychange',this.onVis); this.ro && this.ro.disconnect(); this.unmountGame(); }
   componentDidUpdate(){
     if (this.state.adminOpen && !this._actOff) this.openActivity(); if (!this.state.adminOpen && this._actOff) this.closeActivity();
+    if (this.state.adminOpen && !this._sugOff && window.WLCloud && window.WLCloud.sugListen) this._sugOff = window.WLCloud.sugListen(l => this.setState({sugRows:l||[]}));
+    if (!this.state.adminOpen && this._sugOff) { try { this._sugOff(); } catch(e){} this._sugOff = null; }
     if (window.WLP && this._loginFor !== this.profKey()) { this._loginFor = this.profKey(); const W2 = window.WLP; setTimeout(()=>{ const l = W2.login(this.P); const c = W2.ensureChal({...this.P, ...(l||{})}, GAMES); if (l || c) { this.setP({...(l||{}), ...(c||{})}); if (l && l.login.streak > 1) this.toast('DAY '+l.login.streak+' LOGIN STREAK · BONUS ×'+W2.fmt(W2.globalMult(this.P))); } }, 400); }
     if (window.WLA && window.WLAV && !this._achInit) { this._achInit = true; window.WLA.init({games:GAMES, classic:PRIZES.map(x=>x.id)}); window.WLAV.init({AVP, AVK, TABS:AVTABS, svg:(a,l)=>avSVG(a,l), CURSORS});
       window.WLA.attach({busy:()=>!!this.state.game || !!this.state.authOpen}); avEmblems(); setTimeout(()=>this.setP({}), 50); }
@@ -1498,7 +1553,7 @@ class Component extends DCLogic {
       this.setState({hint:null});
       this.snapFn = null; this._perfect = false; this._roundT0 = Date.now(); this._act = 0; this.startSess(game);
       const am = n => this.state.admin ? Math.round(n*(this.state.adminMult||1)) : n;
-      this.cleanup = A.games[game].mount(this.gameRef.current, { score: n => { const v = am(n); if (v === this.state.liveScore) return; const now = performance.now(); clearTimeout(this._sTo); if (now - (this._sT||0) < 150) { this._sTo = setTimeout(()=>{ this._sT = performance.now(); this.setState({liveScore:v}); }, 160); return; } this._sT = now; this.setState({liveScore:v}); }, over: n => this.finish(game, am(n)), hint: h => this.setState({hint:h}),
+      this.cleanup = A.games[game].mount(this.gameRef.current, { score: n => { const v = am(n); if (v === this.state.liveScore) return; const now = performance.now(); clearTimeout(this._sTo); if (now - (this._sT||0) < 300) { this._sTo = setTimeout(()=>{ this._sT = performance.now(); this.setState({liveScore:v}); }, 160); return; } this._sT = now; this.setState({liveScore:v}); }, over: n => this.finish(game, am(n)), hint: h => this.setState({hint:h}),
         resume, snap: f => { this.snapFn = f; }, stat: (k,v,m) => this.stat(k,v,m),
         stored: this.state.admin ? null : (this.P.idle || null), store: d => { if (this.state.admin) return; try { this.P = {...this.P, idle: JSON.parse(JSON.stringify(d))}; } catch(e) { return; } this.persist(); },
         tix: (n, score, label) => this.grantTix(game, n, score, label), perfect: () => { this._perfect = true; },
@@ -1622,6 +1677,19 @@ class Component extends DCLogic {
   openActivity(){ const C = window.WLCloud; if (!C || !C.actListen) return this.setState({actErr:'Activity needs the online database — open the real site and log in as jonah@wilderland.academy.'});
     if (!this._actOff) this._actOff = C.actListen(list => { if (!list) return this.setState({actErr:'Activity can’t load right now.'}); this.setState({actRows:list, actErr:''}); }); }
   closeActivity(){ if (this._actOff) { try { this._actOff(); } catch(e){} this._actOff = null; } }
+  // Full screen: the game box fills the screen and the game scales to fit without stretching (works on phones too).
+  setFs(on){ if (!!this.state.fs === !!on) return; this.setState({fs:!!on, vw:window.innerWidth, vh:window.innerHeight});
+    try { if (on && document.documentElement.requestFullscreen && !document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{}); if (!on && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(()=>{}); } catch(e){}
+    setTimeout(()=>this.setState({vw:window.innerWidth, vh:window.innerHeight}), 250); window.Arcade && window.Arcade.sfx('blip'); }
+  sendSuggestion(){ const s = this.state, text = String(s.sugText||'').trim().slice(0, 800), name = String(s.sugName||'').trim().slice(0, 30);
+    if (text.length < 4) return this.setState({sugMsg:'Write a little more about your idea first.'});
+    if (Date.now() - (this._sugAt||0) < 30000) return this.setState({sugMsg:'Thanks! Give it 30 seconds before sending another one.'});
+    this._sugAt = Date.now();
+    if (SUGGEST_FORM) { let url = SUGGEST_FORM; const q = []; if (SUGGEST_ENTRY) q.push(SUGGEST_ENTRY+'='+encodeURIComponent(text)); if (SUGGEST_NAME_ENTRY && name) q.push(SUGGEST_NAME_ENTRY+'='+encodeURIComponent(name));
+      if (q.length) url += (url.includes('?') ? '&' : '?') + 'usp=pp_url&' + q.join('&'); try { window.open(url, '_blank', 'noopener'); } catch(e){} }
+    else if (s.cloud && window.WLCloud && window.WLCloud.suggest) window.WLCloud.suggest({uid:this.cloudUid||'', u:(name || this.P.username || 'anonymous').slice(0,30), t:text}).catch(()=>{});
+    try { const L = JSON.parse(localStorage.getItem('wl-suggestions')||'[]'); L.unshift({t:text, n:name, at:Date.now()}); localStorage.setItem('wl-suggestions', JSON.stringify(L.slice(0,30))); } catch(e){}
+    this.setState({sugText:'', sugMsg:'', sugDone:true}); window.Arcade && window.Arcade.sfx('win'); this.logAct('here', 'sent a suggestion'); }
   econApi(){ return { P:()=>this.P, setP:pt=>this.setP(pt), toast:t=>this.toast(t), sfx:n=>window.Arcade && window.Arcade.sfx(n), admin:()=>!!this.state.admin, addTix:(n,f)=>this.addTix(n,f) }; }
   // One-time move to the new economy. Nothing is wiped: tickets, prizes, scores, stars and achievements all stay.
   // One-time moves to the new economy. Nothing is wiped: tickets, prizes, scores, stars and achievements all stay.
@@ -1705,8 +1773,8 @@ class Component extends DCLogic {
     else { window.Arcade && window.Arcade.sfx('bad'); this.setState({codeMsg:'Code not recognised', codeVal:''}); } }
   open(id){ this.keys = {}; this.setState({game:id, liveScore:0, payout:''}); }
   closeAll(){ const saved = this.unmountGame(); this.keys = {}; Object.keys(this.padHeld).forEach(k=>{ if (this.padHeld[k]) fireKey(k,'keyup'); }); this.padHeld = {};
-    setTimeout(()=>window.WLA && window.WLA.pump(), 400);
-    this.setState({game:null, shopOpen:false, avOpen:false, prizesOpen:false, payout:'', authOpen:false, achOpen:false, learnOpen:false, lbOpen:false, uOpen:false, clearArm:false}); if (saved) this.toast('GAME SAVED · PICK IT UP ANY TIME'); }
+    setTimeout(()=>window.WLA && window.WLA.pump(), 400); if (this.state.fs) this.setFs(false);
+    this.setState({game:null, sugOpen:false, shopOpen:false, avOpen:false, prizesOpen:false, payout:'', authOpen:false, achOpen:false, learnOpen:false, lbOpen:false, uOpen:false, clearArm:false}); if (saved) this.toast('GAME SAVED · PICK IT UP ANY TIME'); }
   buy(p){
     const P = this.P; if (P.tickets < p.cost) { window.Arcade && window.Arcade.sfx('bad'); return; }
     const left = P.tickets - p.cost, patch = {tickets:left, prizes:{...P.prizes,[p.id]:(P.prizes[p.id]||0)+1}};
@@ -1777,7 +1845,9 @@ class Component extends DCLogic {
     const sn = strength(pw), [strLabel, strPct, strColor] = pw ? STR[sn] : ['',0,'#9aa79f'];
     const guestP = !s.account && s.authOpen && isSignup ? this.P : null;
     // layout
-    const vw = s.vw || 1200, narrow = vw < 760, modalW = Math.min(520, vw-16), modalPad = vw<560 ? 12 : 20, gameScale = Math.min(1, (modalW-2*modalPad)/480);
+    const vw = s.vw || 1200, narrow = vw < 760, GW = (s.game && GAMEW[s.game]) || 480, modalW = Math.min(GW+40, vw-16), modalPad = vw<560 ? 12 : 20;
+    const vh = s.vh || (typeof window!='undefined' ? window.innerHeight : 800), GH = s.gameH||480, fsOn = !!(s.fs && s.game);
+    const gameScale = fsOn ? Math.min((vw-8)/GW, (vh-56)/GH) : Math.min(1, (modalW-2*modalPad)/GW);
     // learn tracking
     const log = P.sessLog || [], learnLog = log.filter(e=>e.edu||e.learn), sumL = learnLog.reduce((a,e)=>a+e.d,0), okN = learnLog.reduce((a,e)=>a+e.ok,0), badN = learnLog.reduce((a,e)=>a+e.bad,0);
     const td = P.days[today()] || {l:0,r:0};
@@ -1795,7 +1865,9 @@ class Component extends DCLogic {
     const mkPad = key => ({down: e=>{ if (e && e.preventDefault) e.preventDefault(); this.padHeld[key] = 1; fireKey(key,'keydown'); }, up: ()=>{ if (this.padHeld[key]) { this.padHeld[key] = 0; fireKey(key,'keyup'); } }});
     return {
       narrow, wide: !narrow, mainPad: narrow ? '14px 12px' : '20px 24px', headPad: narrow ? '12px 14px' : '14px 24px', floorH: FH,
-      modalW, modalPad, gameScale, gameBoxW: Math.round(480*gameScale), gameBoxH: Math.round((s.gameH||480)*gameScale), boxRef: this.boxRef, boxTouch: s.game && SWIPE.includes(s.game) ? 'none' : 'manipulation',
+      modalW, modalPad, gameScale, gameBoxW: Math.round(GW*gameScale), gameBoxH: Math.round(GH*gameScale), gameW: GW, fsOn, liveScoreFmt: fmtN(s.liveScore||0), toggleFs: ()=>this.setFs(!s.fs), fsExit: vw < 560 ? 'Exit · Y' : 'Exit full screen · Y', fsLabel: s.game=='typing' ? '⛶ Full screen · Shift+Y' : '⛶ Full screen · Y',
+      boxPos: fsOn ? 'fixed' : 'relative', boxInset: fsOn ? '0' : 'auto', boxZ: fsOn ? 700 : 'auto', boxBg: fsOn ? '#0b2e24' : 'transparent', boxWcss: fsOn ? '100vw' : Math.round(GW*gameScale)+'px', boxHcss: fsOn ? '100vh' : Math.round(GH*gameScale)+'px',
+      gameLeft: fsOn ? Math.max(0, Math.round((vw - GW*gameScale)/2)) : 0, gameTop: fsOn ? 48 + Math.max(0, Math.round((vh - 52 - GH*gameScale)/2)) : 0, boxRef: this.boxRef, boxTouch: s.game && SWIPE.includes(s.game) ? 'none' : 'manipulation',
       padAvail: !!pad, padShow: !!pad && s.padOn, togglePad: ()=>this.setState({padOn:!s.padOn}), padLabel: s.padOn ? 'Touch pad · ON' : 'Touch pad · OFF', padBg: s.padOn ? '#015640' : '#D9D9D9', padFg: s.padOn ? '#D5F367' : '#4a4a4a',
       padDpad: pad ? [[null,''],['ArrowUp','▲','u'],[null,''],['ArrowLeft','◀','l'],['ArrowDown','▼','d'],['ArrowRight','▶','r']].map(([k,l,c])=>({...(k?mkPad(k):{down:()=>{},up:()=>{}}), label:l, aria: k ? k.replace('Arrow','')+' arrow' : 'blank', vis: k && pad.d.includes(c) ? 'visible' : 'hidden'})) : [],
       padActs: pad ? pad.a.map(([l,k],i)=>({...mkPad(k), label:l, bg: i==0 ? '#D5F367' : '#ffffff'})) : [],
@@ -1920,6 +1992,9 @@ class Component extends DCLogic {
           actStats:players+' players · '+games+' games finished · '+today.filter(r=>r.k=='rebirth').length+' rebirths in the last 24 h', actFilter:s.actFilter||'',
           inActFilter:e=>this.setState({actFilter:e.target.value}), clearActFilter:()=>this.setState({actFilter:''}),
           actKinds:[['all','All'],['play','Games'],['big','Rebirths & prizes'],['online','Online']].map(([k,l])=>({key:k, label:l, bg:kf==k?'#015640':'#ffffff', fg:kf==k?'#ffffff':'#015640', pick:()=>this.setState({actKind:k})})) }; })(),
+      sugOpen: !!s.sugOpen, openSug: ()=>{ this.keys = {}; this.setState({sugOpen:true, sugDone:false, sugMsg:''}); }, closeSug: ()=>this.setState({sugOpen:false}), sugText: s.sugText||'', sugName: s.sugName||'',
+      inSugText: e=>this.setState({sugText:e.target.value.slice(0,800)}), inSugName: e=>this.setState({sugName:e.target.value.slice(0,30)}), sendSug: ()=>this.sendSuggestion(), sugMsg: s.sugMsg||'', sugDone: !!s.sugDone, sugForm: !s.sugDone,
+      sugCount: String((s.sugText||'').length)+' / 800', sugList: (s.sugRows||[]).slice(0,40).map(r=>({key:r.id, who:r.u||'anonymous', what:r.t||'', when:new Date(r.at).toLocaleDateString()})), sugEmpty: !(s.sugRows||[]).length,
       adminOpen: !!s.adminOpen, closeAdmin: ()=>this.setState({adminOpen:false, admArm:''}),
       admTix: s.admTix ?? '', inAdmTix: e=>this.setState({admTix:e.target.value.replace(/[^0-9]/g,'').slice(0,10), admArm:''}), admMsg: s.admMsg||'',
       admNow: 'Tickets '+fmtN(P.tickets)+' · lifetime earned '+fmtN(P.earned)+' · '+Object.keys(P.best).length+' high scores · '+Object.keys(P.saves).length+' saved games',

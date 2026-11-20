@@ -38,7 +38,8 @@ const UPS = [
   {id:'cart',  n:'Mine Carts',    d:'+25% ore from every miner',        max:999, cost:l=>150*Math.pow(1.7,l)},
   {id:'drill', n:'Deep Charges',  d:'+10% of ALL ore, stacks forever',  max:999, cost:l=>5000*Math.pow(1.45,l)},
   {id:'luck',  n:'Lucky Strike',  d:'+2% chance a tap digs ×10',        max:25,  cost:l=>1000*Math.pow(2,l)},
-  {id:'hire',  n:'Better Hires',  d:'New miners start 1 level up',      max:20,  cost:l=>4000*Math.pow(11,l)},
+  {id:'hire',  n:'Better Hires',  d:'New miners start 1 level up (past the top miner level: +15% ore per level)', max:999, cost:l=>4000*Math.pow(11,Math.min(l,20))*Math.pow(3,Math.max(0,l-20))},
+  {id:'night', n:'Night Shift',   d:'+2 h of digging while away',       max:46,  cost:l=>600*Math.pow(2.1,l)},
   {id:'gem',   n:'Gem Sense',     d:'Gems & geodes show up faster',     max:4,   cost:l=>2500*Math.pow(6,l)},
   {id:'auto',  n:'Foreman',       d:'Auto-merges pairs · faster each level', max:10, cost:l=>15000*Math.pow(4,l)},
 ];
@@ -54,7 +55,7 @@ A.register('idle', { mount(host, api){
   const fresh = () => ({v:1, ore:0, life:0, grid:[1,0,0,0,0,0,0,0,0,0,0,0], hires:1, up:{}, last:Date.now(), tix:{d:'',n:0}, gems:0, geodes:0, best:1});
   let S = (api.stored && api.stored.v==1) ? JSON.parse(JSON.stringify(api.stored)) : fresh();
   S.up = S.up || {}; S.tix = S.tix || {d:'',n:0}; if (!Array.isArray(S.grid) || S.grid.length!=12) S.grid = fresh().grid;
-  const U = k => S.up[k] || 0;
+  const U = k => S.up[k] || 0; let codeMsg = '';
 
   const wrap = el('div',{width:'480px',fontFamily:A.font,userSelect:'none',background:'#1b130c',borderRadius:'12px',overflow:'hidden',position:'relative'}); host.appendChild(wrap);
   const {c,g,w,h} = A.canvas(wrap,480,500); c.style.borderRadius = '0'; c.style.touchAction = 'none';
@@ -64,13 +65,15 @@ A.register('idle', { mount(host, api){
 
   // ---------- economy ----------
   const depthIdx = () => { let d = 0; DEPTHS.forEach((x,i)=>{ if (S.life >= x.at) d = i; }); return d; };
-  const mult = () => (1 + .25*U('cart')) * (1 + .2*depthIdx()) * (1 + .1*U('drill'));
+  const extraStart = () => Math.max(0, 1 + U('hire') + A.U('start') - (MAXL-1));   // hire levels beyond the top miner level
+  const mult = () => (1 + .25*U('cart')) * (1 + .2*depthIdx()) * (1 + .1*U('drill')) * (1 + .15*extraStart());
   const rate = () => S.grid.reduce((a,L)=>a+lvRate(L),0) * mult();
   // A tap is worth about 1% of a second of your miners (plus the pick bonus), so idle miners always out-earn clicking.
   const tapAmt = () => (learn ? 1/3 : 1) * ((1 + 2*U('pick')) + rate()*.01*(1+.1*U('pick')));
   const hireCost = () => Math.ceil(8*Math.pow(1.09, S.hires) * Math.pow(2.5, U('hire')) * Math.pow(.85, A.U('cheap')));
   const hireLv = () => Math.min(MAXL-1, 1 + U('hire') + A.U('start'));
-  const give = n => { S.ore += n; S.life += n; };
+  let rushT = 0, golem = null, golemT = 110 + Math.random()*60;  // Gold Rush power-up · Cave Golem boss
+  const give = n => { if (rushT > 0) n *= 3; S.ore += n; S.life += n; };
   const tixFor = ore => Math.floor(Math.sqrt(ore)/3);
   const score = () => Math.min(99999999, Math.floor(Math.sqrt(S.life)));
 
@@ -112,6 +115,9 @@ A.register('idle', { mount(host, api){
   const autoMerge = () => { for (let L=1; L<MAXL; L++) { const idx = S.grid.map((v,i)=>v===L?i:-1).filter(i=>i>=0); if (idx.length>=2) { merge(idx[0], idx[1]); return; } } };
   let combo = 0, comboT = 0, crack = {a:Math.random()*7, r:.6}, gcart = null, gcartT = 35 + Math.random()*30;
   const tapRock = (x,y) => { comboT = .7; combo = Math.min(60, combo+1); const cm = 1 + Math.min(combo,40)*.0125;
+    if (golem) { const d = tapAmt()*cm*(1 + .1*U('pick')); golem.hp -= d; golem.hit = .12; shake = .1; burst(x, y, '#c9ccd1', 5); A.tone(140+Math.random()*40,.05,'square',.04); float(x, y-16, '-'+fmt(d), '#ffb3ab');
+      if (golem.hp <= 0) { const n = Math.max(500, rate()*150 + tapAmt()*250); give(n); S.golems = (S.golems||0)+1; stat(api,'mineGolem',1,'add'); burst(BOULDER.x, BOULDER.y, C.gold, 40); A.sfx('win');
+        rushT = 30; say('CAVE GOLEM DEFEATED!', '+'+fmt(n)+' ore · GOLD RUSH: all ore ×3 for 30 s', C.gold); golem = null; golemT = 140 + Math.random()*80; } return; }
     const cx = BOULDER.x + Math.cos(crack.a)*BOULDER.r*crack.r, cy = BOULDER.y + Math.sin(crack.a)*BOULDER.r*crack.r*.82, onCrack = Math.hypot(x-cx, y-cy) < 20;
     if (onCrack) { crack = {a:Math.random()*7, r:.3+Math.random()*.5}; float(x, y-46, 'CRACK ×3', '#fff'); A.tone(1100,.06,'square',.04); }
     const lucky = Math.random() < .02*U('luck'), n = tapAmt()*(lucky?10:1)*cm*(onCrack?3:1); give(n); if (lucky) { float(x, y-30, 'LUCKY ×10!', C.gold); A.tone(1400,.08,'triangle',.05); } shake = .12; float(x, y-10, '+'+fmt(n), DEPTHS[depthIdx()].ore); burst(x, y, DEPTHS[depthIdx()].ore, 6); A.tone(180+Math.random()*60,.05,'square',.04); };
@@ -149,9 +155,21 @@ A.register('idle', { mount(host, api){
         b.onclick = () => { if (!can) { A.sfx('bad'); return; } S.ore -= cost; S.up[u.id] = l+1; A.sfx('coin'); persist(); render(); paintBar(); };
         row.append(txt, b); list.append(row); });
       const info = el('div',{fontSize:'12px',color:'#cfc6a8',lineHeight:'1.5',marginTop:'4px'});
-      info.innerHTML = 'Depth: <b style="color:#fff">'+DEPTHS[depthIdx()].n+'</b> (+'+(depthIdx()*20)+'% ore). Dig more lifetime ore to reach deeper layers.<br>Miners only dig while you’re actively playing (tap, drag or click within the last 15 seconds).<br>Selling ore: 9 ore = 1 ticket, 900 = 10, 1M = 333 · no daily limit.';
+      info.innerHTML = 'Depth: <b style="color:#fff">'+DEPTHS[depthIdx()].n+'</b> (+'+(depthIdx()*20)+'% ore). Dig more lifetime ore to reach deeper layers.<br>Miners dig while you’re playing, and keep digging at half speed while you’re away for up to '+(2+2*U('night'))+' hours (Night Shift adds more).'+(extraStart()?'<br>Extra hire levels past the top miner: <b style="color:#fff">+'+(extraStart()*15)+'% ore</b>.':'')+'<br>Selling ore: 9 ore = 1 ticket, 900 = 10, 1M = 333 · no daily limit.';
       const calmB = el('button',{fontFamily:A.font,fontWeight:700,fontSize:'13px',border:'none',borderRadius:'999px',padding:'8px 14px',cursor:'pointer',background:'rgba(255,255,255,.14)',color:'#fff',alignSelf:'flex-start'}, 'Pickaxe animation · '+(S.calm?'OFF (smoother)':'ON'));
-      calmB.onclick = () => { S.calm = !S.calm; A.sfx('blip'); persist(); render(); }; list.append(calmB, info); };
+      calmB.onclick = () => { S.calm = !S.calm; A.sfx('blip'); persist(); render(); };
+      // code bar (one-time codes, remembered in your save even through Rebirths)
+      const codeRow = el('div',{display:'flex',gap:'6px',alignItems:'center',flexWrap:'wrap',background:'rgba(255,255,255,.07)',borderRadius:'12px',padding:'8px 10px'});
+      const inp = el('input',{flex:'1 1 140px',minWidth:0,fontFamily:A.font,fontSize:'14px',fontWeight:700,borderRadius:'999px',border:'none',padding:'8px 12px',textTransform:'uppercase'}); inp.placeholder = 'Enter a code'; inp.setAttribute('aria-label','Mines code');
+      inp.addEventListener('keydown', e => { e.stopPropagation(); if (e.key=='Enter') redeem(); });
+      const go = el('button',{fontFamily:A.font,fontWeight:700,fontSize:'13px',border:'none',borderRadius:'999px',padding:'8px 14px',cursor:'pointer',background:C.lime,color:C.forest},'Redeem');
+      const cmsg = el('div',{width:'100%',fontSize:'12px',fontWeight:700,color:C.lime,minHeight:'14px'}, codeMsg);
+      const redeem = () => { const v = inp.value.trim().toUpperCase(); S.codes = S.codes || {};
+        if (v == 'NIGHTSHIFT20') { if (S.codes[v]) { codeMsg = 'You already redeemed that code.'; A.sfx('bad'); } else { S.codes[v] = Date.now(); S.up.night = Math.max(U('night'), 20); codeMsg = '✓ Code redeemed! Night Shift is now level '+U('night')+'.'; A.sfx('win'); persist(); } }
+        else { codeMsg = v ? 'That code doesn’t work.' : ''; if (v) A.sfx('bad'); }
+        render(); };
+      go.onclick = redeem; codeRow.append(el('div',{fontWeight:700,fontSize:'12px',color:C.gold,letterSpacing:'.08em'},'CODE'), inp, go, cmsg);
+      list.append(codeRow, calmB, info); };
     render(); wrap.append(shop); };
 
   // ---------- bottom bar ----------
@@ -197,6 +215,21 @@ A.register('idle', { mount(host, api){
     g.fillStyle = '#fffbe0'; g.beginPath(); g.arc(0,-17,2.3,0,7); g.fill();
     if (L >= 5 && !lowFx()) { g.globalAlpha = .18 + .1*Math.sin(t*4); g.fillStyle = '#fff6b0'; g.beginPath(); g.moveTo(0,-17); g.lineTo(-14,-34); g.lineTo(14,-34); g.fill(); g.globalAlpha = 1; }
     g.restore(); };
+  const drawBoss = () => {
+    if (rushT > 0) { g.fillStyle = 'rgba(249,191,1,.9)'; rrect(g, w-150, ROCK.y+8, 140, 24, 12); g.fill(); g.fillStyle = '#121313'; g.font = '700 12px '+A.font; g.textAlign = 'center'; g.fillText('GOLD RUSH ×3 · '+Math.ceil(rushT)+'s', w-80, ROCK.y+24); }
+    if (!golem) return; const B = BOULDER, sh = golem.hit ? (Math.random()-.5)*6 : 0, bob = Math.sin(t*3)*3;
+    g.save(); g.translate(B.x + sh, B.y + bob);
+    g.fillStyle = '#5f6b68'; g.beginPath(); g.ellipse(0, 6, 58, 50, 0, 0, 7); g.fill();
+    g.fillStyle = '#7d8a86'; g.beginPath(); g.ellipse(-8, -6, 40, 32, 0, 0, 7); g.fill();
+    g.fillStyle = '#4a5452'; g.beginPath(); g.ellipse(-62, 16, 18, 26, -.4, 0, 7); g.ellipse(62, 16, 18, 26, .4, 0, 7); g.fill();
+    g.fillStyle = golem.hit ? '#ffffff' : '#FF8A3C'; g.beginPath(); g.arc(-16, -6, 7, 0, 7); g.arc(16, -6, 7, 0, 7); g.fill();
+    if (!lowFx()) { g.fillStyle = 'rgba(255,138,60,.25)'; g.beginPath(); g.arc(-16, -6, 13, 0, 7); g.arc(16, -6, 13, 0, 7); g.fill(); }
+    g.strokeStyle = '#2a302f'; g.lineWidth = 3; g.beginPath(); g.moveTo(-14, 18); g.lineTo(14, 18); g.stroke(); g.beginPath(); g.moveTo(-30, -30); g.lineTo(-18, -18); g.moveTo(26, -34); g.lineTo(32, -20); g.stroke();
+    g.fillStyle = DEPTHS[depthIdx()].ore; g.beginPath(); g.arc(30, 22, 5, 0, 7); g.arc(-34, 26, 4, 0, 7); g.fill();
+    g.restore();
+    const bw = 300, bx = (w-bw)/2, by = ROCK.y + 6; g.fillStyle = 'rgba(0,0,0,.72)'; rrect(g, bx-8, by, bw+16, 34, 10); g.fill();
+    g.fillStyle = '#fff'; g.font = '700 12px '+A.font; g.textAlign = 'center'; g.fillText('CAVE GOLEM · '+Math.ceil(golem.t)+'s', w/2, by+14);
+    g.fillStyle = '#3a1010'; g.fillRect(bx, by+19, bw, 9); g.fillStyle = C.red; g.fillRect(bx, by+19, bw*Math.max(0, golem.hp/golem.max), 9); g.strokeStyle = '#fff'; g.lineWidth = 1; g.strokeRect(bx, by+19, bw, 9); };
   const draw = () => { const D = DEPTHS[depthIdx()], r = rate();
     g.fillStyle = '#1b130c'; g.fillRect(0,0,w,h);
     // ----- rock face -----
@@ -261,6 +294,8 @@ A.register('idle', { mount(host, api){
   let barT = 0, scT = 0;
   const offL = A.loop(dt => { t += dt; const r = rate(); const active = Date.now() - (A.lastAct||0) < 15000; if (active && (!busy || shop)) give(r*dt);
     shake = Math.max(0, shake-dt); comboT -= dt; if (comboT <= 0) combo = 0;
+    rushT = Math.max(0, rushT - dt); if (golem) { golem.t -= dt; golem.hit = Math.max(0, (golem.hit||0) - dt); if (golem.t <= 0) { say('THE GOLEM WANDERED OFF', 'Tap faster next time — it comes back later', '#cfc6a8'); golem = null; golemT = 120 + Math.random()*60; } }
+    else if (active && !busy && !learn) { golemT -= dt; if (golemT <= 0) { const hp = Math.max(60, tapAmt()*(1+.1*U('pick'))*55); golem = {hp, max:hp, t:25, hit:0}; say('A CAVE GOLEM APPEARS!', 'Tap it fast — beat it in 25 seconds for a big ore haul', '#ffb3ab'); A.sfx('bad'); } }
     gcartT -= dt; if (!gcart && gcartT <= 0) { gcart = {x:-40}; gcartT = 40 + Math.random()*40; A.tone(880,.1,'triangle',.05); } if (gcart) { gcart.x += 110*dt; if (gcart.x > w+40) gcart = null; } carts = carts.map(cp => (cp + dt*(.04 + Math.min(.12, Math.log10(1+r)*.02))) % 1);
     parts.forEach(p => { p.t -= dt; p.x += p.vx*dt; p.y += p.vy*dt; p.vy += 420*dt; }); parts = parts.filter(p => p.t > 0);
     floats.forEach(f => { f.t -= dt*.9; f.y -= 40*dt; }); floats = floats.filter(f => f.t > 0);
@@ -271,10 +306,13 @@ A.register('idle', { mount(host, api){
     const d = depthIdx(); if (d > lastDepth) { lastDepth = d; say('YOU REACHED '+DEPTHS[d].n.toUpperCase(), 'All ore +'+d*20+'%', DEPTHS[d].ore); A.sfx('win'); stat(api,'mineDepth',d); }
     barT -= dt; if (barT <= 0) { barT = .4; paintBar(); } scT -= dt; if (scT <= 0) { scT = 1; api.score(Math.floor(S.ore)); }
     saveT -= dt; if (saveT <= 0) { saveT = 10; persist(); }
-    draw(); });
+    draw(); drawBoss(); });
 
-  // No offline or idle earnings: miners only dig while you're actively playing.
-  if (!api.stored) say('WELCOME TO THE MINES', learn ? 'Crack math geodes for big ore · merge matching miners' : 'Hire miners · drag matching ones together · sell ore for tickets', C.lime);
+  // ---------- Night Shift: away from the arcade, miners keep digging at half speed (2 h + 2 h per Night Shift level) ----------
+  const away = Math.max(0, (Date.now() - (S.last||Date.now()))/1000), cap = (2 + 2*U('night'))*3600, secs = Math.min(away, cap), earned = rate()*secs*.5;
+  if (api.stored && secs > 60 && earned >= 1) { give(earned); const hh = Math.floor(secs/3600), mm = Math.floor(secs%3600/60);
+    say('WHILE YOU WERE AWAY: +'+fmt(earned)+' ORE', 'Your miners dug for '+(hh?hh+'h ':'')+mm+'m'+(away>cap?' (Night Shift raises the limit)':''), C.gold); A.sfx('win'); }
+  else   if (!api.stored) say('WELCOME TO THE MINES', learn ? 'Crack math geodes for big ore · merge matching miners' : 'Hire miners · drag matching ones together · sell ore for tickets', C.lime);
   stat(api,'minerLevel',S.best||1); stat(api,'mineDepth',depthIdx());
   paintBar(); persist();
   return () => { persist(); offK(); offL(); if (shop) shop.remove(); };

@@ -294,11 +294,11 @@ A.register('rootout', { mount(host, api){
   const plantB = mkb('Plant ↓  (Space)',()=>drop(),C.lime,C.forest), rootB = mkb('Root out ✕  (R)',()=>root(),'#7a3fa0','#ffffff'), pullB = mkb('',()=>pull(),C.gold,C.forest);
   btnRow.append(plantB,rootB,pullB);
   const LH = 28, GROUND = h-34, BASEW = A.D(240,210,180), MAXINF = A.D(5,4,3);
-  let layers, cur, score, health, pulls, perfects, state='ready', resumed=false, camY=0, banner=null, spreadT=0, fx=[], seen={}, rooted=0, flash=0;
+  let layers, cur, score, health, pulls, perfects, state='ready', resumed=false, camY=0, banner=null, spreadT=0, fx=[], seen={}, rooted=0, flash=0, boss=null, seeds=0;
   const level = () => 1 + Math.floor(layers.length/8);
   const tagsVisible = () => A.diff=='easy' || level()<=2;
   const top = () => layers[layers.length-1];
-  const pickSpecies = () => { const pInv = Math.min(.5, .28 + level()*.025); const inv = Math.random()<pInv ? 1 : 0, pool = SPECIES.filter(s=>s.inv===inv); return pool[Math.random()*pool.length|0]; };
+  const pickSpecies = () => { const pInv = Math.min(boss ? .62 : .5, .28 + level()*.025 + (boss ? .15 : 0)); const inv = Math.random()<pInv ? 1 : 0, pool = SPECIES.filter(s=>s.inv===inv); return pool[Math.random()*pool.length|0]; };
   const spawn = () => { const t = top(); const sp = pickSpecies(); const speed = (130 + level()*18) * A.D(.8,1,1.2);
     cur = {sp:SPECIES.indexOf(sp), w:t.w, x: Math.random()<.5 ? -t.w : w, dir: 1, speed, fall:null}; cur.dir = cur.x<0 ? 1 : -1; };
   const showFact = (s, verdict, good) => { fact.innerHTML = ''; const head = el('div',{display:'flex',alignItems:'center',gap:'8px',marginBottom:'3px'});
@@ -306,14 +306,16 @@ A.register('rootout', { mount(host, api){
     if (verdict) head.append(el('span',{marginLeft:'auto',fontSize:'12px',fontWeight:700,color:good?'#007a37':'#B3001B'},verdict));
     fact.append(head, el('div',{fontWeight:500},s.f)); if (!seen[s.n]) { seen[s.n] = 1; stat(api,'rootSpecies',Object.keys(seen).length); } };
   const paintBtns = () => { pullB.textContent = 'Weed puller ×'+pulls; pullB.style.opacity = pulls ? 1 : .5; };
-  const reset = () => { layers = [{x:(w-BASEW)/2, w:BASEW, sp:-1, inf:0}]; score = 0; health = A.D(5,3,2)+A.U('health'); pulls = 1+A.U('pull'); perfects = 0; camY = 0; spreadT = 0; fx = []; rooted = 0; resumed = false; banner = null; api.score(0); spawn(); paintBtns();
+  const reset = () => { layers = [{x:(w-BASEW)/2, w:BASEW, sp:-1, inf:0}]; score = 0; health = A.D(5,3,2)+A.U('health'); pulls = 1+A.U('pull'); perfects = 0; boss = null; seeds = 0; camY = 0; spreadT = 0; fx = []; rooted = 0; resumed = false; banner = null; api.score(0); spawn(); paintBtns();
     fact.innerHTML = ''; fact.append(el('div',{fontWeight:700,color:C.forest,marginBottom:'3px'},'Field guide'), el('div',{fontWeight:500},'Plant native species to grow the tower. Root out invasive ones before they land — if they do, their corruption spreads down the tower.')); };
   const say = (txt,sub,col) => banner = {txt,sub,col:col||C.lime,t:1.6};
+  const hitBoss = n => { if (!boss) return; boss.hp -= n; A.tone(300,.08,'square',.04); if (boss.hp <= 0) { const bonus = 300*level(); score += bonus; api.score(score); pulls += 2; health++; seeds += 3; boss = null; stat(api,'rootBoss',1,'add'); A.sfx('win');
+      say('KUDZU KING DEFEATED!','+'+bonus+' · +2 weed pullers · +1 health · 3 super seeds',C.gold); paintBtns(); } };
   const loseHealth = (why) => { if (!A.immortal) health--; flash = .35; A.sfx('bad'); say(why,'−1 ecosystem health',C.red); if (health<=0) end('ECOSYSTEM COLLAPSED'); };
   const end = (why) => { state = 'dead'; A.sfx('over'); stat(api,'rootHeight',layers.length-1); api.over(score); banner = {txt:why,sub:'',t:99}; };
   function drop(){ if (state=='ready') { state = 'play'; return; } if (state!='play' || !cur || cur.fall) return; cur.fall = {y:0}; A.sfx('flip'); }
   function root(){ if (state!='play' || !cur || cur.fall) return; const s = SPECIES[cur.sp];
-    if (s.inv) { score += 30*level(); api.score(score); rooted++; stat(api,'rootPulled',1,'add'); edu(api,true); A.sfx('coin'); say('ROOTED OUT!','+'+30*level(),C.lime); showFact(s,'✓ Good call',true); fx.push({x:cur.x+cur.w/2,y:70,t:.6,s:'✕'}); }
+    if (s.inv) { hitBoss(1); score += 30*level(); api.score(score); rooted++; if (rooted % 20 == 0) { seeds += 3; say('SUPER SEEDS ×3','Your next 3 plantings land perfectly'); } stat(api,'rootPulled',1,'add'); edu(api,true); A.sfx('coin'); say('ROOTED OUT!','+'+30*level(),C.lime); showFact(s,'✓ Good call',true); fx.push({x:cur.x+cur.w/2,y:70,t:.6,s:'✕'}); }
     else { edu(api,false); showFact(s,'✗ That one was native',false); loseHealth('THAT WAS NATIVE!'); }
     if (state=='play') spawn(); }
   function pull(){ if (state!='play' || pulls<=0) return; const has = layers.some(l=>l.inf); if (!has) { say('NO CORRUPTION','Save your weed puller',C.gold); return; }
@@ -321,15 +323,18 @@ A.register('rootout', { mount(host, api){
     const removed = before - layers.length; score += 40*removed; api.score(score); A.sfx('win'); say('CORRUPTION PULLED','Removed '+removed+' invasive layer'+(removed==1?'':'s')+' · tower healed'); if (cur && !cur.fall) cur.w = Math.min(cur.w, top().w); paintBtns(); }
   const land = () => { const t = top(), s = SPECIES[cur.sp]; const l = Math.max(cur.x, t.x), r = Math.min(cur.x+cur.w, t.x+t.w);
     if (r-l < 4) { fx.push({x:cur.x+cur.w/2,y:GROUND-layers.length*LH+camY,t:.8,s:'MISS'}); loseHealth('MISSED THE TOWER'); if (state=='play') spawn(); return; }
-    let nx = l, nw = r-l, perfect = Math.abs(cur.x-t.x) < 5;
+    let nx = l, nw = r-l, perfect = Math.abs(cur.x-t.x) < 5; if (!perfect && seeds > 0 && !s.inv) { seeds--; perfect = true; nx = t.x; }
+    if (perfect && !s.inv) hitBoss(1);
     if (perfect) { nx = t.x; nw = Math.min(BASEW, t.w + 4); perfects++; if (perfects%5==0) { pulls++; say('PERFECT ×5','+1 weed puller'); } else say('PERFECT','+25'); score += 25; A.sfx('point'); }
     layers.push({x:nx, w:nw, sp:cur.sp, inf: s.inv ? 1 : 0});
     if (s.inv) { edu(api,false); showFact(s,'✗ It took root!',false); say('INVASIVE TOOK ROOT','Corruption will spread — use the weed puller',C.lavender); A.sfx('bad'); }
     else { score += 10*level(); edu(api,true); showFact(s,'✓ Planted',true); if (!perfect) A.sfx('hit'); }
     api.score(score); stat(api,'rootHeight',layers.length-1);
+    if (layers.length % 20 == 0 && !boss) { const hp = 4 + level(); boss = {hp, max:hp, t:8}; say('THE KUDZU KING ARRIVES','Root out invasives and land perfect blocks to beat him',C.lavender); A.sfx('bad'); }
     if (layers.length%10==1 && layers.length>1) { pulls++; say('LEVEL '+level(),tagsVisible()?'+1 weed puller':'+1 weed puller · labels hidden now — trust what you learned'); }
     paintBtns(); spawn(); };
-  const tick = dt => { if (banner && banner.t<90) banner.t -= dt; flash = Math.max(0,flash-dt); fx.forEach(f=>f.t-=dt); fx = fx.filter(f=>f.t>0);
+  const tick = dt => { if (banner && banner.t<90) banner.t -= dt;
+    if (boss) { boss.t -= dt; if (boss.t <= 0) { boss.t = A.D(10,8,6); const idx = layers.map((l,i)=>i>0 && !l.inf ? i : -1).filter(i=>i>0); if (idx.length) { const i = idx[idx.length-1]; layers[i].inf = 1; say('THE KUDZU KING STRIKES','He corrupted a native layer',C.lavender); A.tone(90,.25,'sawtooth',.06); } } } flash = Math.max(0,flash-dt); fx.forEach(f=>f.t-=dt); fx = fx.filter(f=>f.t>0);
     const targetCam = Math.max(0,(layers.length-9)*LH); camY += (targetCam-camY)*Math.min(1,dt*6);
     if (cur) { if (!cur.fall) { cur.x += cur.dir*cur.speed*dt; if (cur.x+cur.w > w+20) cur.dir = -1; if (cur.x < -20) cur.dir = 1; }
       else { cur.fall.y += 900*dt; const startY = 70, targetY = GROUND - layers.length*LH + camY - LH; if (startY + cur.fall.y >= targetY) land(); } }
@@ -356,6 +361,10 @@ A.register('rootout', { mount(host, api){
     const inf = layers.filter(l=>l.inf).length; g.fillText('HEIGHT '+(layers.length-1)+'   LV '+level()+'   '+score.toLocaleString(), 20, 28);
     g.textAlign = 'right'; g.fillStyle = '#ffd0e8'; g.fillText('♥'.repeat(Math.max(0,health)), w-20, 28);
     if (inf) { g.fillStyle = '#d9a8ff'; g.fillText('CORRUPTION '+inf+'/'+MAXINF, w-20-health*14-12, 28); }
+    if (boss) { const bw = 300, bx = (w-bw)/2; g.fillStyle = 'rgba(18,19,19,.78)'; rrect(g,bx-8,44,bw+16,32,10); g.fill(); g.fillStyle = '#fff'; g.font = '700 12px '+A.font; g.textAlign = 'center'; g.fillText('KUDZU KING · strikes in '+Math.ceil(boss.t)+'s', w/2, 57);
+      g.fillStyle = '#2a1030'; g.fillRect(bx,62,bw,8); g.fillStyle = '#a64be0'; g.fillRect(bx,62,bw*Math.max(0,boss.hp/boss.max),8); g.strokeStyle = '#fff'; g.lineWidth = 1; g.strokeRect(bx,62,bw,8);
+      g.font = '28px sans-serif'; g.fillText('👑', w-34, 72); }
+    if (seeds > 0) { g.fillStyle = C.gold; g.font = '700 12px '+A.font; g.textAlign = 'left'; g.fillText('🌱 super seeds ×'+seeds, 16, 54); }
     fx.forEach(f=>{ g.globalAlpha = Math.min(1,f.t*2); g.fillStyle = C.red; g.font = '700 22px '+A.font; g.textAlign = 'center'; g.fillText(f.s,f.x,f.y-(1-f.t)*20); }); g.globalAlpha = 1;
     if (banner && banner.t>0 && state!='ready') { g.globalAlpha = Math.min(1,banner.t); g.fillStyle = 'rgba(1,86,64,.88)'; rrect(g,60,118,360,banner.sub?60:40,14); g.fill(); g.fillStyle = banner.col||C.lime; g.textAlign = 'center'; g.font = '700 20px '+A.font; g.fillText(banner.txt,w/2,144); if (banner.sub) { g.fillStyle = '#fff'; g.font = '500 12px '+A.font; g.fillText(banner.sub,w/2,166,340); } g.globalAlpha = 1; }
     if (flash>0) { g.fillStyle = 'rgba(255,69,57,'+flash*.6+')'; g.fillRect(0,0,w,h); }
@@ -368,7 +377,7 @@ A.register('rootout', { mount(host, api){
     if (k==' ' || k=='ArrowDown' || k=='Enter') { if (state=='dead') { reset(); state = 'play'; } else drop(); }
     else if (k=='r' || k=='x') root(); else if (k=='p' || k=='w') pull(); else return false; });
   const offL = A.loop(dt=>{ if (state=='play') tick(dt); draw(); });
-  api.snap && api.snap(()=> state=='play' || (state=='ready' && resumed) ? {layers:layers.map(l=>({...l})), score, health, pulls, perfects, rooted, seen} : null);
+  api.snap && api.snap(()=> state=='play' || (state=='ready' && resumed) ? {layers:layers.map(l=>({...l})), score, health, pulls, perfects, rooted, seen, seeds} : null);
   return () => { stat(api,'rootHeight',layers.length-1); offK(); offL(); };
 }});
 })();
