@@ -203,9 +203,9 @@ const colMult = P => Math.pow(1.2, Object.keys(P.colDone||{}).length);
 const loginMult = P => 1 + Math.min(30, (P.login||{}).streak||0) * (lv(P,'daily') ? MSHOP[2].eff(lv(P,'daily')) : .01);
 const comboN = P => { const c = P.combo||{}, E2 = window.WLE, warm = E2 ? E2.comboWarmMs(P) : 300000; return c.t && Date.now() - c.t > warm ? 1 : (c.n||1); };
 const comboMult = P => { const E2 = window.WLE, cap = E2 ? E2.comboCap(P) : 10, str = E2 ? E2.comboStrength(P) : 1; return 1 + Math.min(cap, Math.max(0, comboN(P)-1)) * (lv(P,'combo') ? MSHOP[1].eff(lv(P,'combo')) : .01) * str; };
-W.globalMult = P => MSHOP[0].eff(lv(P,'global')) * starMult(P) * colMult(P) * loginMult(P) * W.perks(P).all * (window.WLE ? window.WLE.ptAll(P) : 1);
+W.globalMult = P => MSHOP[0].eff(lv(P,'global')) * starMult(P) * colMult(P) * loginMult(P) * W.perks(P).all * (window.WLE ? window.WLE.ptAll(P) : 1) * (window.WLA && window.WLA.bonus ? window.WLA.bonus(P) : 1);
 W.totalMult = (P, g) => W.globalMult(P) * comboMult(P) * (g ? GAME_UP.eff(glv(P,g)) * (W.perks(P).game[g]||1) * (window.WLE ? window.WLE.ptGame(P,g) : 1) : 1) * (window.WLE ? window.WLE.gameMult(P) : 1);
-W.breakdown = P => [['Ticket Multiplier', MSHOP[0].eff(lv(P,'global'))], ['Golden Stars ('+(P.stars||0)+')', starMult(P)], ['Collections ('+Object.keys(P.colDone||{}).length+')', colMult(P)], ['Login streak ('+(((P.login||{}).streak)||0)+' days)', loginMult(P)], ['Wilderland prizes', W.perks(P).all], ['Prestige Tree 💎', window.WLE ? window.WLE.ptAll(P) * window.WLE.pt(P).games : 1], ['Arcade Expansions', window.WLE ? window.WLE.allMult(P) : 1], ['Combo streak ('+(((P.combo||{}).n)||0)+')', comboMult(P)]];
+W.breakdown = P => [['Ticket Multiplier', MSHOP[0].eff(lv(P,'global'))], ['Golden Stars ('+(P.stars||0)+')', starMult(P)], ['Collections ('+Object.keys(P.colDone||{}).length+')', colMult(P)], ['Login streak ('+(((P.login||{}).streak)||0)+' days)', loginMult(P)], ['Wilderland prizes', W.perks(P).all], ['Prestige Tree 💎', window.WLE ? window.WLE.ptAll(P) * window.WLE.pt(P).games : 1], ['Arcade Expansions', window.WLE ? window.WLE.allMult(P) : 1], ['Achievements (Platinum & Diamond)', window.WLA && window.WLA.bonus ? window.WLA.bonus(P) : 1], ['Combo streak ('+(((P.combo||{}).n)||0)+')', comboMult(P)]];
 
 // ---------------- hooks the arcade calls ----------------
 // A game paid out `tix` base tickets: apply multipliers, combo and lucky jackpots.
@@ -418,6 +418,7 @@ W.mount = (root, api) => {
     if (opts.badge) card.appendChild(E('div', {style:{position:'absolute', top:'6px', left:'6px', background:'#FF4539', color:'#fff', fontSize:'10px', fontWeight:800, borderRadius:'999px', padding:'2px 7px'}}, opts.badge));
     const need = W.rebirthNeed(p), can = !season && (star ? freeStars(p) >= sp : (p.tickets||0) >= price && price < need);
     const b = E('button', {cls:'wlp-buy', style: star ? {background:'#F9BF01', color:'#121313'} : null, onclick:()=>buy(it, price)}, season ? 'Back in '+SEASON_NAME[it.season] : (()=>{ const bk = bulk(it, price); return (bk.n > 1 ? '×'+bk.n+' · ' : '')+(star ? W.fmt(bk.cost)+' ⭐' : W.fmt(bk.cost)+' 🎟'); })());
+    const em = star && window.WLAV && window.WLAV.forPrize ? window.WLAV.forPrize(it.id) : null; if (em) card.appendChild(E('div', {style:{fontSize:'10px', fontWeight:700, color:'#AB2372', margin:'2px 0'}}, '👕 Includes avatar '+em));
     const pk = star && W.perkOf(it); if (pk) card.appendChild(E('div', {cls:'wlp-perk'+(own?' on':''), title:'Permanent — survives every Rebirth'}, (own?'✅ ':'✨ ')+pk.t));
     if (!can) b.disabled = true; card.appendChild(b); return card; };
 

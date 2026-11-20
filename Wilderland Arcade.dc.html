@@ -64,6 +64,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
       <button onClick="{{ openAccount }}" style="background:{{ acctHeadBg }}; color:{{ acctHeadFg }}; border:1.5px solid #D5F367; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ acctHeadLabel }}</button>
       <button onClick="{{ openCode }}" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">{{ adminLabel }}</button>
       <button onClick="{{ toggleSound }}" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">{{ soundLabel }}</button>
+      <button onClick="{{ openAv }}" style="background:#D5F367; color:#015640; border:none; border-radius:999px; padding:8px 14px; font-weight:800; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:6px;"><img src="{{ avImg }}" alt="" style="width:22px; height:22px; margin:-3px 0;">AVATAR</button>
       <button onClick="{{ openChat }}" title="Chat (T)" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">CHAT · T</button>
       <button onClick="{{ toggleFx }}" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">{{ fxLabel }}</button>
     </div>
@@ -163,7 +164,9 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
             </sc-for>
           </div>
 
-          <img src="{{ avImg }}" alt="" style="position:absolute; left:{{ player.x }}px; top:{{ player.y }}px; width:46px; height:46px; margin:-23px 0 0 -23px; z-index:20; pointer-events:none; filter:drop-shadow(0 6px 6px rgba(0,0,0,.3));">
+          <sc-for list="{{ trailDots }}" as="td" hint-placeholder-count="0"><span style="position:absolute; left:{{ td.x }}px; top:{{ td.y }}px; transform:translate(-50%,-50%) scale({{ td.sc }}); opacity:{{ td.op }}; font-size:15px; z-index:18; pointer-events:none;">{{ td.e }}</span></sc-for>
+          <sc-if value="{{ hasPet }}" hint-placeholder-val="{{ false }}"><img src="{{ petImg }}" alt="" style="position:absolute; left:{{ pet.x }}px; top:{{ pet.y }}px; width:34px; height:34px; margin:-17px 0 0 -17px; z-index:19; pointer-events:none; filter:drop-shadow(0 4px 4px rgba(0,0,0,.3));"></sc-if>
+          <img src="{{ walkImg }}" alt="" style="position:absolute; left:{{ player.x }}px; top:{{ player.y }}px; width:46px; height:46px; margin:-23px 0 0 -23px; z-index:20; pointer-events:none; filter:drop-shadow(0 6px 6px rgba(0,0,0,.3));">
 
           <sc-if value="{{ nearLabel }}" hint-placeholder-val="{{ false }}">
             <div style="position:absolute; left:{{ player.x }}px; top:{{ player.y }}px; transform:translate(-50%,-62px); background:#121313; color:#D5F367; font-size:13px; font-weight:700; padding:6px 12px; border-radius:999px; white-space:nowrap; z-index:21; pointer-events:none; letter-spacing:0.04em;">E · {{ nearLabel }}</div>
@@ -180,6 +183,8 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
         <div style="flex:1; min-width:0;">
           <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:#D5F367;">{{ acctKicker }}</div>
           <div style="font-size:17px; font-weight:700; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ acctName }}</div>
+          <sc-if value="{{ hasTitle }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px; font-weight:700; color:#F9BF01;">“{{ acctTitle }}”</div></sc-if>
+          <div style="display:flex; gap:4px; margin-top:3px;"><sc-for list="{{ acctPins }}" as="ap" hint-placeholder-count="0"><span title="{{ ap.name }}" style="width:24px; height:24px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:13px; background:{{ ap.g }};">{{ ap.e }}</span></sc-for></div>
           <div style="font-size:12px; font-weight:500; color:#b9cfc5; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ acctSub }}</div>
         </div>
         <button onClick="{{ openAccount }}" style="flex-shrink:0; background:#D5F367; color:#015640; border:none; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;">{{ acctBtn }}</button>
@@ -520,30 +525,16 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
 
   <sc-if value="{{ achOpen }}" hint-placeholder-val="{{ false }}">
     <div style="position:fixed; inset:0; background:rgba(11,46,36,.9); display:flex; align-items:safe center; justify-content:center; z-index:52; overflow-y:auto; padding:16px; box-sizing:border-box;">
-      <div style="background:#EDE9D8; border-radius:20px; padding:24px; width:780px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:14px; color:#121313;">
+      <div style="background:#EDE9D8; border-radius:20px; padding:20px; width:960px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:14px; color:#121313;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
           <div>
-            <div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#007a37;">TROPHY CASE · {{ achCount }} OF {{ achTotal }} UNLOCKED</div>
+            <div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#007a37;">TROPHY CASE · {{ achCount }} OF {{ achTotal }} TIERS</div>
             <div style="font-size:30px; font-weight:700; color:#015640;">Achievements</div>
-            <div style="font-size:13px; font-weight:500; color:#3d3d3d;">Every unlock pays tickets: Bronze 25 · Silver 75 · Gold 200 · Legend 500.</div>
+            <div style="font-size:13px; font-weight:500; color:#3d3d3d;">Bronze → Silver → Gold → Platinum → Diamond. Every tier pays tickets; some give titles, avatar items or a permanent bonus.</div>
           </div>
           <button onClick="{{ closeAch }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer;">Close · Esc</button>
         </div>
-        <div style="display:flex; flex-wrap:wrap; gap:6px;">
-          <sc-for list="{{ achFilters }}" as="f" hint-placeholder-count="5"><button onClick="{{ f.pick }}" style="border:none; border-radius:999px; padding:6px 14px; font-weight:700; font-size:13px; cursor:pointer; background:{{ f.bg }}; color:{{ f.fg }};">{{ f.label }}</button></sc-for>
-        </div>
-        <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:10px;">
-          <sc-for list="{{ achShown }}" as="a" hint-placeholder-count="9">
-            <div style="background:#ffffff; border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:6px; border:2px solid {{ a.border }};">
-              <div style="display:flex; align-items:center; gap:10px;">
-                <div style="width:34px; height:34px; flex-shrink:0; border-radius:10px; background:{{ a.badgeBg }}; color:#121313; font-weight:700; font-size:16px; display:flex; align-items:center; justify-content:center;">{{ a.mark }}</div>
-                <div style="min-width:0;"><div style="font-size:15px; font-weight:700; color:#015640;">{{ a.name }}</div><div style="font-size:11px; font-weight:700; letter-spacing:0.08em; color:#4a4a4a;">{{ a.tierName }} · {{ a.reward }}</div></div>
-              </div>
-              <div style="font-size:13px; font-weight:500; color:#3d3d3d; flex:1;">{{ a.desc }}</div>
-              <div style="display:flex; align-items:center; gap:8px;"><div style="flex:1; height:6px; background:#e6e2cf; border-radius:999px; overflow:hidden;"><div style="height:100%; width:{{ a.pct }}%; background:{{ a.barColor }};"></div></div><span style="font-size:11px; font-weight:700; color:#015640; white-space:nowrap;">{{ a.prog }}</span></div>
-            </div>
-          </sc-for>
-        </div>
+        <div ref="{{ achRef }}"></div>
       </div>
     </div>
   </sc-if>
@@ -618,25 +609,13 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
   <sc-if value="{{ adminDownBanner }}" hint-placeholder-val="{{ false }}"><div style="position:fixed; left:50%; bottom:12px; transform:translateX(-50%); z-index:480; background:#B3001B; color:#fff; font-weight:700; font-size:13px; padding:8px 10px 8px 16px; border-radius:999px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; max-width:94vw; box-shadow:0 8px 24px rgba(0,0,0,.35);">CLOSED FOR PLAYERS · {{ downLeft }} LEFT · you’re in as admin<button onClick="{{ doReopen }}" style="background:#D5F367; color:#015640; border:none; border-radius:999px; padding:6px 14px; font-weight:800; font-size:13px; cursor:pointer;">Reopen arcade</button></div></sc-if>
 
   <sc-if value="{{ avOpen }}" hint-placeholder-val="{{ false }}">
-    <div style="position:fixed; inset:0; background:rgba(11,46,36,.9); display:flex; align-items:safe center; justify-content:center; z-index:50; overflow-y:auto; padding:16px; box-sizing:border-box;">
-      <div style="background:#EDE9D8; border-radius:20px; padding:22px; width:720px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:14px; color:#121313;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
-          <div style="display:flex; gap:14px; align-items:center;"><img src="{{ avImg }}" alt="" style="width:96px; height:96px;">
-            <div><div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#AB2372;">AVATAR STUDIO</div><div style="font-size:26px; font-weight:700; color:#015640;">{{ acctName }}</div>
-              <div style="font-size:13px; font-weight:500; color:#3d3d3d;">Level {{ avLevel }} · {{ avFrameName }} · {{ avCount }}</div><div style="font-size:12px; font-weight:600; color:#AB2372; margin-top:2px;">{{ avNext }}</div></div></div>
-          <div style="display:flex; gap:6px;"><button onClick="{{ avRandom }}" style="background:#ffffff; color:#015640; border:1.5px solid #015640; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;">🎲 Surprise me</button><button onClick="{{ closeAv }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer;">Done · Esc</button></div>
+    <div style="position:fixed; inset:0; background:rgba(11,46,36,.9); display:flex; align-items:flex-start; justify-content:center; z-index:50; overflow-y:auto; padding:16px 10px; box-sizing:border-box;">
+      <div style="background:#EDE9D8; border-radius:20px; padding:18px; width:900px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:10px; color:#121313;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+          <div><div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#AB2372;">AVATAR STUDIO &amp; SHOP</div><div style="font-size:26px; font-weight:700; color:#015640;">Make it yours</div></div>
+          <button onClick="{{ closeAv }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;">Done · Esc</button>
         </div>
-        <div style="display:flex; gap:6px; flex-wrap:wrap;"><sc-for list="{{ avTabs }}" as="t" hint-placeholder-count="7"><button onClick="{{ t.pick }}" style="border:none; border-radius:999px; padding:7px 14px; font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; background:{{ t.bg }}; color:{{ t.fg }};">{{ t.t }}</button></sc-for></div>
-        <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:10px;">
-          <sc-for list="{{ avOpts }}" as="o" hint-placeholder-count="8">
-            <button onClick="{{ o.pick }}" style="border:3px solid {{ o.border }}; background:{{ o.bg }}; opacity:{{ o.op }}; border-radius:14px; padding:8px; font-family:inherit; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:4px;">
-              <img src="{{ o.img }}" alt="" style="width:64px; height:64px;">
-              <span style="font-size:13px; font-weight:700; color:#015640;">{{ o.n }}</span>
-              <span style="font-size:10px; font-weight:600; color:#AB2372; min-height:12px;">{{ o.lockTxt }}</span>
-            </button>
-          </sc-for>
-        </div>
-        <div style="font-size:12px; color:#4a4a4a;">Unlock looks with achievements — the rarest need Rebirths or a Prestige. Other players see your avatar on the leaderboard, in chat and in the Hall of Players at the entrance.</div>
+        <div ref="{{ avRef }}"></div>
       </div>
     </div>
   </sc-if>
@@ -970,32 +949,44 @@ const PTIER = {Common:{c:'#9a9a9b',bg:'#f6f3e6'},Rare:{c:'#64CDF5',bg:'#e6f6fd'}
 
 // ---------- Avatars: looks unlock as you earn achievements ----------
 // r = achievements needed · rb = Rebirths needed · pr = Prestige level needed
+// Unlocks: no tag = free starter · r = Avatar Shop (ticket price grows with r; old saves keep what they had) ·
+// a:'family:tier' = achievement reward · rb = Rebirths · pr = Prestige level · wp = comes with a Wilderland prize
 const AVP = {
-  skin:{t:'Skin',o:[{n:'Peach',c:'#f2c9a0'},{n:'Tan',c:'#d9a066'},{n:'Brown',c:'#a86b3c'},{n:'Deep',c:'#6b4226'},{n:'Mint',c:'#9fe0c0',r:10},{n:'Lavender',c:'#d7b8f3',r:20},{n:'Gold',c:'#F9BF01',r:40},
-    {n:'Light',c:'#fbe0c8'},{n:'Olive',c:'#c19a6b'},{n:'Sky',c:'#a8dcf5',r:14},{n:'Bubblegum',c:'#f7a8cf',r:24},{n:'Zombie',c:'#9fbf7a',r:34},{n:'Silver',c:'#d7dde2',rb:3},{n:'Diamond',c:'#bff0ff',pr:1}]},
-  shirt:{t:'Shirt',o:[{n:'Forest',c:'#00B451'},{n:'Lime',c:'#D5F367'},{n:'Sky',c:'#64CDF5'},{n:'Pink',c:'#EA55AB'},{n:'Gold',c:'#F9BF01',r:3},{n:'Ember',c:'#FF8A3C',r:6},{n:'Navy',c:'#014987',r:9},{n:'Midnight',c:'#121313',r:14},{n:'Rainbow',c:'rainbow',r:30},
-    {n:'Red',c:'#FF4539'},{n:'Purple',c:'#8a4be0',r:2},{n:'Stripes',c:'#ffffff',pat:'stripes',r:7},{n:'Stars',c:'#014987',pat:'stars',r:11},{n:'Checkers',c:'#121313',pat:'check',r:17},{n:'Hoodie',c:'#9a9a9b',pat:'hood',r:21},{n:'Jersey',c:'#FF4539',pat:'jersey',r:27},{n:'Galaxy',c:'#2a1250',pat:'stars',rb:1},{n:'Diamond Armor',c:'#bff0ff',pat:'armor',pr:1}]},
-  hat:{t:'Hat',o:[{n:'None'},{n:'Cap'},{n:'Beanie',r:3},{n:'Headband',r:5},{n:'Ranger',r:8},{n:'Miner',r:12},{n:'Wizard',r:18},{n:'Astronaut',r:24},{n:'Crown',r:32},{n:'Halo',r:45},
-    {n:'Party Hat',r:2},{n:'Bunny Ears',r:7},{n:'Flower Crown',r:10},{n:'Chef',r:15},{n:'Cowboy',r:20},{n:'Top Hat',r:27},{n:'Pirate',r:35},{n:'Viking',r:50},{n:'Golden Laurel',rb:5},{n:'Diamond Crown',pr:1}]},
-  hair:{t:'Hair',o:[{n:'None'},{n:'Short'},{n:'Spiky',r:2},{n:'Swoop',r:4},{n:'Long'},{n:'Bob',r:3},{n:'Curly',r:6},{n:'Bun',r:8},{n:'Pigtails',r:10},{n:'Afro',r:12},{n:'Mohawk',r:18},{n:'Ponytail',r:22}]},
-  hairc:{t:'Hair color',o:[{n:'Brown',c:'#6b4226'},{n:'Black',c:'#1d1a17'},{n:'Blonde',c:'#f1cc5a'},{n:'Ginger',c:'#d9622b'},{n:'Silver',c:'#c9ccd1',r:6},{n:'Blue',c:'#2f7de0',r:9},{n:'Pink',c:'#EA55AB',r:13},{n:'Lime',c:'#B6E64A',r:19},{n:'Purple',c:'#8a4be0',r:26},{n:'Rainbow',c:'rainbow',r:38},{n:'Golden',c:'#F9BF01',rb:2},{n:'Diamond',c:'#9fe8ff',pr:1}]},
-  face:{t:'Face',o:[{n:'Smile'},{n:'Grin',r:2},{n:'Wink',r:6},{n:'Shades',r:10},{n:'Star eyes',r:16},{n:'Visor',r:26},
-    {n:'Surprised',r:1},{n:'Sleepy',r:4},{n:'Silly',r:8},{n:'Heart eyes',r:14},{n:'Determined',r:20},{n:'Robot',r:30},{n:'Laser eyes',rb:4}]},
-  acc:{t:'Extras',o:[{n:'None'},{n:'Freckles'},{n:'Rosy cheeks',r:2},{n:'Glasses',r:4},{n:'Round glasses',r:9},{n:'Mustache',r:12},{n:'Bandage',r:5},{n:'Earrings',r:15},{n:'Face paint',r:19},{n:'Monocle',r:25},{n:'Gold chain',r:33},{n:'Bow tie',r:7},{n:'Headphones',r:16},{n:'Diamond earrings',pr:1}]},
-  gear:{t:'Back',o:[{n:'None'},{n:'Scarf',r:4},{n:'Backpack',r:9},{n:'Cape',r:15},{n:'Wings',r:22},{n:'Jetpack',r:30},
-    {n:'Balloon',r:3},{n:'Guitar',r:11},{n:'Butterfly wings',r:18},{n:'Shield',r:25},{n:'Bat wings',r:36},{n:'Rocket',rb:3},{n:'Diamond wings',pr:1}]},
-  pet:{t:'Pet',o:[{n:'None'},{n:'Frog',r:5},{n:'Fox',r:13},{n:'Owl',r:20},{n:'Turtle',r:28},{n:'Dragon',r:40},
-    {n:'Cat',r:3},{n:'Puppy',r:7},{n:'Bunny',r:10},{n:'Penguin',r:16},{n:'Axolotl',r:23},{n:'Slime',r:31},{n:'Robot',r:44},{n:'Phoenix',rb:10},{n:'Unicorn',pr:1}]},
-  bg:{t:'Background',o:[{n:'Forest',c:'#015640'},{n:'Night',c:'#14204a'},{n:'Sunset',c:'sunset'},{n:'Ocean',c:'#0a5c8a'},{n:'Candy',c:'#c2427f',r:5},{n:'Lava',c:'lava',r:13},{n:'Starfield',c:'stars',r:21},{n:'Aurora',c:'aurora',r:32},{n:'Gold',c:'#b8860b',rb:1},{n:'Diamond',c:'diamond',pr:1}]},
+  skin:{t:'Skin',kidOnly:1,o:[{n:'Peach',c:'#f2c9a0'},{n:'Tan',c:'#d9a066'},{n:'Brown',c:'#a86b3c'},{n:'Deep',c:'#6b4226'},{n:'Mint',c:'#9fe0c0',r:10},{n:'Lavender',c:'#d7b8f3',r:20},{n:'Gold',c:'#F9BF01',a:'earned:3'},
+    {n:'Light',c:'#fbe0c8'},{n:'Olive',c:'#c19a6b'},{n:'Sky',c:'#a8dcf5',r:14},{n:'Bubblegum',c:'#f7a8cf',r:24},{n:'Zombie',c:'#9fbf7a',a:'owl:0'},{n:'Silver',c:'#d7dde2',rb:3},{n:'Diamond',c:'#bff0ff',pr:1}]},
+  shirt:{t:'Outfit',o:[{n:'Forest',c:'#00B451'},{n:'Lime',c:'#D5F367'},{n:'Sky',c:'#64CDF5'},{n:'Pink',c:'#EA55AB'},{n:'Gold',c:'#F9BF01',r:3},{n:'Ember',c:'#FF8A3C',r:6},{n:'Navy',c:'#014987',r:9},{n:'Midnight',c:'#121313',r:14},{n:'Rainbow',c:'rainbow',a:'collections:2'},
+    {n:'Red',c:'#FF4539'},{n:'Purple',c:'#8a4be0',r:2},{n:'Stripes',c:'#ffffff',pat:'stripes',r:7},{n:'Stars',c:'#014987',pat:'stars',r:11},{n:'Checkers',c:'#121313',pat:'check',r:17},{n:'Hoodie',c:'#9a9a9b',pat:'hood',r:21},{n:'Jersey',c:'#FF4539',pat:'jersey',a:'plays:2'},{n:'Galaxy',c:'#2a1250',pat:'stars',rb:1},{n:'Diamond Armor',c:'#bff0ff',pat:'armor',pr:1},
+    {n:'Ranger Vest',c:'#c9b48a',pat:'vest',a:'rootout_plays:1'},{n:'Spacesuit',c:'#f2f2f2',pat:'space',a:'rebirths:0'},{n:'Tuxedo',c:'#121313',pat:'tux',r:26},{n:'Overalls',c:'#2f7de0',pat:'overalls',r:5},{n:'Lab Coat',c:'#ffffff',pat:'lab',a:'eduRight:2'},{n:'Hoodie Lime',c:'#B6E64A',pat:'hood',r:9}]},
+  hat:{t:'Hat',o:[{n:'None'},{n:'Cap'},{n:'Beanie',r:3},{n:'Headband',r:5},{n:'Ranger',a:'variety:1'},{n:'Miner',a:'idle_plays:1'},{n:'Wizard',a:'eduRight:2'},{n:'Astronaut',a:'rebirths:1'},{n:'Crown',a:'prizes:2'},{n:'Halo',a:'login:3'},
+    {n:'Party Hat',r:2},{n:'Bunny Ears',r:7},{n:'Flower Crown',a:'trace_plays:1'},{n:'Chef',r:15},{n:'Cowboy',r:20},{n:'Top Hat',r:27},{n:'Pirate',r:35},{n:'Viking',a:'td_plays:2'},{n:'Golden Laurel',rb:5},{n:'Diamond Star Crown',pr:1},
+    {n:'Antlers',a:'variety:2'},{n:'Headphones',r:8},{n:'Graduation Cap',a:'eduStreak:2'},{n:'Propeller Cap',r:12}]},
+  hair:{t:'Hair',kidOnly:1,o:[{n:'None'},{n:'Short'},{n:'Spiky',r:2},{n:'Swoop',r:4},{n:'Long'},{n:'Bob',r:3},{n:'Curly',r:6},{n:'Bun',r:8},{n:'Pigtails',r:10},{n:'Afro',r:12},{n:'Mohawk',r:18},{n:'Ponytail',r:22}]},
+  hairc:{t:'Hair color',kidOnly:1,o:[{n:'Brown',c:'#6b4226'},{n:'Black',c:'#1d1a17'},{n:'Blonde',c:'#f1cc5a'},{n:'Ginger',c:'#d9622b'},{n:'Silver',c:'#c9ccd1',r:6},{n:'Blue',c:'#2f7de0',r:9},{n:'Pink',c:'#EA55AB',r:13},{n:'Lime',c:'#B6E64A',r:19},{n:'Purple',c:'#8a4be0',r:26},{n:'Rainbow',c:'rainbow',a:'combo:3'},{n:'Golden',c:'#F9BF01',rb:2},{n:'Diamond',c:'#9fe8ff',pr:1}]},
+  face:{t:'Face',o:[{n:'Happy'},{n:'Grin',r:2},{n:'Wink',r:6},{n:'Shades',r:10},{n:'Star eyes',a:'targets:0'},{n:'Visor',a:'reaction_score:2'},
+    {n:'Surprised',r:1},{n:'Sleepy',r:4},{n:'Silly',r:8},{n:'Heart eyes',r:14},{n:'Determined',a:'hard:0'},{n:'Robot',a:'typing_plays:2'},{n:'Laser eyes',rb:4},{n:'Cool'},{n:'Goggles',a:'mines_plays:1'}]},
+  acc:{t:'Extras',o:[{n:'None'},{n:'Freckles'},{n:'Rosy cheeks',r:2},{n:'Glasses',r:4},{n:'Round glasses',a:'eduRight:1'},{n:'Mustache',r:12},{n:'Bandage',a:'whack_plays:0'},{n:'Earrings',r:15},{n:'Face paint',r:19},{n:'Monocle',r:25},{n:'Gold chain',a:'earned:2'},{n:'Bow tie',r:7},{n:'Headphones',r:16},{n:'Diamond earrings',pr:1},
+    {n:'Sheriff badge',a:'td_score:1'},{n:'Ranger patch',a:'rootSpecies:1'}]},
+  gear:{t:'Back',o:[{n:'None'},{n:'Scarf',r:4},{n:'Backpack'},{n:'Cape',a:'hard:1'},{n:'Wings',a:'flappy_plays:2'},{n:'Jetpack',a:'rebirths:0'},
+    {n:'Balloon',r:3},{n:'Guitar',a:'simon_plays:1'},{n:'Butterfly wings',r:18},{n:'Shield',a:'tdWave:1'},{n:'Bat wings',a:'owl:0'},{n:'Rocket',rb:3},{n:'Diamond wings',pr:1}]},
+  pet:{t:'Pet',note:'Your pet sidekick follows you around the arcade floor.',o:[{n:'None'},{n:'Frog',a:'crossing_plays:0'},{n:'Fox',a:'critters:1'},{n:'Owl',a:'eduRight:0'},{n:'Turtle',a:'rootout_plays:2'},{n:'Dragon',a:'prestige:0'},
+    {n:'Cat',r:3},{n:'Puppy',r:7},{n:'Bunny',r:10},{n:'Penguin',a:'login:1'},{n:'Axolotl',a:'collections:1'},{n:'Slime',a:'mines_plays:2'},{n:'Robot',a:'typing_plays:3'},{n:'Phoenix',rb:10},{n:'Unicorn',pr:1}]},
+  bg:{t:'Background',o:[{n:'Forest',c:'#015640'},{n:'Night',c:'#14204a'},{n:'Sunset',c:'sunset'},{n:'Ocean',c:'#0a5c8a'},{n:'Candy',c:'#c2427f',r:5},{n:'Lava',c:'lava',r:13},{n:'Starfield',c:'stars',a:'eduStreak:1'},{n:'Aurora',c:'aurora',a:'prestige:1'},{n:'Gold',c:'#b8860b',rb:1},{n:'Diamond',c:'diamond',pr:1}]},
+  body:{t:'Body',o:[{n:'Kid'},{n:'Fox'},{n:'Bear'},{n:'Owl',a:'eduRight:1'},{n:'Gopher',a:'whack_plays:1'},{n:'Frog',a:'crossing_plays:1'},{n:'Rabbit',r:6},{n:'Raccoon',r:11},{n:'Cat',r:4},{n:'Panda',a:'collections:0'},{n:'Penguin',r:16},{n:'Robot',a:'typing_plays:1'},{n:'Dragon',a:'rebirths:2'},{n:'Moose',a:'variety:3'}]},
+  main:{t:'Main color',note:'Fur, feathers or metal for critter bodies.',o:[{n:'Natural'},{n:'Orange',c:'#FF8A3C'},{n:'Brown',c:'#8D5B1D'},{n:'Gray',c:'#9a9a9b'},{n:'White',c:'#f4f1e6'},{n:'Black',c:'#2b2b2b'},{n:'Forest',c:'#00B451'},{n:'Lime',c:'#B6E64A',r:3},{n:'Sky',c:'#64CDF5',r:5},{n:'Pink',c:'#f7a8cf',r:8},{n:'Purple',c:'#8a4be0',r:12},{n:'Gold',c:'#F9BF01',a:'jackpots:1'},{n:'Diamond',c:'#bff0ff',pr:1}]},
+  accent:{t:'Accent color',note:'Muzzles, bellies, inner ears and masks.',o:[{n:'Natural'},{n:'Cream',c:'#f6e7c8'},{n:'White',c:'#ffffff'},{n:'Tan',c:'#d9a066'},{n:'Charcoal',c:'#2b2b2b'},{n:'Lime',c:'#D5F367',r:3},{n:'Pink',c:'#f7a8cf',r:6},{n:'Sky',c:'#64CDF5',r:9},{n:'Gold',c:'#F9BF01',r:14},{n:'Rainbow',c:'rainbow',a:'jackpots:2'}]},
+  eye:{t:'Eye color',o:[{n:'Dark',c:'#121313'},{n:'Brown',c:'#5a3a1c'},{n:'Blue',c:'#2f7de0'},{n:'Green',c:'#00894a'},{n:'Hazel',c:'#8a6a2a',r:3},{n:'Purple',c:'#7a3bd0',r:7},{n:'Gold',c:'#e0a800',a:'targets:2'},{n:'Ruby',c:'#e01b4c',rb:2},{n:'Diamond',c:'#4ad8ff',pr:1}]},
+  frame:{t:'Frame',note:'The ring around your avatar card. “Level” shows your achievement level frame.',o:[{n:'Level'},{n:'None'},{n:'Wood'},{n:'Leafy',a:'variety:0'},{n:'Gold',a:'rebirths:0'},{n:'Neon',a:'combo:2'},{n:'Rainbow',a:'avItems:2'},{n:'Platinum',a:'plays:3'},{n:'Diamond',pr:1}]},
+  trail:{t:'Trail',note:'What you leave behind when you walk the arcade floor.',o:[{n:'None',e:''},{n:'Footprints',e:'👣'},{n:'Leaves',e:'🍃',a:'rootout_plays:0'},{n:'Sparkles',e:'✨',a:'plays:1'},{n:'Stars',e:'⭐',a:'earned:2'},{n:'Hearts',e:'💗',r:8},{n:'Bubbles',e:'🫧',r:12},{n:'Notes',e:'🎵',a:'simon_plays:0'},{n:'Rainbow',e:'🌈',a:'collections:2'},{n:'Diamonds',e:'💎',pr:1}]},
+  emblem:{t:'Emblem',note:'A badge on your outfit. Every Wilderland prize (bought with Golden Stars) comes with its own emblem.',o:[{n:'None'},{n:'Leaf',e:'🍃'},{n:'Star',e:'⭐',r:6},{n:'Heart',e:'💚',r:4},{n:'Lightning',e:'⚡',a:'reaction_plays:1'},{n:'Trophy',e:'🏆',a:'targets:1'}]},
 };
-const AVK = ['skin','shirt','hat','face','gear','pet','hair','hairc','acc','bg'];
-const AVTABS = ['hat','hair','hairc','face','acc','skin','shirt','gear','pet','bg'];
-const avOk = (o, P, adm) => adm || ((P.ach||[]).length >= (o.r||0) && (P.rebirths||0) >= (o.rb||0) && Math.floor((P.rebirths||0)/10) >= (o.pr||0));
-const avNeed = o => o.pr ? '🔒 Prestige '+o.pr : o.rb ? '🔒 '+o.rb+' Rebirth'+(o.rb>1?'s':'') : '🔒 '+o.r+' achievements';
-const avNorm = a => { const o = {}; AVK.forEach(k=>{ const v = a && a[k]|0; o[k] = v>=0 && v<AVP[k].o.length ? v : 0; }); if (!a || a.hat==null) o.hat = 1; return o; };
+// Wilderland prizes each add an emblem (appended in catalog order, so saved choices stay put).
+const avEmblems = () => { if (AVP.emblem.done || !window.WLP || !window.WLP.catalog) return; AVP.emblem.done = 1; window.WLP.catalog().filter(it => it.r === 7).forEach(it => AVP.emblem.o.push({n:it.n, e:it.e, wp:it.id, wild:1})); };
+const AVK = ['skin','shirt','hat','face','gear','pet','hair','hairc','acc','bg','body','main','accent','eye','frame','trail','emblem'];
+const AVTABS = ['body','main','accent','skin','eye','hat','hair','hairc','face','acc','shirt','gear','pet','emblem','frame','bg','trail'];
+const avNorm = a => { avEmblems(); const o = {}; AVK.forEach(k=>{ const v = a && a[k]|0; o[k] = v>=0 && v<AVP[k].o.length ? v : 0; }); if (!a || a.hat==null) o.hat = 1; return o; };
 const avEnc = a => AVK.map(k=>avNorm(a)[k]).join('.');
 const avDec = s => { const p = String(s||'').split('.').map(Number); const o = {}; AVK.forEach((k,i)=>o[k]=p[i]||0); return avNorm(o); };
-const avFrame = n => n>=45 ? {c:'#EA55AB',n:'Legend'} : n>=30 ? {c:'#F9BF01',n:'Gold'} : n>=15 ? {c:'#B9C4BF',n:'Silver'} : n>=5 ? {c:'#DD8B03',n:'Bronze'} : null;
+const avFrame = n => n>=200 ? {c:'#EA55AB',n:'Legend'} : n>=100 ? {c:'#F9BF01',n:'Gold'} : n>=40 ? {c:'#B9C4BF',n:'Silver'} : n>=10 ? {c:'#DD8B03',n:'Bronze'} : null;
 const RBG = '<linearGradient id="rb" x1="0" x2="1"><stop offset="0" stop-color="#FF4539"/><stop offset=".33" stop-color="#F9BF01"/><stop offset=".66" stop-color="#00B451"/><stop offset="1" stop-color="#64CDF5"/></linearGradient>';
 const avBG = c => { if (c=='sunset') return '<defs><linearGradient id="bgs" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff7a59"/><stop offset=".6" stop-color="#f9bf01"/><stop offset="1" stop-color="#ea55ab"/></linearGradient></defs><circle cx="32" cy="32" r="31" fill="url(#bgs)"/>';
   if (c=='lava') return '<defs><radialGradient id="bgl"><stop offset="0" stop-color="#ffb02e"/><stop offset="1" stop-color="#8a1500"/></radialGradient></defs><circle cx="32" cy="32" r="31" fill="url(#bgl)"/>';
@@ -1003,10 +994,54 @@ const avBG = c => { if (c=='sunset') return '<defs><linearGradient id="bgs" x1="
   if (c=='aurora') return '<defs><linearGradient id="bga" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b2e24"/><stop offset=".5" stop-color="#00B451"><animate attributeName="stop-color" values="#00B451;#64CDF5;#a64be0;#00B451" dur="6s" repeatCount="indefinite"/></stop><stop offset="1" stop-color="#14204a"/></linearGradient></defs><circle cx="32" cy="32" r="31" fill="url(#bga)"/>';
   if (c=='diamond') return '<defs><linearGradient id="bgd" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9fbff"/><stop offset=".5" stop-color="#64CDF5"/><stop offset="1" stop-color="#4a5cff"/></linearGradient></defs><circle cx="32" cy="32" r="31" fill="url(#bgd)"/><path d="M10 20l6-6l6 6l-6 6zM44 12l4-4l4 4l-4 4z" fill="#fff" opacity=".7">'+an('opacity','.7;.2;.7',2)+'</path>';
   return '<circle cx="32" cy="32" r="31" fill="'+c+'"/>'; };
-const avSVG = (a, lvl) => { a = avNorm(a); const sk = AVP.skin.o[a.skin].c, SH = AVP.shirt.o[a.shirt], sc = SH.c, fr = avFrame(lvl||0); let o = '<defs>'+RBG+'</defs>';
-  const hc0 = AVP.hairc.o[a.hairc].c, hc = hc0=='rainbow' ? 'url(#rb)' : hc0, HR = a.hair;
+// Critter bodies: natural main + accent colors
+const BODY = [null, {m:'#FF8A3C',a:'#ffffff'}, {m:'#8D5B1D',a:'#d9b48a'}, {m:'#8D5B1D',a:'#f6e7c8'}, {m:'#a86b3c',a:'#e8c39a'}, {m:'#00B451',a:'#D5F367'}, {m:'#f2f2f2',a:'#f7a8cf'}, {m:'#8f9497',a:'#2b2b2b'}, {m:'#9a9a9b',a:'#f7a8cf'}, {m:'#ffffff',a:'#1d1a17'}, {m:'#1d2733',a:'#ffffff'}, {m:'#c9ccd1',a:'#64CDF5'}, {m:'#5B2A86',a:'#F9BF01'}, {m:'#7a4f2a',a:'#d9b48a'}];
+const lum = h => { if (!h || h[0] != '#') return 1; const n = parseInt(h.slice(1),16); return ((n>>16)*.299 + ((n>>8)&255)*.587 + (n&255)*.114)/255; };
+const critterHead = (B, M, C) => { const sh = '<ellipse cx="27" cy="20" rx="6" ry="3" fill="#fff" opacity=".18"/>';
+  switch (B) {
+    case 1: return '<path d="M18 23l2-15l9 8zM46 23l-2-15l-9 8z" fill="'+M+'"/><path d="M20 19l1-7l5 5zM44 19l-1-7l-5 5z" fill="'+C+'"/><ellipse cx="32" cy="29" rx="14" ry="12.5" fill="'+M+'"/><path d="M19 31q13 14 26 0q-3 8-13 8t-13-8z" fill="'+C+'"/><ellipse cx="32" cy="32" rx="2" ry="1.5" fill="#121313"/>'+sh;
+    case 2: return '<circle cx="21" cy="18" r="5.5" fill="'+M+'"/><circle cx="43" cy="18" r="5.5" fill="'+M+'"/><circle cx="21" cy="18" r="2.8" fill="'+C+'"/><circle cx="43" cy="18" r="2.8" fill="'+C+'"/><circle cx="32" cy="29" r="14" fill="'+M+'"/><ellipse cx="32" cy="33.5" rx="6.5" ry="5" fill="'+C+'"/><ellipse cx="32" cy="31.5" rx="2.4" ry="1.7" fill="#121313"/>'+sh;
+    case 3: return '<path d="M19 18l3-7l5 6zM45 18l-3-7l-5 6z" fill="'+M+'"/><circle cx="32" cy="29" r="14.5" fill="'+M+'"/><circle cx="27" cy="27" r="5.6" fill="'+C+'"/><circle cx="37" cy="27" r="5.6" fill="'+C+'"/><path d="M30 31l2 4l2-4z" fill="#F9BF01"/><path d="M24 37q8 4 16 0" stroke="'+C+'" stroke-width="1.5" fill="none" opacity=".7"/>'+sh;
+    case 4: return '<circle cx="21" cy="19" r="3.6" fill="'+M+'"/><circle cx="43" cy="19" r="3.6" fill="'+M+'"/><circle cx="32" cy="29" r="13.5" fill="'+M+'"/><ellipse cx="32" cy="34" rx="7" ry="5" fill="'+C+'"/><rect x="29.8" y="35" width="4.4" height="4.2" rx="1" fill="#fff" stroke="#d8d2bd" stroke-width=".5"/><path d="M32 35v4" stroke="#d8d2bd" stroke-width=".5"/><ellipse cx="32" cy="32" rx="2" ry="1.4" fill="#5a3a1c"/>'+sh;
+    case 5: return '<circle cx="25" cy="19" r="6.5" fill="'+M+'"/><circle cx="39" cy="19" r="6.5" fill="'+M+'"/><ellipse cx="32" cy="30" rx="15.5" ry="11.5" fill="'+M+'"/><ellipse cx="32" cy="35" rx="9" ry="4.5" fill="'+C+'" opacity=".85"/><circle cx="21" cy="32" r="2" fill="#ff7aa8" opacity=".5"/><circle cx="43" cy="32" r="2" fill="#ff7aa8" opacity=".5"/>'+sh;
+    case 6: return '<ellipse cx="26" cy="9" rx="4" ry="11" fill="'+M+'"/><ellipse cx="38" cy="9" rx="4" ry="11" fill="'+M+'"/><ellipse cx="26" cy="10" rx="2" ry="7.5" fill="'+C+'"/><ellipse cx="38" cy="10" rx="2" ry="7.5" fill="'+C+'"/><circle cx="32" cy="29" r="13.5" fill="'+M+'"/><path d="M30.5 31.5h3l-1.5 1.8z" fill="'+C+'"/><circle cx="24" cy="32.5" r="2" fill="'+C+'" opacity=".55"/><circle cx="40" cy="32.5" r="2" fill="'+C+'" opacity=".55"/>'+sh;
+    case 7: return '<path d="M18 22l2-11l8 6zM46 22l-2-11l-8 6z" fill="'+M+'"/><circle cx="32" cy="29" r="14" fill="'+M+'"/><path d="M18 26q7-4 14 1q7-5 14-1q-2 6-7 5q-4-1-7 2q-3-3-7-2q-5 1-7-5z" fill="'+C+'"/><path d="M23 35q9 7 18 0q-2 5-9 5t-9-5z" fill="#fff"/><ellipse cx="32" cy="34" rx="2" ry="1.4" fill="#121313"/>'+sh;
+    case 8: return '<path d="M19 22l1-12l8 7zM45 22l-1-12l-8 7z" fill="'+M+'"/><path d="M21 18l1-5l4 3zM43 18l-1-5l-4 3z" fill="'+C+'"/><circle cx="32" cy="29" r="13.5" fill="'+M+'"/><path d="M30.6 31.5h2.8l-1.4 1.6z" fill="'+C+'"/><path d="M17 31l9 1M17 34l9-.5M47 31l-9 1M47 34l-9-.5" stroke="#4a4a4a" stroke-width=".8" opacity=".7"/>'+sh;
+    case 9: return '<circle cx="21" cy="18" r="5.5" fill="'+C+'"/><circle cx="43" cy="18" r="5.5" fill="'+C+'"/><circle cx="32" cy="29" r="14" fill="'+M+'"/><ellipse cx="26.5" cy="27.5" rx="4.2" ry="5" fill="'+C+'" transform="rotate(-20 26.5 27.5)"/><ellipse cx="37.5" cy="27.5" rx="4.2" ry="5" fill="'+C+'" transform="rotate(20 37.5 27.5)"/><ellipse cx="32" cy="32.5" rx="2.2" ry="1.5" fill="#121313"/>'+sh;
+    case 10: return '<circle cx="32" cy="29" r="14" fill="'+M+'"/><path d="M21 31q0-10 11-9q11-1 11 9q0 8-11 8t-11-8z" fill="'+C+'"/><path d="M29 31l3 3l3-3z" fill="#F9BF01"/>'+sh;
+    case 11: return '<path d="M32 15v-6" stroke="#7d7d7d" stroke-width="1.8"/><circle cx="32" cy="8" r="2.4" fill="#FF4539">'+an('opacity','1;.3;1',1)+'</circle><rect x="18" y="15" width="28" height="26" rx="7" fill="'+M+'" stroke="#7d7d7d" stroke-width="1.2"/><rect x="21" y="22" width="22" height="10" rx="3" fill="#121313"/><circle cx="16.5" cy="28" r="2.5" fill="'+C+'"/><circle cx="47.5" cy="28" r="2.5" fill="'+C+'"/><path d="M25 36h14" stroke="#7d7d7d" stroke-width="1.4" stroke-dasharray="2 1.5"/>';
+    case 12: return '<path d="M22 19q-6-8-3-13q2 6 7 9zM42 19q6-8 3-13q-2 6-7 9z" fill="'+C+'"/><path d="M30 14l2-5l2 5z" fill="'+C+'"/><ellipse cx="32" cy="29" rx="14" ry="13" fill="'+M+'"/><ellipse cx="32" cy="35" rx="8" ry="5" fill="'+M+'" stroke="'+C+'" stroke-width="1" opacity=".9"/><circle cx="29.5" cy="35" r="1" fill="#121313"/><circle cx="34.5" cy="35" r="1" fill="#121313"/>'+sh;
+    case 13: return '<path d="M20 18q-9-2-11-10q4 2 6 0q1 4 5 3q-2-4 1-6q2 5 3 9zM44 18q9-2 11-10q-4 2-6 0q-1 4-5 3q2-4-1-6q-2 5-3 9z" fill="'+C+'"/><ellipse cx="32" cy="29" rx="12.5" ry="13" fill="'+M+'"/><ellipse cx="32" cy="36" rx="7.5" ry="5.5" fill="'+M+'" stroke="#5a3a1c" stroke-width=".6"/><circle cx="29.5" cy="36" r="1.1" fill="#121313"/><circle cx="34.5" cy="36" r="1.1" fill="#121313"/>'+sh;
+  } return ''; };
+const FRAMES = [null, null, {c:'#8D5B1D', w:4, d:'2 0'}, {c:'#00B451', w:3, leaf:1}, {c:'#F9BF01', w:3.5}, {c:'#D5F367', w:3, neon:1}, {c:'url(#rb)', w:3.5}, {c:'#9fe8e3', w:3.5}, {c:'#64CDF5', w:4, dia:1}];
+const avPet = (PT, px, py, big) => { let o = '';
+  if (PT==1) o += '<ellipse cx="'+px+'" cy="'+py+'" rx="8" ry="6" fill="#00B451"/><circle cx="'+(px-3)+'" cy="'+(py-5)+'" r="2.5" fill="#00B451"/><circle cx="'+(px+3)+'" cy="'+(py-5)+'" r="2.5" fill="#00B451"/><circle cx="'+(px-3)+'" cy="'+(py-5)+'" r="1" fill="#121313"/><circle cx="'+(px+3)+'" cy="'+(py-5)+'" r="1" fill="#121313"/>';
+  if (PT==2) o += '<path d="M'+(px-8)+' '+(py-7)+'l3 6h10l3-6l-2 10q-3 6-6 6q-3 0-6-6z" fill="#FF8A3C"/><circle cx="'+(px-3)+'" cy="'+(py)+'" r="1.2" fill="#121313"/><circle cx="'+(px+3)+'" cy="'+(py)+'" r="1.2" fill="#121313"/>';
+  if (PT==3) o += '<ellipse cx="'+px+'" cy="'+py+'" rx="7" ry="8" fill="#8D5B1D"/><circle cx="'+(px-3)+'" cy="'+(py-2)+'" r="3" fill="#fff"/><circle cx="'+(px+3)+'" cy="'+(py-2)+'" r="3" fill="#fff"/><circle cx="'+(px-3)+'" cy="'+(py-2)+'" r="1.3" fill="#121313"/><circle cx="'+(px+3)+'" cy="'+(py-2)+'" r="1.3" fill="#121313"/>';
+  if (PT==4) o += '<ellipse cx="'+px+'" cy="'+(py+1)+'" rx="9" ry="6" fill="#00B451" stroke="#015640" stroke-width="2"/><circle cx="'+(px+9)+'" cy="'+(py-1)+'" r="3" fill="#9fe07a"/>';
+  if (PT==5) o += '<g>'+at('translate','0 1;0 -2;0 1',1,SPLINE)+'<ellipse cx="'+px+'" cy="'+py+'" rx="8" ry="7" fill="#5B2A86"/><path d="M'+(px-8)+' '+(py-4)+'l-5-6l7 2zM'+(px+8)+' '+(py-4)+'l5-6l-7 2z" fill="#E9B9F7"/><circle cx="'+(px-3)+'" cy="'+(py-2)+'" r="1.4" fill="#F9BF01"/><circle cx="'+(px+3)+'" cy="'+(py-2)+'" r="1.4" fill="#F9BF01"/></g>';
+  const pet = (body, eyes, extra) => '<g transform="translate('+px+' '+py+')">'+body+(eyes||'<circle cx="-2.6" cy="-1" r="1.2" fill="#121313"/><circle cx="2.6" cy="-1" r="1.2" fill="#121313"/>')+(extra||'')+'</g>';
+  if (PT==6) o += pet('<path d="M-7-3l1-6l4 4h4l4-4l1 6q1 9-7 9t-7-9z" fill="#9a9a9b"/>', '', '<path d="M-1 2l1 1l1-1" stroke="#121313" stroke-width=".8" fill="none"/><path d="M7 3q5-1 4-6" stroke="#9a9a9b" stroke-width="2" fill="none"/>');
+  if (PT==7) o += pet('<ellipse cx="0" cy="0" rx="7" ry="6.5" fill="#d9a066"/><ellipse cx="-7" cy="-1" rx="2.4" ry="4.5" fill="#8D5B1D"/><ellipse cx="7" cy="-1" rx="2.4" ry="4.5" fill="#8D5B1D"/>', '', '<ellipse cx="0" cy="2" rx="1.6" ry="1.1" fill="#121313"/><path d="M0 3.5q0 2 1.4 2.4" stroke="#FF4539" stroke-width="1.2" fill="none"/>');
+  if (PT==8) o += pet('<ellipse cx="-2.5" cy="-9" rx="1.8" ry="5" fill="#fff"/><ellipse cx="2.5" cy="-9" rx="1.8" ry="5" fill="#fff"/><ellipse cx="0" cy="0" rx="6.5" ry="6" fill="#fff" stroke="#e1ddcb" stroke-width=".8"/>', '', '<circle cx="0" cy="1.5" r=".9" fill="#f7a8cf"/>');
+  if (PT==9) o += pet('<ellipse cx="0" cy="0" rx="6.5" ry="8" fill="#121313"/><ellipse cx="0" cy="1.5" rx="4.5" ry="6" fill="#fff"/><path d="M-1.5 -1l1.5 1.5l1.5-1.5z" fill="#F9BF01"/>', '<circle cx="-2.4" cy="-3" r="1" fill="#fff"/><circle cx="2.4" cy="-3" r="1" fill="#fff"/>');
+  if (PT==10) o += pet('<path d="M-9-5l-3-2M-9-2l-4 0M-9 1l-3 2M9-5l3-2M9-2l4 0M9 1l3 2" stroke="#EA55AB" stroke-width="1.6" stroke-linecap="round"/><ellipse cx="0" cy="0" rx="8.5" ry="6.5" fill="#f7a8cf"/>', '', '<path d="M-2 2.5q2 1.5 4 0" stroke="#121313" stroke-width=".9" fill="none"/>');
+  if (PT==11) o += '<g>'+at('translate','0 0;0 -1.5;0 0',.9,SPLINE)+pet('<path d="M-8 6q-1-12 8-12t8 12z" fill="#7be08a" opacity=".9"/><ellipse cx="-3" cy="-2" rx="1.6" ry="1" fill="#fff" opacity=".7"/>')+'</g>';
+  if (PT==12) o += pet('<rect x="-7" y="-6" width="14" height="12" rx="3" fill="#c9ccd1" stroke="#7d7d7d" stroke-width="1"/><path d="M0-6v-4" stroke="#7d7d7d" stroke-width="1.2"/><circle cx="0" cy="-10.5" r="1.4" fill="#FF4539">'+an('opacity','1;.2;1',.8)+'</circle>', '<rect x="-4.5" y="-2.5" width="3" height="2.5" fill="#64CDF5"/><rect x="1.5" y="-2.5" width="3" height="2.5" fill="#64CDF5"/>');
+  if (PT==13) o += '<g>'+at('translate','0 1;0 -2;0 1',.8,SPLINE)+pet('<path d="M-6 2q-8-10-4-14q2 6 6 8zM6 2q8-10 4-14q-2 6-6 8z" fill="#FF8A3C"/><ellipse cx="0" cy="0" rx="6" ry="7" fill="#FF4539"/><path d="M-2 6l2 7l2-7z" fill="#F9BF01"/>', '<circle cx="-2.4" cy="-1.5" r="1.1" fill="#F9BF01"/><circle cx="2.4" cy="-1.5" r="1.1" fill="#F9BF01"/>')+'</g>';
+  if (PT==14) o += pet('<ellipse cx="0" cy="0" rx="8" ry="6.5" fill="#fff" stroke="#e1ddcb" stroke-width=".8"/><path d="M-2-6l2-8l2 8z" fill="#F9BF01"/><path d="M-6-5q4-5 9-2" stroke="url(#rb)" stroke-width="2.4" fill="none"/>', '', '<circle cx="-4.5" cy="2" r="1" fill="#f7a8cf"/>');
+  return big ? '<g transform="translate('+(32-px*2)+' '+(32-py*2)+') scale(2)">'+o+'</g>' : o; };
+const avSVG = (a, lvl, opts) => { a = avNorm(a); opts = opts || {}; const B = a.body, BD = BODY[B], sk = AVP.skin.o[a.skin].c, SH = AVP.shirt.o[a.shirt], sc = SH.c; let o = '<defs>'+RBG+'</defs>';
+  const mc0 = AVP.main.o[a.main].c, ac0 = AVP.accent.o[a.accent].c, M = B ? (mc0 || BD.m) : sk, C = B ? (ac0 == 'rainbow' ? 'url(#rb)' : (ac0 || BD.a)) : sk, ec = AVP.eye.o[a.eye].c || '#121313';
+  if (opts.petOnly) return svgURI('<defs>'+RBG+'</defs>'+avPet(a.pet, 32, 38, true));
+  const hc0 = AVP.hairc.o[a.hairc].c, hc = hc0=='rainbow' ? 'url(#rb)' : hc0, HR = B ? 0 : a.hair;
   o += avBG(AVP.bg.o[a.bg].c);
-  if (fr) o += '<circle cx="32" cy="32" r="29.5" fill="none" stroke="'+fr.c+'" stroke-width="3">'+(lvl>=45?an('stroke','#EA55AB;#64CDF5;#F9BF01;#EA55AB',3):'')+'</circle>';
+  const FR = a.frame ? FRAMES[a.frame] : null, fr = a.frame ? null : avFrame(lvl||0);
+  if (fr) o += '<circle cx="32" cy="32" r="29.5" fill="none" stroke="'+fr.c+'" stroke-width="3">'+(lvl>=200?an('stroke','#EA55AB;#64CDF5;#F9BF01;#EA55AB',3):'')+'</circle>';
+  if (FR) { o += '<circle cx="32" cy="32" r="29.5" fill="none" stroke="'+FR.c+'" stroke-width="'+FR.w+'"'+(FR.neon?' stroke-opacity=".95"':'')+'>'+(FR.neon?an('stroke','#D5F367;#64CDF5;#EA55AB;#D5F367',2.4):'')+'</circle>';
+    if (FR.leaf) o += [0,60,120,180,240,300].map(d=>'<ellipse cx="32" cy="3.5" rx="2.4" ry="4" fill="#00B451" transform="rotate('+d+' 32 32)"/>').join('');
+    if (FR.dia) o += [45,135,225,315].map(d=>'<path d="M32 0l2.5 3l-2.5 3l-2.5-3z" fill="#fff" stroke="#64CDF5" stroke-width=".8" transform="rotate('+d+' 32 32)"/>').join('');
+    if (a.frame == 2) o += '<circle cx="32" cy="32" r="27.2" fill="none" stroke="#5a3a1c" stroke-width="1"/>'; }
   const G = a.gear; // behind body
   if (G==3) o += '<path d="M18 40q-6 16 0 22h28q6-6 0-22z" fill="#FF4539"/>';
   if (G==4) o += '<g>'+at('rotate','-6 32 42;6 32 42;-6 32 42',.8,SPLINE)+'<path d="M24 42q-16-14-20-2q4 10 20 8zM40 42q16-14 20-2q-4 10-20 8z" fill="#fff" stroke="#c9e8f5" stroke-width="1.5"/></g>';
@@ -1032,9 +1067,16 @@ const avSVG = (a, lvl) => { a = avNorm(a); const sk = AVP.skin.o[a.skin].c, SH =
   if (PAT=='check') o += '<path d="M20 50h6v6h-6zM32 50h6v6h-6zM26 56h6v6h-6zM38 56h6v6h-6z" fill="#fff"/>';
   if (PAT=='hood') o += '<path d="M22 44q10 6 20 0" stroke="#6a6a6a" stroke-width="3" fill="none"/><path d="M29 47v7M35 47v7" stroke="#fff" stroke-width="1.5"/><rect x="25" y="56" width="14" height="6" rx="2" fill="#7d7d7d"/>';
   if (PAT=='jersey') o += '<text x="32" y="60" text-anchor="middle" font-size="10" font-weight="700" font-family="sans-serif" fill="#fff">1</text><path d="M18 50h28" stroke="#fff" stroke-width="2"/>';
+  if (PAT=='vest') o += '<path d="M22 46l-4 18h11v-20zM42 46l4 18h-11v-20z" fill="#5f7a3a"/><rect x="21" y="52" width="6" height="4" rx="1" fill="#4a5f2c"/><path d="M38 50l1 2l2 .2l-1.6 1.3l.5 2l-1.9-1.1l-1.9 1.1l.5-2l-1.6-1.3l2-.2z" fill="#F9BF01"/>';
+  if (PAT=='space') o += '<path d="M21 44q11 6 22 0" stroke="#c9ccd1" stroke-width="4" fill="none"/><rect x="26" y="50" width="12" height="9" rx="2" fill="#2f7de0"/><circle cx="29" cy="54.5" r="1.2" fill="#FF4539"/><circle cx="32" cy="54.5" r="1.2" fill="#F9BF01"/><circle cx="35" cy="54.5" r="1.2" fill="#00B451"/>';
+  if (PAT=='tux') o += '<path d="M28 43l4 21l4-21z" fill="#fff"/><path d="M32 44l-3.5-2v4zM32 44l3.5-2v4z" fill="#FF4539"/><circle cx="32" cy="52" r=".9" fill="#121313"/><circle cx="32" cy="57" r=".9" fill="#121313"/>';
+  if (PAT=='overalls') o += '<rect x="24" y="50" width="16" height="14" rx="2" fill="#014987"/><path d="M25 50l-3-8M39 50l3-8" stroke="#014987" stroke-width="3"/><circle cx="26" cy="51" r="1.2" fill="#F9BF01"/><circle cx="38" cy="51" r="1.2" fill="#F9BF01"/><rect x="29" y="53" width="6" height="4" rx="1" fill="#2f5d99"/>';
+  if (PAT=='lab') o += '<path d="M28 43l4 10l4-10" stroke="#d8d2bd" stroke-width="1.5" fill="none"/><path d="M32 53v11" stroke="#d8d2bd" stroke-width="1"/><rect x="36" y="54" width="5" height="5" rx="1" fill="none" stroke="#d8d2bd" stroke-width="1"/><path d="M37.5 54v-3" stroke="#2f7de0" stroke-width="1.2"/>';
   if (PAT=='armor') o += '<path d="M24 46l8 4l8-4l2 14h-20z" fill="#64CDF5" stroke="#fff" stroke-width="1.2"/><path d="M32 50l3 4l-3 4l-3-4z" fill="#fff"/>';
-  o += '<circle cx="32" cy="28" r="13" fill="'+sk+'"/>';
+  o += B ? critterHead(B, M, C) : '<circle cx="32" cy="28" r="13" fill="'+sk+'"/>';
+  if (B && lum(M) < .35) o += '<circle cx="27" cy="27" r="3.2" fill="#fff"/><circle cx="37" cy="27" r="3.2" fill="#fff"/>';
   if (G==1) o += '<path d="M21 40q11 6 22 0v4q-11 6-22 0z" fill="#EA55AB"/><path d="M38 43l3 9l4-2z" fill="#EA55AB"/>';
+  const EM = AVP.emblem.o[a.emblem]; if (a.emblem && EM) o += '<circle cx="25.5" cy="54" r="5" fill="#fff" stroke="'+(EM.wild?'url(#rb)':'#015640')+'" stroke-width="1.6"/><text x="25.5" y="56.6" text-anchor="middle" font-size="7">'+EM.e+'</text>';
   // extras on the skin
   const X = a.acc;
   if (X==1) o += '<g fill="#a5643a" opacity=".8"><circle cx="23.5" cy="31" r=".9"/><circle cx="26" cy="32" r=".9"/><circle cx="24.5" cy="33.5" r=".9"/><circle cx="40.5" cy="31" r=".9"/><circle cx="38" cy="32" r=".9"/><circle cx="39.5" cy="33.5" r=".9"/></g>';
@@ -1046,19 +1088,22 @@ const avSVG = (a, lvl) => { a = avNorm(a); const sk = AVP.skin.o[a.skin].c, SH =
   if (F==3) o += '<rect x="21" y="24" width="9" height="6" rx="2" fill="#121313"/><rect x="34" y="24" width="9" height="6" rx="2" fill="#121313"/><path d="M30 26h4" stroke="#121313" stroke-width="2"/>';
   else if (F==4) o += '<path d="M26 23l1.3 2.7l3 .4l-2.2 2l.5 3l-2.6-1.4l-2.6 1.4l.5-3l-2.2-2l3-.4zM38 23l1.3 2.7l3 .4l-2.2 2l.5 3l-2.6-1.4l-2.6 1.4l.5-3l-2.2-2l3-.4z" fill="#F9BF01"/>';
   else if (F==5) o += '<rect x="20" y="23" width="24" height="7" rx="3.5" fill="#64CDF5"><animate attributeName="fill" values="#64CDF5;#D5F367;#64CDF5" dur="2s" repeatCount="indefinite"/></rect>';
-  else if (F==2) o += '<circle cx="27" cy="27" r="2" fill="#121313"/><path d="M35 27h5" stroke="#121313" stroke-width="2" stroke-linecap="round"/>';
-  else if (F==6) o += '<circle cx="27" cy="27" r="2.6" fill="#fff" stroke="#121313" stroke-width="1.2"/><circle cx="37" cy="27" r="2.6" fill="#fff" stroke="#121313" stroke-width="1.2"/><circle cx="27" cy="27" r="1.1" fill="#121313"/><circle cx="37" cy="27" r="1.1" fill="#121313"/>';
+  else if (F==2) o += '<circle cx="27" cy="27" r="2" fill="'+ec+'"/><path d="M35 27h5" stroke="#121313" stroke-width="2" stroke-linecap="round"/>';
+  else if (F==13) o += '<path d="M24 26.5h6M34 26.5h6" stroke="#121313" stroke-width="1.6" stroke-linecap="round"/><circle cx="27" cy="28" r="1.7" fill="'+ec+'"/><circle cx="37" cy="28" r="1.7" fill="'+ec+'"/>';
+  else if (F==14) o += '<path d="M17 25h30" stroke="#5a3a1c" stroke-width="2.4"/><circle cx="26.5" cy="26.5" r="5" fill="#9fe8ff" stroke="#8D5B1D" stroke-width="2.2"/><circle cx="37.5" cy="26.5" r="5" fill="#9fe8ff" stroke="#8D5B1D" stroke-width="2.2"/><circle cx="26.5" cy="26.5" r="1.8" fill="'+ec+'"/><circle cx="37.5" cy="26.5" r="1.8" fill="'+ec+'"/><path d="M24 24.5l2-1" stroke="#fff" stroke-width="1.2"/>';
+  else if (F==6) o += '<circle cx="27" cy="27" r="2.6" fill="#fff" stroke="#121313" stroke-width="1.2"/><circle cx="37" cy="27" r="2.6" fill="#fff" stroke="#121313" stroke-width="1.2"/><circle cx="27" cy="27" r="1.1" fill="'+ec+'"/><circle cx="37" cy="27" r="1.1" fill="'+ec+'"/>';
   else if (F==7) o += '<path d="M24.5 27.5q2.5 1.8 5 0M34.5 27.5q2.5 1.8 5 0" stroke="#121313" stroke-width="1.8" fill="none" stroke-linecap="round"/>';
   else if (F==9) o += '<path d="M27 29.5l-3-3a1.8 1.8 0 0 1 3-2a1.8 1.8 0 0 1 3 2zM37 29.5l-3-3a1.8 1.8 0 0 1 3-2a1.8 1.8 0 0 1 3 2z" fill="#FF4539"/>';
-  else if (F==10) o += '<path d="M23 23l6 2M41 23l-6 2" stroke="#121313" stroke-width="2" stroke-linecap="round"/><circle cx="27" cy="27.5" r="2" fill="#121313"/><circle cx="37" cy="27.5" r="2" fill="#121313"/>';
+  else if (F==10) o += '<path d="M23 23l6 2M41 23l-6 2" stroke="#121313" stroke-width="2" stroke-linecap="round"/><circle cx="27" cy="27.5" r="2" fill="'+ec+'"/><circle cx="37" cy="27.5" r="2" fill="'+ec+'"/>';
   else if (F==11) o += '<rect x="22" y="23.5" width="8" height="6" rx="1" fill="#c9ccd1" stroke="#121313" stroke-width="1"/><rect x="34" y="23.5" width="8" height="6" rx="1" fill="#c9ccd1" stroke="#121313" stroke-width="1"/><circle cx="26" cy="26.5" r="1.6" fill="#FF4539">'+an('opacity','1;.3;1',1)+'</circle><circle cx="38" cy="26.5" r="1.6" fill="#FF4539">'+an('opacity','1;.3;1',1)+'</circle>';
   else if (F==12) o += '<circle cx="27" cy="27" r="2.2" fill="#FF4539"/><circle cx="37" cy="27" r="2.2" fill="#FF4539"/><path d="M27 27L4 30M37 27L60 30" stroke="#FF4539" stroke-width="1.6" opacity=".8">'+an('opacity','.9;.2;.9',.6)+'</path>';
-  else o += '<circle cx="27" cy="27" r="2" fill="#121313"/><circle cx="37" cy="27" r="2" fill="#121313"/>';
+  else o += '<circle cx="27" cy="27" r="2" fill="'+ec+'"/><circle cx="37" cy="27" r="2" fill="'+ec+'"/><circle cx="27.7" cy="26.3" r=".6" fill="#fff"/><circle cx="37.7" cy="26.3" r=".6" fill="#fff"/>';
   if (F==1) o += '<path d="M26 33q6 6 12 0z" fill="#fff" stroke="#121313" stroke-width="1.5"/>';
   else if (F==6) o += '<ellipse cx="32" cy="34.5" rx="2.6" ry="3" fill="#121313"/>';
   else if (F==7) o += '<path d="M29 34h6" stroke="#121313" stroke-width="2" stroke-linecap="round"/><text x="43" y="20" font-size="6" font-weight="700" font-family="sans-serif" fill="#fff">z</text>';
   else if (F==8) o += '<path d="M27 33q5 4 10 0" stroke="#121313" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M30 34.5q2 5 4 0z" fill="#ff7aa8"/>';
   else if (F==10) o += '<path d="M28 34h8" stroke="#121313" stroke-width="2" stroke-linecap="round"/>';
+  else if (F==13) o += '<path d="M28 34q5 2 9-1.5" stroke="#121313" stroke-width="2" fill="none" stroke-linecap="round"/>';
   else if (F==11) o += '<rect x="26" y="32.5" width="12" height="3" rx="1" fill="#c9ccd1" stroke="#121313" stroke-width="1"/>';
   else o += '<path d="M27 33q5 4 10 0" stroke="#121313" stroke-width="2" fill="none" stroke-linecap="round"/>';
   // extras over the face
@@ -1070,6 +1115,8 @@ const avSVG = (a, lvl) => { a = avNorm(a); const sk = AVP.skin.o[a.skin].c, SH =
   if (X==10) o += '<path d="M23 42q9 7 18 0" stroke="#F9BF01" stroke-width="2.5" fill="none"/><circle cx="32" cy="45.5" r="2.2" fill="#F9BF01"/>';
   if (X==11) o += '<path d="M32 43l-6-3v6zM32 43l6-3v6z" fill="#FF4539"/><circle cx="32" cy="43" r="1.6" fill="#b3001b"/>';
   if (X==12) o += '<path d="M18 28a14 14 0 0 1 28 0" stroke="#121313" stroke-width="2.5" fill="none"/><rect x="15" y="25" width="6" height="9" rx="3" fill="#EA55AB"/><rect x="43" y="25" width="6" height="9" rx="3" fill="#EA55AB"/>';
+  if (X==14) o += '<path d="M39 50l1.3 2.6l2.9.3l-2.2 2l.6 2.8l-2.6-1.5l-2.6 1.5l.6-2.8l-2.2-2l2.9-.3z" fill="#F9BF01" stroke="#b07d00" stroke-width=".6"/>';
+  if (X==15) o += '<path d="M36 48h8l-1 6l-3 2l-3-2z" fill="#5f7a3a" stroke="#F9BF01" stroke-width=".8"/><path d="M40 50l-2 3h4z" fill="#D5F367"/>';
   if (X==13) o += '<path d="M19.2 30l1.8 2.4l-1.8 2.4l-1.8-2.4zM44.8 30l1.8 2.4l-1.8 2.4l-1.8-2.4z" fill="#9fe8ff" stroke="#fff" stroke-width=".6">'+an('opacity','1;.5;1',1.2)+'</path>';
   // hair on top of the head (under the hat)
   if (HR==1) o += '<path d="M19 27a13 13 0 0 1 26 0q-4-7-13-7t-13 7z" fill="'+hc+'"/>';
@@ -1103,23 +1150,12 @@ const avSVG = (a, lvl) => { a = avNorm(a); const sk = AVP.skin.o[a.skin].c, SH =
   if (H==17) o += '<path d="M19 24a13 12 0 0 1 26 0z" fill="#9a9a9b"/><rect x="18" y="21" width="28" height="4" rx="1.5" fill="#8D5B1D"/><path d="M19 20q-8-4-6-14q4 8 9 9zM45 20q8-4 6-14q-4 8-9 9z" fill="#fffbe0" stroke="#c9ccd1" stroke-width="1"/>';
   if (H==18) o += '<path d="M19 22q-2-6 4-6M45 22q2-6-4-6" stroke="#F9BF01" stroke-width="2.5" fill="none"/>'+[[20,18],[23,14],[27,12],[37,12],[41,14],[44,18]].map(([x,y])=>'<ellipse cx="'+x+'" cy="'+y+'" rx="2.6" ry="1.4" fill="#F9BF01" transform="rotate('+(x<32?-35:35)+' '+x+' '+y+')"/>').join('');
   if (H==19) o += '<path d="M19 20l3-11l5 6l5-10l5 10l5-6l3 11z" fill="#9fe8ff" stroke="#fff" stroke-width="1.2"/><path d="M32 10l2.5 3l-2.5 3l-2.5-3z" fill="#4a5cff">'+an('opacity','1;.5;1',1.2)+'</path>';
+  if (H==20) o += '<path d="M23 17q-4-6-9-7M19 12q-3-2-3-6M17 14q-5 0-7-3M41 17q4-6 9-7M45 12q3-2 3-6M47 14q5 0 7-3" stroke="#8D5B1D" stroke-width="2.6" fill="none" stroke-linecap="round"/>';
+  if (H==21) o += '<path d="M18 28a14 14 0 0 1 28 0" stroke="#121313" stroke-width="3" fill="none"/><rect x="14" y="24" width="7" height="10" rx="3.5" fill="#EA55AB"/><rect x="43" y="24" width="7" height="10" rx="3.5" fill="#EA55AB"/><circle cx="17.5" cy="29" r="1.6" fill="#fff" opacity=".6"/>';
+  if (H==22) o += '<path d="M14 15l18-7l18 7l-18 7z" fill="#121313"/><path d="M22 18v5q10 4 20 0v-5" fill="#121313"/><path d="M46 16v8" stroke="#F9BF01" stroke-width="1.2"/><circle cx="46" cy="25" r="1.6" fill="#F9BF01"/>';
+  if (H==23) o += '<path d="M19 24a13 12 0 0 1 26 0z" fill="#64CDF5"/><path d="M19 24a13 12 0 0 1 13-12v12z" fill="#FF4539"/><rect x="31" y="7" width="2" height="6" fill="#121313"/><g>'+at('rotate','0 32 7;360 32 7',.6)+'<ellipse cx="32" cy="7" rx="8" ry="1.8" fill="#F9BF01"/></g>';
   // pets
-  const PT = a.pet, px = 50, py = 52;
-  if (PT==1) o += '<ellipse cx="'+px+'" cy="'+py+'" rx="8" ry="6" fill="#00B451"/><circle cx="'+(px-3)+'" cy="'+(py-5)+'" r="2.5" fill="#00B451"/><circle cx="'+(px+3)+'" cy="'+(py-5)+'" r="2.5" fill="#00B451"/><circle cx="'+(px-3)+'" cy="'+(py-5)+'" r="1" fill="#121313"/><circle cx="'+(px+3)+'" cy="'+(py-5)+'" r="1" fill="#121313"/>';
-  if (PT==2) o += '<path d="M'+(px-8)+' '+(py-7)+'l3 6h10l3-6l-2 10q-3 6-6 6q-3 0-6-6z" fill="#FF8A3C"/><circle cx="'+(px-3)+'" cy="'+(py)+'" r="1.2" fill="#121313"/><circle cx="'+(px+3)+'" cy="'+(py)+'" r="1.2" fill="#121313"/>';
-  if (PT==3) o += '<ellipse cx="'+px+'" cy="'+py+'" rx="7" ry="8" fill="#8D5B1D"/><circle cx="'+(px-3)+'" cy="'+(py-2)+'" r="3" fill="#fff"/><circle cx="'+(px+3)+'" cy="'+(py-2)+'" r="3" fill="#fff"/><circle cx="'+(px-3)+'" cy="'+(py-2)+'" r="1.3" fill="#121313"/><circle cx="'+(px+3)+'" cy="'+(py-2)+'" r="1.3" fill="#121313"/>';
-  if (PT==4) o += '<ellipse cx="'+px+'" cy="'+(py+1)+'" rx="9" ry="6" fill="#00B451" stroke="#015640" stroke-width="2"/><circle cx="'+(px+9)+'" cy="'+(py-1)+'" r="3" fill="#9fe07a"/>';
-  if (PT==5) o += '<g>'+at('translate','0 1;0 -2;0 1',1,SPLINE)+'<ellipse cx="'+px+'" cy="'+py+'" rx="8" ry="7" fill="#5B2A86"/><path d="M'+(px-8)+' '+(py-4)+'l-5-6l7 2zM'+(px+8)+' '+(py-4)+'l5-6l-7 2z" fill="#E9B9F7"/><circle cx="'+(px-3)+'" cy="'+(py-2)+'" r="1.4" fill="#F9BF01"/><circle cx="'+(px+3)+'" cy="'+(py-2)+'" r="1.4" fill="#F9BF01"/></g>';
-  const pet = (body, eyes, extra) => '<g transform="translate('+px+' '+py+')">'+body+(eyes||'<circle cx="-2.6" cy="-1" r="1.2" fill="#121313"/><circle cx="2.6" cy="-1" r="1.2" fill="#121313"/>')+(extra||'')+'</g>';
-  if (PT==6) o += pet('<path d="M-7-3l1-6l4 4h4l4-4l1 6q1 9-7 9t-7-9z" fill="#9a9a9b"/>', '', '<path d="M-1 2l1 1l1-1" stroke="#121313" stroke-width=".8" fill="none"/><path d="M7 3q5-1 4-6" stroke="#9a9a9b" stroke-width="2" fill="none"/>');
-  if (PT==7) o += pet('<ellipse cx="0" cy="0" rx="7" ry="6.5" fill="#d9a066"/><ellipse cx="-7" cy="-1" rx="2.4" ry="4.5" fill="#8D5B1D"/><ellipse cx="7" cy="-1" rx="2.4" ry="4.5" fill="#8D5B1D"/>', '', '<ellipse cx="0" cy="2" rx="1.6" ry="1.1" fill="#121313"/><path d="M0 3.5q0 2 1.4 2.4" stroke="#FF4539" stroke-width="1.2" fill="none"/>');
-  if (PT==8) o += pet('<ellipse cx="-2.5" cy="-9" rx="1.8" ry="5" fill="#fff"/><ellipse cx="2.5" cy="-9" rx="1.8" ry="5" fill="#fff"/><ellipse cx="0" cy="0" rx="6.5" ry="6" fill="#fff" stroke="#e1ddcb" stroke-width=".8"/>', '', '<circle cx="0" cy="1.5" r=".9" fill="#f7a8cf"/>');
-  if (PT==9) o += pet('<ellipse cx="0" cy="0" rx="6.5" ry="8" fill="#121313"/><ellipse cx="0" cy="1.5" rx="4.5" ry="6" fill="#fff"/><path d="M-1.5 -1l1.5 1.5l1.5-1.5z" fill="#F9BF01"/>', '<circle cx="-2.4" cy="-3" r="1" fill="#fff"/><circle cx="2.4" cy="-3" r="1" fill="#fff"/>');
-  if (PT==10) o += pet('<path d="M-9-5l-3-2M-9-2l-4 0M-9 1l-3 2M9-5l3-2M9-2l4 0M9 1l3 2" stroke="#EA55AB" stroke-width="1.6" stroke-linecap="round"/><ellipse cx="0" cy="0" rx="8.5" ry="6.5" fill="#f7a8cf"/>', '', '<path d="M-2 2.5q2 1.5 4 0" stroke="#121313" stroke-width=".9" fill="none"/>');
-  if (PT==11) o += '<g>'+at('translate','0 0;0 -1.5;0 0',.9,SPLINE)+pet('<path d="M-8 6q-1-12 8-12t8 12z" fill="#7be08a" opacity=".9"/><ellipse cx="-3" cy="-2" rx="1.6" ry="1" fill="#fff" opacity=".7"/>')+'</g>';
-  if (PT==12) o += pet('<rect x="-7" y="-6" width="14" height="12" rx="3" fill="#c9ccd1" stroke="#7d7d7d" stroke-width="1"/><path d="M0-6v-4" stroke="#7d7d7d" stroke-width="1.2"/><circle cx="0" cy="-10.5" r="1.4" fill="#FF4539">'+an('opacity','1;.2;1',.8)+'</circle>', '<rect x="-4.5" y="-2.5" width="3" height="2.5" fill="#64CDF5"/><rect x="1.5" y="-2.5" width="3" height="2.5" fill="#64CDF5"/>');
-  if (PT==13) o += '<g>'+at('translate','0 1;0 -2;0 1',.8,SPLINE)+pet('<path d="M-6 2q-8-10-4-14q2 6 6 8zM6 2q8-10 4-14q-2 6-6 8z" fill="#FF8A3C"/><ellipse cx="0" cy="0" rx="6" ry="7" fill="#FF4539"/><path d="M-2 6l2 7l2-7z" fill="#F9BF01"/>', '<circle cx="-2.4" cy="-1.5" r="1.1" fill="#F9BF01"/><circle cx="2.4" cy="-1.5" r="1.1" fill="#F9BF01"/>')+'</g>';
-  if (PT==14) o += pet('<ellipse cx="0" cy="0" rx="8" ry="6.5" fill="#fff" stroke="#e1ddcb" stroke-width=".8"/><path d="M-2-6l2-8l2 8z" fill="#F9BF01"/><path d="M-6-5q4-5 9-2" stroke="url(#rb)" stroke-width="2.4" fill="none"/>', '', '<circle cx="-4.5" cy="2" r="1" fill="#f7a8cf"/>');
+  if (!opts.noPet) o += avPet(a.pet, 50, 52);
   return svgURI(o); };
 
 // ---------- Cursors: unlocked with achievements ----------
@@ -1235,10 +1271,10 @@ const ACH = [
   {id:'lifer',cat:'Secret',tier:4,secret:true,name:'Lifer',desc:'Finish 1,000 games',p:s=>[plays(s),1000]},
 ];
 const KEY = 'wl-arcade-v1', ACCT_KEY = 'wl-arcade-accounts', SESSION_KEY = 'wl-arcade-session';
-const DEF = () => ({difficulty:'normal',speed:'normal',tickets:0,best:{},played:{},ach:[],prizes:{},daily:{date:'',done:false},earned:0,saves:{},savesV:2,stats:{max:{},sum:{}},username:'',edu:{on:false,topic:'add'},sessLog:[],days:{},adjSeen:0,idle:null,upg:{},avatar:{},cursor:'',resetSeen:0,mult:{},stars:0,starsSpent:0,exp:{},expUp:{},tree:{},ptree:{},diaSpent:0,ptFav:'',clicks:0,critters:0,econV:0,rebirths:0,colDone:{},login:{},chal:{},combo:{},capsules:0,skin:'',learnTix:0});
+const DEF = () => ({difficulty:'normal',speed:'normal',tickets:0,best:{},played:{},ach:[],prizes:{},daily:{date:'',done:false},earned:0,saves:{},savesV:2,stats:{max:{},sum:{}},username:'',edu:{on:false,topic:'add'},sessLog:[],days:{},adjSeen:0,idle:null,upg:{},avatar:{},cursor:'',resetSeen:0,at:{},achV:0,title:'',achPins:[],avOwn:{},avPresets:[],mult:{},stars:0,starsSpent:0,exp:{},expUp:{},tree:{},ptree:{},diaSpent:0,ptFav:'',clicks:0,critters:0,econV:0,rebirths:0,colDone:{},login:{},chal:{},combo:{},capsules:0,skin:'',learnTix:0});
 const PFIELDS = Object.keys(DEF());
 const loadP = key => { let d = {}; try { d = JSON.parse(localStorage.getItem(key)) || {}; } catch(e){} return normP(d); };
-const normP = d => { const P = Object.assign(DEF(), d||{}); P.stats = Object.assign({max:{},sum:{}}, P.stats||{}); P.stats.max = P.stats.max||{}; P.stats.sum = P.stats.sum||{}; P.saves = P.saves||{}; P.ach = Array.isArray(P.ach)?P.ach:[]; P.edu = Object.assign({on:false,topic:'add'}, P.edu||{}); P.sessLog = Array.isArray(P.sessLog)?P.sessLog:[]; P.days = P.days||{}; Object.keys(P.best||{}).forEach(k=>{ P.best[k] = safeScore(k, P.best[k]); }); ['tickets','earned'].forEach(k=>{ if (!isFinite(P[k]) || P[k] < 0) P[k] = 0; }); ['mult','colDone','login','chal','combo','upg','prizes','best','played','exp','expUp','tree','ptree'].forEach(k=>{ if (!P[k] || typeof P[k]!='object') P[k] = {}; }); if (P.savesV !== 2) { P.saves = {}; P.savesV = 2; } return P; };
+const normP = d => { const P = Object.assign(DEF(), d||{}); P.stats = Object.assign({max:{},sum:{}}, P.stats||{}); P.stats.max = P.stats.max||{}; P.stats.sum = P.stats.sum||{}; P.saves = P.saves||{}; P.ach = Array.isArray(P.ach)?P.ach:[]; P.edu = Object.assign({on:false,topic:'add'}, P.edu||{}); P.sessLog = Array.isArray(P.sessLog)?P.sessLog:[]; P.days = P.days||{}; Object.keys(P.best||{}).forEach(k=>{ P.best[k] = safeScore(k, P.best[k]); }); ['tickets','earned'].forEach(k=>{ if (!isFinite(P[k]) || P[k] < 0) P[k] = 0; }); ['mult','colDone','login','chal','combo','upg','prizes','best','played','exp','expUp','tree','ptree','at','avOwn'].forEach(k=>{ if (!P[k] || typeof P[k]!='object') P[k] = {}; }); if (P.savesV !== 2) { P.saves = {}; P.savesV = 2; } return P; };
 const FB_ERR = {'auth/email-already-in-use':'That email already has an account. Switch to Log in.','auth/invalid-email':'That email doesn’t look right.','auth/weak-password':'That password is too weak — use at least 6 characters.','auth/invalid-credential':'Email or password is wrong.','auth/wrong-password':'Email or password is wrong.','auth/user-not-found':'Email or password is wrong.','auth/too-many-requests':'Too many tries. Wait a few minutes and try again.','auth/network-request-failed':'Can’t reach the server. Check your internet connection.','auth/operation-not-allowed':'That sign-in method is turned off in the Firebase console (Authentication → Sign-in method).','auth/user-disabled':'This account has been disabled.','auth/popup-closed-by-user':'The Google window was closed before sign-in finished.','auth/cancelled-popup-request':'The Google window was closed before sign-in finished.','auth/popup-blocked':'Your browser blocked the Google pop-up. Allow pop-ups for this site and try again.','auth/unauthorized-domain':'This website isn’t on Firebase’s list yet. Add it under Authentication → Settings → Authorized domains.','auth/account-exists-with-different-credential':'That email already has a password login. Log in with your email and password instead.','auth/operation-not-supported-in-this-environment':'Google sign-in doesn’t work here. Open the arcade’s own website instead.'};
 const fbErr = e => FB_ERR[e && e.code] || ('Something went wrong'+(e && e.code ? ' ('+e.code+')' : '')+'. Try again.');
 const getAccts = () => { try { return JSON.parse(localStorage.getItem(ACCT_KEY)) || {}; } catch(e) { return {}; } };
@@ -1256,8 +1292,8 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-11-22b';
-const SCRIPTS = ['arcade-core.js','prizes2.js','economy.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-edu.js','games-idle.js'];
+const BUILD = '2026-11-23a';
+const SCRIPTS = ['arcade-core.js','prizes2.js','economy.js','achievements.js','avatar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-edu.js','games-idle.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
 class Component extends DCLogic {
@@ -1270,7 +1306,7 @@ class Component extends DCLogic {
       immortal:false,autoHint:true,codeOpen:false,codeVal:'',codeMsg:'',admin:false,px:760,py:745,vw:(typeof window!='undefined'?window.innerWidth:1200),gameH:480,padOn:(typeof window!='undefined'&&(('ontouchstart' in window)||(window.matchMedia&&window.matchMedia('(pointer: coarse)').matches))),learnOpen:false,pinIn:'',pinNew:'',pinNew2:'',pinMsg:'',pinAsk:'',pinFails:0,pinLock:0,pinMode:'',lbOpen:false,lbGame:'_tix',lbMode:'all',uOpen:false,uVal:'',uMsg:'',clearArm:false,dir:[0,1],game:null,liveScore:0,payout:'',prizesOpen:false,toasts:[],scale:1,muted:false,
       authOpen:false,authMode:'signup',aEmail:'',aPass:'',aPass2:'',aName:'',aShow:false,aRemember:true,aBring:true,aMsg:'',aBusy:false,aFails:0,aLock:0,aTouched:false,
       achOpen:false,achFilter:'All'});
-    this.keys = {}; this.gameRef = React.createRef(); this.pzRef = React.createRef();
+    this.keys = {}; this.gameRef = React.createRef(); this.pzRef = React.createRef(); this.achRef = React.createRef(); this.avRef = React.createRef();
     this.ro = typeof ResizeObserver != 'undefined' ? new ResizeObserver(()=>this.onResize && this.onResize()) : null;
     this.wrapRef = el => { if (el && el !== this._wrapEl) { this._wrapEl = el; this.ro && this.ro.observe(el); this.onResize && this.onResize(); } };
     this.padHeld = {};
@@ -1299,7 +1335,7 @@ class Component extends DCLogic {
   saveKey(id){ return EDU_SWITCH.includes(id) && this.eduOn() ? id+'~edu' : id; }
   isLearn(id){ return LEARN_GAMES.includes(id) || (EDU_SWITCH.includes(id) && this.eduOn()); }
   startSess(id){ this.sess = {g:id, t0:Date.now(), lock:this.locked(), edu:!!this.eduOn(), learn:this.isLearn(id), topic:EDU_SWITCH.includes(id) && id!='typing' ? this.P.edu.topic : (id=='typing'?'words':id=='trace'?'handwriting':id=='rootout'?'species':''), ok:0, bad:0}; }
-  endSess(){ const s = this.sess; this.sess = null; if (!s) return; const d = Math.round((Date.now()-s.t0)/1000); if (d<3 && !s.ok && !s.bad) return;
+  endSess(){ const s = this.sess; this.sess = null; if (!s) return; const d = Math.round((Date.now()-s.t0)/1000); if (d >= 1800 && !this.state.admin) this.stat('marathon', 1, 'add'); if (d<3 && !s.ok && !s.bad) return;
     const day = new Date(s.t0).toISOString().slice(0,10), days = {...this.P.days}, cur = {...(days[day]||{l:0,r:0})};
     if (s.edu || s.learn) cur.l += d; else cur.r += d; days[day] = cur; const keys = Object.keys(days).sort(); while (keys.length>45) delete days[keys.shift()];
     const sessLog = [{t:s.t0, g:s.g, d, lock:!!s.lock, edu:s.edu, learn:s.learn, topic:s.topic, ok:s.ok, bad:s.bad}, ...this.P.sessLog].slice(0,200);
@@ -1359,11 +1395,16 @@ class Component extends DCLogic {
     if (this._bBusy[g] || (this._bAt[g] && Date.now()-this._bAt[g] < 30000)) return; this._bBusy[g] = true;
     window.WLCloud.top(g, 100).then(rows=>{ this.cloudBoard[g] = rows.map(r=>({u:r.u, k:r.uid, id:r.id, g, s:r.s, edu:!!r.edu, d:r.d, av:r.av||'', al:r.al||0})); this._bAt[g] = Date.now(); this._bBusy[g] = false; this.setState({lbTick:Date.now()}); })
       .catch(()=>{ this._bBusy[g] = false; this._bAt[g] = Date.now(); }); }
-  evalAch(P){ let s = {...P}; const has = new Set(s.ach), newly = []; let changed = true;
-    while (changed) { changed = false; for (const a of ACH) { if (has.has(a.id)) continue; let pr; try { pr = a.p(s); } catch(e) { continue; } if (pr[0] >= pr[1]) { has.add(a.id); newly.push(a); const r = TIER[a.tier].r; s = {...s, tickets:s.tickets+r, earned:s.earned+r}; changed = true; } } }
-    s.ach = [...has].filter(id=>ACH.some(a=>a.id==id)); return {s, newly}; }
+  // Achievements 2.0: tiers come from saved stats. Each new tier pays tickets (shown before you unlock it);
+  // titles, avatar items and Platinum/Diamond bonuses follow from the tiers you hold.
+  evalAch(P){ const WA = window.WLA; if (!WA || !WA.list().length) return {s:P, newly:[]}; let s = {...P}, all = [];
+    if ((s.achV||0) < 2) { // one-time move from the old achievement list: progress carries over, nothing is paid twice
+      const old = (s.ach||[]).length; if (window.WLAV) s.avOwn = window.WLAV.migrate(s, old); let moved = 0; for (let i = 0; i < 4; i++) { const r0 = WA.eval(s); if (!r0.newly.length) break; s.at = r0.at; moved += r0.newly.length; } s.achV = 2; s.ach = WA.achList(s.at); this._achMoved = moved; return {s, newly:[]}; }
+    for (let i = 0; i < 6; i++) { const r = WA.eval(s); if (!r.newly.length) break; let tix = 0; r.newly.forEach(x => { tix += WA.tixReward(s, x.t); }); s = {...s, at:r.at, tickets:s.tickets+tix, earned:s.earned+tix}; all = all.concat(r.newly); }
+    s.ach = WA.achList(s.at); return {s, newly:all}; }
   setP(patch){ const r = this.evalAch({...this.P, ...patch}); this.P = r.s; this.persist(); this.setState({...this.P}); this.checkRebirth();
-    r.newly.forEach((a,i)=>setTimeout(()=>{ this.toast('ACHIEVEMENT · '+a.name.toUpperCase()+' · +'+TIER[a.tier].r+' TICKETS'); window.Arcade && window.Arcade.sfx('win'); }, 350+i*900)); }
+    if (r.newly.length && window.WLA && !this.state.admin) window.WLA.queue(r.newly, this.P);
+    if (this._achMoved) { const n = this._achMoved; this._achMoved = 0; setTimeout(()=>this.toast('ACHIEVEMENTS 2.0 · '+n+' TIERS CARRIED OVER FROM YOUR OLD TROPHIES'), 1200); } }
   stat(k, v, mode){ if (this.state.admin && k!='account' && k!='resumes') return; const st = this.P.stats;
     if (mode=='add') this.setP({stats:{...st, sum:{...st.sum, [k]:(st.sum[k]||0)+v}}});
     else { if ((st.max[k]||0) >= v) return; this.setP({stats:{...st, max:{...st.max, [k]:v}}}); } }
@@ -1411,6 +1452,13 @@ class Component extends DCLogic {
           this.setState({px,py,dir:[dx,dy]});
           stepT += dt; if (stepT > .22) { stepT = 0; window.Arcade && window.Arcade.sfx('step'); }
         }
+        // walking trail + pet sidekick that follows you
+        const av = avNorm(this.P.avatar), st = this.state; let redraw = false;
+        if (av.trail && !LOWFX && (dx||dy) && now - (this._trT||0) > 95) { this._trT = now; (this._trail = this._trail||[]).push({x:st.px + (Math.random()-.5)*10, y:st.py + 16 + (Math.random()-.5)*6, t:now}); }
+        if (this._trail && this._trail.length) { this._trail = this._trail.filter(d => now - d.t < 1100); redraw = true; }
+        if (av.pet) { const pp = this._petPos || (this._petPos = {x:st.px - 34, y:st.py + 10}); const tx = st.px - 34 * ((st.dir||[1])[0] >= 0 ? 1 : -1), ty = st.py + 12, d = Math.hypot(tx-pp.x, ty-pp.y);
+          if (d > 2) { const k = Math.min(1, dt * (d > 60 ? 6 : 3.5)); pp.x += (tx-pp.x)*k; pp.y += (ty-pp.y)*k; redraw = true; } }
+        if (redraw && !(dx||dy)) this.setState({ftick:now});
       }
       this.raf = requestAnimationFrame(tick);
     };
@@ -1425,6 +1473,14 @@ class Component extends DCLogic {
   componentDidUpdate(){
     if (this.state.adminOpen && !this._actOff) this.openActivity(); if (!this.state.adminOpen && this._actOff) this.closeActivity();
     if (window.WLP && this._loginFor !== this.profKey()) { this._loginFor = this.profKey(); const W2 = window.WLP; setTimeout(()=>{ const l = W2.login(this.P); const c = W2.ensureChal({...this.P, ...(l||{})}, GAMES); if (l || c) { this.setP({...(l||{}), ...(c||{})}); if (l && l.login.streak > 1) this.toast('DAY '+l.login.streak+' LOGIN STREAK · BONUS ×'+W2.fmt(W2.globalMult(this.P))); } }, 400); }
+    if (window.WLA && window.WLAV && !this._achInit) { this._achInit = true; window.WLA.init({games:GAMES, classic:PRIZES.map(x=>x.id)}); window.WLAV.init({AVP, AVK, TABS:AVTABS, svg:(a,l)=>avSVG(a,l), CURSORS});
+      window.WLA.attach({busy:()=>!!this.state.game || !!this.state.authOpen}); avEmblems(); setTimeout(()=>this.setP({}), 50); }
+    if (this.state.achOpen && this.achRef.current && !this._achOff && window.WLA) this._achOff = window.WLA.mount(this.achRef.current, {P:()=>this.P, setP:pt=>this.setP(pt), sfx:n=>window.Arcade && window.Arcade.sfx(n)});
+    if (!this.state.achOpen && this._achOff) { try { this._achOff(); } catch(e){} this._achOff = null; }
+    if (this.state.avOpen && this.avRef.current && !this._avOff && window.WLAV) this._avOff = window.WLAV.mount(this.avRef.current, {P:()=>this.P, setP:pt=>this.setP(pt), sfx:n=>window.Arcade && window.Arcade.sfx(n), toast:t=>this.toast(t), admin:()=>!!this.state.admin,
+      norm:avNorm, level:P=>(P.ach||[]).length, name:()=>this.P.username || (this.cloudMeta && this.cloudMeta.name) || 'Player', title:()=>window.WLA ? window.WLA.title(this.P) : '', pins:()=>window.WLA ? window.WLA.pins(this.P) : [],
+      applyCursor, cursorImg:c => c.id ? svgURI('<g transform="translate(16 16)">'+c.s+'</g>') : svgURI('<path d="M20 12l0 34l9-9l6 14l6-3l-6-13l12 0z" fill="#fff" stroke="#121313" stroke-width="3"/>'), openAch:()=>{ this.setState({avOpen:false}); setTimeout(()=>this.setState({achOpen:true}), 30); }});
+    if (!this.state.avOpen && this._avOff) { try { this._avOff(); } catch(e){} this._avOff = null; }
     if (this.state.prizesOpen && this.pzRef.current && !this._pzOff && window.WLP) { const P0 = () => this.P;
       this._pzOff = window.WLP.mount(this.pzRef.current, { P:P0, setP:pt=>this.setP(pt), toast:t=>this.toast(t), sfx:n=>window.Arcade && window.Arcade.sfx(n), admin:()=>!!this.state.admin, log:(k,t)=>this.logAct(k,t), lowFx:()=>LOWFX, tab:(t=>{ this._pzTab = null; return t; })(this._pzTab),
         games:()=>GAMES, icon:id=>ICON(id), classicArt: Object.fromEntries(PRIZES.map(pz=>[pz.id, PZ(pz.art)])) }); }
@@ -1614,7 +1670,7 @@ class Component extends DCLogic {
     this.setP({tickets:P.tickets+tix, earned:P.earned+tix, best, played:{...P.played, [id]:(P.played[id]||0)+1}});
     if (better && this.P.username) this.addScore(id, score, this.isLearn(id)); else this.addScore('_none', 0);
     this.toast((label||'')+' · +'+fmtN(tix)+' TICKETS'); window.Arcade && window.Arcade.sfx('coin'); return tix; }
-  finish(id, score){ score = safeScore(id, score);
+  finish(id, score){ score = safeScore(id, score); if (!this.state.admin) { const P0 = this.P; this.stat('mode:'+P0.difficulty+'/'+P0.speed, 1, 'max'); if (this.isLearn(id)) this.stat('learnG:'+id, 1, 'max'); if (score === 0) this.stat('zero', 1, 'add'); }
     if (this.state.admin) { const sv = {...this.P.saves}; delete sv[this.saveKey(id)]; this.setP({saves:sv}); this.setState({payout:'Admin mode · no tickets, scores or achievements recorded'}); window.Arcade && window.Arcade.sfx('blip'); return; }
     const g = GAMES.find(x=>x.id==id), mult = this.props.ticketMultiplier ?? 1, P = this.P;
     const best = {...P.best}, played = {...P.played, [id]:(P.played[id]||0)+1}, sum = {...P.stats.sum};
@@ -1634,7 +1690,7 @@ class Component extends DCLogic {
     const learn = this.isLearn(id); if (learn) { const lm = 1.25 * (window.WLE ? window.WLE.learnGameMult(P) : 1); tix = Math.ceil(tix*lm); lines.push('LEARN BONUS ×'+fmtN(lm)); }
     const wsm = upgTixMult(P, id); if (tix > 0 && wsm > 1.001) { tix = Math.ceil(tix*wsm); lines.push('WORKSHOP +'+fmtN(Math.round((wsm-1)*100))+'%'); }
     const WP = window.WLP; let extra = {};
-    if (WP && tix > 0) { const r = WP.payout(P, id, tix); tix = r.tix; lines.push(...r.lines); extra = r.patch || {}; if (r.lines.some(l=>/JACKPOT|LUCKY/.test(l))) sum.jackpots = (sum.jackpots||0)+1; }
+    if (WP && tix > 0) { const r = WP.payout(P, id, tix); if (r.patch && r.patch.combo && r.patch.combo.n > 1) this.stat('comboMax', r.patch.combo.n, 'max'); tix = r.tix; lines.push(...r.lines); extra = r.patch || {}; if (r.lines.some(l=>/JACKPOT|LUCKY/.test(l))) sum.jackpots = (sum.jackpots||0)+1; }
     this.setP({best, played, daily, saves, tickets:P.tickets+tix, earned:P.earned+tix, stats:{...P.stats, sum}, ...extra});
     if (WP) { const c = WP.onFinish(this.P, id, score, tix); if (c) this.setP(c); }
     if (window.WLE && tix > 0) window.WLE.fly(tix);
@@ -1649,6 +1705,7 @@ class Component extends DCLogic {
     else { window.Arcade && window.Arcade.sfx('bad'); this.setState({codeMsg:'Code not recognised', codeVal:''}); } }
   open(id){ this.keys = {}; this.setState({game:id, liveScore:0, payout:''}); }
   closeAll(){ const saved = this.unmountGame(); this.keys = {}; Object.keys(this.padHeld).forEach(k=>{ if (this.padHeld[k]) fireKey(k,'keyup'); }); this.padHeld = {};
+    setTimeout(()=>window.WLA && window.WLA.pump(), 400);
     this.setState({game:null, shopOpen:false, avOpen:false, prizesOpen:false, payout:'', authOpen:false, achOpen:false, learnOpen:false, lbOpen:false, uOpen:false, clearArm:false}); if (saved) this.toast('GAME SAVED · PICK IT UP ANY TIME'); }
   buy(p){
     const P = this.P; if (P.tickets < p.cost) { window.Arcade && window.Arcade.sfx('bad'); return; }
@@ -1709,14 +1766,10 @@ class Component extends DCLogic {
     const [dx,dy] = s.dir;
     // achievements
     const has = new Set(P.ach);
-    const achAll = ACH.map(a=>{ const on = has.has(a.id), T = TIER[a.tier]; let c = 0, goal = 1; try { [c,goal] = a.p(P); } catch(e){}
-      const pct = on ? 100 : Math.max(0, Math.min(99, Math.floor(c/goal*100))), hide = a.secret && !on;
-      return {id:a.id, cat:a.cat, on, name: hide ? 'Secret' : a.name, desc: hide ? 'A hidden achievement. Keep playing to find it.' : a.desc,
-        tierName:T.n.toUpperCase(), tierShort:T.s, tierColor:T.c, reward:'+'+T.r+' tix', pct, barColor: on ? '#00B451' : T.c,
-        prog: on ? 'Unlocked' : goal>1 ? fmt(Math.min(c,goal))+' / '+fmt(goal) : 'Locked', badgeBg: on ? T.c : '#E6E2CF', mark: on ? '✓' : hide ? '?' : T.s, border: on ? T.c : 'transparent', secret:!!a.secret}; });
-    const achCount = achAll.filter(a=>a.on).length;
-    const filt = s.achFilter;
-    const achShown = achAll.filter(a=> filt=='All' ? true : filt=='Unlocked' ? a.on : filt=='Locked' ? !a.on : a.cat==filt).sort((a,b)=>(b.on-a.on)||(b.pct-a.pct));
+    const WA = window.WLA && window.WLA.list().length ? window.WLA : null, atM = P.at||{};
+    const achCount = WA ? WA.level(P) : (P.ach||[]).length, achTot = WA ? WA.total() : 1;
+    const achNear = !WA ? [] : WA.list().filter(f => (atM[f.id]|0) < f.goals.length && !f.secret).map(f => { const t = atM[f.id]|0, {v} = WA.tierOf(P, f), g = f.goals[t], prev = t ? f.goals[t-1] : 0, T = WA.TIERS[t];
+      return {name:f.e+' '+f.name, desc:f.desc(g), pct: Math.max(0, Math.min(99, Math.floor((v-prev)/Math.max(1e-9,g-prev)*100))), tierColor:T.c, tierShort:T.n[0], reward:'+'+fmtN(WA.tixReward(P, t))+' 🎟', prog:fmtN(Math.min(v,g))+' / '+fmtN(g)}; }).sort((a,b)=>b.pct-a.pct);
     // auth
     const accts = s.account && !this.cloudUid ? getAccts() : {}, me = this.cloudUid ? this.cloudMeta : (s.account ? accts[s.account] : null);
     const isSignup = s.authMode=='signup', pw = s.aPass||'', email = (s.aEmail||'').trim();
@@ -1806,19 +1859,19 @@ class Component extends DCLogic {
       daily: {name:dg.title, target:dg.target.toLocaleString(), status: dailyDone?'Completed today':'Not yet cleared'},
       openDaily: ()=>this.open(dg.id), openPrizes: ()=>this.setState({prizesOpen:true}), closePrizes: ()=>this.closeAll(), closeGame: ()=>this.closeAll(),
       player: {x:s.px, y:s.py, ex:9+dx*6, ey:9+dy*6}, nearLabel,
-      achCount, achTotal: ACH.length, achPct: Math.round(achCount/ACH.length*100),
-      tierCounts: [1,2,3,4].map(t=>({c:TIER[t].c, label:TIER[t].n+' '+achAll.filter((a,i)=>ACH[i].tier==t && a.on).length+'/'+ACH.filter(a=>a.tier==t).length})),
-      nextAch: achAll.filter(a=>!a.on && !a.secret).sort((a,b)=>b.pct-a.pct).slice(0,3),
+      walkImg: avSVG(P.avatar, (P.ach||[]).length, {noPet:true}), hasPet: avNorm(P.avatar).pet > 0, petImg: avSVG(P.avatar, 0, {petOnly:true}), pet: this._petPos || {x:s.px-34, y:s.py+10},
+      trailDots: (this._trail||[]).map((d,i)=>{ const age = Math.min(1, (performance.now()-d.t)/1100); return {key:d.t+'-'+i, x:d.x, y:d.y, op:(1-age).toFixed(2), sc:(1.1-age*.6).toFixed(2), e:AVP.trail.o[avNorm(P.avatar).trail].e||''}; }),
+      achCount, achTotal: achTot, achPct: Math.round(achCount/achTot*100), achRef: this.achRef, avRef: this.avRef,
+      tierCounts: WA ? [0,1,2,3,4].map(t=>({c:WA.TIERS[t].c, label:WA.TIERS[t].n+' '+WA.list().filter(f=>(atM[f.id]|0)>t).length+'/'+WA.list().filter(f=>f.goals.length>t).length})) : [],
+      nextAch: achNear.slice(0,3),
       openAch: ()=>{ this.keys = {}; this.setState({achOpen:true}); }, closeAch: ()=>this.setState({achOpen:false}), achOpen: s.achOpen,
-      achFilters: ['All','Arcade','Machines','Learning','Collections','Rebirth','Secret','Unlocked','Locked'].map(f=>({label:f, bg: filt==f?'#015640':'#ffffff', fg: filt==f?'#ffffff':'#015640', pick:()=>this.setState({achFilter:f})})),
-      achShown,
       // account
       acctHeadLabel: s.account ? '● '+(me?me.name:s.account) : 'SIGN UP / LOG IN', acctHeadBg: s.account ? 'transparent' : '#D5F367', acctHeadFg: s.account ? '#D5F367' : '#015640',
       acctInitial: s.account ? ((me&&me.name)||s.account)[0].toUpperCase() : '?', acctAvatarBg: s.account ? '#D5F367' : '#EDE9D8',
       acctKicker: s.account ? 'MEMBER' : 'PLAYING AS GUEST', acctName: s.account ? (me?me.name:s.account) : 'Guest',
       acctSub: s.account ? s.account : 'Make an account so your tickets and trophies have a home', acctBtn: s.account ? 'Account' : 'Sign up',
       acctEmail: s.account || '', acctSince: me ? me.created : '',
-      acctStats: [{k:'TICKETS',v:fmtN(P.tickets)},{k:'TROPHIES',v:achCount+'/'+ACH.length},{k:'GAMES',v:plays(P).toLocaleString()}],
+      acctStats: [{k:'TICKETS',v:fmtN(P.tickets)},{k:'TROPHIES',v:achCount+'/'+achTot},{k:'GAMES',v:plays(P).toLocaleString()}],
       openAccount: ()=>this.openAuth(s.account ? 'account' : 'signup'), closeAuth: ()=>this.setState({authOpen:false}), logout: ()=>this.logout(),
       authOpen: s.authOpen, isAccountView: s.authMode=='account' && !!s.account, isAuthForm: s.authMode!='account' || !s.account,
       authTitle: s.authMode=='account' && s.account ? 'Your account' : isSignup ? 'Create your account' : 'Welcome back',
@@ -1918,14 +1971,8 @@ class Component extends DCLogic {
       mostPlayed: !s.prizesOpen ? [] : (()=>{ const rows = GAMES.map(gm=>({id:gm.id, name:gm.title, color:gm.color, icon:ICON(gm.id), n:P.played[gm.id]||0, best:(P.best[gm.id]||0).toLocaleString()})).sort((a,b)=>b.n-a.n); const mxp = Math.max(1, ...rows.map(r=>r.n)); return rows.map((r,i)=>({...r, rank:i+1, w:Math.round(r.n/mxp*100)+'%', nLabel:r.n+(r.n==1?' play':' plays')})); })(),
       playedTotal: plays(P).toLocaleString()+' games finished in total · kept with your profile across every update',
       avImg: avSVG(P.avatar, (P.ach||[]).length), avLevel: (P.ach||[]).length, avFrameName: (avFrame((P.ach||[]).length)||{n:'No'}).n+' frame',
-      avCount: (()=>{ let t = 0, u = 0; AVK.forEach(k=>AVP[k].o.forEach(o=>{ t++; if (avOk(o, P, s.admin)) u++; })); return u+' / '+t+' looks unlocked'; })(),
-      avRandom: ()=>{ const a = {}; AVK.forEach(k=>{ const ok = AVP[k].o.map((o,i)=>[o,i]).filter(([o])=>avOk(o, P, s.admin)); a[k] = ok[Math.floor(Math.random()*ok.length)][1]; }); this.setP({avatar:a}); window.Arcade && window.Arcade.sfx('blip'); },
+      acctTitle: window.WLA ? window.WLA.title(P) : '', hasTitle: !!(window.WLA && window.WLA.title(P)), acctPins: window.WLA ? window.WLA.pins(P).map(x=>({key:x.id, e:x.e, g:x.g, name:x.name})) : [],
       avOpen: !!s.avOpen, openAv: ()=>{ this.keys = {}; this.setState({avOpen:true, avTab:s.avTab||'hat'}); }, closeAv: ()=>this.closeAll(),
-      avTabs: [...AVTABS.map(k=>[k,AVP[k].t]),['cursor','Cursor']].map(([id,t])=>({id, t, bg:(s.avTab||'hat')==id?'#015640':'#ffffff', fg:(s.avTab||'hat')==id?'#ffffff':'#015640', pick:()=>this.setState({avTab:id})})),
-      avOpts: !s.avOpen ? [] : (()=>{ const tab = s.avTab||'hat', n = (P.ach||[]).length, adm = s.admin, cur = avNorm(P.avatar);
-        if (tab=='cursor') return CURSORS.map(c=>{ const ok = adm || n>=c.r, on = (P.cursor||'')==c.id; return {key:'c'+c.id, n:c.n, img: c.id ? svgURI('<g transform="translate(16 16)">'+c.s+'</g>') : svgURI('<path d="M20 12l0 34l9-9l6 14l6-3l-6-13l12 0z" fill="#fff" stroke="#121313" stroke-width="3"/>'), lockTxt: ok?(on?'Selected':''):'🔒 '+c.r+' achievements', border: on?'#015640':'transparent', bg: ok?'#ffffff':'#e8e4d4', op: ok?1:.55, pick:()=>{ if (!ok) { window.Arcade && window.Arcade.sfx('bad'); return; } this.setP({cursor:c.id}); applyCursor(c.id); window.Arcade && window.Arcade.sfx('blip'); }}; });
-        return AVP[tab].o.map((o,i)=>{ const ok = avOk(o, P, adm), on = cur[tab]==i; const look = {...cur, [tab]:i}; if (tab=='hair' || tab=='hairc') { look.hat = 0; if (tab=='hairc' && !look.hair) look.hair = 1; } return {key:tab+i, n:o.n, img: avSVG(look, n), lockTxt: ok?(on?'Wearing':''):avNeed(o), border: on?'#015640':'transparent', bg: ok?'#ffffff':'#e8e4d4', op: ok?1:.55, pick:()=>{ if (!ok) { window.Arcade && window.Arcade.sfx('bad'); return; } this.setP({avatar:{...cur, [tab]:i}}); window.Arcade && window.Arcade.sfx('blip'); }}; }); })(),
-      avNext: (()=>{ const n = (P.ach||[]).length; const all = [...AVK.flatMap(k=>AVP[k].o.filter(o=>!o.rb&&!o.pr).map(o=>({r:o.r||0,n:o.n+' '+AVP[k].t.toLowerCase()}))), ...CURSORS.map(c=>({r:c.r,n:c.n+' cursor'}))].filter(x=>x.r>n).sort((a,b)=>a.r-b.r)[0]; return all ? 'Next unlock: '+all.n+' at '+all.r+' achievements ('+(all.r-n)+' to go)' : 'Everything unlocked. Legend!'; })(),
       hallPlayers: lbRows('_tix','all',6), hallEmpty: lbRows('_tix','all',1).length==0,
       toasts: s.toasts,
     };
