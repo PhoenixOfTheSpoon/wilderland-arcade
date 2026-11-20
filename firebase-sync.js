@@ -87,5 +87,10 @@ WLCloud.mutes = () => MUTES;
 WLCloud.kick = async (uid, minutes) => { const cur = await getDoc(CTRL); const kicks = { ...((cur.exists() && cur.data().kicks) || {}) }; const now = Date.now();
   Object.keys(kicks).forEach(k => { if (kicks[k] < now) delete kicks[k]; }); if (minutes > 0) kicks[uid] = now + minutes * 60000; else delete kicks[uid]; return ctrlSet({ kicks }); };
 WLCloud.kickedUntil = uid => ((C.kicks || {})[uid]) || 0;
+// Admin activity tracker: short notes about what signed-in players do (games finished, rebirths, big prizes, coming online).
+// Stored next to the leaderboards like chat. Only usernames and game events — never emails or personal info.
+const ACT = collection(db, 'boards', '_activity', 'scores');
+WLCloud.logAct = row => addDoc(ACT, { ...row, s: 0, d: new Date().toISOString().slice(0, 10), at: serverTimestamp() });
+WLCloud.actListen = (cb, n = 200) => onSnapshot(query(ACT, orderBy('at', 'desc'), limit(n)), snap => cb(snap.docs.map(d => ({ id: d.id, ...d.data(), at: d.data().at && d.data().at.toMillis ? d.data().at.toMillis() : Date.now() }))), () => cb(null));
 window.WLCloud = WLCloud;
 window.dispatchEvent(new Event('wlcloud-ready'));

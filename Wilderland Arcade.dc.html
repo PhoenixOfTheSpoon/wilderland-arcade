@@ -343,6 +343,22 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
           <div><div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#8a6100;">OPERATOR ACCESS · ADMIN ∞</div><div style="font-size:28px; font-weight:700; color:#015640;">Admin tools</div><div style="font-size:13px; font-weight:500; color:#3d3d3d;">Games played in admin mode never save, pay tickets or post scores.</div></div>
           <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;"><button onClick="{{ adminOff }}" style="background:#F9BF01; color:#121313; border:none; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;">Turn admin mode off · play normally</button><button onClick="{{ closeAdmin }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer;">Close</button></div>
         </div>
+        <div style="background:#ffffff; border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:8px; border:2px solid #015640;">
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;"><div style="font-size:12px; font-weight:700; letter-spacing:0.1em; color:#015640;">ACTIVITY TRACKER · LIVE</div><div style="font-size:12px; font-weight:700; color:#00B451;">🟢 {{ actOnline }} online now</div></div>
+          <div style="font-size:12px; color:#3d3d3d;"><b>Online:</b> {{ actOnlineNames }}</div>
+          <div style="font-size:12px; color:#3d3d3d;">{{ actStats }}</div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+            <input class="wl-field" value="{{ actFilter }}" onChange="{{ inActFilter }}" onKeyDown="{{ stopKey }}" placeholder="Filter by player" aria-label="Filter activity by player" style="flex:1 1 140px; min-width:0; font-family:inherit; font-size:13px; border:1.5px solid #015640; border-radius:10px; padding:5px 10px;">
+            <button onClick="{{ clearActFilter }}" style="border:1.5px solid #015640; border-radius:999px; padding:5px 10px; font-weight:700; font-size:12px; cursor:pointer; background:#ffffff; color:#015640;">Clear</button>
+            <sc-for list="{{ actKinds }}" as="ak" hint-placeholder-count="4"><button onClick="{{ ak.pick }}" style="border:1.5px solid #015640; border-radius:999px; padding:5px 10px; font-weight:700; font-size:12px; cursor:pointer; background:{{ ak.bg }}; color:{{ ak.fg }};">{{ ak.label }}</button></sc-for>
+          </div>
+          <sc-if value="{{ actErr }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px; font-weight:700; color:#B3001B;">{{ actErr }}</div></sc-if>
+          <div style="max-height:260px; overflow-y:auto; display:flex; flex-direction:column; gap:2px; border-top:1px solid #e4dfca; padding-top:6px;">
+            <sc-if value="{{ actEmpty }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px; color:#6a6a6a;">No activity yet. Players show up here when they’re logged in and playing.</div></sc-if>
+            <sc-for list="{{ actList }}" as="ar" hint-placeholder-count="6"><div style="display:flex; gap:8px; align-items:baseline; font-size:13px; padding:3px 2px; border-bottom:1px dashed #eee8d2;"><span style="width:20px; text-align:center;">{{ ar.ico }}</span><button onClick="{{ ar.pick }}" title="Show only this player" style="border:none; background:none; padding:0; font-weight:800; color:#015640; cursor:pointer; font-size:13px;">{{ ar.who }}</button><span style="font-size:11px; color:#AB2372; font-weight:700;">{{ ar.rb }}</span><span style="flex:1; min-width:0; color:#3d3d3d;">{{ ar.what }}</span><span style="font-size:11px; color:#8a8a8a; white-space:nowrap;">{{ ar.when }}</span></div></sc-for>
+          </div>
+          <div style="font-size:11px; color:#4a4a4a;">Shows signed-in players only: coming online, games finished, rebirths and big prize buys. Click a name to see just that player.</div>
+        </div>
         <div style="background:#ffffff; border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:8px; border:2px solid #B3001B;">
           <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;"><div style="font-size:12px; font-weight:700; letter-spacing:0.1em; color:#B3001B;">MAINTENANCE · CLOSE OR REOPEN</div><div style="font-size:12px; font-weight:700; color:#015640;">Now: {{ downStatus }}</div></div>
           <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
@@ -1126,7 +1142,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-11-21c';
+const BUILD = '2026-11-21d';
 const SCRIPTS = ['arcade-core.js','prizes2.js','economy.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-edu.js','games-idle.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
@@ -1203,7 +1219,7 @@ class Component extends DCLogic {
   async cloudLogin(u, carry, name){ if (this.state.game) this.closeAll(); let rec = null; try { rec = await window.WLCloud.loadProfile(u.uid); } catch(e){}
     let P = rec && rec.P ? normP(rec.P) : (carry ? normP({...this.P, saves:{}}) : normP(getJSON(KEY+':cloud:'+u.uid, {})));
     this.cloudUid = u.uid; this.acct = null; this.cloudMeta = {name: (rec && rec.name) || name || (u.email||'player').split('@')[0].slice(0,16), created: (rec && rec.created) || today(), email: u.email};
-    this.P = P; this.setState({...P, account:u.email||u.displayName||'Player', authOpen:false, aBusy:false, aPass:'', aPass2:'', aMsg:'', aInfo:''}); this.persist(true);
+    this.P = P; setTimeout(()=>this.logAct('join', 'came online · '+fmtN(P.tickets||0)+' 🎟 · '+(P.stars||0)+' ⭐'), 1500); this.setState({...P, account:u.email||u.displayName||'Player', authOpen:false, aBusy:false, aPass:'', aPass2:'', aMsg:'', aInfo:''}); this.persist(true);
     try { const C = window.WLCloud, ra = C.resetAt ? C.resetAt() : 0;
       if (ra && rec && rec.P && (rec.updated||0) < ra && (this.P.resetSeen||0) < ra) { this.P = normP({username:this.P.username, avatar:this.P.avatar, savesV:2, resetSeen:ra}); this.setState({...this.P}); this.persist(true); this.toast('THE ARCADE WAS RESET · FRESH START FOR EVERYONE'); }
       if (ra && (this.P.resetSeen||0) < ra) { this.P = {...this.P, resetSeen:ra}; }
@@ -1260,6 +1276,7 @@ class Component extends DCLogic {
     this.autoIv = setInterval(()=>{ const s = this.state; if (s.admin && s.autoHint && s.game && s.game!='simon' && s.hint && !s.payout) { try { s.hint.run(true); } catch(e){} } }, 1100);
     this.saveIv = setInterval(()=>{ if (this.mounted) this.saveGame(); }, 5000);
     // Active play time: only seconds where you pressed/tapped something in the last 25 s (and the tab is visible) count toward tickets.
+    this._hb = setInterval(() => { if (Date.now() - (this._lastAct||0) < 120000) { const g = this.state.game && GAMES.find(x=>x.id==this.state.game); this.logAct('here', g ? 'playing '+g.title : 'on the arcade floor'); } }, 240000);
     this._poke = () => { this._lastAct = Date.now(); if (window.Arcade) window.Arcade.lastAct = this._lastAct; }; window.addEventListener('keydown', this._poke, true); window.addEventListener('pointerdown', this._poke, true);
     this.actIv = setInterval(()=>{ if (this.mounted && Date.now()-(this._lastAct||0) < 25000 && !(typeof document!='undefined' && document.hidden)) this._act = (this._act||0) + 1; }, 1000);
     this.onHide = () => { if (this.mounted) { this.saveGame(); this.endSess(); this.startSess(this.mounted); } this.persist(true); };
@@ -1287,12 +1304,13 @@ class Component extends DCLogic {
     this.onResize(); setTimeout(this.onResize, 100); setTimeout(this.onResize, 600);
     setTimeout(()=>this.setP({}), 900);
   }
-  componentWillUnmount(){ if (this._chatOff) this._chatOff(); clearInterval(this.downIv); window.removeEventListener('wl-down', this.onDown); clearInterval(this.actIv); window.removeEventListener('keydown', this._poke, true); window.removeEventListener('pointerdown', this._poke, true); this.onHide && this.onHide(); cancelAnimationFrame(this.raf); clearInterval(this.autoIv); clearInterval(this.saveIv); window.removeEventListener('keydown',this.kd); window.removeEventListener('keyup',this.ku); window.removeEventListener('resize',this.onResize);
+  componentWillUnmount(){ clearInterval(this._hb); this.closeActivity(); if (this._chatOff) this._chatOff(); clearInterval(this.downIv); window.removeEventListener('wl-down', this.onDown); clearInterval(this.actIv); window.removeEventListener('keydown', this._poke, true); window.removeEventListener('pointerdown', this._poke, true); this.onHide && this.onHide(); cancelAnimationFrame(this.raf); clearInterval(this.autoIv); clearInterval(this.saveIv); window.removeEventListener('keydown',this.kd); window.removeEventListener('keyup',this.ku); window.removeEventListener('resize',this.onResize);
     window.removeEventListener('pagehide',this.onHide); window.removeEventListener('beforeunload',this.onHide); document.removeEventListener('visibilitychange',this.onVis); this.ro && this.ro.disconnect(); this.unmountGame(); }
   componentDidUpdate(){
+    if (this.state.adminOpen && !this._actOff) this.openActivity(); if (!this.state.adminOpen && this._actOff) this.closeActivity();
     if (window.WLP && this._loginFor !== this.profKey()) { this._loginFor = this.profKey(); const W2 = window.WLP; setTimeout(()=>{ const l = W2.login(this.P); const c = W2.ensureChal({...this.P, ...(l||{})}, GAMES); if (l || c) { this.setP({...(l||{}), ...(c||{})}); if (l && l.login.streak > 1) this.toast('DAY '+l.login.streak+' LOGIN STREAK · BONUS ×'+W2.fmt(W2.globalMult(this.P))); } }, 400); }
     if (this.state.prizesOpen && this.pzRef.current && !this._pzOff && window.WLP) { const P0 = () => this.P;
-      this._pzOff = window.WLP.mount(this.pzRef.current, { P:P0, setP:pt=>this.setP(pt), toast:t=>this.toast(t), sfx:n=>window.Arcade && window.Arcade.sfx(n), admin:()=>!!this.state.admin, lowFx:()=>LOWFX, tab:(t=>{ this._pzTab = null; return t; })(this._pzTab),
+      this._pzOff = window.WLP.mount(this.pzRef.current, { P:P0, setP:pt=>this.setP(pt), toast:t=>this.toast(t), sfx:n=>window.Arcade && window.Arcade.sfx(n), admin:()=>!!this.state.admin, log:(k,t)=>this.logAct(k,t), lowFx:()=>LOWFX, tab:(t=>{ this._pzTab = null; return t; })(this._pzTab),
         games:()=>GAMES, icon:id=>ICON(id), classicArt: Object.fromEntries(PRIZES.map(pz=>[pz.id, PZ(pz.art)])) }); }
     if (window.WLE && !this._econAttached) { this._econAttached = true; window.WLE.attach(this.econApi()); }
     if (window.WLE && window.WLP && this._welcomeFor !== this.profKey()) { this._welcomeFor = this.profKey(); setTimeout(()=>this.migrateEcon(), 600); }
@@ -1418,8 +1436,19 @@ class Component extends DCLogic {
         if (this._pzOff) { try { this._pzOff(); } catch(e){} this._pzOff = null; } if (this._ckOff) { try { this._ckOff(); } catch(e){} this._ckOff = null; } this.forceUpdate();
         const info = {stars:rb.stars, total:this.P.stars, free:Math.max(0,(this.P.stars||0)-(this.P.starsSpent||0)), n:this.P.rebirths, next:W2.rebirthNeed(this.P), starMult:W2.starMult(this.P)};
         if (window.WLE) window.WLE.celebrate(info); else W2.reveal(W2.rebirthCard(rb.stars, this.P.stars, this.P.rebirths), 'REBIRTH!', LOWFX);
-        this.toast('REBIRTH #'+this.P.rebirths+' · +'+rb.stars+' GOLDEN STAR'+(rb.stars>1?'S':'')); } }
+        this.toast('REBIRTH #'+this.P.rebirths+' · +'+rb.stars+' GOLDEN STAR'+(rb.stars>1?'S':'')); this.logAct('rebirth', 'REBIRTH #'+this.P.rebirths+' · +'+rb.stars+' ⭐'); } }
       finally { this._rebirthing = false; } }); }
+  // ---- activity tracker (admins see it in Admin tools) ----
+  logAct(k, t){ const C = window.WLCloud; if (!C || !C.logAct || !this.cloudUid || this.state.admin) return;
+    const now = Date.now(); this._actQ = (this._actQ||[]).concat([{k, t:String(t).slice(0,120)}]).slice(-6);
+    this._actHour = (this._actHour||[]).filter(x => now - x < 3600e3); if (this._actHour.length >= 90) return;
+    if (this._actT) return; const wait = Math.max(0, 6000 - (now - (this._actLast||0)));
+    this._actT = setTimeout(() => { this._actT = null; const q = this._actQ||[]; this._actQ = []; if (!q.length || !this.cloudUid) return; this._actLast = Date.now(); this._actHour.push(this._actLast);
+      const row = q.length == 1 ? q[0] : {k:q[q.length-1].k, t:q.map(x=>x.t).join(' · ').slice(0,240)};
+      C.logAct({uid:this.cloudUid, u:(this.P.username || (this.cloudMeta && this.cloudMeta.name) || 'player').slice(0,16), k:row.k, t:row.t, r:this.P.rebirths||0}).catch(()=>{}); }, wait); }
+  openActivity(){ const C = window.WLCloud; if (!C || !C.actListen) return this.setState({actErr:'Activity needs the online database — open the real site and log in as jonah@wilderland.academy.'});
+    if (!this._actOff) this._actOff = C.actListen(list => { if (!list) return this.setState({actErr:'Activity can’t load right now.'}); this.setState({actRows:list, actErr:''}); }); }
+  closeActivity(){ if (this._actOff) { try { this._actOff(); } catch(e){} this._actOff = null; } }
   econApi(){ return { P:()=>this.P, setP:pt=>this.setP(pt), toast:t=>this.toast(t), sfx:n=>window.Arcade && window.Arcade.sfx(n), admin:()=>!!this.state.admin, addTix:(n,f,c)=>this.addTix(n,f,c) }; }
   // One-time move to the new economy. Nothing is wiped: tickets, prizes, scores, stars and achievements all stay.
   migrateEcon(){ const P = this.P;
@@ -1485,6 +1514,7 @@ class Component extends DCLogic {
     this.setP({best, played, daily, saves, tickets:P.tickets+tix, earned:P.earned+tix, stats:{...P.stats, sum}, ...extra});
     if (WP) { const c = WP.onFinish(this.P, id, score, tix); if (c) this.setP(c); }
     if (window.WLE && tix > 0) window.WLE.fly(tix);
+    { const g = GAMES.find(x=>x.id==id); this.logAct('play', 'finished '+(g?g.title:id)+' · score '+fmtN(score)+(tix>0?' · +'+fmtN(tix)+' 🎟':'')+(learn?' · learn mode':'')); }
     if (this.P.username) this.addScore(id, score, learn); else if (!this._unameNag) { this._unameNag = true; setTimeout(()=>this.toast('CREATE A USERNAME TO JOIN THE LEADERBOARD'), 1200); }
     this.setState({payout:'+'+fmtN(tix)+' tickets'+(lines.length?' · '+lines.join(' · '):'')});
     window.Arcade.sfx('coin'); lines.filter(l=>/HIGH|DAILY|PERFECT|JACKPOT|LUCKY/.test(l)).forEach(l=>this.toast(l));
@@ -1700,6 +1730,17 @@ class Component extends DCLogic {
       toggleImmortal: ()=>{ const v=!s.immortal; if (window.Arcade) window.Arcade.immortal = v; this.setState({immortal:v}); window.Arcade && window.Arcade.sfx(v?'coin':'blip'); },
       codeOpen: s.codeOpen, codeVal: s.codeVal, codeMsg: s.codeMsg, adminLabel: s.admin ? 'ADMIN ∞' : 'CODE',
       openCode: ()=>{ this.keys = {}; if (s.admin) return this.setState({adminOpen:true, admArm:'', admMsg:''}); this.setState({codeOpen:true, codeVal:'', codeMsg:''}); },
+      ...(()=>{ const rows = s.actRows||[], now = Date.now(), f = String(s.actFilter||'').toLowerCase().trim(), kf = s.actKind||'all';
+        const ago = t => { const x = Math.max(0, (now - t)/1000); return x < 60 ? Math.floor(x)+'s' : x < 3600 ? Math.floor(x/60)+'m' : x < 86400 ? Math.floor(x/3600)+'h' : Math.floor(x/86400)+'d'; };
+        const KI = {join:'🟢', here:'🕹️', play:'🏁', rebirth:'⭐', prize:'🏆', star:'🌟'};
+        const online = {}; rows.forEach(r => { if (now - r.at < 6*60000 && !online[r.uid]) online[r.uid] = r.u; });
+        const list = rows.filter(r => (!f || String(r.u||'').toLowerCase().includes(f)) && (kf=='all' || (kf=='play' ? r.k=='play' : kf=='big' ? ['rebirth','prize','star'].includes(r.k) : kf=='online' ? ['join','here'].includes(r.k) : true))).slice(0, 120)
+          .map(r => ({key:r.id, ico:KI[r.k]||'•', who:r.u||'player', what:r.t||'', when:ago(r.at)+' ago', rb:r.r ? '↻'+r.r : '', pick:()=>this.setState({actFilter:r.u||''})}));
+        const today = rows.filter(r => now - r.at < 86400e3), players = new Set(today.map(r=>r.uid)).size, games = today.filter(r=>r.k=='play').length;
+        return { actList:list, actEmpty:!list.length, actErr:s.actErr||'', actOnline:Object.keys(online).length, actOnlineNames:Object.values(online).slice(0,12).join(', ') || 'nobody right now',
+          actStats:players+' players · '+games+' games finished · '+today.filter(r=>r.k=='rebirth').length+' rebirths in the last 24 h', actFilter:s.actFilter||'',
+          inActFilter:e=>this.setState({actFilter:e.target.value}), clearActFilter:()=>this.setState({actFilter:''}),
+          actKinds:[['all','All'],['play','Games'],['big','Rebirths & prizes'],['online','Online']].map(([k,l])=>({key:k, label:l, bg:kf==k?'#015640':'#ffffff', fg:kf==k?'#ffffff':'#015640', pick:()=>this.setState({actKind:k})})) }; })(),
       adminOpen: !!s.adminOpen, closeAdmin: ()=>this.setState({adminOpen:false, admArm:''}),
       admTix: s.admTix ?? '', inAdmTix: e=>this.setState({admTix:e.target.value.replace(/[^0-9]/g,'').slice(0,10), admArm:''}), admMsg: s.admMsg||'',
       admNow: 'Tickets '+fmtN(P.tickets)+' · lifetime earned '+fmtN(P.earned)+' · '+Object.keys(P.best).length+' high scores · '+Object.keys(P.saves).length+' saved games',

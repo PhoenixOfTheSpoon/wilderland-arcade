@@ -383,9 +383,9 @@ W.mount = (root, api) => {
     const prizes = {...(p.prizes||{}), [it.id]: ((p.prizes||{})[it.id]||0)+n};
     let pp = {...p, prizes}, ch = {}; for (let i = 0; i < Math.min(n, 200); i++) { const c = W.onBuy(pp); if (!c) break; pp = {...pp, ...c}; ch = c; }
     if (isStar(it)) { if (freeStars(p) < cost) { api.sfx('bad'); api.toast('NEED '+(cost - freeStars(p))+' MORE GOLDEN STARS'); return; }
-      set({starsSpent:(p.starsSpent||0)+cost, prizes, ...ch}); const hd = W.applyHead(P()); if (hd) set(hd); reveal(it, lbl); const pk = W.perkOf(it); if (pk) api.toast('PERMANENT POWER · '+pk.t.toUpperCase()); checkCols(); render(); return; }
+      set({starsSpent:(p.starsSpent||0)+cost, prizes, ...ch}); const hd = W.applyHead(P()); if (hd) set(hd); reveal(it, lbl); const pk = W.perkOf(it); if (pk) api.toast('PERMANENT POWER · '+pk.t.toUpperCase()); if (api.log) api.log('star', 'bought '+(n>1?n+'× ':'')+it.n+' for '+cost+' ⭐'); checkCols(); render(); return; }
     if ((p.tickets||0) < cost) { api.sfx('bad'); api.toast('NEED '+W.fmt(cost - p.tickets)+' MORE TICKETS'); return; }
-    set({tickets:p.tickets-cost, prizes, ...ch}); reveal(it, lbl); checkCols(); render(); };
+    set({tickets:p.tickets-cost, prizes, ...ch}); reveal(it, lbl); if (api.log && it.r >= 4) api.log('prize', 'bought '+(n>1?n+'× ':'')+it.n+' ('+R[it.r].n+')'); checkCols(); render(); };
 
   const head = E('div'); const body = E('div'); wrap.append(head, body);
   const renderHead = () => { head.innerHTML = ''; const p = P();
