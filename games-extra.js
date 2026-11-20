@@ -3,6 +3,8 @@ const A = window.Arcade, C = A.C, el = A.el, {board, splash} = A.ui;
 
 // ---------- 2048 family: sizes 3–6, pairs (×2) or triples (×3), three move styles ----------
 A.register('2048', { mount(host, api){
+  // Scores build 10× slower than before (each merge is worth a tenth of the old points) and are capped so they can't run away.
+  { const a0 = api; api = {...a0, score: n => a0.score(Math.floor(n)), over: n => a0.over(Math.floor(n))}; }
   const b = board(host, C.sand);
   const PAL=['#EDE9D8','#e4f7a8',C.lime,'#9fe07a',C.green,'#028a4e',C.forest,C.sky,C.blue,C.pink,C.gold,'#AB2372',C.orange,C.ink];
   let cfg={size:4,base:2,mode:'smooth'}; try{Object.assign(cfg,JSON.parse(localStorage.getItem('wl-2048-cfg'))||{});}catch(e){}
@@ -53,7 +55,7 @@ A.register('2048', { mount(host, api){
     if(!canMove()&&undos>0&&hist.length&&!A.learnOn()){ over=true; A.ui.choice(b,'STUCK!','Spend an undo? You have '+undos+' left.',[['↶ Undo',()=>undo()],['End game',()=>{ over=false; endNow(); }]]); return; }
     endNow(); };
   const endNow=()=>{
-    if(!canMove()){over=true;A.sfx('over');if(tiles.some(t=>!t.dead&&t.v>=2048))api.perfect&&api.perfect();api.over(score);setTimeout(()=>splash(b,'NO MOVES LEFT','Score '+score+' · best tile '+Math.max(...tiles.map(t=>t.v)),'New board',reset),400);} };
+    if(!canMove()){over=true;A.sfx('over');if(tiles.some(t=>!t.dead&&t.v>=2048))api.perfect&&api.perfect();api.over(score);setTimeout(()=>splash(b,'NO MOVES LEFT','Score '+Math.floor(score)+' · best tile '+Math.max(...tiles.map(t=>t.v)),'New board',reset),400);} };
   const move=d=>{ if(over)return; if(pending&&(cfg.mode=='glide'||cfg.mode=='crawl'))return; settle(); const snapB=tiles.filter(t=>!t.dead).map(t=>({r:t.r,c:t.c,v:t.v})), scB=score;
     const n=2, D=dur(); let moved=false; const merged=[];
     for(let k=0;k<N;k++){ let line=[...Array(N)].map((_,j)=>d=='L'||d=='R'?[k,j]:[j,k]); if(d=='R'||d=='D')line.reverse();
@@ -61,7 +63,7 @@ A.register('2048', { mount(host, api){
       while(i<list.length){ const run=list.slice(i,i+n);
         const [nr,nc]=line[t];
         if(run.length==n&&run.every(x=>x.v==run[0].v)){ run.forEach((x,j)=>{ if(x.r!=nr||x.c!=nc)moved=true; x.r=nr;x.c=nc; if(j){x.dead=true;x.el.style.zIndex=1;} });
-          run[0].el.style.zIndex=3; merged.push(run[0]); score+=run[0].v*cfg.base; moved=true; i+=n; }
+          run[0].el.style.zIndex=3; merged.push(run[0]); score=Math.min(2e6, score+run[0].v*cfg.base/10); moved=true; i+=n; }
         else { const x=list[i]; if(x.r!=nr||x.c!=nc)moved=true; x.r=nr;x.c=nc; i++; }
         t++; } }
     if(!moved)return; movedAny=true; hist.push({cells:snapB,score:scB}); if(hist.length>30)hist.shift(); paintUndo();

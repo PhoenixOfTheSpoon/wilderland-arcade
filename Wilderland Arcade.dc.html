@@ -58,7 +58,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
       <div style="display:flex; align-items:center; gap:8px; background:#D5F367; color:#015640; font-weight:700; font-size:18px; padding:8px 16px; border-radius:999px;">
         <span style="display:inline-block; width:18px; height:12px; background:#015640; border-radius:3px;"></span>{{ tickets }} tickets
       </div>
-      <div onClick="{{ openPrizes }}" title="Your ticket multiplier · tap to upgrade it" style="cursor:pointer; background:#015640; color:#D5F367; border:1.5px solid #D5F367; font-weight:700; font-size:15px; padding:7px 13px; border-radius:999px; white-space:nowrap;">{{ multLabelHead }}</div>
+      <div onClick="{{ openMultCats }}" title="Your total multiplier · tap for the breakdown by category" style="cursor:pointer; background:#015640; color:#D5F367; border:1.5px solid #D5F367; font-weight:700; font-size:15px; padding:7px 13px; border-radius:999px; white-space:nowrap;">{{ multLabelHead }}</div>
       <button onClick="{{ toggleEdu }}" aria-pressed="{{ eduPressed }}" style="background:{{ eduHeadBg }}; color:{{ eduHeadFg }}; border:1.5px solid #64CDF5; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;">{{ eduLabel }}</button>
       <button onClick="{{ openUname }}" style="background:transparent; color:#F9BF01; border:1.5px solid #F9BF01; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ unameLabel }}</button>
       <button onClick="{{ openAccount }}" style="background:{{ acctHeadBg }}; color:{{ acctHeadFg }}; border:1.5px solid #D5F367; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ acctHeadLabel }}</button>
@@ -550,7 +550,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
     <div style="position:fixed; inset:0; background:rgba(11,46,36,.9); display:flex; align-items:flex-start; justify-content:center; z-index:50; overflow-y:auto; padding:16px 10px; box-sizing:border-box;">
       <div style="background:#EDE9D8; border-radius:20px; padding:20px; width:980px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:10px; color:#121313;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
-          <div><div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#AB2372;">PRIZE COUNTER 2.0</div><div style="font-size:28px; font-weight:700; color:#015640;">Prizes, Trophies &amp; Multipliers</div></div>
+          <div><div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#AB2372;">THE ARCADE SHOP</div><div style="font-size:28px; font-weight:700; color:#015640;">Upgrades, Prizes, Avatar &amp; Wilderland</div></div>
           <button onClick="{{ closePrizes }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;">Leave · Esc</button>
         </div>
         <div ref="{{ pzRef }}"></div>
@@ -832,7 +832,7 @@ const GAMES = [
   {id:'pong',title:'Pong',name:'PONG',color:'#E9B9F7',glyph:'▯·▯',rate:0.1,target:400,pitch:'THE ORIGINAL RIVALRY'},
   {id:'memory',title:'Memory Match',name:'MEMORY',color:'#FBB99D',glyph:'◆◆',rate:0.06,target:600,pitch:'PAIRS PAY, MISSES COST'},
   {id:'whack',title:'Whack-a-Gopher',name:'WHACK',color:'#DD8B03',glyph:'• •',rate:0.12,target:600,pitch:'LIVES, NOT A CLOCK'},
-  {id:'2048',title:'2048',name:'2048',color:'#F9BF01',glyph:'2048',rate:0.02,target:16000,pitch:'JUST FOR FUN · NO TICKETS'},
+  {id:'2048',title:'2048',name:'2048',color:'#F9BF01',glyph:'2048',rate:0.02,target:16000,pitch:'MERGE TILES · SMALL TICKET PAYOUT'},
   {id:'tictactoe',title:'Tic-Tac-Toe',name:'TIC-TAC',color:'#EA55AB',glyph:'✕◯',rate:0.3,target:100,pitch:'OUTSMART THE MACHINE'},
   {id:'reaction',title:'Reaction Test',name:'REFLEX',color:'#D5F367',glyph:'◉',rate:0.12,target:300,pitch:'HOW FAST ARE YOU, REALLY'},
   {id:'typing',title:'Typing Race',name:'TYPE RACE',color:'#C7F1EE',glyph:'Aa',rate:0.12,target:300,pitch:'FINGERS ON THE HOME ROW'},
@@ -902,7 +902,7 @@ const PARENT_KEY = 'wl-arcade-parent';
 const pinRules = (a,b) => [['4–8 digits', /^\d{4,8}$/.test(a)], ['Not all one digit', a.length>0 && !/^(\d)\1+$/.test(a)], ['Not a straight run (1234)', a.length>0 && !'0123456789012345678909876543210987654321'.includes(a)], ['Codes match', a.length>0 && a===b]];
 const LEARN_NOTES = {space:'Answer a question between waves for a free power-up and bonus points.', idle:'Math geodes appear in the rock — answer the problem to crack one open for a huge pile of ore. Tapping the rock digs less.', flappy:'Fly through the gap with the right answer.', snake:'Eat the apple with the right answer.', typing:'Sight words for early readers.', whack:'Whack only gophers holding the right answer.', memory:'Match each problem with its answer.', tictactoe:'Answer a question to claim each square.', crossing:'Hop into the den with the right answer.', td:'Bonus-gold question after every wave.', breakout:'Lose the ball? Answer to keep your life.', pong:'Answer to block points scored against you.', '2048':'Stuck? Answer to clear two tiles (3 per board).', reaction:'Click only when the right answer flashes.', simon:'Wrong pad? Answer for one retry.', mines:'Hit a mine? Answer to defuse it.', connect4:'Answer a question to drop each disc.', stack:'Bonus question every 5 lines; answer for a second chance.', rootout:'This machine always counts as learning time.', trace:'This machine always counts as learning time.'};
 const fireKey = (key,type) => { try { window.dispatchEvent(new KeyboardEvent(type,{key, bubbles:true, cancelable:true})); } catch(e){} };
-const TIPS = {space:'Move with ← → (or A/D, or drag on a phone) and hold Space to fire. Catch falling power-ups: II double shot, ≋ spread, » rapid fire, ◯ shield and ✈ a rescued wing mate. Diving critters are worth double. Bosses have a boss bar — the Grand Hive Mother’s glowing core takes triple damage.',idle:'Your miners dig even while you are away. Drag two matching miners together to merge them into a stronger one. Tap a miner to sell it. Keep tapping the rock for a combo, hit the white crack for ×3, and tap golden carts as they roll by. Cash out ore for tickets any time — no limit.', snake:'Each level has a new maze. Gold apples are worth 3, mushrooms slow time, blue berries shrink your tail. Purple portals connect — and dashed edges wrap around.',breakout:'Hit with the paddle edge to angle shots. Long combos multiply every brick.',flappy:'Tap in short, steady bursts and aim for the middle of each gap.',pong:'Return off the paddle tip for steep angles the CPU struggles to reach.',memory:'Work row by row so you remember where you have already looked.',whack:'Red bombs cost a life — leave them. Every 15-hit combo earns a Quake, Freeze or Shield. The Gopher King shows up every 5 levels.','2048':'Keep your biggest tile pinned in one corner and avoid the opposite direction.',tictactoe:'Take the centre or a corner. Two threats at once is a guaranteed win.',reaction:'Watch the colour, not the words. Gold is a decoy.',typing:'Accuracy beats speed — a missed word scores nothing.',simon:'Say the colours out loud, or chunk them in threes.',mines:'A 1 touching only one hidden tile means that tile is a mine.',connect4:'The centre column is part of the most fours. Watch the diagonals.',td:'Pick a trail — the big maps have several entrances. 14 towers, each with 5 levels that change how they look; Gold Pans level forever and every pan pays. The Phantom King turns invisible: only Lanterns, Spirit Bells, Frost (close up), level-3 Totems or the R · Reveal ability can hit it then. X changes speed (½× to 5×); turn on Performance mode on slower computers.',crossing:'Wait for gaps instead of rushing. Diving turtles fade before they sink, and gators bite at the head end.',stack:'Keep the stack flat and leave one column open for long logs. A saw (X) rescues a messy bottom row.',rootout:'Purple “!” tags mark invasives early on — from level 3 the labels disappear, so read the fact cards. Every 5 perfect drops earns a weed puller.',trace:'Cover the whole grey shape — ink outside the lines costs points (it turns red). Tap Camera to write on real paper and hold it up instead.'};
+const TIPS = {space:'Move with ← → (or A/D, or drag on a phone) and hold Space to fire. Catch falling power-ups: II double shot, ≋ spread, » rapid fire, ◯ shield and ✈ a rescued wing mate. Diving critters are worth double. Bosses have a boss bar — the Grand Hive Mother’s glowing core takes triple damage.',idle:'Dig through 100 layers down to The Armageddon Core! Drag the mine to explore (or use arrows/WASD), scroll or pinch to zoom, and tap 🗺 for the map of all 100 layers. Tap the dig face to dig, grab gems, open hidden treasure rooms and tap hazards before they go off. Drag two matching miners together to merge them; tap one to sell it. Cash out ore for tickets any time.', snake:'Each level has a new maze. Gold apples are worth 3, mushrooms slow time, blue berries shrink your tail. Purple portals connect — and dashed edges wrap around.',breakout:'Hit with the paddle edge to angle shots. Long combos multiply every brick.',flappy:'Tap in short, steady bursts and aim for the middle of each gap.',pong:'Return off the paddle tip for steep angles the CPU struggles to reach.',memory:'Work row by row so you remember where you have already looked.',whack:'Red bombs cost a life — leave them. Every 15-hit combo earns a Quake, Freeze or Shield. The Gopher King shows up every 5 levels.','2048':'Keep your biggest tile pinned in one corner and avoid the opposite direction.',tictactoe:'Take the centre or a corner. Two threats at once is a guaranteed win.',reaction:'Watch the colour, not the words. Gold is a decoy.',typing:'Accuracy beats speed — a missed word scores nothing.',simon:'Say the colours out loud, or chunk them in threes.',mines:'A 1 touching only one hidden tile means that tile is a mine.',connect4:'The centre column is part of the most fours. Watch the diagonals.',td:'Pick a trail — the big maps have several entrances. 14 towers, each with 5 levels that change how they look; Gold Pans level forever and every pan pays. The Phantom King turns invisible: only Lanterns, Spirit Bells, Frost (close up), level-3 Totems or the R · Reveal ability can hit it then. X changes speed (½× to 5×); turn on Performance mode on slower computers.',crossing:'Wait for gaps instead of rushing. Diving turtles fade before they sink, and gators bite at the head end.',stack:'Keep the stack flat and leave one column open for long logs. A saw (X) rescues a messy bottom row.',rootout:'Purple “!” tags mark invasives early on — from level 3 the labels disappear, so read the fact cards. Every 5 perfect drops earns a weed puller.',trace:'Cover the whole grey shape — ink outside the lines costs points (it turns red). Tap Camera to write on real paper and hold it up instead.'};
 const RIVALS = [['littletimmy','Little Timmy',3],['jimmy','Jimmy',8],['timmy','Timmy',15],['baubau','Lord Emperor Bau Bau',30],['thetimmy','THE TIMMY',60]];
 const RIVAL = id => RIVALS.find(r=>r[0]==id);
 // Upgrade Workshop: permanent per-game upgrades bought with tickets. Games read the level with A.U(key).
@@ -916,7 +916,7 @@ const UPG_RAW = {
   pong:[{k:'paddle',n:'Big Paddle',d:'Your paddle 10px taller per level',base:250,cap:5},{k:'slowai',n:'Sleepy CPU',d:'The CPU paddle moves 8% slower per level',base:350,cap:6}],
   memory:[{k:'peek',n:'Sneak Peek',d:'See every card for 0.6 s per level when a game starts',base:300,cap:5}],
   whack:[{k:'life',n:'Extra Life',d:'+1 starting life per level',base:300,cap:10},{k:'charge',n:'Power Charges',d:'+1 Quake, Freeze and Shield per level',base:400,cap:10}],
-  '2048':[{k:'undo',n:'Undo',d:'+1 undo per game per level (2048 pays no tickets)',base:300,cap:25}],
+  '2048':[{k:'undo',n:'Undo',d:'+1 undo per game per level',base:300,cap:25}],
   tictactoe:[{k:'misere',n:'Misère Mode',d:'Unlock: three in a row LOSES · pays ×1.5',base:500,one:1},{k:'big4',n:'4×4 Board',d:'Unlock 4-in-a-row on 4×4 · pays ×2',base:1000,one:1},{k:'big5',n:'5×5 Board',d:'Unlock 4-in-a-row on 5×5 · pays ×3',base:2500,one:1}],
   simon:[{k:'second',n:'Second Chance',d:'Forgive one wrong pad per level, each game',base:600,cap:10},{k:'slow',n:'Slow Motion',d:'Patterns play 12% slower per level',base:300,cap:5}],
   mines:[{k:'scan',n:'Mine Scanner',d:'Flags 2 mines per level at the start',base:300,cap:6},{k:'shield',n:'Blast Shield',d:'Survive one mine per level',base:700,cap:5}],
@@ -995,7 +995,7 @@ const PTIER = {Common:{c:'#9a9a9b',bg:'#f6f3e6'},Rare:{c:'#64CDF5',bg:'#e6f6fd'}
 // a:'family:tier' = achievement reward · rb = Rebirths · pr = Prestige level · wp = comes with a Wilderland prize
 const AVP = {
   skin:{t:'Skin',kidOnly:1,o:[{n:'Peach',c:'#f2c9a0'},{n:'Tan',c:'#d9a066'},{n:'Brown',c:'#a86b3c'},{n:'Deep',c:'#6b4226'},{n:'Mint',c:'#9fe0c0',r:10},{n:'Lavender',c:'#d7b8f3',r:20},{n:'Gold',c:'#F9BF01',a:'earned:3'},
-    {n:'Light',c:'#fbe0c8'},{n:'Olive',c:'#c19a6b'},{n:'Sky',c:'#a8dcf5',r:14},{n:'Bubblegum',c:'#f7a8cf',r:24},{n:'Zombie',c:'#9fbf7a',a:'owl:0'},{n:'Silver',c:'#d7dde2',rb:3},{n:'Diamond',c:'#bff0ff',pr:1}]},
+    {n:'Light',c:'#fbe0c8'},{n:'Olive',c:'#c19a6b'},{n:'Sky',c:'#a8dcf5',r:14},{n:'Bubblegum',c:'#f7a8cf',r:24},{n:'Zombie',c:'#9fbf7a',a:'owl:0'},{n:'Silver',c:'#d7dde2',rb:3},{n:'Diamond',c:'#bff0ff',pr:1},{n:'Magma',c:'#ff6a3a',a:'mineCore:0'}]},
   shirt:{t:'Outfit',o:[{n:'Forest',c:'#00B451'},{n:'Lime',c:'#D5F367'},{n:'Sky',c:'#64CDF5'},{n:'Pink',c:'#EA55AB'},{n:'Gold',c:'#F9BF01',r:3},{n:'Ember',c:'#FF8A3C',r:6},{n:'Navy',c:'#014987',r:9},{n:'Midnight',c:'#121313',r:14},{n:'Rainbow',c:'rainbow',a:'collections:2'},
     {n:'Red',c:'#FF4539'},{n:'Purple',c:'#8a4be0',r:2},{n:'Stripes',c:'#ffffff',pat:'stripes',r:7},{n:'Stars',c:'#014987',pat:'stars',r:11},{n:'Checkers',c:'#121313',pat:'check',r:17},{n:'Hoodie',c:'#9a9a9b',pat:'hood',r:21},{n:'Jersey',c:'#FF4539',pat:'jersey',a:'plays:2'},{n:'Galaxy',c:'#2a1250',pat:'stars',rb:1},{n:'Diamond Armor',c:'#bff0ff',pat:'armor',pr:1},
     {n:'Ranger Vest',c:'#c9b48a',pat:'vest',a:'rootout_plays:1'},{n:'Spacesuit',c:'#f2f2f2',pat:'space',a:'rebirths:0'},{n:'Tuxedo',c:'#121313',pat:'tux',r:26},{n:'Overalls',c:'#2f7de0',pat:'overalls',r:5},{n:'Lab Coat',c:'#ffffff',pat:'lab',a:'eduRight:2'},{n:'Hoodie Lime',c:'#B6E64A',pat:'hood',r:9}]},
@@ -1018,7 +1018,7 @@ const AVP = {
   accent:{t:'Accent color',note:'Muzzles, bellies, inner ears and masks.',o:[{n:'Natural'},{n:'Cream',c:'#f6e7c8'},{n:'White',c:'#ffffff'},{n:'Tan',c:'#d9a066'},{n:'Charcoal',c:'#2b2b2b'},{n:'Lime',c:'#D5F367',r:3},{n:'Pink',c:'#f7a8cf',r:6},{n:'Sky',c:'#64CDF5',r:9},{n:'Gold',c:'#F9BF01',r:14},{n:'Rainbow',c:'rainbow',a:'jackpots:2'}]},
   eye:{t:'Eye color',o:[{n:'Dark',c:'#121313'},{n:'Brown',c:'#5a3a1c'},{n:'Blue',c:'#2f7de0'},{n:'Green',c:'#00894a'},{n:'Hazel',c:'#8a6a2a',r:3},{n:'Purple',c:'#7a3bd0',r:7},{n:'Gold',c:'#e0a800',a:'targets:2'},{n:'Ruby',c:'#e01b4c',rb:2},{n:'Diamond',c:'#4ad8ff',pr:1}]},
   frame:{t:'Frame',note:'The ring around your avatar card. “Level” shows your achievement level frame.',o:[{n:'Level'},{n:'None'},{n:'Wood'},{n:'Leafy',a:'variety:0'},{n:'Gold',a:'rebirths:0'},{n:'Neon',a:'combo:2'},{n:'Rainbow',a:'avItems:2'},{n:'Platinum',a:'plays:3'},{n:'Diamond',pr:1}]},
-  trail:{t:'Trail',note:'What you leave behind when you walk the arcade floor.',o:[{n:'None',e:''},{n:'Footprints',e:'👣'},{n:'Leaves',e:'🍃',a:'rootout_plays:0'},{n:'Sparkles',e:'✨',a:'plays:1'},{n:'Stars',e:'⭐',a:'earned:2'},{n:'Hearts',e:'💗',r:8},{n:'Bubbles',e:'🫧',r:12},{n:'Notes',e:'🎵',a:'simon_plays:0'},{n:'Rainbow',e:'🌈',a:'collections:2'},{n:'Diamonds',e:'💎',pr:1}]},
+  trail:{t:'Trail',note:'What you leave behind when you walk the arcade floor.',o:[{n:'None',e:''},{n:'Footprints',e:'👣'},{n:'Leaves',e:'🍃',a:'rootout_plays:0'},{n:'Sparkles',e:'✨',a:'plays:1'},{n:'Stars',e:'⭐',a:'earned:2'},{n:'Hearts',e:'💗',r:8},{n:'Bubbles',e:'🫧',r:12},{n:'Notes',e:'🎵',a:'simon_plays:0'},{n:'Rainbow',e:'🌈',a:'collections:2'},{n:'Diamonds',e:'💎',pr:1},{n:'Core Flames',e:'🔥',a:'mineCore:0'},{n:'Deep Crystals',e:'💠',a:'mineDepth:2'}]},
   emblem:{t:'Emblem',note:'A badge on your outfit. Every Wilderland prize (bought with Golden Stars) comes with its own emblem.',o:[{n:'None'},{n:'Leaf',e:'🍃'},{n:'Star',e:'⭐',r:6},{n:'Heart',e:'💚',r:4},{n:'Lightning',e:'⚡',a:'reaction_plays:1'},{n:'Trophy',e:'🏆',a:'targets:1'}]},
 };
 // Wilderland prizes each add an emblem (appended in catalog order, so saved choices stay put).
@@ -1343,7 +1343,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-11-24a';
+const BUILD = '2026-11-25a';
 const SCRIPTS = ['arcade-core.js','prizes2.js','economy.js','achievements.js','avatar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
@@ -1532,13 +1532,11 @@ class Component extends DCLogic {
       window.WLA.attach({busy:()=>!!this.state.game || !!this.state.authOpen}); avEmblems(); setTimeout(()=>this.setP({}), 50); }
     if (this.state.achOpen && this.achRef.current && !this._achOff && window.WLA) this._achOff = window.WLA.mount(this.achRef.current, {P:()=>this.P, setP:pt=>this.setP(pt), sfx:n=>window.Arcade && window.Arcade.sfx(n)});
     if (!this.state.achOpen && this._achOff) { try { this._achOff(); } catch(e){} this._achOff = null; }
-    if (this.state.avOpen && this.avRef.current && !this._avOff && window.WLAV) this._avOff = window.WLAV.mount(this.avRef.current, {P:()=>this.P, setP:pt=>this.setP(pt), sfx:n=>window.Arcade && window.Arcade.sfx(n), toast:t=>this.toast(t), admin:()=>!!this.state.admin,
-      norm:avNorm, level:P=>(P.ach||[]).length, name:()=>this.P.username || (this.cloudMeta && this.cloudMeta.name) || 'Player', title:()=>window.WLA ? window.WLA.title(this.P) : '', pins:()=>window.WLA ? window.WLA.pins(this.P) : [],
-      applyCursor, cursorImg:c => c.id ? svgURI('<g transform="translate(16 16)">'+c.s+'</g>') : svgURI('<path d="M20 12l0 34l9-9l6 14l6-3l-6-13l12 0z" fill="#fff" stroke="#121313" stroke-width="3"/>'), openAch:()=>{ this.setState({avOpen:false}); setTimeout(()=>this.setState({achOpen:true}), 30); }});
+    if (this.state.avOpen && this.avRef.current && !this._avOff && window.WLAV) this._avOff = window.WLAV.mount(this.avRef.current, this.avApi());
     if (!this.state.avOpen && this._avOff) { try { this._avOff(); } catch(e){} this._avOff = null; }
     if (this.state.prizesOpen && this.pzRef.current && !this._pzOff && window.WLP) { const P0 = () => this.P;
       this._pzOff = window.WLP.mount(this.pzRef.current, { P:P0, setP:pt=>this.setP(pt), toast:t=>this.toast(t), sfx:n=>window.Arcade && window.Arcade.sfx(n), admin:()=>!!this.state.admin, log:(k,t)=>this.logAct(k,t), lowFx:()=>LOWFX, tab:(t=>{ this._pzTab = null; return t; })(this._pzTab),
-        games:()=>GAMES, icon:id=>ICON(id), classicArt: Object.fromEntries(PRIZES.map(pz=>[pz.id, PZ(pz.art)])) }); }
+        games:()=>GAMES, icon:id=>ICON(id), upgrades:()=>this.upgData(), buyUpg:(g,k,n)=>this.buyUpg(g,k,n), upgPlan:(g,k,n)=>this.upgPlan(g,k,n), cats:()=>this.multCats(), avatar:el=>window.WLAV ? window.WLAV.mount(el, this.avApi()) : null, openAv:()=>{ this.setState({prizesOpen:false}); setTimeout(()=>this.setState({avOpen:true}), 30); }, classicArt: Object.fromEntries(PRIZES.map(pz=>[pz.id, PZ(pz.art)])) }); }
     if (window.WLE && !this._econAttached) { this._econAttached = true; window.WLE.attach(this.econApi()); }
     if (window.WLE && window.WLP && this._welcomeFor !== this.profKey()) { this._welcomeFor = this.profKey(); setTimeout(()=>this.migrateEcon(), 600); }
     if (!this.state.prizesOpen && this._pzOff) { try { this._pzOff(); } catch(e){} this._pzOff = null; }
@@ -1724,11 +1722,53 @@ class Component extends DCLogic {
       catch(e) { this.setState({admArm:'', admMsg: String(e && e.code||'').includes('permission') ? 'Firebase said no. Make sure you’re logged in as jonah@wilderland.academy (log out and back in once so your game sets up the admin control record), then try again.' : 'Couldn’t delete: '+(e && (e.code||e.message))}); } }
     else { const B = getJSON(BOARD_KEY,{e:[]}); B.e = B.e.filter(y=>!(y.g==g && (g=='_tix' ? y.k==x.k : (y.k==x.k && y.s==x.s && y.d==x.d)))); putJSON(BOARD_KEY,B); this.setState({admArm:'', admMsg:'Removed '+x.u+'.'}); } }
   toast(text){ const id = Math.random(); this.setState(s=>({toasts:[...s.toasts,{id,text}]})); setTimeout(()=>this.setState(s=>({toasts:s.toasts.filter(t=>t.id!=id)})), 3000); }
-  buyUpg(gid, k){ const list = UPG[gid] || [], u = list.find(x=>x.k==k); if (!u) return; if (this.state.admin) { this.toast('ADMIN MODE · SHOPPING DISABLED'); return; } const P = this.P, cur = ((P.upg||{})[gid]||{})[k]||0;
-    if (cur >= upgMax(u)) return; const cost = upgCost(u, cur);
-    if (P.tickets < cost) { window.Arcade && window.Arcade.sfx('bad'); this.toast('NEED '+fmtN(cost-P.tickets)+' MORE TICKETS'); return; }
-    const upg = {...(P.upg||{})}; upg[gid] = {...(upg[gid]||{}), [k]:cur+1};
-    this.setP({tickets:P.tickets-cost, upg, stats:{...P.stats, sum:{...P.stats.sum, upgrades:(P.stats.sum.upgrades||0)+1}}}); window.Arcade && window.Arcade.sfx('coin'); this.toast(u.n.toUpperCase()+' · LEVEL '+(cur+1)); }
+  avApi(){ return {P:()=>this.P, setP:pt=>this.setP(pt), sfx:n=>window.Arcade && window.Arcade.sfx(n), toast:t=>this.toast(t), admin:()=>!!this.state.admin,
+      norm:avNorm, level:P=>(P.ach||[]).length, name:()=>this.P.username || (this.cloudMeta && this.cloudMeta.name) || 'Player', title:()=>window.WLA ? window.WLA.title(this.P) : '', pins:()=>window.WLA ? window.WLA.pins(this.P) : [],
+      applyCursor, cursorImg:c => c.id ? svgURI('<g transform="translate(16 16)">'+c.s+'</g>') : svgURI('<path d="M20 12l0 34l9-9l6 14l6-3l-6-13l12 0z" fill="#fff" stroke="#121313" stroke-width="3"/>'), openAch:()=>{ this.setState({avOpen:false, prizesOpen:false}); setTimeout(()=>this.setState({achOpen:true}), 30); }}; }
+  openShopTab(t){ this.keys = {}; if (this.state.prizesOpen && this._pzOff) { try { this._pzOff(); } catch(e){} this._pzOff = null; } this._pzTab = t; this.setState({prizesOpen:true, shopOpen:false}); }
+  upgData(){ const P = this.P; return Object.entries(UPG).map(([gid,list])=>{ const gm = GAMES.find(x=>x.id==gid); return {id:gid, name:gm.title, color:gm.color, icon:ICON(gid), tm:upgTixMult(P, gid),
+    ups: list.map(u=>{ const lv = ((P.upg||{})[gid]||{})[u.k]||0, max = upgMax(u); return {k:u.k, n:u.n, d:u.d, lv, max, one:!!u.one, cap:u.cap||0, cost: lv>=max ? 0 : upgCost(u, lv)}; })}; }); }
+  // Every multiplier, sorted into categories. Each row: [name, value, what it affects].
+  multCats(){ const P = this.P, WP = window.WLP, E2 = window.WLE, A2 = window.WLA; if (!WP) return [];
+    const f = v => '×'+WP.fmt(Math.round(v*100)/100), pk = WP.perks(P), pt = E2 ? E2.pt(P) : {}, glv = g => ((P.mult||{}).game||{})[g]||0, M = WP.MSHOP, lvM = k => (P.mult||{})[k]||0;
+    const gameM = g => (1+.2*glv(g)) * (pk.game[g]||1) * upgTixMult(P, g) * (E2 ? E2.ptGame(P, g) : 1);
+    const gameRows = g => [['Machine Multiplier (lv '+glv(g)+')', f(1+.2*glv(g)), 'Tickets from this cabinet only'], ['Workshop upgrades & Ticket Booster', f(upgTixMult(P, g)), 'Tickets from this cabinet only'],
+      ...(pk.game[g] ? [['Wilderland prize power', f(pk.game[g]), 'Tickets from this cabinet only']] : []), ...(P.ptFav==g ? [['Prestige Tree · favourite machine', f(E2.ptGame(P,g)), 'Tickets from this cabinet only']] : [])];
+    const I = P.idle || {}, IU = I.up || {}, iw = (P.upg||{}).idle || {};
+    const cats = [
+      {id:'all', e:'🎟', n:'All Tickets', d:'Boosts tickets from every game', rows:[['Ticket Multiplier (lv '+lvM('global')+')', f(M[0].eff(lvM('global'))), 'Every ticket you earn'], ['Golden Stars ('+(P.stars||0)+')', f(WP.breakdown(P)[1][1]), 'Every ticket you earn'],
+        ['Collections ('+Object.keys(P.colDone||{}).length+')', f(WP.breakdown(P)[2][1]), 'Every ticket you earn'], ['Login streak', f(WP.breakdown(P)[3][1]), 'Every ticket you earn'], ['Wilderland prizes', f(pk.all), 'Every ticket you earn'],
+        ['Achievements (Platinum & Diamond)', f(A2 && A2.bonus ? A2.bonus(P) : 1), 'Every ticket you earn'], ['Arcade Expansions', f(E2 ? E2.gameMult(P)/(pt.games||1) : 1), 'Tickets you earn by playing'], ['Combo streak', f(WP.breakdown(P)[8][1]), 'Game payouts while your combo lasts']]},
+      {id:'mineTix', e:'⛏️', n:'Mine Tickets', d:'Boosts tickets from The Mines only', rows: gameRows('idle')},
+      {id:'mineCrew', e:'👷', n:'Mine Crew', d:'Miners, hiring and digging speed in The Mines', total:(1+.25*(IU.cart||0))*(1+.1*(IU.drill||0)), rows:[
+        ['Mine Carts (lv '+(IU.cart||0)+')', f(1+.25*(IU.cart||0)), 'Ore from every miner'], ['Deep Charges (lv '+(IU.drill||0)+')', f(1+.1*(IU.drill||0)), 'All ore'],
+        ['Better Hires (lv '+(IU.hire||0)+')', '+'+(IU.hire||0)+' levels', 'Level of new miners'], ['Starter Crew (Workshop lv '+(iw.start||0)+')', '+'+(iw.start||0)+' levels', 'Level of new miners'],
+        ['Miners’ Union Deal (Workshop lv '+(iw.cheap||0)+')', f(Math.pow(.85, iw.cheap||0)), 'Cost of hiring (lower is better)'], ['Foreman (lv '+(IU.auto||0)+'/100)', (IU.auto ? 'every '+(6*Math.pow(0.1/6,(Math.min(IU.auto,100)-1)/99)).toFixed(2)+' s' : 'off'), 'Automatic merges'],
+        ['Night Shift (lv '+(IU.night||0)+')', (2+2*(IU.night||0))+' h', 'Digging while you’re away'], ['Best miner', 'Lv '+(I.best||1), 'Ore per second']]},
+      {id:'mineTreasure', e:'💎', n:'Mine Treasure', d:'Gems, treasure rooms and lucky digs in The Mines', rows:[
+        ['Gem Sense (lv '+(IU.gem||0)+'/20)', IU.gem ? 'gems '+Math.round(100-100*Math.max(.3,1-.035*IU.gem))+'% sooner' : 'off', 'Gems, rare gems, treasure & hazard warnings'], ['Lucky Strike (lv '+(IU.luck||0)+')', (2*(IU.luck||0))+'% for ×10', 'Taps on the dig face'],
+        ['Mine depth (layer '+Math.max(1, (P.stats.max||{}).mineDepth||1)+')', f(1+.2*(Math.max(1,(P.stats.max||{}).mineDepth||1)-1)), 'All ore'], ['Treasure rooms opened', String((P.stats.sum||{}).mineChests||0), 'One-time ore hauls']]},
+      {id:'td', e:'🏰', n:'Tower Defense', d:'Gold, towers and tickets in Trailhead Defense', rows:[...gameRows('td'), ...(UPG.td||[]).filter(u=>u.k!='boost').map(u=>[u.n+' (lv '+(((P.upg||{}).td||{})[u.k]||0)+')', '+'+(((P.upg||{}).td||{})[u.k]||0)+' levels', u.d]),
+        ['Gold Pans', 'no level cap', 'Gold paid every wave (upgrade them during a run)']]},
+      {id:'games', e:'🕹️', n:'Per-Game Boosts', d:'Each cabinet’s own multiplier', rows: GAMES.filter(g=>g.id!='idle' && g.id!='td').map(g=>[g.title, f(gameM(g.id)), 'Tickets from '+g.title+' only'])},
+      {id:'learn', e:'📚', n:'Learn Mode', d:'Bonuses for playing with Learn mode on', rows:[['Learn game payout', f(1.25*(E2 ? E2.learnGameMult(P) : 1)), 'Tickets from games played in Learn mode'],
+        ['Learn Mode Bonus (lv '+lvM('learn')+')', '+'+WP.fmt(WP.learnBonus(P))+' per answer', 'Each correct answer'], ['Learn boost from Expansions & Prestige', f(E2 ? E2.learnMult(P) : 1), 'Each correct answer'], ['Wilderland prize power', f(pk.learn), 'Each correct answer']]},
+      {id:'prestige', e:'💠', n:'Prestige', d:'From the Prestige Tree and Diamond Stars', total:(pt.all||1)*(pt.games||1), rows:[['All tickets', f(pt.all||1), 'Every ticket you earn'], ['Game payouts', f(pt.games||1), 'Tickets from every game'], ['Favourite machine'+(P.ptFav ? ' ('+((GAMES.find(g=>g.id==P.ptFav)||{}).title||'')+')' : ''), f(pt.fav||1), 'One cabinet you choose'],
+        ['Learn answers', f(pt.learn||1), 'Learn-mode answer bonus'], ['Learn games', f(pt.learnGame||1), 'Learn-mode game payouts'], ['Jackpot chance', f(pt.jack||1), 'Lucky ×10 / ×100 payouts'], ['Diamond Stars', (E2 ? E2.diaFree(P) : 0)+' free · '+(E2 ? E2.diamonds(P) : 0)+' earned', 'Spend them in the Prestige Tree']]},
+    ];
+    const num = v => { const m = /^×([\d.]+)([A-Za-z]*)$/.exec(v); if (!m) return null; const u = {'':1,K:1e3,M:1e6,B:1e9,T:1e12}[m[2]]; return u ? parseFloat(m[1])*u : null; };
+    cats.forEach(c => { if (c.total == null) { let t = 1, any = false; c.rows.forEach(r => { const n = num(r[1]); if (n && c.id!='games' && !/lower is better/.test(r[2]) && r[2]!='Each correct answer') { t *= n; any = true; } }); c.total = c.id=='games' ? null : any ? t : null; } });
+    return cats; }
+  // Bulk buy: n = 1, 10, 100 or Infinity (Max). Buys as many levels as you can afford, up to n.
+  upgPlan(gid, k, n){ const u = (UPG[gid]||[]).find(x=>x.k==k); if (!u) return {u:null, cnt:0, cost:0}; const P = this.P, cur = ((P.upg||{})[gid]||{})[k]||0, max = upgMax(u); let cnt = 0, cost = 0;
+    while (cnt < (n||1) && cur+cnt < max && cnt < 10000) { const c = upgCost(u, cur+cnt); if (cost + c > P.tickets) break; cost += c; cnt++; }
+    return {u, cur, cnt, cost, next: cur < max ? upgCost(u, cur) : 0}; }
+  buyUpg(gid, k, n){ if (this.state.admin) { this.toast('ADMIN MODE · SHOPPING DISABLED'); return 0; } const pl = this.upgPlan(gid, k, n || 1), u = pl.u; if (!u) return 0;
+    if (pl.cur >= upgMax(u)) return 0;
+    if (!pl.cnt) { window.Arcade && window.Arcade.sfx('bad'); this.toast('NEED '+fmtN(pl.next-this.P.tickets)+' MORE TICKETS'); return 0; }
+    const P = this.P, upg = {...(P.upg||{})}; upg[gid] = {...(upg[gid]||{}), [k]:pl.cur+pl.cnt};
+    this.setP({tickets:P.tickets-pl.cost, upg, stats:{...P.stats, sum:{...P.stats.sum, upgrades:(P.stats.sum.upgrades||0)+pl.cnt}}}); window.Arcade && window.Arcade.sfx('coin');
+    if (!window.WLP || window.WLP.popsOn(this.P)) this.toast(u.n.toUpperCase()+' · LEVEL '+(pl.cur+pl.cnt)+(pl.cnt>1?' (+'+pl.cnt+')':'')); return pl.cnt; }
   cashOutGame(){ const g = this.state.game; if (!g || g=='idle') return; const sc = this.state.liveScore || 0;
     if (!(sc > 0)) { this.toast('SCORE SOME POINTS FIRST'); window.Arcade && window.Arcade.sfx('bad'); return; }
     this.snapFn = null; this.finish(g, sc); this.unmountGame(false); this.setState({liveScore:0}); this.toast('CASHED OUT · NEW RUN READY'); }
@@ -1744,10 +1784,10 @@ class Component extends DCLogic {
     const best = {...P.best}, played = {...P.played, [id]:(P.played[id]||0)+1}, sum = {...P.stats.sum};
     const dm = RIVAL(P.difficulty) ? (id=='connect4'?RIVAL(P.difficulty)[2]:2) : ({easy:.75,normal:1,hard:2}[P.difficulty]||1);
     const mins = (this._act||0) / 60; this._act = 0; this._roundT0 = Date.now();
-    let tix = Math.ceil(baseTix(g, score, mins) * mult * dm), lines = [mins < 1 ? Math.max(1,Math.round(mins*60))+' SEC PLAYED' : Math.round(mins)+' MIN PLAYED'];
+    let tix = Math.ceil(baseTix(g, id=='2048' ? score*10 : score, mins) * mult * dm), lines = [mins < 1 ? Math.max(1,Math.round(mins*60))+' SEC PLAYED' : Math.round(mins)+' MIN PLAYED'];
     if (dm != 1) lines.push((RIVAL(P.difficulty) ? RIVAL(P.difficulty)[1].toUpperCase() : P.difficulty.toUpperCase())+' ×'+dm);
     const spm = TIX_SPEED_GAMES.includes(id) ? (SPEED_TIX[P.speed] || 1) : 1; if (spm != 1) { tix = Math.max(1, Math.ceil(tix*spm)); lines.push(P.speed.toUpperCase()+' SPEED ×'+spm); }
-    if (NO_TIX.includes(id)) { tix = 0; lines.push('2048 PAYS NO TICKETS'); }
+    if (NO_TIX.includes(id)) { tix = Math.max(1, Math.round(tix*.1)); lines.push('2048 PAYS ×0.1'); }
     if (this._perfect && tix) { tix *= 3; lines.push('PERFECT ×3'); sum.perfect = (sum.perfect||0)+1; } this._perfect = false;
     if (score > (best[id]||0)) { if (best[id]) lines.push('NEW HIGH SCORE'); best[id] = score; }
     const daily = {...(P.daily.date==today() ? P.daily : {date:today(),done:false})};
@@ -1826,7 +1866,7 @@ class Component extends DCLogic {
     const eduOn = this.eduOn(), locked = this.locked(), hasCode = !!this.lockInfo().hash;
     const s = this.state, P = this.P, di = dailyIdx(), dg = GAMES[di], dailyDone = P.daily.date==today() && P.daily.done;
     const ni = this.findNear(), glow = '0 0 0 4px #D5F367, 0 12px 24px rgba(0,0,0,.3)', base = '0 10px 18px rgba(0,0,0,.22)';
-    const kiosk = [()=>this.setState({prizesOpen:true}), ()=>this.open(dg.id), ()=>this.setState({lbOpen:true}), ()=>this.setState({learnOpen:true}), ()=>this.setState({shopOpen:true})];
+    const kiosk = [()=>this.openShopTab('shop'), ()=>this.open(dg.id), ()=>this.setState({lbOpen:true}), ()=>this.setState({learnOpen:true}), ()=>this.openShopTab('upg')];
     this.near = ni==null ? null : ni<NG ? {act:()=>this.open(GAMES[ni].id)} : {act:kiosk[ni-NG]};
     const savedOf = id => !!(P.saves[id] || P.saves[id+'~edu']);
     const nearLabel = ni==null ? '' : ni<NG ? 'PLAY '+GAMES[ni].title.toUpperCase()+(savedOf(GAMES[ni].id)?' · SAVED':'') : ['PRIZE COUNTER','DAILY: '+dg.title.toUpperCase(),'LEADERBOARD','LEARNING DESK','UPGRADE WORKSHOP'][ni-NG];
@@ -1922,14 +1962,14 @@ class Component extends DCLogic {
       openExp: ()=>{ this.keys = {}; this._pzTab = 'exp'; this.setState({prizesOpen:true}); },
       openRebirth: ()=>{ this.keys = {}; this._pzTab = 'rebirth'; this.setState({prizesOpen:true}); },
       rbPct: window.WLP ? Math.min(100, (P.tickets||0)/window.WLP.rebirthNeed(P)*100).toFixed(1)+'%' : '0%', rbShort: window.WLP ? fmtN(P.tickets||0)+' / '+fmtN(window.WLP.rebirthNeed(P))+' · Prestige '+Math.floor((P.rebirths||0)/10)+' · Rebirth '+((P.rebirths||0)%10)+' / 10 to next 💎' : '', rbLabel: window.WLP ? 'Next Rebirth: '+fmtN(P.tickets||0)+' / '+fmtN(window.WLP.rebirthNeed(P))+' (automatic)' : '',
-      fxLabel: LOWFX ? 'ANIMATIONS OFF' : 'ANIMATIONS ON', toggleFx: ()=>{ LOWFX = !LOWFX; try { localStorage.setItem('wl-arcade-lowfx', LOWFX?'1':'0'); } catch(e){} applyLowFx(LOWFX); if (window.Arcade) window.Arcade.lowFx = LOWFX; this.toast(LOWFX ? 'ANIMATIONS OFF · SMOOTHER ON SLOW DEVICES' : 'ANIMATIONS ON'); this.forceUpdate(); },
+      fxLabel: LOWFX ? 'PERFORMANCE MODE ON' : 'PERFORMANCE MODE OFF', toggleFx: ()=>{ LOWFX = !LOWFX; try { localStorage.setItem('wl-arcade-lowfx', LOWFX?'1':'0'); } catch(e){} applyLowFx(LOWFX); if (window.Arcade) window.Arcade.lowFx = LOWFX; this.toast(LOWFX ? 'PERFORMANCE MODE ON · FEWER EFFECTS, SMOOTHER ON SLOW DEVICES' : 'PERFORMANCE MODE OFF · FULL EFFECTS'); this.forceUpdate(); },
       toggleSound: ()=>{ const m=!s.muted; this.setState({muted:m}); if (window.Arcade) window.Arcade.muted = m; },
       wrapRef: this.wrapRef, gameRef: this.gameRef, pzRef: this.pzRef, scale: s.scale, floorTransform: 'scale(' + s.scale + ')', scaledH: Math.round(FH*s.scale),
       cabinets: GAMES.map((c,i)=>({...c, ...POS[i], icon: ICON(c.id), best:fmtN(P.best[c.id]||0), daily:i==di, saved:savedOf(c.id), isNew:!!c.isNew && !P.played[c.id] && !savedOf(c.id), learn: !!c.learn || (eduOn && EDU_SWITCH.includes(c.id)), shadow: (ni===i?glow:base)+(P.skin && window.WLP ? ', '+window.WLP.skinStyle(P.skin) : ''), open:()=>this.open(c.id)})),
       prizeShadow: ni===NG?glow:base, dailyShadow: ni===NG+1?glow:base,
       prizesOwned: Object.values(P.prizes).reduce((a,b)=>a+b,0),
       daily: {name:dg.title, target:dg.target.toLocaleString(), status: dailyDone?'Completed today':'Not yet cleared'},
-      openDaily: ()=>this.open(dg.id), openPrizes: ()=>this.setState({prizesOpen:true}), closePrizes: ()=>this.closeAll(), closeGame: ()=>this.closeAll(),
+      openDaily: ()=>this.open(dg.id), openPrizes: ()=>this.openShopTab('shop'), openMultCats: ()=>this.openShopTab('mult'), closePrizes: ()=>this.closeAll(), closeGame: ()=>this.closeAll(),
       player: {x:s.px, y:s.py, ex:9+dx*6, ey:9+dy*6}, nearLabel,
       walkImg: avSVG(P.avatar, (P.ach||[]).length, {noPet:true}), hasPet: avNorm(P.avatar).pet > 0, petImg: avSVG(P.avatar, 0, {petOnly:true}), pet: this._petPos || {x:s.px-34, y:s.py+10},
       trailDots: (this._trail||[]).map((d,i)=>{ const age = Math.min(1, (performance.now()-d.t)/1100); return {key:d.t+'-'+i, x:d.x, y:d.y, op:(1-age).toFixed(2), sc:(1.1-age*.6).toFixed(2), e:AVP.trail.o[avNorm(P.avatar).trail].e||''}; }),
@@ -2031,7 +2071,7 @@ class Component extends DCLogic {
       hasRivals: s.game=='connect4',
       rivalOpts: RIVALS.map(([id,label])=>({label, bg: P.difficulty==id?'#B3001B':'transparent', fg: P.difficulty==id?'#ffffff':'#015640', pick:()=>this.pickDiff(id)})),
       diffNote: {easy:'Easy pays ×0.75 tickets',normal:'',hard:'Hard pays ×1.5 tickets',}[P.difficulty] || (RIVAL(P.difficulty) ? (s.game=='connect4' ? RIVAL(P.difficulty)[1]+' pays ×'+RIVAL(P.difficulty)[2]+' tickets' : 'Rivals are Connect 4 only · playing Hard (×1.5)') : ''), payout: s.payout,
-      prizesOpen: s.prizesOpen, shopOpen: !!s.shopOpen, openShop: ()=>{ this.keys = {}; this.setState({shopOpen:true}); }, closeShop: ()=>this.closeAll(), shopShadow: ni===NG+4?glow:base, shopIcon: KIOSK_ICONS.shop,
+      prizesOpen: s.prizesOpen, shopOpen: !!s.shopOpen, openShop: ()=>this.openShopTab('upg'), closeShop: ()=>this.closeAll(), shopShadow: ni===NG+4?glow:base, shopIcon: KIOSK_ICONS.shop,
       shopOwned: Object.values(P.upg||{}).reduce((a,o)=>a+Object.values(o).reduce((x,y)=>x+y,0),0), shopTotal: '∞',
       shopGames: !s.shopOpen ? [] : Object.entries(UPG).map(([gid,list])=>{ const gm = GAMES.find(x=>x.id==gid); const tm = upgTixMult(P, gid); return {id:gid, name:gm.title+(tm>1.001?'  ·  +'+fmtN(Math.round((tm-1)*100))+'% tickets':''), color:gm.color, icon:ICON(gid),
         ups: list.map(u=>{ const lv = ((P.upg||{})[gid]||{})[u.k]||0, max = upgMax(u), maxed = lv>=max, cost = maxed?0:upgCost(u, lv), can = !maxed && P.tickets>=cost, capped = u.cap && lv >= u.cap;

@@ -125,9 +125,11 @@ const css = `
 .wle-h{font-size:12px;font-weight:700;letter-spacing:.12em;color:#AB2372;margin:12px 0 6px}
 .wle-buffs{display:flex;gap:6px;flex-wrap:wrap}
 .wle-buff{background:#F9BF01;color:#121313;border-radius:999px;padding:4px 10px;font-weight:800;font-size:12px}
-.wle-critter{position:fixed;z-index:450;font-size:44px;cursor:pointer;filter:drop-shadow(0 0 10px #F9BF01) drop-shadow(0 0 3px #fff);user-select:none;transition:left 9s linear;animation:wleHop .45s ease-in-out infinite alternate}
-.wle-fly{position:fixed;z-index:460;font-size:22px;pointer-events:none;transition:transform .8s cubic-bezier(.5,0,.2,1),opacity .8s}
-.wle-rain{position:fixed;z-index:455;font-size:30px;cursor:pointer;user-select:none;animation:wleFall linear forwards}
+.wle-critter{position:fixed;z-index:985;font-size:44px;cursor:pointer;filter:drop-shadow(0 0 10px #F9BF01) drop-shadow(0 0 3px #fff);user-select:none;transition:left 9s linear;animation:wleHop .45s ease-in-out infinite alternate}
+.wle-fly{position:fixed;z-index:995;font-size:22px;pointer-events:none;transition:transform .8s cubic-bezier(.5,0,.2,1),opacity .8s}
+.wle-raincv{position:fixed;inset:0;width:100vw;height:100vh;z-index:990;pointer-events:none}
+.wle-rainpill{position:fixed;left:50%;top:58px;transform:translateX(-50%);z-index:991;background:#F9BF01;color:#121313;font:800 14px "Uncut Sans",system-ui,sans-serif;border-radius:999px;padding:8px 16px;box-shadow:0 4px 18px rgba(0,0,0,.35);pointer-events:none;white-space:nowrap;max-width:94vw;overflow:hidden;text-overflow:ellipsis}
+.wle-rainpill.done{background:#D5F367;color:#015640}
 .wle-node{border-radius:12px;padding:8px;text-align:center;font-size:12px;font-weight:700;border:2px solid #d9d5c3;background:#f6f3e6;cursor:pointer;min-height:78px;display:flex;flex-direction:column;justify-content:center;gap:2px}
 .wle-node.own{background:#F9BF01;border-color:#c48a00;color:#121313}
 .wle-node.next{background:#fff;border-color:#015640;color:#015640}
@@ -180,10 +182,43 @@ const catchCritter = (c, ev) => { if (!host) return; c.remove(); const P = host.
   else if (r < .86) { const need = window.WLP ? window.WLP.rebirthNeed(P) : 1e7; const gain = Math.min(Math.max(50, (P.tickets||0)*.15), need*.04) * R; host.addTix(Math.round(gain), {x:ev.clientX, y:ev.clientY}); msg = 'LUCKY JACKPOT! +'+fmt(gain)+' tickets'; }
   else { ticketRain(P); msg = 'TICKET RAIN! Click the falling tickets!'; }
   host.toast(msg); host.sfx('win'); host.setP({critters:(P.critters||0)+1}); };
-const ticketRain = P => { const need = window.WLP ? window.WLP.rebirthNeed(P) : 1e7; const val = Math.max(5, Math.min(need*.0015, Math.max(20, (P.tickets||0)*.004)) * E.critterReward(P)); const end = now() + 9000*E.buffLen(P);
-  const drop = () => { if (now() > end) return; const t = el('div', {cls:'wle-rain', style:{left:(20 + Math.random()*(innerWidth-60))+'px', top:'-50px', animationDuration:(3 + Math.random()*2)+'s'}}, '🎟️');
-    t.onclick = e => { e.stopPropagation(); t.remove(); host.addTix(Math.round(val), {x:e.clientX, y:e.clientY}); window.Arcade && window.Arcade.tone && window.Arcade.tone(900+Math.random()*400,.05,'triangle',.04); };
-    document.body.appendChild(t); setTimeout(()=>t.remove(), 5200); setTimeout(drop, 260); }; drop(); };
+// Ticket Rain: one light canvas on top of everything (also full screen and games). Tickets fall for the whole boost;
+// tap one to catch it for double value, or let it land — every ticket that lands still goes into your counter.
+let rainOn = null;
+const ticketRain = P => { const need = window.WLP ? window.WLP.rebirthNeed(P) : 1e7; const val = Math.max(5, Math.round(Math.min(need*.0015, Math.max(20, (P.tickets||0)*.004)) * E.critterReward(P)));
+  const dur = 9000*E.buffLen(P); if (rainOn) { rainOn.end += dur; return; }
+  const dpr = Math.min(2, window.devicePixelRatio||1), cv = el('canvas', {cls:'wle-raincv', 'aria-hidden':'true'}), pill = el('div', {cls:'wle-rainpill'}); document.body.append(cv, pill);
+  const g = cv.getContext('2d'); let W = 0, H = 0; const size = () => { W = innerWidth; H = innerHeight; cv.width = W*dpr; cv.height = H*dpr; g.setTransform(dpr,0,0,dpr,0,0); }; size(); addEventListener('resize', size);
+  const R = rainOn = {end: now() + dur, total:0, caught:0, landed:0, pend:0}, tix = [], low = () => reduced(), every = () => low() ? 520 : 260;
+  let nextDrop = 0, last = now(), flushT = 0, raf = 0;
+  const add = (n, from) => { R.total += n; R.pend += n; if (from) E.fly(n, from); };
+  const flush = () => { if (R.pend && host) { host.addTix(R.pend); R.pend = 0; } };
+  const hit = e => { const x = e.clientX, y = e.clientY; let best = null, bd = 44*44;
+    for (const t of tix) { if (t.dead) continue; const tx = t.dx==null ? t.x : t.dx; const d = (tx-x)*(tx-x) + (t.y-y)*(t.y-y); if (d < bd) { bd = d; best = t; } }
+    if (!best) return; e.preventDefault(); e.stopPropagation(); best.dead = 1; R.caught++; add(best.v*2, {x, y}); burst(x, y);
+    window.Arcade && window.Arcade.tone && window.Arcade.tone(900+Math.random()*400,.05,'triangle',.04); };
+  addEventListener('pointerdown', hit, true);
+  const sparks = []; const burst = (x, y) => { if (low()) return; for (let i=0;i<8;i++) { const a = Math.random()*6.28; sparks.push({x, y, vx:Math.cos(a)*160, vy:Math.sin(a)*160-60, t:.5}); } };
+  const tkt = (x, y, r) => { g.save(); g.translate(x, y); g.rotate(r); g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(-15, -8, 34, 22); g.fillStyle = '#F9BF01'; g.beginPath(); if (g.roundRect) g.roundRect(-18, -12, 36, 24, 5); else g.rect(-18,-12,36,24); g.fill();
+    g.fillStyle = '#fff3b0'; g.fillRect(-18, -12, 36, 5); g.fillStyle = '#c48a00'; g.beginPath(); g.arc(-18, 0, 4, 0, 6.28); g.arc(18, 0, 4, 0, 6.28); g.fill();
+    g.strokeStyle = '#8a5a00'; g.setLineDash([2,2]); g.beginPath(); g.moveTo(-8, -10); g.lineTo(-8, 10); g.stroke(); g.setLineDash([]); g.fillStyle = '#5a3a00'; g.font = '800 11px "Uncut Sans",system-ui,sans-serif'; g.textAlign = 'center'; g.fillText('🎟', 5, 4); g.restore(); };
+  const frame = () => { const t = now(), dt = Math.min(.05, (t-last)/1000); last = t; const live = t < R.end;
+    if (live && t >= nextDrop) { nextDrop = t + every(); const n = low() ? 2 : 1; for (let i=0;i<n;i++) tix.push({x: 30 + Math.random()*(W-60), y: -30, vy: H/(2.6 + Math.random()*1.4), r: Math.random()*6, vr: (Math.random()-.5)*3, sw: Math.random()*6, v: val}); }
+    g.clearRect(0, 0, W, H);
+    for (const k of tix) { if (k.dead) continue; k.y += k.vy*dt; k.r += k.vr*dt; k.sw += dt*2; const x = k.x + Math.sin(k.sw)*12;
+      if (k.y > H - 20) { k.dead = 1; R.landed++; add(k.v, low() ? null : {x, y:H-30}); continue; } tkt(x, k.y, Math.sin(k.r)*.5); k.dx = x; }
+    for (let i = tix.length-1; i >= 0; i--) if (tix[i].dead) tix.splice(i,1);;
+    for (const p of sparks) { p.t -= dt; p.x += p.vx*dt; p.y += p.vy*dt; p.vy += 400*dt; if (p.t > 0) { g.globalAlpha = p.t*2; g.fillStyle = '#F9BF01'; g.fillRect(p.x-2, p.y-2, 4, 4); } } g.globalAlpha = 1; for (let i = sparks.length-1; i >= 0; i--) if (sparks[i].t <= 0) sparks.splice(i,1);
+    flushT -= dt; if (flushT <= 0) { flushT = .5; flush(); }
+    pill.textContent = live ? '🎟 TICKET RAIN · '+Math.ceil((R.end-t)/1000)+'s · +'+fmt(R.total)+' · tap tickets for ×2!' : '🎟 TICKET RAIN · +'+fmt(R.total);
+    if (!live && !tix.length) { flush(); cancelAnimationFrame(raf); removeEventListener('pointerdown', hit, true); removeEventListener('resize', size); cv.remove(); rainOn = null;
+      pill.textContent = '🎟 Ticket Rain gave you +'+fmt(R.total)+' tickets ('+R.caught+' caught, '+R.landed+' landed)'; pill.classList.add('done'); setTimeout(()=>pill.remove(), 4500);
+      if (host) { host.toast('TICKET RAIN OVER · +'+fmt(R.total)+' TICKETS'); host.sfx('win'); } return; }
+    raf = requestAnimationFrame(frame); };
+  // touch: hit test uses the real ticket position (with sway)
+  raf = requestAnimationFrame(frame);
+  E._rain = () => rainOn; };
+E.ticketRain = P => ticketRain(P || (host && host.P()));
 
 // ---------------- Arcade Expansions panel (Prize Counter tab) ----------------
 E.expPanel = api => { ensureCss(); const p = api.P(), need = window.WLP ? window.WLP.rebirthNeed(p) : Infinity, box = el('div', {cls:'wle'});

@@ -61,7 +61,7 @@ A.register('td', { w:720, mount(host, api){
     geyser:{n:'Geyser',cost:150,col:'#2f7de0',top:'#14457a',range:1.8,dmg:10,rate:2.4,knock:1.4,d:'Blasts critters back along the trail'},
   };
   const TIDS = Object.keys(TW);
-  const MAXLV = t => t.type=='pan' ? 999 : 5;
+  const MAXLV = t => t.type=='pan' ? Infinity : 5;   // Gold Pans have no level cap
   // ---------------- enemies ----------------
   const EN = {
     beetle:{hp:26,sp:1.1,b:4,col:'#3d6b4f',r:.22}, hare:{hp:16,sp:2.2,b:5,col:'#e3d2b4',r:.2},
@@ -380,7 +380,7 @@ A.register('td', { w:720, mount(host, api){
     nextBtn.textContent = state=='wave' ? 'Wave '+wave+' · '+(queue.length-qi+enemies.length)+' left' : (wave==0 ? 'Space · Start wave 1' : 'Space · Next wave'); paintBtn(nextBtn,state=='build',state=='build');
     spdBtn.textContent = 'X · Speed '+spd+'×'; paintBtn(spdBtn,spd!=1,true); perfBtn.textContent = 'Perf '+(perf?'ON':'OFF'); paintBtn(perfBtn,perf,true);
     if (sel) { const D = TW[sel.type], S = tstat(sel), mx = MAXLV(sel);
-      selLbl.textContent = D.n+' · Lv '+sel.lvl+(sel.buff?' · boosted +'+Math.round(sel.buff*100)+'%':'')+(D.range ? (D.dmg ? ' · '+Math.round(S.dmg)+' dmg' : '')+(D.buff ? ' · +'+Math.round(S.tbuff*100)+'% to nearby towers' : '')+(D.poison ? ' · poison '+Math.round(S.poison)+'/s' : '') : ' · +'+S.inc+' gold/wave');
+      selLbl.textContent = D.n+' · Lv '+sel.lvl+(sel.buff?' · boosted +'+Math.round(sel.buff*100)+'%':'')+(D.range ? (D.dmg ? ' · '+Math.round(S.dmg)+' dmg' : '')+(D.buff ? ' · +'+Math.round(S.tbuff*100)+'% to nearby towers' : '')+(D.poison ? ' · poison '+Math.round(S.poison)+'/s' : '') : ' · now +'+S.inc+' gold/wave → next level +'+tstat({...sel, lvl:sel.lvl+1}).inc+' gold/wave (no level cap)');
       upBtn.textContent = sel.lvl>=mx ? 'Max level' : 'U · Upgrade '+upCost(sel); paintBtn(upBtn,false,sel.lvl<mx && gold>=upCost(sel));
       sellBtn.textContent = 'Sell +'+sellVal(sel); paintBtn(sellBtn,false,true);
       modeBtn.style.display = D.range && !D.buff && !D.pulse ? '' : 'none'; modeBtn.textContent = 'Target · '+({first:'First',strong:'Strong',close:'Close'}[sel.mode||'first']); paintBtn(modeBtn,false,true); paintBtn(doneBtn,false,true); } };

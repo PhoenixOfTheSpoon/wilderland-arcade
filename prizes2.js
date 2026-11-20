@@ -366,11 +366,11 @@ W.reveal = (it, label, low, sfx, opts) => { ensureCss(); sfx = sfx || (n => wind
 W.mount = (root, api) => {
   ensureCss(); build(api.classicArt);
   const games = api.games();
-  let bumpK = null, expN = 1; let tab = api.tab || 'shop', colF = 'featured', rarF = -1, affordOnly = false, live = true;
+  let bumpK = null, expN = 1; let tab = api.tab || 'shop', colF = 'featured', rarF = -1, affordOnly = false, live = true, q = '', upgF = 'all', catF = 'all', avOff = null;
   const wrap = E('div', {cls:'wlp'+(api.lowFx()?' wlp-low':'')}); root.appendChild(wrap);
   const P = () => api.P();
   const set = patch => { api.setP(patch); };
-  const tabs = [['shop','Prize Shop'],['trophy','Trophy Room'],['mult','Multipliers'],['chal','Challenges'],['caps','Capsules'],['exp','Expansions 🎢'],['rebirth','Rebirth ⭐'],['prestige','Prestige 💎'],['stats','Most Played']];
+  const tabs = [['upg','🔧 Upgrades'],['shop','🎁 Prizes'],['avatar','👕 Avatar'],['wild','⭐ Wilderland'],['mult','✖ Multipliers'],['trophy','Trophy Room'],['chal','Challenges'],['caps','Capsules'],['exp','Expansions 🎢'],['rebirth','Rebirth ⭐'],['prestige','Prestige 💎'],['stats','Most Played']];
   // keep challenges current
   { const p = W.ensureChal(P(), games); if (p) set(p); }
 
@@ -403,12 +403,17 @@ W.mount = (root, api) => {
       E('div', {style:{background:'#D5F367', color:'#015640', borderRadius:'999px', padding:'7px 14px', fontWeight:800}}, '🎟 '+W.fmt(p.tickets||0)+' tickets'),
       E('div', {style:{background:'#015640', color:'#D5F367', borderRadius:'999px', padding:'7px 14px', fontWeight:800}, title:'Total multiplier on every game'}, '×'+W.fmt(W.totalMult(p))+' total multiplier'),
       E('div', {style:{background:'#F9BF01', color:'#121313', borderRadius:'999px', padding:'7px 14px', fontWeight:800}}, '⭐ '+freeStars(p)+' to spend · '+(p.stars||0)+' earned'),
+      ...(window.WLE && window.WLE.diamonds(p) ? [E('div', {style:{background:'#C7F1EE', color:'#06324a', borderRadius:'999px', padding:'7px 14px', fontWeight:800}}, '💎 '+window.WLE.diaFree(p)+' Diamond Stars')] : []),
       E('div', {cls:'wlp-small'}, W.ownedCount(p)+' / '+W.total()+' prizes · '+Object.keys(p.colDone||{}).length+' / '+COLS.length+' collections'));
     const opt = E('div', {style:{display:'flex', gap:'6px', flexWrap:'wrap', alignItems:'center', marginBottom:'8px'}}, E('span', {style:{fontSize:'12px', fontWeight:700, color:'#015640'}}, 'BUY'));
     [1, 10, 100, 'max'].forEach(q => opt.appendChild(E('button', {cls:'wlp-chip'+(qty===q?' on':''), onclick:()=>{ qty = q; try { localStorage.setItem('wl-prize-qty', JSON.stringify(q)); } catch(e) {} render(); }}, q === 'max' ? 'Max' : '×'+q)));
     opt.appendChild(E('button', {cls:'wlp-chip'+(W.popsOn()?' on':''), style:{marginLeft:'6px'}, title:'The big pop-up when you buy a prize or open a capsule', onclick:()=>{ W.setPops(!W.popsOn()); api.toast(W.popsOn() ? 'BUY POP-UPS ON' : 'BUY POP-UPS OFF'); render(); }}, W.popsOn() ? '🔔 Pop-ups on' : '🔕 Pop-ups off'));
     const tb = E('div', {cls:'wlp-tabs'}); tabs.forEach(([id,t]) => tb.appendChild(E('button', {cls:'wlp-tab'+(tab==id?' on':''), onclick:()=>{ tab = id; render(); }}, t)));
+    const sr = E('input', {type:'search', placeholder:'🔍 Search upgrades and prizes…', 'aria-label':'Search the shop', value:q, style:{flex:'1 1 220px', minWidth:0, font:'600 14px inherit', fontFamily:'inherit', border:'1.5px solid #015640', borderRadius:'999px', padding:'7px 14px', background:'#fff'}});
+    sr.addEventListener('keydown', e => e.stopPropagation()); sr.addEventListener('input', () => { q = sr.value; if (!['upg','shop','wild'].includes(tab)) tab = 'shop'; renderBody(); setTimeout(()=>{ try { const x = head.querySelector('input[type=search]'); x.focus(); x.setSelectionRange(q.length, q.length); } catch(e){} }, 0); });
+    opt.insertBefore(sr, opt.firstChild);
     head.append(top, opt, tb); };
+  const match = (...t) => !q.trim() || t.join(' ').toLowerCase().includes(q.trim().toLowerCase());
 
   const prizeCard = (it, opts={}) => { const p = P(), own = (p.prizes||{})[it.id]||0, r = R[it.r];
     let price = opts.price || priceOf(it, p); const season = it.season && it.season !== seasonNow(), star = isStar(it), sp = star ? starPrice(it, p) : 0;
@@ -427,10 +432,10 @@ W.mount = (root, api) => {
     const pool = CAT.filter(it => !isStar(it) && (!it.season || it.season === seasonNow()));
     const fr = rng('feat'+today()); const feat = pool[Math.floor(fr()*pool.length)], fprice = nice(priceOf(feat,p)*.7);
     const goals = pool.filter(it => !(p.prizes||{})[it.id] && priceOf(it,p) > (p.tickets||0)).sort((a,b)=>priceOf(a,p)-priceOf(b,p)).slice(0,3);
-    box.appendChild(E('div', {cls:'wlp-h'}, 'FEATURED PRIZE OF THE DAY · 30% OFF'));
+    if (!q.trim()) { box.appendChild(E('div', {cls:'wlp-h'}, 'FEATURED PRIZE OF THE DAY · 30% OFF'));
     const fr2 = E('div', {cls:'wlp-grid'}); fr2.appendChild(prizeCard(feat, {price:fprice, badge:'−30%'}));
     if (goals.length) goals.forEach(g => fr2.appendChild(prizeCard(g, {badge:'NEXT GOAL'})));
-    box.appendChild(fr2);
+    box.appendChild(fr2); }
     // filters
     box.appendChild(E('div', {cls:'wlp-h'}, 'BROWSE'));
     const chips = E('div', {style:{display:'flex', gap:'5px', flexWrap:'wrap', marginBottom:'8px'}});
@@ -442,7 +447,7 @@ W.mount = (root, api) => {
     rch.appendChild(E('button', {cls:'wlp-chip'+(affordOnly?' on':''), onclick:()=>{ affordOnly = !affordOnly; render(); }}, 'Can afford'));
     box.appendChild(rch);
     const grid = E('div', {cls:'wlp-grid'});
-    let list = CAT.filter(it => (colF=='featured' || it.col===colF) && (rarF<0 || it.r===rarF) && (!affordOnly || priceOf(it,p) <= (p.tickets||0)));
+    let list = CAT.filter(it => (colF=='featured' || it.col===colF) && (rarF<0 || it.r===rarF) && (!affordOnly || (isStar(it) ? freeStars(p) >= starPrice(it,p) : priceOf(it,p) <= (p.tickets||0))) && match(it.n, it.d, R[it.r].n));
     list.sort((a,b) => priceOf(a,p)-priceOf(b,p));
     list.forEach(it => grid.appendChild(prizeCard(it)));
     if (!list.length) grid.appendChild(E('div', {cls:'wlp-small'}, 'Nothing here yet. Keep playing!'));
@@ -465,10 +470,21 @@ W.mount = (root, api) => {
       sec.appendChild(row); sec.appendChild(E('div', {style:{height:'8px', marginTop:'6px', borderRadius:'3px', background:'linear-gradient(#a0703f,#7a5230)'}})); box.appendChild(sec); });
     return box; };
 
-  const mult = () => { const p = P(), box = E('div');
-    const bd = E('div', {cls:'wlp-box'}, E('div', {style:{fontWeight:800, fontSize:'18px', color:'#015640'}}, 'Your multiplier: ×'+W.fmt(W.globalMult(p))+' on everything'), E('div', {cls:'wlp-small'}, 'Then each machine’s own multiplier and your combo stack on top.'));
-    const tbl = E('div', {style:{display:'grid', gridTemplateColumns:'1fr auto', gap:'2px 12px', marginTop:'8px', fontSize:'13px'}}); W.breakdown(p).forEach(([n,v]) => tbl.append(E('span', null, n), E('b', null, '×'+W.fmt(v))));
-    bd.appendChild(tbl); box.appendChild(bd); box.appendChild(perkCard());
+  const mult = () => { const p = P(), box = E('div'), cats = api.cats ? api.cats() : [];
+    box.appendChild(E('div', {cls:'wlp-box'}, E('div', {style:{fontWeight:800, fontSize:'18px', color:'#015640'}}, 'Total multiplier: ×'+W.fmt(W.totalMult(p))+' · ×'+W.fmt(W.globalMult(p))+' on everything'),
+      E('div', {cls:'wlp-small'}, 'Every multiplier sorted by what it boosts. Pick a category to see each one, its value and exactly what it affects.')));
+    if (cats.length) { const ch = E('div', {style:{display:'flex', gap:'6px', flexWrap:'wrap', margin:'10px 0'}});
+      [{id:'all', e:'📋', n:'Overview'}, ...cats].forEach(c => ch.appendChild(E('button', {cls:'wlp-chip'+(catF==c.id?' on':''), onclick:()=>{ catF = c.id; renderBody(); }}, c.e+' '+c.n+(c.total ? ' · ×'+W.fmt(Math.round(c.total*100)/100) : ''))));
+      box.appendChild(ch);
+      const show = catF=='all' ? cats : cats.filter(c => c.id==catF);
+      show.forEach(c => { const card = E('div', {cls:'wlp-box', style:{marginBottom:'10px'}});
+        card.appendChild(E('div', {style:{display:'flex', justifyContent:'space-between', gap:'8px', flexWrap:'wrap', alignItems:'baseline'}}, E('div', {style:{fontWeight:800, fontSize:'16px', color:'#015640'}}, c.e+' '+c.n), E('b', {style:{color:'#AB2372'}}, c.total ? 'Category total ×'+W.fmt(Math.round(c.total*100)/100) : '')));
+        card.appendChild(E('div', {cls:'wlp-small'}, c.d));
+        const tb = E('div', {style:{display:'grid', gridTemplateColumns:'1fr auto', gap:'3px 12px', marginTop:'8px', fontSize:'13px'}});
+        (catF=='all' ? c.rows.slice(0, 4) : c.rows).forEach(([n,v,aff]) => tb.append(E('div', null, E('div', {style:{fontWeight:600}}, n), E('div', {style:{fontSize:'11px', color:'#6a6a6a'}}, c.n+' · affects: '+aff)), E('b', {style:{color:'#015640', alignSelf:'center'}}, v)));
+        card.appendChild(tb); if (catF=='all' && c.rows.length > 4) card.appendChild(E('button', {cls:'wlp-chip', style:{marginTop:'6px'}, onclick:()=>{ catF = c.id; renderBody(); }}, 'See all '+c.rows.length));
+        box.appendChild(card); }); }
+    box.appendChild(perkCard());
     box.appendChild(E('div', {cls:'wlp-h'}, 'UPGRADES · PAID IN TICKETS · RESET ON REBIRTH'));
     const up = (n, d, l, max, cost, now, next, buyFn) => { const maxed = l >= max, c = maxed ? 0 : nice(cost), can = !maxed && (p.tickets||0) >= c;
       const b = E('button', {cls:'wlp-buy', style:{width:'auto', minWidth:'110px'}, onclick:buyFn}, maxed ? 'MAXED' : W.fmt(c)+' 🎟'); if (!can) b.disabled = true;
@@ -546,14 +562,46 @@ W.mount = (root, api) => {
       E('span', {style:{fontSize:'11px', color:'#4a4a4a', minWidth:'70px', textAlign:'right'}}, 'best '+W.fmt(r.best)))));
     return box; };
 
-  const render = () => { if (!live) return; renderHead(); body.innerHTML = '';
+  // ----- Upgrades (the old Upgrade Workshop), with bulk buy -----
+  const qN = () => qty === 'max' ? Infinity : qty;
+  const upg = () => { const box = E('div'), data = api.upgrades ? api.upgrades() : [], p = P();
+    box.appendChild(E('div', {cls:'wlp-box'}, E('div', {style:{fontWeight:800, fontSize:'18px', color:'#015640'}}, '🔧 Upgrades · '+data.reduce((a,g)=>a+g.ups.reduce((x,u)=>x+u.lv,0),0)+' levels owned'),
+      E('div', {cls:'wlp-small'}, 'Machine upgrades from the old Workshop — paid in tickets, they reset on Rebirth. Use ×1 / ×10 / ×100 / Max at the top to buy many levels at once.')));
+    const ch = E('div', {style:{display:'flex', gap:'5px', flexWrap:'wrap', margin:'8px 0'}});
+    [['all','All machines'], ...data.map(g=>[g.id, g.name])].forEach(([id,t]) => ch.appendChild(E('button', {cls:'wlp-chip'+(upgF==id?' on':''), onclick:()=>{ upgF = id; renderBody(); }}, t)));
+    ch.appendChild(E('button', {cls:'wlp-chip'+(affordOnly?' on':''), onclick:()=>{ affordOnly = !affordOnly; renderBody(); }}, 'Can afford'));
+    box.appendChild(ch); let shown = 0;
+    data.filter(g => upgF=='all' || g.id==upgF).forEach(g => { const ups = g.ups.filter(u => match(u.n, u.d, g.name) && (!affordOnly || (u.lv < u.max && (p.tickets||0) >= u.cost))); if (!ups.length) return;
+      box.appendChild(E('div', {cls:'wlp-h', style:{display:'flex', alignItems:'center', gap:'8px'}}, E('img', {src:g.icon, alt:'', style:{width:'24px', height:'24px', background:'#015640', borderRadius:'6px'}}), g.name.toUpperCase()+(g.tm > 1.001 ? ' · +'+W.fmt(Math.round((g.tm-1)*100))+'% TICKETS' : '')));
+      ups.forEach(u => { shown++; const maxed = u.lv >= u.max, pl = api.upgPlan ? api.upgPlan(g.id, u.k, qN()) : {cnt:1, cost:u.cost}, n = Math.max(1, pl.cnt), cost = pl.cnt ? pl.cost : u.cost, can = !maxed && pl.cnt > 0;
+        const b = E('button', {cls:'wlp-buy', style:{width:'auto', minWidth:'120px'}, onclick:()=>{ if (api.admin()) return api.toast('ADMIN MODE · SHOPPING DISABLED'); const got = api.buyUpg(g.id, u.k, qN()); if (got) { api.sfx('coin'); } renderHead(); renderBody(); }},
+          maxed ? (u.one ? 'OWNED' : 'MAXED') : (n > 1 ? '×'+n+' · ' : '')+W.fmt(cost)+' 🎟'); if (!can) b.disabled = true;
+        const pips = E('div', {style:{display:'flex', gap:'2px', marginTop:'4px'}}); if (u.cap || u.one) for (let i=0;i<Math.min(10, u.one ? 1 : u.cap);i++) pips.appendChild(E('div', {style:{width:'12px', height:'5px', borderRadius:'3px', background: i < Math.min(u.lv, u.cap||1) ? '#F9BF01' : '#d9d3bd'}}));
+        box.appendChild(E('div', {cls:'wlp-row', style:{marginBottom:'6px'}}, E('div', {style:{flex:1, minWidth:0}}, E('div', {style:{fontWeight:700, color:'#015640'}}, u.n+'  ', E('span', {style:{fontSize:'11px', color:'#8a8a8a'}}, u.one ? (u.lv ? 'unlocked' : 'locked') : 'level '+W.fmt(u.lv)+(u.max < 1e9 ? ' / '+u.max : ''))),
+          E('div', {cls:'wlp-small'}, u.d+(u.cap && u.lv >= u.cap ? ' · effect maxed, each level now +2% tickets' : '')), E('div', {style:{fontSize:'11px', color:'#4a4a4a'}}, 'Category: '+g.name+' · affects '+g.name+' only'), pips), b)); }); });
+    if (!shown) box.appendChild(E('div', {cls:'wlp-small'}, 'No upgrades match.'));
+    return box; };
+  // ----- Avatar (the builder, inside the shop) -----
+  const avatar = () => { const box = E('div'); if (!api.avatar) { box.appendChild(E('div', {cls:'wlp-small'}, 'Loading…')); return box; }
+    box.appendChild(E('div', {cls:'wlp-small', style:{marginBottom:'6px'}}, 'Build your critter, buy avatar parts with tickets and see what achievements unlock.'));
+    const host = E('div'); box.appendChild(host); setTimeout(() => { if (live && tab=='avatar') avOff = api.avatar(host); }, 0); return box; };
+  // ----- Wilderland prizes (Golden Stars) -----
+  const wild = () => { const p = P(), box = E('div');
+    box.appendChild(E('div', {cls:'wlp-box', style:{border:'3px solid #F9BF01'}}, E('div', {style:{fontWeight:800, fontSize:'18px', color:'#015640'}}, '⭐ Wilderland prizes · '+freeStars(p)+' Golden Stars to spend'),
+      E('div', {cls:'wlp-small'}, 'The rarest prizes. They cost Golden Stars (earned by Rebirthing) and each one gives a permanent power that survives every Rebirth.')));
+    box.appendChild(perkCard());
+    const gg = E('div', {cls:'wlp-grid', style:{marginTop:'10px'}}); const list = CAT.filter(it => isStar(it) && match(it.n, it.d) && (!affordOnly || freeStars(p) >= starPrice(it,p)));
+    list.forEach(it => gg.appendChild(prizeCard(it))); if (!list.length) gg.appendChild(E('div', {cls:'wlp-small'}, 'No Wilderland prizes match.'));
+    box.appendChild(E('button', {cls:'wlp-chip'+(affordOnly?' on':''), style:{margin:'10px 0 4px'}, onclick:()=>{ affordOnly = !affordOnly; renderBody(); }}, 'Can afford')); box.appendChild(gg); return box; };
+  const renderBody = () => { if (!live) return; if (avOff) { try { avOff(); } catch(e){} avOff = null; } body.innerHTML = '';
     const eapi = bump => ({P, setP:set, sfx:api.sfx, toast:api.toast, admin:api.admin, games:api.games, rerender:k=>{ bumpK = k; render(); }, bump, buyN:expN, setBuyN:n=>{ expN = n; }});
     const exp = () => window.WLE ? window.WLE.expPanel(eapi(bumpK)) : E('div', null, 'Loading…');
     const prestige = () => window.WLE ? window.WLE.ptPanel(eapi()) : E('div', null, 'Loading…');
-    body.appendChild(({shop, trophy, mult, chal, caps, exp, rebirth, prestige, stats}[tab] || shop)()); bumpK = null; };
+    body.appendChild(({upg, shop, avatar, wild, trophy, mult, chal, caps, exp, rebirth, prestige, stats}[tab] || shop)()); bumpK = null; };
+  const render = () => { if (!live) return; renderHead(); renderBody(); };
   render();
   checkCols();
-  return () => { live = false; wrap.remove(); };
+  return () => { live = false; if (avOff) { try { avOff(); } catch(e){} } wrap.remove(); };
 };
 
 window.WLP = W;
