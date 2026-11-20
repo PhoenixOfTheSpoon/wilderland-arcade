@@ -110,20 +110,73 @@ const build = classicArt => {
       items.push({id:C.id+'_'+i, n, d, e, r, f}); });
     items.forEach((it, i) => { it.col = C.id; it.colName = C.n;
       it.price = C.prestige ? 1e12 * Math.pow(1000, i) : nice(R[it.r].base * (1 + 3*it.f) * (C.k||1));
-      if (C.prestige) it.stars = i + 1; if (C.season) it.season = C.season;
+      // Mythic, Cosmic and Wilderland prizes (and the whole Golden Hall) cost Golden Stars, never tickets.
+      if (C.prestige) it.sp = 10 * Math.pow(2, i); else if (it.r >= 5) it.sp = [0,0,0,0,0,2,8,25][it.r] + Math.round(it.f * [0,0,0,0,0,4,12,35][it.r]);
+      if (C.season) it.season = C.season;
       CAT.push(it); BYID[it.id] = it; });
     C.size = items.length; });
   // A monument you can always buy one more of: each one costs 10× the last.
-  const mon = {id:'monument', n:'Wilderland Monument', d:'Each one costs 10× the last. There is always another.', e:'🗽', r:7, col:'golden', colName:'Golden Hall', repeat:1, price:1e6};
+  const mon = {id:'monument', n:'Wilderland Monument', d:'Costs Golden Stars, doubling each time. There is always another.', e:'🗽', r:7, col:'golden', colName:'Golden Hall', repeat:1, price:1e6};
   CAT.push(mon); BYID.monument = mon;
   return CAT; };
 W.catalog = build;
+
+// ---------------- Golden Star perks: every Star prize gives permanent power that survives every Rebirth ----------------
+const PERK_GAMES = ['snake','breakout','flappy','pong','memory','whack','tictactoe','reaction','typing','simon','mines','connect4','td','crossing','stack','rootout','trace','idle'];
+const GNAME = {snake:'Snake',breakout:'Breakout',flappy:'Flapper',pong:'Pong',memory:'Memory Match',whack:'Whack-a-Gopher',tictactoe:'Tic-Tac-Toe',reaction:'Reaction Test',typing:'Typing Race',simon:'Simon Says',mines:'Minesweeper',connect4:'Connect 4',td:'Trailhead Defense',crossing:'Critter Crossing',stack:'Timber Stack',rootout:'Root Out',trace:'Trace & Write',idle:'The Mines'};
+const HEAD_EXP = [['claw','Claw Machine'],['booth','Prize Booth'],['snack','Snack Bar'],['row','Cabinet Row']];
+const PERK_KINDS = ['all','game','click','learn','jack','head','combo','critter','workshop','buff'];
+const r2 = x => Math.round(x*100)/100;
+const mkPerk = (k, s, si) => { const q = Math.pow(s, .75), w = Math.pow(s, .6);
+  switch (k) {
+    case 'all': return {k, v:r2(1 + .12*q), t:'×'+r2(1 + .12*q)+' ALL tickets'};
+    case 'game': { const g = PERK_GAMES[si % PERK_GAMES.length], v = r2(1 + .5*q); return {k, g, v, t:'×'+v+' payouts on '+GNAME[g]}; }
+    case 'click': return {k, v:r2(1 + .3*q), t:'×'+r2(1 + .3*q)+' Golden Ticket click power'};
+    case 'learn': return {k, v:r2(1 + .25*q), t:'×'+r2(1 + .25*q)+' Learn mode bonus'};
+    case 'jack': return {k, v:r2(1 + .1*w), t:'×'+r2(1 + .1*w)+' jackpot chance'};
+    case 'head': { const [x, nm] = HEAD_EXP[si % 4], n = Math.max(1, Math.round(3*w)); return {k, x, n, t:'Start every Rebirth with '+nm+' Lv '+n}; }
+    case 'combo': return {k, v:r2(1 + .08*w), t:'Combo meter ×'+r2(1 + .08*w)+' stronger'};
+    case 'critter': return {k, v:r2(1 + .1*w), t:'Golden critters ×'+r2(1 + .1*w)+' more often'};
+    case 'workshop': { const n = Math.max(1, Math.round(1.5*Math.sqrt(s))); return {k, n, t:'Start every Rebirth with Ticket Booster Lv '+n+' on every machine'}; }
+    case 'buff': return {k, v:r2(1 + .08*w), t:'Critter boosts last ×'+r2(1 + .08*w)+' longer and hit ×'+r2(1 + .08*w)+' harder'};
+  } };
+let STAR_ITEMS = null;
+const starItems = () => { if (STAR_ITEMS) return STAR_ITEMS; build(); STAR_ITEMS = []; let si = 0;
+  CAT.forEach(it => { if (!(it.sp || it.repeat)) return;
+    it.perk = it.repeat ? {k:'all', v:2, t:'×2 ALL tickets for each one you own (stacks)'} : mkPerk(PERK_KINDS[si % PERK_KINDS.length], it.sp, Math.floor(si / PERK_KINDS.length) + si);
+    si++; STAR_ITEMS.push(it); });
+  return STAR_ITEMS; };
+W.perkOf = it => { starItems(); return it.perk || null; };
+// Combined power of every Star prize you own. Prizes are never reset, so these survive every Rebirth.
+W.perks = P => { const o = {all:1, click:1, learn:1, jack:1, combo:1, critter:1, buff:1, game:{}, head:{}, workshop:0, count:0}; const own = P.prizes||{};
+  starItems().forEach(it => { const n = own[it.id]|0; if (!n) return; const k = it.perk; o.count++;
+    if (it.repeat) { o.all *= Math.pow(2, n); return; }
+    if (k.k == 'game') o.game[k.g] = (o.game[k.g]||1) * k.v; else if (k.k == 'head') o.head[k.x] = (o.head[k.x]||0) + k.n; else if (k.k == 'workshop') o.workshop += k.n; else o[k.k] *= k.v; });
+  return o; };
+W.perkLines = P => { const o = W.perks(P), L = [], f = v => '×'+W.fmt(r2(v));
+  if (o.all > 1) L.push(['💫','All tickets',f(o.all)]); if (o.click > 1) L.push(['👆','Golden Ticket clicks',f(o.click)]); if (o.learn > 1) L.push(['📚','Learn mode bonus',f(o.learn)]);
+  if (o.jack > 1) L.push(['🎰','Jackpot chance',f(o.jack)]); if (o.combo > 1) L.push(['🔥','Combo meter',f(o.combo)]); if (o.critter > 1) L.push(['🦊','Golden critters appear',f(o.critter)]);
+  if (o.buff > 1) L.push(['⚡','Critter boosts (length & power)',f(o.buff)]);
+  Object.keys(o.game).forEach(g => L.push(['🕹️', GNAME[g]+' payouts', f(o.game[g])]));
+  Object.keys(o.head).forEach(x => L.push(['🏗️', 'Rebirth head start: '+(HEAD_EXP.find(h=>h[0]==x)||[0,x])[1], 'Lv '+o.head[x]]));
+  if (o.workshop) L.push(['🛠️','Rebirth head start: Ticket Booster on every machine','Lv '+o.workshop]);
+  return L; };
+// Levels you start each Rebirth with (also applied the moment you buy a head-start prize).
+W.headStart = P => { const o = W.perks(P), exp = {}, upg = {}; Object.keys(o.head).forEach(x => exp[x] = o.head[x]);
+  if (o.workshop) PERK_GAMES.forEach(g => upg[g] = {boost:o.workshop}); return {exp, upg}; };
+W.applyHead = P => { const h = W.headStart(P), exp = {...(P.exp||{})}, upg = {...(P.upg||{})}; let ch = false;
+  Object.keys(h.exp).forEach(x => { if ((exp[x]|0) < h.exp[x]) { exp[x] = h.exp[x]; ch = true; } });
+  Object.keys(h.upg).forEach(g => { const cur = {...(upg[g]||{})}; if ((cur.boost|0) < h.upg[g].boost) { cur.boost = h.upg[g].boost; upg[g] = cur; ch = true; } });
+  return ch ? {exp, upg} : null; };
 W.cols = COLS;
-const priceOf = (it, P) => it.repeat ? 1e6 * Math.pow(10, (P.prizes||{})[it.id]||0) : it.price;
+const priceOf = (it, P) => it.price;
+const starPrice = (it, P) => it.repeat ? 100 * Math.pow(2, (P.prizes||{})[it.id]||0) : (it.sp||0);
+const isStar = it => !!(it.sp || it.repeat);
+const freeStars = P => Math.max(0, (P.stars||0) - (P.starsSpent||0));
 
 // ---------------- multipliers ----------------
 const MSHOP = [
-  {k:'global', n:'Ticket Multiplier', d:'Every ticket you earn ×1.12 per level (multiplies)', max:600, cost:l=>150*Math.pow(1.3,l), eff:l=>Math.pow(1.12,l), show:l=>'×'+W.fmt(Math.pow(1.12,l))},
+  {k:'global', n:'Ticket Multiplier', d:'Every ticket you earn ×1.13 per level (multiplies)', max:999, cost:l=>150*Math.pow(1.32,l), eff:l=>Math.pow(1.13,l), show:l=>'×'+W.fmt(Math.pow(1.13,l))},
   {k:'combo',  n:'Combo Streak', d:'Play different machines in a row: +bonus per machine (up to 10)', max:60, cost:l=>300*Math.pow(1.45,l), eff:l=>.02+.02*l, show:l=>'+'+Math.round((.02+.02*l)*100)+'% per machine'},
   {k:'daily',  n:'Daily Login Streak', d:'Each day in a row you visit adds a bonus (up to 30 days)', max:60, cost:l=>250*Math.pow(1.45,l), eff:l=>.01+.01*l, show:l=>'+'+Math.round((.01+.01*l)*100)+'% per day'},
   {k:'learn',  n:'Learn Mode Bonus', d:'Bonus tickets for every correct answer in Learn mode', max:200, cost:l=>120*Math.pow(1.33,l), eff:l=>5*Math.pow(1.25,l), show:l=>'+'+W.fmt(5*Math.pow(1.25,l))+' per answer (× your multipliers)'},
@@ -133,24 +186,27 @@ const GAME_UP = {n:'Machine Multiplier', max:150, cost:l=>100*Math.pow(1.4,l), e
 W.MSHOP = MSHOP;
 const lv = (P,k) => ((P.mult||{})[k])|0;
 const glv = (P,g) => (((P.mult||{}).game||{})[g])|0;
-const starMult = P => Math.pow(1.5, P.stars||0);
+// Golden Stars: every star you've ever EARNED counts (spending them in the Star Tree doesn't lower this).
+const starMult = P => Math.pow(1 + (P.stars||0), 0.6);
+W.starMult = starMult;
 const colMult = P => Math.pow(1.2, Object.keys(P.colDone||{}).length);
 const loginMult = P => 1 + Math.min(30, (P.login||{}).streak||0) * (lv(P,'daily') ? MSHOP[2].eff(lv(P,'daily')) : .01);
-const comboMult = P => 1 + Math.min(10, Math.max(0, ((P.combo||{}).n||1)-1)) * (lv(P,'combo') ? MSHOP[1].eff(lv(P,'combo')) : .01);
-W.globalMult = P => MSHOP[0].eff(lv(P,'global')) * starMult(P) * colMult(P) * loginMult(P);
-W.totalMult = (P, g) => W.globalMult(P) * comboMult(P) * (g ? GAME_UP.eff(glv(P,g)) : 1);
-W.breakdown = P => [['Ticket Multiplier', MSHOP[0].eff(lv(P,'global'))], ['Golden Stars ('+(P.stars||0)+')', starMult(P)], ['Collections ('+Object.keys(P.colDone||{}).length+')', colMult(P)], ['Login streak ('+(((P.login||{}).streak)||0)+' days)', loginMult(P)], ['Combo streak ('+(((P.combo||{}).n)||0)+')', comboMult(P)]];
+const comboN = P => { const c = P.combo||{}, E2 = window.WLE, warm = E2 ? E2.comboWarmMs(P) : 300000; return c.t && Date.now() - c.t > warm ? 1 : (c.n||1); };
+const comboMult = P => { const E2 = window.WLE, cap = E2 ? E2.comboCap(P) : 10, str = E2 ? E2.comboStrength(P) : 1; return 1 + Math.min(cap, Math.max(0, comboN(P)-1)) * (lv(P,'combo') ? MSHOP[1].eff(lv(P,'combo')) : .01) * str; };
+W.globalMult = P => MSHOP[0].eff(lv(P,'global')) * starMult(P) * colMult(P) * loginMult(P) * W.perks(P).all;
+W.totalMult = (P, g) => W.globalMult(P) * comboMult(P) * (g ? GAME_UP.eff(glv(P,g)) * (W.perks(P).game[g]||1) : 1) * (window.WLE ? window.WLE.gameMult(P) : 1);
+W.breakdown = P => [['Ticket Multiplier', MSHOP[0].eff(lv(P,'global'))], ['Golden Stars ('+(P.stars||0)+')', starMult(P)], ['Collections ('+Object.keys(P.colDone||{}).length+')', colMult(P)], ['Login streak ('+(((P.login||{}).streak)||0)+' days)', loginMult(P)], ['Golden Star prizes', W.perks(P).all], ['Combo streak ('+(((P.combo||{}).n)||0)+')', comboMult(P)]];
 
 // ---------------- hooks the arcade calls ----------------
 // A game paid out `tix` base tickets: apply multipliers, combo and lucky jackpots.
-W.payout = (P, g, tix) => { const lines = []; const prev = P.combo||{}; const n = prev.g && prev.g !== g ? Math.min(10,(prev.n||1)+1) : 1;
-  const combo = {g, n}; const P2 = {...P, combo};
+W.payout = (P, g, tix) => { const lines = []; const prev = {...(P.combo||{}), n:comboN(P)}; const cap = window.WLE ? window.WLE.comboCap(P) : 10; const n = prev.g && prev.g !== g ? Math.min(cap,(prev.n||1)+1) : 1;
+  const combo = {g, n, t:Date.now()}; const P2 = {...P, combo};
   const m = W.totalMult(P2, g); let out = tix * m;
   if (m > 1.01) lines.push('MULTIPLIER ×'+W.fmt(m));
   if (n > 1) lines.push('COMBO ×'+n+' MACHINES');
-  const L = lv(P,'lucky'); if (L) { const o = MSHOP[4].eff(L), r = Math.random(); if (r < o.x100) { out *= 100; lines.push('JACKPOT ×100!!'); } else if (r < o.x100 + o.x10) { out *= 10; lines.push('LUCKY ×10!'); } }
+  const L = lv(P,'lucky'), lb = window.WLE ? window.WLE.luckBonus(P) : 0, jk = W.perks(P).jack; if (L || lb || jk > 1) { const o = MSHOP[4].eff(L); o.x10 += lb; if (jk > 1) { o.x10 = Math.min(.5, Math.max(o.x10, .01) * jk); o.x100 = Math.min(.05, Math.max(o.x100, .001) * jk); } const r = Math.random(); if (r < o.x100) { out *= 100; lines.push('JACKPOT ×100!!'); } else if (r < o.x100 + o.x10) { out *= 10; lines.push('LUCKY ×10!'); } }
   return {tix: Math.max(1, Math.round(out)), lines, patch:{combo}}; };
-W.learnBonus = P => lv(P,'learn') ? Math.round(MSHOP[3].eff(lv(P,'learn')) * W.globalMult(P)) : 0;
+W.learnBonus = P => Math.round((lv(P,'learn') ? MSHOP[3].eff(lv(P,'learn')) : 2) * W.globalMult(P) * (window.WLE ? window.WLE.learnMult(P) : 1) * W.perks(P).learn);
 W.login = P => { const L = P.login||{}, t = today(); if (L.last === t) return null; const streak = L.last === yesterday() ? (L.streak||0)+1 : 1; return {login:{last:t, streak, best:Math.max(L.best||0, streak)}}; };
 
 // ---------------- challenges ----------------
@@ -185,24 +241,30 @@ W.onBuy = P => bump(P, x => { if (x.t=='buy') x.prog++; });
 // ---------------- capsules (tickets only, odds always shown) ----------------
 const CAPS = [
   {id:'basic',  n:'Basic Capsule',  price:500,   col:'#00B451', odds:[60,25,10,4,1,0,0,0]},
-  {id:'deluxe', n:'Deluxe Capsule', price:2e5,   col:'#a64be0', odds:[0,30,35,22,10,3,0,0]},
-  {id:'cosmic', n:'Cosmic Capsule', price:5e9,   col:'#4a5cff', odds:[0,0,0,30,35,25,9,1]},
+  {id:'deluxe', n:'Deluxe Capsule', price:1.5e5,   col:'#a64be0', odds:[0,30,35,22,10,3,0,0]},
+  {id:'cosmic', n:'Mega Capsule',   price:3e6,   col:'#4a5cff', odds:[0,0,0,35,40,25,0,0]},
 ];
+// Capsules can only ever roll Common → Mythic. Cosmic and Wilderland prizes are bought with Golden Stars only.
+const CAP_MAX_R = 5; CAPS.forEach(c => { for (let i = CAP_MAX_R+1; i < 8; i++) c.odds[i] = 0; const t = c.odds.reduce((a,b)=>a+b,0); if (t !== 100) c.odds = c.odds.map(o => Math.round(o*100/t*10)/10); });
 W.CAPS = CAPS;
-const capPrice = (c, P) => nice(c.price * Math.max(1, Math.pow(W.globalMult(P), .5)));
-const rollCap = (c, P) => { const r = Math.random()*100; let acc = 0, tier = 0; for (let i=0;i<8;i++) { acc += c.odds[i]; if (r < acc) { tier = i; break; } }
-  const pool = CAT.filter(it => it.r === tier && !it.season && !it.stars && !it.repeat); return pool[Math.floor(Math.random()*pool.length)] || CAT[0]; };
+const capPrice = (c, P) => nice(Math.min(c.price * Math.max(1, Math.pow(W.globalMult(P), .25)), W.rebirthNeed(P) * .3));
+const rollCap = (c, P) => { const tot = c.odds.slice(0, CAP_MAX_R+1).reduce((a,b)=>a+b,0); const r = Math.random()*tot; let acc = 0, tier = 0; for (let i=0;i<=CAP_MAX_R;i++) { if (!c.odds[i]) continue; acc += c.odds[i]; tier = i; if (r < acc) break; }
+  const pool = CAT.filter(it => it.r === tier && it.r <= CAP_MAX_R && !it.season && it.col !== 'golden' && !it.repeat); return pool[Math.floor(Math.random()*pool.length)] || CAT[0]; };
+W.rollCap = rollCap;
 
 // ---------------- rebirth ----------------
 // 10M → 10B → 10T → 10Qa → 10Qi (10 quintillion) → 10Sx … ×1,000 each Rebirth
 W.rebirthNeed = P => 1e7 * Math.pow(1000, P.rebirths||0);
-W.rebirthStars = P => { const need = W.rebirthNeed(P); if ((P.tickets||0) < need) return 0; return 1 + Math.floor(Math.log10(P.tickets/need)); };
+// Stars come from ALL tickets ever earned: total stars = cube root of (lifetime tickets ÷ 1M). Each Rebirth gives at least 1.
+W.lifetimeStars = P => Math.floor(Math.cbrt(Math.max(0, P.earned||0) / 1e6));
+W.rebirthStars = P => { const need = W.rebirthNeed(P); if ((P.tickets||0) < need) return 0; return Math.max(1, W.lifetimeStars(P) - (P.stars||0)); };
 // Rebirth: tickets, Multiplier upgrades, The Mines (miners, ore, mine upgrades — depth stays) and the Mines Workshop upgrades reset;
 // every saved game restarts. Returns the profile patch plus how many Golden Stars were earned.
 W.doRebirth = P => { const stars = W.rebirthStars(P); if (!stars) return null;
   const idle = P.idle && typeof P.idle=='object' ? {...P.idle, grid:[1,0,0,0,0,0,0,0,0,0,0,0], up:{}, ore:0, hires:1, last:Date.now()} : P.idle;
   const upg = {}; // the whole Upgrade Workshop resets
-  return {stars, patch:{tickets:0, mult:{}, stars:(P.stars||0)+stars, rebirths:(P.rebirths||0)+1, saves:{}, idle, upg}}; };
+  const hs = W.headStart(P); Object.assign(upg, hs.upg); // Golden Star head starts survive
+  return {stars, patch:{tickets:0, mult:{}, exp:hs.exp, expUp:{}, combo:{}, stars:(P.stars||0)+stars, rebirths:(P.rebirths||0)+1, saves:{}, idle, upg}}; };
 W.rebirthCard = (stars, total, n) => ({n:'+'+stars+' Golden Star'+(stars>1?'s':''), d:'Every ticket is now worth ×'+W.fmt(Math.pow(1.5,total))+'. Your next milestone is '+W.fmt(1e7*Math.pow(1000,n))+' tickets.', e:'⭐', r:7, colName:'Rebirth #'+n});
 const SKINS = [{id:'',n:'Classic',stars:0},{id:'gold',n:'Gold Trim',stars:1},{id:'neon',n:'Neon Glow',stars:3},{id:'galaxy',n:'Galaxy',stars:6},{id:'rainbow',n:'Wilderland Rainbow',stars:10}];
 W.SKINS = SKINS;
@@ -229,6 +291,8 @@ const css = `
 .wlp-card .ds{font-size:10.5px;color:#4a4a4a;line-height:1.25;min-height:26px}
 .wlp-card .tier{font-size:9.5px;font-weight:700;letter-spacing:.12em;color:var(--rc)}
 .wlp-buy{width:100%;border:none;border-radius:999px;padding:7px 6px;font:700 12px inherit;font-family:inherit;cursor:pointer;background:#015640;color:#fff}
+.wlp-perk{font-size:11px;font-weight:700;line-height:1.25;color:#7a5200;background:#fff3c4;border:1.5px solid #F9BF01;border-radius:8px;padding:4px 6px;margin:2px 0 6px}
+.wlp-perk.on{background:#e9f7c8;border-color:#00B451;color:#015640}
 .wlp-buy:disabled{background:#d9d5c3;color:#6a6a6a;cursor:default}
 .wlp-ic{width:64px;height:64px;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:36px;background:radial-gradient(circle at 50% 35%,#fff,var(--rbg));box-shadow:0 0 0 3px var(--rc),0 0 14px var(--rg);position:relative}
 .wlp-ic img{width:54px;height:54px}
@@ -303,34 +367,36 @@ W.mount = (root, api) => {
     if (newly) { set({colDone:done}); api.toast('COLLECTION COMPLETE · '+newly.n.toUpperCase()+' · PERMANENT ×1.2'); } };
 
   const buy = (it, price) => { const p = P(); if (api.admin()) { api.toast('ADMIN MODE · SHOPPING DISABLED'); return; }
-    if (it.stars && (p.stars||0) < it.stars) { api.sfx('bad'); return; }
-    if ((p.tickets||0) < price) { api.sfx('bad'); api.toast('NEED '+W.fmt(price - p.tickets)+' MORE TICKETS'); return; }
     const prizes = {...(p.prizes||{}), [it.id]: ((p.prizes||{})[it.id]||0)+1};
+    if (isStar(it)) { const sp = starPrice(it, p); if (freeStars(p) < sp) { api.sfx('bad'); api.toast('NEED '+(sp - freeStars(p))+' MORE GOLDEN STARS'); return; }
+      set({starsSpent:(p.starsSpent||0)+sp, prizes, ...(W.onBuy({...p, prizes})||{})}); const hd = W.applyHead(P()); if (hd) set(hd); reveal(it); const pk = W.perkOf(it); if (pk) api.toast('PERMANENT POWER · '+pk.t.toUpperCase()); checkCols(); render(); return; }
+    if ((p.tickets||0) < price) { api.sfx('bad'); api.toast('NEED '+W.fmt(price - p.tickets)+' MORE TICKETS'); return; }
     set({tickets:p.tickets-price, prizes, ...(W.onBuy({...p, prizes})||{})}); reveal(it); checkCols(); render(); };
 
   const head = E('div'); const body = E('div'); wrap.append(head, body);
   const renderHead = () => { head.innerHTML = ''; const p = P();
     const top = E('div', {style:{display:'flex', gap:'8px', flexWrap:'wrap', alignItems:'center', marginBottom:'10px'}},
       E('div', {style:{background:'#D5F367', color:'#015640', borderRadius:'999px', padding:'7px 14px', fontWeight:800}}, '🎟 '+W.fmt(p.tickets||0)+' tickets'),
-      E('div', {style:{background:'#015640', color:'#D5F367', borderRadius:'999px', padding:'7px 14px', fontWeight:800}, title:'Total multiplier on every game'}, '×'+W.fmt(W.globalMult(p))+' multiplier'),
-      (p.stars ? E('div', {style:{background:'#F9BF01', color:'#121313', borderRadius:'999px', padding:'7px 14px', fontWeight:800}}, '⭐ '+p.stars+' Golden Stars') : null),
+      E('div', {style:{background:'#015640', color:'#D5F367', borderRadius:'999px', padding:'7px 14px', fontWeight:800}, title:'Total multiplier on every game'}, '×'+W.fmt(W.totalMult(p))+' total multiplier'),
+      E('div', {style:{background:'#F9BF01', color:'#121313', borderRadius:'999px', padding:'7px 14px', fontWeight:800}}, '⭐ '+freeStars(p)+' to spend · '+(p.stars||0)+' earned'),
       E('div', {cls:'wlp-small'}, W.ownedCount(p)+' / '+W.total()+' prizes · '+Object.keys(p.colDone||{}).length+' / '+COLS.length+' collections'));
     const tb = E('div', {cls:'wlp-tabs'}); tabs.forEach(([id,t]) => tb.appendChild(E('button', {cls:'wlp-tab'+(tab==id?' on':''), onclick:()=>{ tab = id; render(); }}, t)));
     head.append(top, tb); };
 
   const prizeCard = (it, opts={}) => { const p = P(), own = (p.prizes||{})[it.id]||0, r = R[it.r];
-    let price = opts.price || priceOf(it, p); const season = it.season && it.season !== seasonNow(), lockStar = it.stars && (p.stars||0) < it.stars;
+    let price = opts.price || priceOf(it, p); const season = it.season && it.season !== seasonNow(), star = isStar(it), sp = star ? starPrice(it, p) : 0;
     const card = E('div', {cls:'wlp-card wlp-r'+it.r, style:{'--rc':r.c}});
     card.append(E('div', {cls:'tier'+(r.rainbow?' wlp-rain':'')}, r.n.toUpperCase()), icon(it, true), E('div', {cls:'nm'}, it.n), E('div', {cls:'ds'}, it.d));
     if (own) card.appendChild(E('div', {style:{position:'absolute', top:'6px', right:'6px', background:'#015640', color:'#D5F367', fontSize:'10px', fontWeight:800, borderRadius:'999px', padding:'2px 7px'}}, '×'+own));
     if (opts.badge) card.appendChild(E('div', {style:{position:'absolute', top:'6px', left:'6px', background:'#FF4539', color:'#fff', fontSize:'10px', fontWeight:800, borderRadius:'999px', padding:'2px 7px'}}, opts.badge));
-    const can = !season && !lockStar && (p.tickets||0) >= price;
-    const b = E('button', {cls:'wlp-buy', onclick:()=>buy(it, price)}, season ? 'Back in '+SEASON_NAME[it.season] : lockStar ? '🔒 '+it.stars+' ⭐ needed' : W.fmt(price)+' 🎟');
+    const need = W.rebirthNeed(p), can = !season && (star ? freeStars(p) >= sp : (p.tickets||0) >= price && price < need);
+    const b = E('button', {cls:'wlp-buy', style: star ? {background:'#F9BF01', color:'#121313'} : null, onclick:()=>buy(it, price)}, season ? 'Back in '+SEASON_NAME[it.season] : star ? W.fmt(sp)+' ⭐' : W.fmt(price)+' 🎟');
+    const pk = star && W.perkOf(it); if (pk) card.appendChild(E('div', {cls:'wlp-perk'+(own?' on':''), title:'Permanent — survives every Rebirth'}, (own?'✅ ':'✨ ')+pk.t));
     if (!can) b.disabled = true; card.appendChild(b); return card; };
 
   const shop = () => { const p = P(), box = E('div');
     // featured
-    const pool = CAT.filter(it => !it.stars && !it.repeat && (!it.season || it.season === seasonNow()));
+    const pool = CAT.filter(it => !isStar(it) && (!it.season || it.season === seasonNow()));
     const fr = rng('feat'+today()); const feat = pool[Math.floor(fr()*pool.length)], fprice = nice(priceOf(feat,p)*.7);
     const goals = pool.filter(it => !(p.prizes||{})[it.id] && priceOf(it,p) > (p.tickets||0)).sort((a,b)=>priceOf(a,p)-priceOf(b,p)).slice(0,3);
     box.appendChild(E('div', {cls:'wlp-h'}, 'FEATURED PRIZE OF THE DAY · 30% OFF'));
@@ -374,7 +440,7 @@ W.mount = (root, api) => {
   const mult = () => { const p = P(), box = E('div');
     const bd = E('div', {cls:'wlp-box'}, E('div', {style:{fontWeight:800, fontSize:'18px', color:'#015640'}}, 'Your multiplier: ×'+W.fmt(W.globalMult(p))+' on everything'), E('div', {cls:'wlp-small'}, 'Then each machine’s own multiplier and your combo stack on top.'));
     const tbl = E('div', {style:{display:'grid', gridTemplateColumns:'1fr auto', gap:'2px 12px', marginTop:'8px', fontSize:'13px'}}); W.breakdown(p).forEach(([n,v]) => tbl.append(E('span', null, n), E('b', null, '×'+W.fmt(v))));
-    bd.appendChild(tbl); box.appendChild(bd);
+    bd.appendChild(tbl); box.appendChild(bd); box.appendChild(perkCard());
     box.appendChild(E('div', {cls:'wlp-h'}, 'UPGRADES · PAID IN TICKETS · RESET ON REBIRTH'));
     const up = (n, d, l, max, cost, now, next, buyFn) => { const maxed = l >= max, c = maxed ? 0 : nice(cost), can = !maxed && (p.tickets||0) >= c;
       const b = E('button', {cls:'wlp-buy', style:{width:'auto', minWidth:'110px'}, onclick:buyFn}, maxed ? 'MAXED' : W.fmt(c)+' 🎟'); if (!can) b.disabled = true;
@@ -408,7 +474,7 @@ W.mount = (root, api) => {
     const it = rollCap(c, p), prizes = {...(p.prizes||{}), [it.id]:((p.prizes||{})[it.id]||0)+1};
     set({tickets:(p.tickets||0)-(free?0:price), prizes, capsules:(p.capsules||0)+1}); reveal(it, (free?'FREE ':'')+c.n.toUpperCase()+' · '+R[it.r].n.toUpperCase()); checkCols(); render(); };
   const caps = () => { const p = P(), box = E('div');
-    box.appendChild(E('div', {cls:'wlp-box'}, E('div', {style:{fontWeight:800, fontSize:'18px', color:'#015640'}}, 'Mystery Capsules'), E('div', {cls:'wlp-small'}, 'Paid with tickets only — never real money. The exact odds are printed on every capsule. Duplicates add to your count in the Trophy Room.')));
+    box.appendChild(E('div', {cls:'wlp-box'}, E('div', {style:{fontWeight:800, fontSize:'18px', color:'#015640'}}, 'Mystery Capsules'), E('div', {cls:'wlp-small'}, 'Paid with tickets only — never real money. The exact odds are printed on every capsule. Capsules only hold Common to Mythic prizes — Cosmic and Wilderland prizes can only be bought with Golden Stars. Duplicates add to your count in the Trophy Room.')));
     const g = E('div', {style:{display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))', gap:'10px', marginTop:'10px'}});
     CAPS.forEach(c => { const price = capPrice(c,p), can = (p.tickets||0) >= price;
       const odds = E('div', {style:{display:'grid', gridTemplateColumns:'1fr auto', gap:'1px 8px', fontSize:'12px', margin:'6px 0'}});
@@ -417,19 +483,26 @@ W.mount = (root, api) => {
       g.appendChild(E('div', {cls:'wlp-box', style:{border:'3px solid '+c.col, textAlign:'center'}}, E('div', {style:{fontSize:'52px'}}, '🥚'), E('div', {style:{fontWeight:800, color:c.col, fontSize:'17px'}}, c.n), E('div', {cls:'wlp-small'}, 'ODDS FOR EACH RARITY:'), odds, b)); });
     box.appendChild(g); box.appendChild(E('div', {cls:'wlp-small', style:{marginTop:'8px'}}, 'You’ve opened '+(p.capsules||0)+' capsules. Capsule prices grow a little as your multiplier grows.')); return box; };
 
+  // Summary of everything Golden Star prizes give you (permanent — never reset).
+  const perkCard = () => { const p = P(), L = W.perkLines(p), o = W.perks(p);
+    const b = E('div', {cls:'wlp-box', style:{border:'3px solid #F9BF01', background:'linear-gradient(160deg,#fffbe6,#fff3c4)'}},
+      E('div', {style:{fontWeight:800, fontSize:'18px', color:'#7a5200'}}, '⭐ Golden Star power · '+o.count+' Star prize'+(o.count==1?'':'s')),
+      E('div', {cls:'wlp-small'}, 'Every prize bought with Golden Stars gives permanent power that survives every Rebirth. Bigger Star prices give bigger bonuses.'));
+    if (!L.length) b.appendChild(E('div', {style:{marginTop:'6px', fontWeight:700, color:'#015640'}}, 'No Star prizes yet. Mythic, Cosmic, Wilderland and Golden Hall prizes cost Golden Stars — each one shows its power on the card.'));
+    else { const g = E('div', {style:{display:'grid', gridTemplateColumns:'auto 1fr auto', gap:'4px 10px', marginTop:'8px', alignItems:'center'}});
+      L.forEach(([e,n,v]) => g.append(E('span', null, e), E('span', {style:{fontWeight:600}}, n), E('b', {style:{color:'#015640'}}, v))); b.appendChild(g); }
+    return b; };
+  W._perkCard = perkCard;
   const rebirth = () => { const p = P(), box = E('div'), need = W.rebirthNeed(p), stars = W.rebirthStars(p), pct = Math.min(100, (p.tickets||0)/need*100);
     box.appendChild(E('div', {cls:'wlp-box', style:{border:'3px solid #F9BF01'}},
       E('div', {style:{fontWeight:800, fontSize:'20px', color:'#015640'}}, '⭐ Rebirth'),
-      E('div', {cls:'wlp-small'}, 'When you reach the milestone you Rebirth automatically: your tickets and Multiplier upgrades reset, every game’s saved run restarts, the whole Upgrade Workshop resets, and The Mines clears its miners, ore and mine upgrades (you keep the depth you reached). In return you get Golden Stars: each multiplies every ticket ×1.5 forever and unlocks Golden Hall prizes and cabinet skins — and The Mines’ max miner level grows 15% (now '+(function(){ let m = 30; for (let i=0;i<(p.rebirths||0);i++) m = Math.floor(m*1.15); return m; })()+'). You keep high scores, prizes, collections and achievements.'),
-      E('div', {style:{marginTop:'10px', fontWeight:700}}, 'Rebirths: '+(p.rebirths||0)+' · Golden Stars: '+(p.stars||0)+' · star bonus ×'+W.fmt(starMult(p))),
+      E('div', {cls:'wlp-small'}, 'When you reach the milestone you Rebirth automatically: your tickets, Multiplier upgrades and Arcade Expansions reset, every game’s saved run restarts, the whole Upgrade Workshop resets, and The Mines clears its miners, ore and mine upgrades (you keep the depth you reached). In return you get Golden Stars: they boost every ticket forever (×'+W.fmt(starMult(p))+' right now), buy Star prizes with permanent powers and unlock Golden Hall prizes and cabinet skins — and The Mines’ max miner level grows 15% (now '+(function(){ let m = 30; for (let i=0;i<(p.rebirths||0);i++) m = Math.floor(m*1.15); return m; })()+'). You keep high scores, prizes, collections and achievements.'),
+      E('div', {style:{marginTop:'10px', fontWeight:700}}, 'Rebirths: '+(p.rebirths||0)+' · Golden Stars earned: '+(p.stars||0)+' ('+freeStars(p)+' to spend) · star bonus ×'+W.fmt(starMult(p))),
       E('div', {style:{marginTop:'6px', fontSize:'13px'}}, 'Next milestone: '+W.fmt(need)+' tickets'),
       E('div', {cls:'wlp-small'}, 'Milestones: '+[0,1,2,3,4,5].map(i=>W.fmt(1e7*Math.pow(1000,(p.rebirths||0)+i))).join(' → ')+' → …'),
       E('div', {cls:'wlp-bar', style:{margin:'6px 0'}}, E('div', {style:{width:pct+'%', background:'#F9BF01'}})),
-      (() => { const b = E('button', {cls:'wlp-buy', style:{background:'#F9BF01', color:'#121313', fontSize:'15px', padding:'10px'}, onclick:()=>{ if (api.admin()) return api.toast('ADMIN MODE · REBIRTH DISABLED'); if (!stars) return api.sfx('bad');
-          if (b.dataset.arm !== '1') { b.dataset.arm = '1'; b.textContent = 'Are you sure? Tap again to Rebirth for '+stars+' ⭐'; return; }
-          const pp = P(), rb = W.doRebirth(pp); if (!rb) return; set(rb.patch); const np = P();
-          reveal(W.rebirthCard(rb.stars, np.stars, np.rebirths), 'REBIRTH!'); render(); }},
-          stars ? 'Rebirth now for +'+stars+' Golden Star'+(stars>1?'s':'') : 'Need '+W.fmt(need-(p.tickets||0))+' more tickets'); if (!stars) b.disabled = true; return b; })()));
+      E('div', {style:{fontWeight:700, color:'#015640', fontSize:'13px'}}, 'No button needed — the Rebirth happens the moment you reach '+W.fmt(need)+' tickets. You’ll earn about '+Math.max(1, W.lifetimeStars({...p, earned:Math.max(p.earned||0, need)}) - (p.stars||0))+' Golden Star(s).')));
+    box.appendChild(perkCard());
     box.appendChild(E('div', {cls:'wlp-h'}, 'CABINET SKINS (UNLOCK WITH GOLDEN STARS)'));
     const sk = E('div', {style:{display:'flex', gap:'8px', flexWrap:'wrap'}});
     SKINS.forEach(s => { const ok = (p.stars||0) >= s.stars, on = (p.skin||'') === s.id;

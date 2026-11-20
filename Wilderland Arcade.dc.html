@@ -18,6 +18,27 @@ button{touch-action:manipulation;}
 a{color:#D5F367;} a:hover{color:#ffffff;}
 button{font-family:inherit;}
 .wl-field:focus{border-color:#00B451 !important; box-shadow:0 0 0 3px rgba(0,180,81,.25);}
+/* ---- polish: hover/press on every button, modal entrances, golden kiosk, expansion pop ---- */
+button{transition:transform .12s ease, filter .15s ease, box-shadow .15s ease;}
+button:not(:disabled):hover{filter:brightness(1.08);transform:translateY(-1px);}
+button:not(:disabled):active{transform:translateY(1px) scale(.97);filter:brightness(.95);}
+button:focus-visible{outline:3px solid #D5F367;outline-offset:2px;}
+@keyframes wlIn{from{opacity:0}to{opacity:1}}
+@keyframes wlRise{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
+div[style*="position:fixed; inset:0"]{animation:wlIn .22s ease-out;}
+div[style*="position:fixed; inset:0"] > div[style*="border-radius:20px"]{animation:wlRise .28s cubic-bezier(.2,.9,.3,1.2);}
+@keyframes wlBob{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-6px) rotate(4deg)}}
+.wl-bob{animation:wlBob 2.2s ease-in-out infinite;}
+@keyframes wlGold{0%,100%{box-shadow:0 0 0 0 rgba(249,191,1,.0), 0 8px 18px rgba(0,0,0,.35)}50%{box-shadow:0 0 26px 6px rgba(249,191,1,.55), 0 8px 18px rgba(0,0,0,.35)}}
+.wl-gold{animation:wlGold 2.6s ease-in-out infinite; transition:transform .15s ease;}
+.wl-gold:hover{transform:translateY(-3px) scale(1.02);} .wl-gold:active{transform:scale(.97);}
+.wl-gold::after{content:"";position:absolute;inset:0;background:linear-gradient(105deg,transparent 35%,rgba(255,255,255,.55) 50%,transparent 65%);background-size:250% 100%;animation:wlShine 3.2s linear infinite;pointer-events:none;border-radius:inherit;}
+@keyframes wlShine{from{background-position:150% 0}to{background-position:-100% 0}}
+@keyframes wlPop{0%{transform:scale(.3)}60%{transform:scale(1.18)}100%{transform:scale(1)}}
+.wl-pop{animation:wlPop .45s cubic-bezier(.2,.9,.3,1.4);}
+@keyframes wlGlow{0%,100%{filter:drop-shadow(0 0 0 rgba(213,243,103,0))}50%{filter:drop-shadow(0 0 7px rgba(213,243,103,.55))}}
+img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
+@media (prefers-reduced-motion: reduce){ *,*::before,*::after{animation:none !important;transition:none !important;} }
 </style>
 </helmet>
 <div style="min-height:100vh; background:#0b2e24; font-family:'Uncut Sans','Inter',system-ui,sans-serif; color:#EDE9D8; display:flex; flex-direction:column;">
@@ -43,10 +64,16 @@ button{font-family:inherit;}
       <button onClick="{{ openAccount }}" style="background:{{ acctHeadBg }}; color:{{ acctHeadFg }}; border:1.5px solid #D5F367; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ acctHeadLabel }}</button>
       <button onClick="{{ openCode }}" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">{{ adminLabel }}</button>
       <button onClick="{{ toggleSound }}" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">{{ soundLabel }}</button>
+      <button onClick="{{ openClick }}" style="background:#F9BF01; color:#3d2900; border:none; border-radius:999px; padding:8px 14px; font-weight:800; font-size:13px; cursor:pointer;">🎟 CLICK</button>
       <button onClick="{{ openChat }}" title="Chat (T)" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">CHAT · T</button>
       <button onClick="{{ toggleFx }}" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">{{ fxLabel }}</button>
     </div>
   </header>
+  <div onClick="{{ openClick }}" title="{{ rbLabel }}" style="cursor:pointer; background:#0b2e24; padding:6px 16px; display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(213,243,103,.2);">
+    <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:#F9BF01; white-space:nowrap;">⭐ NEXT REBIRTH</div>
+    <div style="flex:1; height:10px; border-radius:999px; background:rgba(255,255,255,.1); overflow:hidden;"><div style="height:100%; width:{{ rbPct }}; background:linear-gradient(90deg,#00B451,#D5F367,#F9BF01); border-radius:999px; transition:width .4s;"></div></div>
+    <div style="font-size:11px; font-weight:700; color:#EDE9D8; white-space:nowrap; font-variant-numeric:tabular-nums;">{{ rbShort }}</div>
+  </div>
 
   <main style="flex:1; display:flex; flex-wrap:wrap; align-items:flex-start; gap:20px; padding:{{ mainPad }};">
     <div ref="{{ wrapRef }}" style="min-width:0; flex:999 1 620px;">
@@ -67,6 +94,7 @@ button{font-family:inherit;}
           <button onClick="{{ openPrizes }}" style="border:none; border-radius:14px; background:#AB2372; color:#ffffff; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:16px 10px; cursor:pointer; min-height:120px;">PRIZE COUNTER<br><span style="font-size:12px; font-weight:500; letter-spacing:0;">{{ prizesOwned }} claimed</span></button>
           <button onClick="{{ openLb }}" style="border:none; border-radius:14px; background:#121313; color:#F9BF01; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:10px; cursor:pointer; min-height:120px; display:flex; flex-direction:column; align-items:center; gap:4px;"><img src="{{ boardIcon }}" alt="" style="width:48px; height:48px;">LEADERBOARD</button>
           <button onClick="{{ openLearn }}" style="border:none; border-radius:14px; background:#014987; color:#ffffff; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:10px; cursor:pointer; min-height:120px; display:flex; flex-direction:column; align-items:center; gap:4px;"><img src="{{ learnIcon }}" alt="" style="width:48px; height:48px;">LEARNING DESK</button>
+          <button onClick="{{ openClick }}" style="border:none; border-radius:14px; background:linear-gradient(160deg,#fff3a8,#F9BF01 55%,#c88a00); color:#3d2900; font-family:inherit; font-weight:800; font-size:14px; letter-spacing:0.08em; padding:10px; cursor:pointer; min-height:120px; display:flex; flex-direction:column; align-items:center; gap:4px;"><span style="font-size:44px;">🎟️</span>GOLDEN TICKET</button>
           <button onClick="{{ openShop }}" style="border:none; border-radius:14px; background:#2a1d12; color:#F9BF01; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:10px; cursor:pointer; min-height:120px; display:flex; flex-direction:column; align-items:center; gap:4px;"><img src="{{ shopIcon }}" alt="" style="width:48px; height:48px;">UPGRADE WORKSHOP<span style="font-size:11px; font-weight:500; letter-spacing:0; color:#EDE9D8;">{{ shopOwned }} levels · ∞</span></button>
           <button onClick="{{ openAv }}" style="border:none; border-radius:14px; background:#015640; color:#D5F367; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:10px; cursor:pointer; min-height:120px; display:flex; flex-direction:column; align-items:center; gap:4px;"><img src="{{ avImg }}" alt="" style="width:52px; height:52px;">AVATAR STUDIO</button>
         </div>
@@ -112,12 +140,16 @@ button{font-family:inherit;}
             <div style="font-size:10px; font-weight:600; color:#EDE9D8;">{{ shopOwned }} levels · ∞</div>
           </div>
 
-          <div onClick="{{ openDaily }}" style="position:absolute; left:850px; top:290px; width:230px; height:140px; cursor:pointer; border-radius:14px; background:#121313; border:3px solid #D5F367; box-shadow:{{ dailyShadow }}; padding:14px; box-sizing:border-box; display:flex; flex-direction:column; gap:4px;">
-            <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:#D5F367;">DAILY CHALLENGE</div>
-            <div style="font-size:22px; font-weight:700; color:#ffffff;">{{ daily.name }}</div>
-            <div style="font-size:13px; font-weight:500; color:#EDE9D8;">Beat {{ daily.target }} · {{ daily.status }}</div>
+          <div onClick="{{ openClick }}" style="position:absolute; left:850px; top:290px; width:230px; height:140px; cursor:pointer; border-radius:14px; background:linear-gradient(160deg,#fff3a8,#F9BF01 55%,#c88a00); border:3px solid #a06c00; box-shadow:{{ dailyShadow }}; padding:12px 14px; box-sizing:border-box; display:flex; align-items:center; gap:10px; overflow:hidden;" class="wl-gold">
+            <div style="font-size:54px; line-height:1; filter:drop-shadow(0 4px 4px rgba(0,0,0,.3));" class="wl-bob">🎟️</div>
+            <div style="min-width:0;"><div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:#5a3d00;">CLICK ME</div><div style="font-size:21px; font-weight:800; color:#3d2900; line-height:1.05;">Golden Ticket</div><div style="font-size:12px; font-weight:600; color:#5a3d00;">Expansions · Star Tree</div></div>
           </div>
 
+          <div onClick="{{ openClick }}" style="position:absolute; left:30px; top:858px; width:1060px; height:58px; border-radius:12px; background:linear-gradient(#123d31,#0b2e24); box-shadow:inset 0 -5px 0 #071f18; display:flex; align-items:center; gap:8px; padding:0 12px; box-sizing:border-box; cursor:pointer; overflow:hidden;">
+            <div style="font-size:10px; font-weight:700; letter-spacing:0.14em; color:#D5F367; line-height:1.15; flex-shrink:0;">ARCADE<br>EXPANSIONS</div>
+            <sc-if value="{{ expEmpty }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px; color:#b9cfc5;">Click the Golden Ticket and buy expansions — they fill up this space</div></sc-if>
+            <sc-for list="{{ expFloor }}" as="xf" hint-placeholder-count="4"><div title="{{ xf.n }}" class="wl-pop" style="position:relative; width:44px; height:44px; flex-shrink:0; border-radius:12px; background:radial-gradient(circle at 35% 30%, #fff, #D5F367 55%, #00B451); box-shadow:inset 0 -4px 0 rgba(0,0,0,.18), 0 3px 6px rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; font-size:24px;">{{ xf.e }}<span style="position:absolute; right:-4px; bottom:-4px; background:#015640; color:#D5F367; font-size:9px; font-weight:800; padding:1px 5px; border-radius:999px;">{{ xf.lv }}</span></div></sc-for>
+          </div>
           <div onClick="{{ openPrizes }}" style="position:absolute; left:30px; top:790px; width:1060px; height:56px; border-radius:12px; background:linear-gradient(#5a3a1c,#3b2614); box-shadow:inset 0 -6px 0 #2a1b0e; display:flex; align-items:center; gap:8px; padding:0 12px; box-sizing:border-box; cursor:pointer; overflow:hidden;">
             <div style="font-size:10px; font-weight:700; letter-spacing:0.14em; color:#F9BF01; line-height:1.15; flex-shrink:0;">TROPHY<br>WALK</div>
             <sc-if value="{{ trophyEmpty }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px; color:#cfc6a8;">Complete a prize collection to put its trophy here · {{ trophyPct }}</div></sc-if>
@@ -318,12 +350,12 @@ button{font-family:inherit;}
           <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;"><button onClick="{{ adminOff }}" style="background:#F9BF01; color:#121313; border:none; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;">Turn admin mode off · play normally</button><button onClick="{{ closeAdmin }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer;">Close</button></div>
         </div>
         <div style="background:#ffffff; border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:8px; border:2px solid #B3001B;">
-          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;"><div style="font-size:12px; font-weight:700; letter-spacing:0.1em; color:#B3001B;">SHUT DOWN THE ARCADE</div><div style="font-size:12px; font-weight:700; color:#015640;">Now: {{ downStatus }}</div></div>
+          <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;"><div style="font-size:12px; font-weight:700; letter-spacing:0.1em; color:#B3001B;">MAINTENANCE · CLOSE OR REOPEN</div><div style="font-size:12px; font-weight:700; color:#015640;">Now: {{ downStatus }}</div></div>
           <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
             <label for="wl-downmin" style="font-size:12px; font-weight:700; color:#015640;">Minutes</label><input id="wl-downmin" class="wl-field" inputMode="decimal" value="{{ downMin }}" onChange="{{ inDownMin }}" onKeyDown="{{ stopKey }}" placeholder="15" style="width:80px; font-family:inherit; font-size:15px; font-weight:700; border:1.5px solid #015640; border-radius:10px; padding:6px 10px;">
             <input class="wl-field" value="{{ downText }}" onChange="{{ inDownText }}" onKeyDown="{{ stopKey }}" placeholder="Message for players (optional)" aria-label="Message for players" style="flex:1 1 200px; min-width:0; font-family:inherit; font-size:14px; border:1.5px solid #015640; border-radius:10px; padding:6px 10px;">
           </div>
-          <div style="display:flex; gap:6px; flex-wrap:wrap;"><button onClick="{{ doShutdown }}" style="border:none; border-radius:999px; padding:7px 14px; font-weight:700; font-size:13px; cursor:pointer; background:#B3001B; color:#ffffff;">{{ shutLabel }}</button><button onClick="{{ doReopen }}" style="border:1.5px solid #015640; border-radius:999px; padding:7px 14px; font-weight:700; font-size:13px; cursor:pointer; background:#ffffff; color:#015640;">Reopen now</button><button onClick="{{ doPreview }}" style="border:1.5px solid #015640; border-radius:999px; padding:7px 14px; font-weight:700; font-size:13px; cursor:pointer; background:#ffffff; color:#015640;">Preview (8 s)</button></div>
+          <div style="display:flex; gap:6px; flex-wrap:wrap;"><button onClick="{{ doShutdown }}" style="border:none; border-radius:999px; padding:7px 14px; font-weight:700; font-size:13px; cursor:pointer; background:#B3001B; color:#ffffff;">{{ shutLabel }}</button><button onClick="{{ doReopen }}" style="border:1.5px solid #015640; border-radius:999px; padding:7px 14px; font-weight:700; font-size:13px; cursor:pointer; background:#D5F367; color:#015640;">Reopen arcade</button><button onClick="{{ doPreview }}" style="border:1.5px solid #015640; border-radius:999px; padding:7px 14px; font-weight:700; font-size:13px; cursor:pointer; background:#ffffff; color:#015640;">Preview (8 s)</button></div>
           <div style="font-size:11px; color:#4a4a4a;">Every open tab shows a closed screen with a countdown and reopens by itself. Games in progress are saved first. Admins can still play.</div>
         </div>
         <sc-if value="{{ admMsg }}" hint-placeholder-val="{{ false }}"><div role="status" style="background:#fff4cc; color:#5c4100; border-radius:10px; padding:9px 12px; font-size:13px; font-weight:700;">{{ admMsg }}</div></sc-if>
@@ -563,12 +595,12 @@ button{font-family:inherit;}
         <span style="font-size:12px; color:#cfe3d9;">{{ downAcct }}</span>
         <sc-if value="{{ downIn }}" hint-placeholder-val="{{ true }}"><button onClick="{{ downLogin }}" style="background:#D5F367; color:#015640; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer;">Log in</button></sc-if>
         <sc-if value="{{ downOut }}" hint-placeholder-val="{{ false }}"><button onClick="{{ logout }}" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:7px 14px; font-weight:700; font-size:13px; cursor:pointer;">Log out</button></sc-if>
-        <sc-if value="{{ downIsAdminAcct }}" hint-placeholder-val="{{ false }}"><button onClick="{{ downAdminOn }}" style="background:#F9BF01; color:#121313; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer;">Admin: reopen the arcade</button></sc-if>
+        <sc-if value="{{ downIsAdminAcct }}" hint-placeholder-val="{{ false }}"><button onClick="{{ downAdminOn }}" style="background:#F9BF01; color:#121313; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer;">Reopen arcade (admin)</button></sc-if>
         <button onClick="{{ downCode }}" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.35); border-radius:999px; padding:7px 14px; font-weight:700; font-size:12px; cursor:pointer;">Admin code</button>
       </div>
     </div>
   </sc-if>
-  <sc-if value="{{ adminDownBanner }}" hint-placeholder-val="{{ false }}"><div style="position:fixed; left:50%; bottom:12px; transform:translateX(-50%); z-index:480; background:#B3001B; color:#fff; font-weight:700; font-size:13px; padding:8px 16px; border-radius:999px;">ARCADE IS SHUT DOWN FOR PLAYERS · {{ downLeft }} LEFT · you're in as admin</div></sc-if>
+  <sc-if value="{{ adminDownBanner }}" hint-placeholder-val="{{ false }}"><div style="position:fixed; left:50%; bottom:12px; transform:translateX(-50%); z-index:480; background:#B3001B; color:#fff; font-weight:700; font-size:13px; padding:8px 10px 8px 16px; border-radius:999px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; max-width:94vw; box-shadow:0 8px 24px rgba(0,0,0,.35);">CLOSED FOR PLAYERS · {{ downLeft }} LEFT · you’re in as admin<button onClick="{{ doReopen }}" style="background:#D5F367; color:#015640; border:none; border-radius:999px; padding:6px 14px; font-weight:800; font-size:13px; cursor:pointer;">Reopen arcade</button></div></sc-if>
 
   <sc-if value="{{ avOpen }}" hint-placeholder-val="{{ false }}">
     <div style="position:fixed; inset:0; background:rgba(11,46,36,.9); display:flex; align-items:safe center; justify-content:center; z-index:50; overflow-y:auto; padding:16px; box-sizing:border-box;">
@@ -590,6 +622,18 @@ button{font-family:inherit;}
           </sc-for>
         </div>
         <div style="font-size:12px; color:#4a4a4a;">Other players see your avatar on the leaderboard and in the Hall of Players at the entrance.</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ clickOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; inset:0; background:rgba(11,46,36,.9); display:flex; align-items:flex-start; justify-content:center; z-index:50; overflow-y:auto; padding:16px 10px; box-sizing:border-box;">
+      <div style="background:#EDE9D8; border-radius:20px; padding:20px; width:1000px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:10px; color:#121313;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
+          <div><div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#8D5B1D;">THE GOLDEN TICKET</div><div style="font-size:28px; font-weight:700; color:#015640;">Click, expand, shine</div></div>
+          <button onClick="{{ closeClick }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;">Leave · Esc</button>
+        </div>
+        <div ref="{{ ckRef }}"></div>
       </div>
     </div>
   </sc-if>
@@ -818,7 +862,8 @@ const ICONS = {
   trace: '<path id="tA" d="M14 52L32 12L50 52M21 38H43" fill="none" stroke="#EDE9D8" stroke-opacity=".25" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/><path d="M14 52L32 12L50 52M21 38H43" fill="none" stroke="#D5F367" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="120">'+an('stroke-dashoffset','120;0;0',2.4)+'</path><g><animateMotion dur="2.4s" repeatCount="indefinite" keyPoints="0;1;1" keyTimes="0;0.83;1" calcMode="linear" path="M14 52L32 12L50 52M21 38H43"/><path d="M0 0L6 -14L10 -12L4 2Z" fill="#F9BF01"/><path d="M0 0L2 -4L4 -3Z" fill="#121313"/></g>',
   idle: '<path d="M6 58L14 38L26 34L40 38L52 32L60 58Z" fill="#6b4a2b"/><path d="M14 46l6-2M30 42l5 3M44 44l6-3" stroke="#c48a4a" stroke-width="3" stroke-linecap="round"/><path d="M22 54l4-6l5 6zM40 54l4-5l4 5z" fill="#F9BF01"/><g>'+at('rotate','-30 34 30;20 34 30;-30 34 30',.7,SPLINE)+'<path d="M34 30L46 8" stroke="#8D5B1D" stroke-width="4" stroke-linecap="round"/><path d="M36 6Q46 2 56 12" fill="none" stroke="#c9ccd1" stroke-width="5" stroke-linecap="round"/></g><path d="M50 26l2 -5l2 5l5 2l-5 2l-2 5l-2-5l-5-2z" fill="#9fd8ff">'+an('opacity','0;1;0',1.4)+'</path>',
 };
-const _iconCache = {}; const ICON = id => { const k = id+(LOWFX?'~':''); return _iconCache[k] || (_iconCache[k] = svgURI(ICONS[id] || '')); };
+const GLOSS = b => '<defs><filter id="ds" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2.2" stdDeviation="1.6" flood-color="#000" flood-opacity=".45"/></filter><linearGradient id="sh" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".38"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/></linearGradient><radialGradient id="gl" cx=".5" cy=".42" r=".6"><stop offset="0" stop-color="#D5F367" stop-opacity=".22"/><stop offset="1" stop-color="#D5F367" stop-opacity="0"/></radialGradient></defs><circle cx="32" cy="30" r="31" fill="url(#gl)"/><g filter="url(#ds)">'+b+'</g><ellipse cx="30" cy="15" rx="17" ry="7" fill="url(#sh)" opacity=".7"/>';
+const _iconCache = {}; const ICON = id => { const k = id+(LOWFX?'~':''); return _iconCache[k] || (_iconCache[k] = svgURI(LOWFX ? (ICONS[id] || '') : GLOSS(ICONS[id] || ''))); };
 const KIOSK_ICONS = {
   shop: svgURI('<g>'+at('rotate','-20 26 38;10 26 38;-20 26 38',.9,SPLINE)+'<rect x="22" y="14" width="8" height="34" rx="3" fill="#8D5B1D"/><rect x="10" y="8" width="32" height="12" rx="4" fill="#c9ccd1"/></g><circle cx="44" cy="44" r="12" fill="none" stroke="#F9BF01" stroke-width="6" stroke-dasharray="6 3.4">'+at('rotate','0 44 44;360 44 44',3)+'</circle><circle cx="44" cy="44" r="4" fill="#F9BF01"/>'),
   board: svgURI('<path d="M20 10H44V26A12 12 0 0 1 20 26Z" fill="#F9BF01"/><path d="M20 14H12A8 8 0 0 0 20 26M44 14H52A8 8 0 0 1 44 26" fill="none" stroke="#F9BF01" stroke-width="3"/><rect x="28" y="36" width="8" height="10" fill="#F9BF01"/><rect x="20" y="46" width="24" height="7" rx="2" fill="#DD8B03"/><circle cx="26" cy="16" r="2" fill="#fff">'+an('opacity','0;1;0',1.6)+'</circle>'),
@@ -829,7 +874,7 @@ const LEARN_GAMES = ['trace','rootout'];
 const TOPICS = [['add','Add'],['sub','Subtract'],['mult','Multiply'],['div','Divide'],['multi','Two-step'],['skip','Skip-count'],['spell','Spelling'],['mixed','Mix']];
 const PADS = {snake:{d:'udlr',a:[['Start',' ']]}, breakout:{d:'lr',a:[['Launch',' ']]}, flappy:{d:'',a:[['Flap',' ']]}, pong:{d:'ud',a:[['Serve',' ']]}, '2048':{d:'udlr',a:[]}, crossing:{d:'udlr',a:[['Start',' ']]}, stack:{d:'ldr',a:[['Rotate','ArrowUp'],['Drop',' '],['Hold','c'],['Saw','x']]}, connect4:{d:'lr',a:[['Drop',' ']]}};
 const SWIPE = ['snake','2048','crossing','stack'];
-const FW = 1120, FH = 860;
+const FW = 1120, FH = 930;
 const KIOSKS = [{id:'prize',x:850,y:50,w:230,h:200},{id:'daily',x:850,y:290,w:230,h:140},{id:'board',x:850,y:465,w:230,h:110},{id:'learn',x:850,y:605,w:230,h:110},{id:'shop',x:678,y:590,w:140,h:130}];
 const BOARD_KEY = 'wl-arcade-board-v3', UNAME_KEY = 'wl-arcade-usernames';
 const getJSON = (k,d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch(e) { return d; } };
@@ -885,6 +930,9 @@ const CHAT_BAD = ['fuck','shit','bitch','bastard','dick','cock','pussy','cunt','
 const chatClean = t => { let o = String(t||'').replace(/\s+/g,' ').trim().slice(0,140); CHAT_BAD.forEach(w => { const re = new RegExp(w.split('').join('[\\W_]*'), 'gi'); o = o.replace(re, m => '★'.repeat(Math.min(6, m.length))); }); return o; };
 const chatPrivate = t => /(https?:|www\.|\.(com|net|org|io|gg|co|me|tv|xyz)\b)/i.test(t) || /[\w.+-]+@[\w-]+\.\w+/.test(t) || /(\d[\s().-]*){7,}/.test(t) || /\b(my (address|phone|number|house|school is)|i live (at|on|in))\b/i.test(t) || /(snap|insta|discord|tiktok|whatsapp)\s*[:@]/i.test(t);
 const fmtDur2 = sec => { sec = Math.ceil(sec); const h = Math.floor(sec/3600), m = Math.floor(sec%3600/60), ss = sec%60; return (h ? h+':'+String(m).padStart(2,'0') : m)+':'+String(ss).padStart(2,'0'); };
+// Safe numbers: no game score can be more than this (stops glitched/hacked scores like 5.9e38).
+const scoreCap = id => { const g = GAMES.find(x=>x.id==id); return id=='idle' ? 99999999 : Math.max(1e6, ((g&&g.target)||1000) * 2000); };
+const safeScore = (id, n) => { n = Number(n); if (!isFinite(n) || n < 0) return 0; return Math.min(Math.floor(n), scoreCap(id)); };
 // Big numbers: 12,345 then 12.3K, 4.5M, 6.7B, T, Qa, Qi, Sx … then 1.2e45 style.
 const fmtN = n => (window.WLP ? window.WLP.fmt(n) : (Number(n)||0).toLocaleString());
 // Fair payout: tickets come from TIME played × how well you did, so 10 minutes of any game pays about the same.
@@ -1020,6 +1068,21 @@ const ACH = [
   {id:'reb1',cat:'Rebirth',tier:2,name:'Born Again',desc:'Rebirth once',p:s=>[s.rebirths||0,1]},
   {id:'reb3',cat:'Rebirth',tier:3,name:'Phoenix',desc:'Rebirth 3 times',p:s=>[s.rebirths||0,3]},
   {id:'reb10',cat:'Rebirth',tier:4,name:'Eternal',desc:'Rebirth 10 times',p:s=>[s.rebirths||0,10]},
+  {id:'reb25',cat:'Rebirth',tier:4,name:'Timeless',desc:'Rebirth 25 times',p:s=>[s.rebirths||0,25]},
+  {id:'click100',cat:'Golden Ticket',tier:1,name:'Clicker',desc:'Click the Golden Ticket 100 times',p:s=>[s.clicks||0,100]},
+  {id:'click5k',cat:'Golden Ticket',tier:2,name:'Tap Dancer',desc:'Click the Golden Ticket 5,000 times',p:s=>[s.clicks||0,5000]},
+  {id:'click50k',cat:'Golden Ticket',tier:4,name:'Finger of Gold',desc:'Click the Golden Ticket 50,000 times',p:s=>[s.clicks||0,50000]},
+  {id:'exp10',cat:'Golden Ticket',tier:1,name:'Builder',desc:'Own 10 Arcade Expansion levels',p:s=>[window.WLE?window.WLE.expLevels(s):0,10]},
+  {id:'exp100',cat:'Golden Ticket',tier:2,name:'Developer',desc:'Own 100 Arcade Expansion levels',p:s=>[window.WLE?window.WLE.expLevels(s):0,100]},
+  {id:'exp500',cat:'Golden Ticket',tier:3,name:'Tycoon',desc:'Own 500 Arcade Expansion levels in one run',p:s=>[window.WLE?window.WLE.expLevels(s):0,500]},
+  {id:'galaxy',cat:'Golden Ticket',tier:4,name:'Out of This World',desc:'Open the Galactic Fun Zone',p:s=>[((s.exp||{}).galaxy||0)?1:0,1]},
+  {id:'crit1',cat:'Golden Ticket',tier:1,name:'Gotcha!',desc:'Catch a golden critter',p:s=>[s.critters||0,1]},
+  {id:'crit25',cat:'Golden Ticket',tier:2,name:'Critter Keeper',desc:'Catch 25 golden critters',p:s=>[s.critters||0,25]},
+  {id:'crit200',cat:'Golden Ticket',tier:4,name:'Golden Zoo',desc:'Catch 200 golden critters',p:s=>[s.critters||0,200]},
+  {id:'streak10',cat:'Learning',tier:2,name:'On a Roll',desc:'Get 10 learn-mode answers right in a row',p:s=>[mx(s,'eduStreak'),10]},
+  {id:'streak30',cat:'Learning',tier:3,name:'Brainstorm',desc:'Get 30 learn-mode answers right in a row',p:s=>[mx(s,'eduStreak'),30]},
+  {id:'streak100',cat:'Learning',tier:4,name:'Genius Mode',desc:'Get 100 learn-mode answers right in a row',p:s=>[mx(s,'eduStreak'),100]},
+  {id:'starPrize',cat:'Rebirth',tier:2,name:'Star Shopper',desc:'Buy a prize with Golden Stars',p:s=>[window.WLP&&window.WLP.perks?window.WLP.perks(s).count:0,1]},
   {id:'mult10',cat:'Rebirth',tier:1,name:'Multiplying',desc:'Ticket Multiplier level 10',p:s=>[((s.mult||{}).global)|0,10]},
   {id:'mult50',cat:'Rebirth',tier:2,name:'Exponential',desc:'Ticket Multiplier level 50',p:s=>[((s.mult||{}).global)|0,50]},
   {id:'mult200',cat:'Rebirth',tier:4,name:'Number Go Up',desc:'Ticket Multiplier level 200',p:s=>[((s.mult||{}).global)|0,200]},
@@ -1067,10 +1130,10 @@ const ACH = [
   {id:'lifer',cat:'Secret',tier:4,secret:true,name:'Lifer',desc:'Finish 1,000 games',p:s=>[plays(s),1000]},
 ];
 const KEY = 'wl-arcade-v1', ACCT_KEY = 'wl-arcade-accounts', SESSION_KEY = 'wl-arcade-session';
-const DEF = () => ({difficulty:'normal',speed:'normal',tickets:0,best:{},played:{},ach:[],prizes:{},daily:{date:'',done:false},earned:0,saves:{},savesV:2,stats:{max:{},sum:{}},username:'',edu:{on:false,topic:'add'},sessLog:[],days:{},adjSeen:0,idle:null,upg:{},avatar:{},cursor:'',resetSeen:0,mult:{},stars:0,rebirths:0,colDone:{},login:{},chal:{},combo:{},capsules:0,skin:'',learnTix:0});
+const DEF = () => ({difficulty:'normal',speed:'normal',tickets:0,best:{},played:{},ach:[],prizes:{},daily:{date:'',done:false},earned:0,saves:{},savesV:2,stats:{max:{},sum:{}},username:'',edu:{on:false,topic:'add'},sessLog:[],days:{},adjSeen:0,idle:null,upg:{},avatar:{},cursor:'',resetSeen:0,mult:{},stars:0,starsSpent:0,exp:{},expUp:{},tree:{},clicks:0,critters:0,econV:0,rebirths:0,colDone:{},login:{},chal:{},combo:{},capsules:0,skin:'',learnTix:0});
 const PFIELDS = Object.keys(DEF());
 const loadP = key => { let d = {}; try { d = JSON.parse(localStorage.getItem(key)) || {}; } catch(e){} return normP(d); };
-const normP = d => { const P = Object.assign(DEF(), d||{}); P.stats = Object.assign({max:{},sum:{}}, P.stats||{}); P.stats.max = P.stats.max||{}; P.stats.sum = P.stats.sum||{}; P.saves = P.saves||{}; P.ach = Array.isArray(P.ach)?P.ach:[]; P.edu = Object.assign({on:false,topic:'add'}, P.edu||{}); P.sessLog = Array.isArray(P.sessLog)?P.sessLog:[]; P.days = P.days||{}; ['mult','colDone','login','chal','combo','upg','prizes','best','played'].forEach(k=>{ if (!P[k] || typeof P[k]!='object') P[k] = {}; }); if (P.savesV !== 2) { P.saves = {}; P.savesV = 2; } return P; };
+const normP = d => { const P = Object.assign(DEF(), d||{}); P.stats = Object.assign({max:{},sum:{}}, P.stats||{}); P.stats.max = P.stats.max||{}; P.stats.sum = P.stats.sum||{}; P.saves = P.saves||{}; P.ach = Array.isArray(P.ach)?P.ach:[]; P.edu = Object.assign({on:false,topic:'add'}, P.edu||{}); P.sessLog = Array.isArray(P.sessLog)?P.sessLog:[]; P.days = P.days||{}; Object.keys(P.best||{}).forEach(k=>{ P.best[k] = safeScore(k, P.best[k]); }); ['tickets','earned'].forEach(k=>{ if (!isFinite(P[k]) || P[k] < 0) P[k] = 0; }); ['mult','colDone','login','chal','combo','upg','prizes','best','played','exp','expUp','tree'].forEach(k=>{ if (!P[k] || typeof P[k]!='object') P[k] = {}; }); if (P.savesV !== 2) { P.saves = {}; P.savesV = 2; } return P; };
 const FB_ERR = {'auth/email-already-in-use':'That email already has an account. Switch to Log in.','auth/invalid-email':'That email doesn’t look right.','auth/weak-password':'That password is too weak — use at least 6 characters.','auth/invalid-credential':'Email or password is wrong.','auth/wrong-password':'Email or password is wrong.','auth/user-not-found':'Email or password is wrong.','auth/too-many-requests':'Too many tries. Wait a few minutes and try again.','auth/network-request-failed':'Can’t reach the server. Check your internet connection.','auth/operation-not-allowed':'That sign-in method is turned off in the Firebase console (Authentication → Sign-in method).','auth/user-disabled':'This account has been disabled.','auth/popup-closed-by-user':'The Google window was closed before sign-in finished.','auth/cancelled-popup-request':'The Google window was closed before sign-in finished.','auth/popup-blocked':'Your browser blocked the Google pop-up. Allow pop-ups for this site and try again.','auth/unauthorized-domain':'This website isn’t on Firebase’s list yet. Add it under Authentication → Settings → Authorized domains.','auth/account-exists-with-different-credential':'That email already has a password login. Log in with your email and password instead.','auth/operation-not-supported-in-this-environment':'Google sign-in doesn’t work here. Open the arcade’s own website instead.'};
 const fbErr = e => FB_ERR[e && e.code] || ('Something went wrong'+(e && e.code ? ' ('+e.code+')' : '')+'. Try again.');
 const getAccts = () => { try { return JSON.parse(localStorage.getItem(ACCT_KEY)) || {}; } catch(e) { return {}; } };
@@ -1088,8 +1151,8 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-11-20l';
-const SCRIPTS = ['arcade-core.js','prizes2.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-edu.js','games-idle.js'];
+const BUILD = '2026-11-21a';
+const SCRIPTS = ['arcade-core.js','prizes2.js','economy.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-edu.js','games-idle.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
 class Component extends DCLogic {
@@ -1102,7 +1165,7 @@ class Component extends DCLogic {
       immortal:false,autoHint:true,codeOpen:false,codeVal:'',codeMsg:'',admin:false,px:760,py:745,vw:(typeof window!='undefined'?window.innerWidth:1200),gameH:480,padOn:(typeof window!='undefined'&&(('ontouchstart' in window)||(window.matchMedia&&window.matchMedia('(pointer: coarse)').matches))),learnOpen:false,pinIn:'',pinNew:'',pinNew2:'',pinMsg:'',pinAsk:'',pinFails:0,pinLock:0,pinMode:'',lbOpen:false,lbGame:'_tix',lbMode:'all',uOpen:false,uVal:'',uMsg:'',clearArm:false,dir:[0,1],game:null,liveScore:0,payout:'',prizesOpen:false,toasts:[],scale:1,muted:false,
       authOpen:false,authMode:'signup',aEmail:'',aPass:'',aPass2:'',aName:'',aShow:false,aRemember:true,aBring:true,aMsg:'',aBusy:false,aFails:0,aLock:0,aTouched:false,
       achOpen:false,achFilter:'All'});
-    this.keys = {}; this.gameRef = React.createRef(); this.pzRef = React.createRef();
+    this.keys = {}; this.gameRef = React.createRef(); this.pzRef = React.createRef(); this.ckRef = React.createRef();
     this.ro = typeof ResizeObserver != 'undefined' ? new ResizeObserver(()=>this.onResize && this.onResize()) : null;
     this.wrapRef = el => { if (el && el !== this._wrapEl) { this._wrapEl = el; this.ro && this.ro.observe(el); this.onResize && this.onResize(); } };
     this.padHeld = {};
@@ -1212,7 +1275,7 @@ class Component extends DCLogic {
       if (this.state.kickUntil > Date.now() && !this.state.admin) return;
       if (k=='t' && !this.state.chatOpen && !this.state.game && !this.state.codeOpen && !this.state.authOpen) { e.preventDefault(); this.openChat(); return; }
       if (this.state.chatOpen) return;
-      const S = this.state; if (S.game || S.shopOpen || S.avOpen || S.prizesOpen || S.codeOpen || S.authOpen || S.achOpen || S.learnOpen || S.lbOpen || S.uOpen) return;
+      const S = this.state; if (S.game || S.clickOpen || S.shopOpen || S.avOpen || S.prizesOpen || S.codeOpen || S.authOpen || S.achOpen || S.learnOpen || S.lbOpen || S.uOpen) return;
       if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k)) e.preventDefault();
       this.keys[k] = true;
       if ((k=='e'||k=='Enter') && this.near) this.near.act();
@@ -1222,7 +1285,7 @@ class Component extends DCLogic {
     this.autoIv = setInterval(()=>{ const s = this.state; if (s.admin && s.autoHint && s.game && s.game!='simon' && s.hint && !s.payout) { try { s.hint.run(true); } catch(e){} } }, 1100);
     this.saveIv = setInterval(()=>{ if (this.mounted) this.saveGame(); }, 5000);
     // Active play time: only seconds where you pressed/tapped something in the last 25 s (and the tab is visible) count toward tickets.
-    this._poke = () => { this._lastAct = Date.now(); }; window.addEventListener('keydown', this._poke, true); window.addEventListener('pointerdown', this._poke, true);
+    this._poke = () => { this._lastAct = Date.now(); if (window.Arcade) window.Arcade.lastAct = this._lastAct; }; window.addEventListener('keydown', this._poke, true); window.addEventListener('pointerdown', this._poke, true);
     this.actIv = setInterval(()=>{ if (this.mounted && Date.now()-(this._lastAct||0) < 25000 && !(typeof document!='undefined' && document.hidden)) this._act = (this._act||0) + 1; }, 1000);
     this.onHide = () => { if (this.mounted) { this.saveGame(); this.endSess(); this.startSess(this.mounted); } this.persist(true); };
     this.onVis = () => { if (document.visibilityState=='hidden') this.onHide(); };
@@ -1230,7 +1293,7 @@ class Component extends DCLogic {
     let last = performance.now(), stepT = 0;
     const tick = now => {
       const dt = Math.min(.05,(now-last)/1000); last = now; const s = this.state;
-      if (!s.game && !s.shopOpen && !s.avOpen && !s.prizesOpen && !s.codeOpen && !s.authOpen && !s.achOpen && !s.learnOpen && !s.lbOpen && !s.uOpen) {
+      if (!s.game && !s.clickOpen && !s.shopOpen && !s.avOpen && !s.prizesOpen && !s.codeOpen && !s.authOpen && !s.achOpen && !s.learnOpen && !s.lbOpen && !s.uOpen) {
         const K = this.keys, dx = (K.ArrowRight||K.d?1:0)-(K.ArrowLeft||K.a?1:0), dy = (K.ArrowDown||K.s?1:0)-(K.ArrowUp||K.w?1:0);
         if (dx||dy) {
           const sp = (this.props.walkSpeed ?? 280) * dt / Math.hypot(dx,dy);
@@ -1256,6 +1319,11 @@ class Component extends DCLogic {
     if (this.state.prizesOpen && this.pzRef.current && !this._pzOff && window.WLP) { const P0 = () => this.P;
       this._pzOff = window.WLP.mount(this.pzRef.current, { P:P0, setP:pt=>this.setP(pt), toast:t=>this.toast(t), sfx:n=>window.Arcade && window.Arcade.sfx(n), admin:()=>!!this.state.admin, lowFx:()=>LOWFX,
         games:()=>GAMES, icon:id=>ICON(id), classicArt: Object.fromEntries(PRIZES.map(pz=>[pz.id, PZ(pz.art)])) }); }
+    if (this.state.clickOpen && this.ckRef.current && !this._ckOff && window.WLE) {
+      this._ckOff = window.WLE.mount(this.ckRef.current, this.econApi()); }
+    if (!this.state.clickOpen && this._ckOff) { try { this._ckOff(); } catch(e){} this._ckOff = null; }
+    if (window.WLE && !this._econAttached) { this._econAttached = true; window.WLE.attach(this.econApi()); }
+    if (window.WLE && window.WLP && this._welcomeFor !== this.profKey()) { this._welcomeFor = this.profKey(); setTimeout(()=>this.migrateEcon(), 600); }
     if (!this.state.prizesOpen && this._pzOff) { try { this._pzOff(); } catch(e){} this._pzOff = null; }
     if (this._fx !== LOWFX) { this._fx = LOWFX; applyLowFx(LOWFX); if (window.Arcade) window.Arcade.lowFx = LOWFX; }
     if ((this.P.cursor||'') !== this._cursor) { this._cursor = this.P.cursor||''; applyCursor(this._cursor); }
@@ -1272,7 +1340,7 @@ class Component extends DCLogic {
         resume, snap: f => { this.snapFn = f; }, stat: (k,v,m) => this.stat(k,v,m),
         stored: this.state.admin ? null : (this.P.idle || null), store: d => { if (this.state.admin) return; try { this.P = {...this.P, idle: JSON.parse(JSON.stringify(d))}; } catch(e) { return; } this.persist(); },
         tix: (n, score, label) => this.grantTix(game, n, score, label), perfect: () => { this._perfect = true; },
-        edu: ok => { if (this.sess) { if (ok) this.sess.ok++; else this.sess.bad++; } this.stat(ok?'eduRight':'eduWrong',1,'add');
+        edu: ok => { if (this.sess) { if (ok) this.sess.ok++; else this.sess.bad++; } this.stat(ok?'eduRight':'eduWrong',1,'add'); this._eduRun = ok ? (this._eduRun||0)+1 : 0; if (ok) this.stat('eduStreak', this._eduRun, 'max');
           const WP = window.WLP; if (ok && WP && !this.state.admin && this.isLearn(game)) { const b = WP.learnBonus(this.P), c = WP.onEdu(this.P) || {}; if (b || c.chal) this.setP({...c, ...(b ? {tickets:this.P.tickets+b, earned:this.P.earned+b, learnTix:(this.P.learnTix||0)+b} : {})}); } } });
       if (this.gro && this.gameRef.current !== this._gEl) { if (this._gEl) this.gro.unobserve(this._gEl); this._gEl = this.gameRef.current; this.gro.observe(this._gEl); }
       if (resume) { this.stat('resumes',1,'add'); this.toast('SAVED GAME LOADED'); }
@@ -1326,14 +1394,14 @@ class Component extends DCLogic {
     putJSON(x.k, out); if (x.k === this.profKey()) { this.P = normP(out); this.setState({...this.P}); }
     const B = getJSON(BOARD_KEY,{e:[]}); B.e.forEach(y=>{ if (y.g=='_tix' && y.k==x.k) y.s = out.earned||0; }); putJSON(BOARD_KEY,B);
     this.setState({admArm:'', admMsg:'Removed '+what+' from '+x.u+'.'}); window.Arcade && window.Arcade.sfx('coin'); }
-  async adminShutdown(open){ const s = this.state; if (!s.admin) return;
+  async adminShutdown(open, force){ const s = this.state; if (!s.admin && !force) return;
     if (!s.cloud || !window.WLCloud) return this.setState({admMsg:'The online database isn’t connected on this page, so a shutdown can’t reach other players. Use the real site (arcade.wilderland.academy) and reload.'});
     if (!this.cloudUid) return this.setState({admMsg:'Log in as jonah@wilderland.academy first (Sign up / Log in at the top), then try again.'});
     const em = String((this.cloudMeta && this.cloudMeta.email) || '').toLowerCase();
     if (em && !ADMIN_EMAILS.includes(em)) return this.setState({admMsg:'You’re logged in as '+em+'. Log out and log in as jonah@wilderland.academy to shut the arcade down.'});
     const mins = open ? 0 : Math.max(1, Math.min(1440, parseFloat(String(s.downMin||'').replace(/[^0-9.]/g,''))||0));
-    if (!open && !(parseFloat(s.downMin) > 0)) return this.setState({admMsg:'Type how many minutes to shut down for (1–1440).'});
-    if (!open && s.admArm !== 'down') return this.setState({admArm:'down', admMsg:'Press SHUT DOWN again to close the arcade for everyone for '+mins+' minute'+(mins==1?'':'s')+'.'});
+    if (!open && !(parseFloat(s.downMin) > 0)) return this.setState({admMsg:'Type how many minutes to close for (1–1440).'});
+    if (!open && s.admArm !== 'down') return this.setState({admArm:'down', admMsg:'Press it again to close the arcade for everyone for '+mins+' minute'+(mins==1?'':'s')+'.'});
     try { await window.WLCloud.shutdown(mins, (s.downText||'').slice(0,140)); this.setState({admArm:'', admMsg: open ? 'The arcade is open again for everyone.' : 'Done! The arcade is closed for '+mins+' minute'+(mins==1?'':'s')+'. Every other player sees the countdown now. You won’t see it because admins can still play — press “Preview” to see what they see, or open the site in a private window.'}); }
     catch(e) { const code = String(e && (e.code||e.message) || 'unknown');
       this.setState({admArm:'', admMsg: code.includes('permission') ? 'Firebase refused. Log out and log back in as jonah@wilderland.academy (that sets up the admin control record), then try again. If it still fails, another account owns the control record — tell Claude.' : 'Couldn’t shut down: '+code}); } }
@@ -1371,12 +1439,24 @@ class Component extends DCLogic {
     catch(e) { this.setState({admArm:'', admMsg:'Couldn’t kick: '+(e && (e.code||e.message))+'. Log out and back in as jonah@wilderland.academy, then try again.'}); } }
   async adminUnkick(uid, name){ const C = window.WLCloud; try { await C.kick(uid, 0); this.setState({admMsg:'Let '+name+' back in.'}); } catch(e) { this.setState({admMsg:'Couldn’t: '+(e && (e.code||e.message))}); } }
   // Forced Rebirth: as soon as tickets reach the milestone, the Rebirth happens automatically.
+  // Forced Rebirth: the instant tickets reach the requirement, the Rebirth happens — no button, no setting, every time.
   checkRebirth(){ const W2 = window.WLP; if (!W2 || this.state.admin || this._rebirthing || !(this.P.tickets >= W2.rebirthNeed(this.P))) return;
     this._rebirthing = true;
-    setTimeout(()=>{ try { if (this.state.game) this.closeAll(); const rb = W2.doRebirth(this.P); if (rb) { this.setP(rb.patch);
-        if (this._pzOff) { try { this._pzOff(); } catch(e){} this._pzOff = null; this.forceUpdate(); }
-        W2.reveal(W2.rebirthCard(rb.stars, this.P.stars, this.P.rebirths), 'REBIRTH!', LOWFX); this.toast('REBIRTH #'+this.P.rebirths+' · +'+rb.stars+' GOLDEN STAR'+(rb.stars>1?'S':'')); } }
-      finally { this._rebirthing = false; } }, 300); }
+    Promise.resolve().then(()=>{ try { if (this.state.game) this.closeAll(); const rb = W2.doRebirth(this.P); if (rb) { this.setP(rb.patch);
+        if (this._pzOff) { try { this._pzOff(); } catch(e){} this._pzOff = null; } if (this._ckOff) { try { this._ckOff(); } catch(e){} this._ckOff = null; } this.forceUpdate();
+        const info = {stars:rb.stars, total:this.P.stars, free:Math.max(0,(this.P.stars||0)-(this.P.starsSpent||0)), n:this.P.rebirths, next:W2.rebirthNeed(this.P), starMult:W2.starMult(this.P)};
+        if (window.WLE) window.WLE.celebrate(info); else W2.reveal(W2.rebirthCard(rb.stars, this.P.stars, this.P.rebirths), 'REBIRTH!', LOWFX);
+        this.toast('REBIRTH #'+this.P.rebirths+' · +'+rb.stars+' GOLDEN STAR'+(rb.stars>1?'S':'')); } }
+      finally { this._rebirthing = false; } }); }
+  econApi(){ return { P:()=>this.P, setP:pt=>this.setP(pt), toast:t=>this.toast(t), sfx:n=>window.Arcade && window.Arcade.sfx(n), admin:()=>!!this.state.admin, addTix:(n,f,c)=>this.addTix(n,f,c) }; }
+  // One-time move to the new economy. Nothing is wiped: tickets, prizes, scores, stars and achievements all stay.
+  migrateEcon(){ const P = this.P; if ((P.econV||0) >= 3) return; const had = (P.tickets||0) > 0 || Object.keys(P.played||{}).length > 0;
+    const lines = ['🎟 '+fmtN(P.tickets||0)+' tickets', '🏆 '+Object.keys(P.prizes||{}).length+' kinds of prizes kept', '⭐ '+(P.stars||0)+' Golden Stars', '🏅 '+(P.ach||[]).length+' achievements', '🛠 Workshop and multiplier levels kept until your next Rebirth'];
+    const idle = P.idle && typeof P.idle=='object' ? {...P.idle, last:Date.now()} : P.idle;
+    this.setP({econV:3, idle}); if (had && window.WLE) window.WLE.welcome({lines}); }
+  // Golden Ticket clicks and critter rewards land here (batched)
+  addTix(n, from, clicks){ if (this.state.admin) return; n = Math.max(0, Math.round(n)); if (!n) return; const P = this.P;
+    this.setP({tickets:P.tickets+n, earned:P.earned+n, clicks:(P.clicks||0)+(clicks||0), combo: clicks ? {...(P.combo||{}), t:Date.now()} : P.combo}); if (from && window.WLE) window.WLE.fly(n, from); }
   previewDown(){ this.setState({downPreview:Date.now()+8000}); setTimeout(()=>this.setState({downPreview:0}), 8100); }
   async adminReloadAll(){ const s = this.state; if (!s.admin || !s.cloud || !this.cloudUid) return this.setState({admMsg:'Log in with an admin account (online) first.'});
     try { await window.WLCloud.reloadEveryone(); this.setState({admMsg:'Reloading every open arcade tab…'}); } catch(e) { this.setState({admMsg:'Couldn’t: '+(e && (e.code||e.message))+' · publish the new firestore.rules first.'}); } }
@@ -1407,7 +1487,7 @@ class Component extends DCLogic {
     this.setP({tickets:P.tickets+tix, earned:P.earned+tix, best, played:{...P.played, [id]:(P.played[id]||0)+1}});
     if (better && this.P.username) this.addScore(id, score, this.isLearn(id)); else this.addScore('_none', 0);
     this.toast((label||'')+' · +'+fmtN(tix)+' TICKETS'); window.Arcade && window.Arcade.sfx('coin'); return tix; }
-  finish(id, score){
+  finish(id, score){ score = safeScore(id, score);
     if (this.state.admin) { const sv = {...this.P.saves}; delete sv[this.saveKey(id)]; this.setP({saves:sv}); this.setState({payout:'Admin mode · no tickets, scores or achievements recorded'}); window.Arcade && window.Arcade.sfx('blip'); return; }
     const g = GAMES.find(x=>x.id==id), mult = this.props.ticketMultiplier ?? 1, P = this.P;
     const best = {...P.best}, played = {...P.played, [id]:(P.played[id]||0)+1}, sum = {...P.stats.sum};
@@ -1424,12 +1504,13 @@ class Component extends DCLogic {
     if (P.difficulty=='hard' || RIVAL(P.difficulty)) sum.hard = (sum.hard||0)+1;
     if (new Date().getHours() < 4) sum.owl = (sum.owl||0)+1;
     const saves = {...P.saves}; delete saves[this.saveKey(id)];
-    const learn = this.isLearn(id); if (learn) { tix = Math.ceil(tix*1.25); lines.push('LEARN BONUS ×1.25'); }
+    const learn = this.isLearn(id); if (learn) { const lm = 1.25 * (window.WLE ? window.WLE.learnGameMult(P) : 1); tix = Math.ceil(tix*lm); lines.push('LEARN BONUS ×'+fmtN(lm)); }
     const wsm = upgTixMult(P, id); if (tix > 0 && wsm > 1.001) { tix = Math.ceil(tix*wsm); lines.push('WORKSHOP +'+fmtN(Math.round((wsm-1)*100))+'%'); }
     const WP = window.WLP; let extra = {};
     if (WP && tix > 0) { const r = WP.payout(P, id, tix); tix = r.tix; lines.push(...r.lines); extra = r.patch || {}; if (r.lines.some(l=>/JACKPOT|LUCKY/.test(l))) sum.jackpots = (sum.jackpots||0)+1; }
     this.setP({best, played, daily, saves, tickets:P.tickets+tix, earned:P.earned+tix, stats:{...P.stats, sum}, ...extra});
     if (WP) { const c = WP.onFinish(this.P, id, score, tix); if (c) this.setP(c); }
+    if (window.WLE && tix > 0) window.WLE.fly(tix);
     if (this.P.username) this.addScore(id, score, learn); else if (!this._unameNag) { this._unameNag = true; setTimeout(()=>this.toast('CREATE A USERNAME TO JOIN THE LEADERBOARD'), 1200); }
     this.setState({payout:'+'+fmtN(tix)+' tickets'+(lines.length?' · '+lines.join(' · '):'')});
     window.Arcade.sfx('coin'); lines.filter(l=>/HIGH|DAILY|PERFECT|JACKPOT|LUCKY/.test(l)).forEach(l=>this.toast(l));
@@ -1440,7 +1521,7 @@ class Component extends DCLogic {
     else { window.Arcade && window.Arcade.sfx('bad'); this.setState({codeMsg:'Code not recognised', codeVal:''}); } }
   open(id){ this.keys = {}; this.setState({game:id, liveScore:0, payout:''}); }
   closeAll(){ const saved = this.unmountGame(); this.keys = {}; Object.keys(this.padHeld).forEach(k=>{ if (this.padHeld[k]) fireKey(k,'keyup'); }); this.padHeld = {};
-    this.setState({game:null, shopOpen:false, avOpen:false, prizesOpen:false, payout:'', authOpen:false, achOpen:false, learnOpen:false, lbOpen:false, uOpen:false, clearArm:false}); if (saved) this.toast('GAME SAVED · PICK IT UP ANY TIME'); }
+    this.setState({game:null, clickOpen:false, shopOpen:false, avOpen:false, prizesOpen:false, payout:'', authOpen:false, achOpen:false, learnOpen:false, lbOpen:false, uOpen:false, clearArm:false}); if (saved) this.toast('GAME SAVED · PICK IT UP ANY TIME'); }
   buy(p){
     const P = this.P; if (P.tickets < p.cost) { window.Arcade && window.Arcade.sfx('bad'); return; }
     const left = P.tickets - p.cost, patch = {tickets:left, prizes:{...P.prizes,[p.id]:(P.prizes[p.id]||0)+1}};
@@ -1492,10 +1573,10 @@ class Component extends DCLogic {
     const eduOn = this.eduOn(), locked = this.locked(), hasCode = !!this.lockInfo().hash;
     const s = this.state, P = this.P, di = dailyIdx(), dg = GAMES[di], dailyDone = P.daily.date==today() && P.daily.done;
     const ni = this.findNear(), glow = '0 0 0 4px #D5F367, 0 12px 24px rgba(0,0,0,.3)', base = '0 10px 18px rgba(0,0,0,.22)';
-    const kiosk = [()=>this.setState({prizesOpen:true}), ()=>this.open(dg.id), ()=>this.setState({lbOpen:true}), ()=>this.setState({learnOpen:true}), ()=>this.setState({shopOpen:true})];
+    const kiosk = [()=>this.setState({prizesOpen:true}), ()=>this.setState({clickOpen:true}), ()=>this.setState({lbOpen:true}), ()=>this.setState({learnOpen:true}), ()=>this.setState({shopOpen:true})];
     this.near = ni==null ? null : ni<NG ? {act:()=>this.open(GAMES[ni].id)} : {act:kiosk[ni-NG]};
     const savedOf = id => !!(P.saves[id] || P.saves[id+'~edu']);
-    const nearLabel = ni==null ? '' : ni<NG ? 'PLAY '+GAMES[ni].title.toUpperCase()+(savedOf(GAMES[ni].id)?' · SAVED':'') : ['PRIZE COUNTER','DAILY: '+dg.title.toUpperCase(),'LEADERBOARD','LEARNING DESK','UPGRADE WORKSHOP'][ni-NG];
+    const nearLabel = ni==null ? '' : ni<NG ? 'PLAY '+GAMES[ni].title.toUpperCase()+(savedOf(GAMES[ni].id)?' · SAVED':'') : ['PRIZE COUNTER','GOLDEN TICKET','LEADERBOARD','LEARNING DESK','UPGRADE WORKSHOP'][ni-NG];
     const g = s.game && GAMES.find(x=>x.id==s.game);
     const [dx,dy] = s.dir;
     // achievements
@@ -1527,7 +1608,7 @@ class Component extends DCLogic {
     // leaderboard
     const B = s.cloud ? {e:[]} : (s.lbOpen || !s.game) ? getJSON(BOARD_KEY,{e:[]}) : {e:[]}, myK = this.cloudUid || this.profKey();
     const lbRows = (g, mode, n) => { if (s.cloud && (s.lbOpen || !s.game)) this.needBoard(g); let e = s.cloud ? ((this.cloudBoard||{})[g]||[]).slice() : B.e.filter(x=>x.g==g); if (mode=='edu') e = e.filter(x=>x.edu); if (mode=='reg') e = e.filter(x=>!x.edu);
-      return e.sort((a,b)=>b.s-a.s).slice(0,n).map((x,i)=>({rank:i+1, avImg: avSVG(avDec(x.av), x.al||0), name:x.u, score:fmtN(x.s), badge: x.edu?'LEARN':'', hasBadge:!!x.edu, date:x.d||'', bg: x.k==myK ? '#D5F367' : (i%2?'#ffffff':'#f6f3e6'), weight: x.k==myK ? 700 : 500, medal: ['#F9BF01','#B9C4BF','#DD8B03'][i]||'transparent', rankFg: i<3 ? '#121313' : '#ffffff', rankFgDark: '#121313'})); };
+      return e.filter(x=>x.g=='_tix' || x.s <= scoreCap(x.g||g)).sort((a,b)=>b.s-a.s).slice(0,n).map((x,i)=>({rank:i+1, avImg: avSVG(avDec(x.av), x.al||0), name:x.u, score:fmtN(x.s), badge: x.edu?'LEARN':'', hasBadge:!!x.edu, date:x.d||'', bg: x.k==myK ? '#D5F367' : (i%2?'#ffffff':'#f6f3e6'), weight: x.k==myK ? 700 : 500, medal: ['#F9BF01','#B9C4BF','#DD8B03'][i]||'transparent', rankFg: i<3 ? '#121313' : '#ffffff', rankFgDark: '#121313'})); };
     const uv = (s.uVal||'').trim(), ureg = s.uOpen ? getJSON(UNAME_KEY,{}) : {}, uOwner = ureg[uv.toLowerCase()];
     const pad = s.game && PADS[s.game];
     const mkPad = key => ({down: e=>{ if (e && e.preventDefault) e.preventDefault(); this.padHeld[key] = 1; fireKey(key,'keydown'); }, up: ()=>{ if (this.padHeld[key]) { this.padHeld[key] = 0; fireKey(key,'keyup'); } }});
@@ -1582,8 +1663,11 @@ class Component extends DCLogic {
       uRules: unameRules(uv, !!uOwner && uOwner!==myK).map(([label,ok])=>({label, color: ok?'#015640':'#4a4a4a', dot: ok?'#00B451':'#b0ab95', mark: ok?'✓':'·'})),
       boardShadow: ni===NG+2?glow:base, learnShadow: ni===NG+3?glow:base, boardIcon: KIOSK_ICONS.board, learnIcon: KIOSK_ICONS.learn,
       lbLeader: (lbRows('_tix','all',1)[0]||{}).name || 'Nobody yet',
-      tickets: fmtN(P.tickets), multLabelHead: '×'+(window.WLP ? window.WLP.fmt(window.WLP.globalMult(P)) : '1')+((P.stars||0) ? ' · ⭐'+P.stars : ''), soundLabel: s.muted ? 'SOUND OFF' : 'SOUND ON',
+      tickets: fmtN(P.tickets), multLabelHead: '×'+(window.WLP ? window.WLP.fmt(window.WLP.totalMult(P)) : '1')+' total'+((P.stars||0) ? ' · ⭐'+P.stars : ''), soundLabel: s.muted ? 'SOUND OFF' : 'SOUND ON',
       showCash: !!s.game && s.game!='idle', cashOutGame: ()=>this.cashOutGame(), cashLabel: s.admin ? 'Cash out · (admin)' : 'Cash out · '+fmtN(s.liveScore||0),
+      clickOpen: !!s.clickOpen, openClick: ()=>{ this.keys = {}; this.setState({clickOpen:true}); }, closeClick: ()=>this.closeAll(), ckRef: this.ckRef,
+      rbPct: window.WLP ? Math.min(100, (P.tickets||0)/window.WLP.rebirthNeed(P)*100).toFixed(1)+'%' : '0%', rbShort: window.WLP ? fmtN(P.tickets||0)+' / '+fmtN(window.WLP.rebirthNeed(P)) : '', rbLabel: window.WLP ? 'Next Rebirth: '+fmtN(P.tickets||0)+' / '+fmtN(window.WLP.rebirthNeed(P))+' (automatic)' : '',
+      expFloor: window.WLE ? window.WLE.EXP.filter(x=>(P.exp||{})[x.k]).map(x=>({key:x.k+'-'+P.exp[x.k], e:x.e, n:x.n, lv:P.exp[x.k]})) : [], expEmpty: !window.WLE || !window.WLE.EXP.some(x=>(P.exp||{})[x.k]),
       fxLabel: LOWFX ? 'ANIMATIONS OFF' : 'ANIMATIONS ON', toggleFx: ()=>{ LOWFX = !LOWFX; try { localStorage.setItem('wl-arcade-lowfx', LOWFX?'1':'0'); } catch(e){} applyLowFx(LOWFX); if (window.Arcade) window.Arcade.lowFx = LOWFX; this.toast(LOWFX ? 'ANIMATIONS OFF · SMOOTHER ON SLOW DEVICES' : 'ANIMATIONS ON'); this.forceUpdate(); },
       toggleSound: ()=>{ const m=!s.muted; this.setState({muted:m}); if (window.Arcade) window.Arcade.muted = m; },
       wrapRef: this.wrapRef, gameRef: this.gameRef, pzRef: this.pzRef, scale: s.scale, floorTransform: 'scale(' + s.scale + ')', scaledH: Math.round(FH*s.scale),
@@ -1597,7 +1681,7 @@ class Component extends DCLogic {
       tierCounts: [1,2,3,4].map(t=>({c:TIER[t].c, label:TIER[t].n+' '+achAll.filter((a,i)=>ACH[i].tier==t && a.on).length+'/'+ACH.filter(a=>a.tier==t).length})),
       nextAch: achAll.filter(a=>!a.on && !a.secret).sort((a,b)=>b.pct-a.pct).slice(0,3),
       openAch: ()=>{ this.keys = {}; this.setState({achOpen:true}); }, closeAch: ()=>this.setState({achOpen:false}), achOpen: s.achOpen,
-      achFilters: ['All','Arcade','Machines','Learning','Collections','Rebirth','Secret','Unlocked','Locked'].map(f=>({label:f, bg: filt==f?'#015640':'#ffffff', fg: filt==f?'#ffffff':'#015640', pick:()=>this.setState({achFilter:f})})),
+      achFilters: ['All','Arcade','Machines','Learning','Golden Ticket','Collections','Rebirth','Secret','Unlocked','Locked'].map(f=>({label:f, bg: filt==f?'#015640':'#ffffff', fg: filt==f?'#ffffff':'#015640', pick:()=>this.setState({achFilter:f})})),
       achShown,
       // account
       acctHeadLabel: s.account ? '● '+(me?me.name:s.account) : 'SIGN UP / LOG IN', acctHeadBg: s.account ? 'transparent' : '#D5F367', acctHeadFg: s.account ? '#D5F367' : '#015640',
@@ -1658,11 +1742,11 @@ class Component extends DCLogic {
       chatList: (s.chatMsgs||[]).filter(m=>!((window.WLCloud && window.WLCloud.mutes ? window.WLCloud.mutes() : []).includes(m.uid)) || s.admin).map(m=>({key:m.id, avImg: avSVG(avDec(m.av), m.al||0), name:m.u||'?', text:chatClean(m.t), time: new Date(m.at).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}), mine: m.uid===this.cloudUid, bg: m.uid===this.cloudUid ? '#e4f7a8' : '#ffffff',
         del: ()=>this.chatAdmin(m,'del'), mute: ()=>this.chatAdmin(m,'mute'), kick: ()=>this.adminKick(m, m.uid, m.u||'player'), kickLabel: s.admArm=='kick:'+m.uid ? 'Confirm kick' : 'Kick', muteLabel: ((window.WLCloud && window.WLCloud.mutes ? window.WLCloud.mutes() : []).includes(m.uid)) ? 'Unmute' : 'Mute'})),
       adminOff: ()=>{ try { localStorage.setItem('wl-admin-off','1'); } catch(e){} if (window.Arcade) { window.Arcade.infiniteHints = false; window.Arcade.immortal = false; } this.closeAll(); this.setState({admin:false, immortal:false, adminMult:1, adminOpen:false, codeOpen:false}); this.toast('ADMIN MODE OFF · TICKETS, SCORES AND SAVES COUNT AGAIN'); },
-      doShutdown: ()=>this.adminShutdown(false), doReopen: ()=>this.adminShutdown(true), doPreview: ()=>this.previewDown(), shutLabel: s.admArm=='down' ? 'YES · SHUT IT DOWN' : 'Shut down',
+      doShutdown: ()=>this.adminShutdown(false), doReopen: ()=>this.adminShutdown(true), doPreview: ()=>this.previewDown(), shutLabel: s.admArm=='down' ? 'YES · CLOSE IT' : 'Close for maintenance',
       downStatus: (s.downUntil||0) > Date.now() ? 'CLOSED · reopens in '+fmtDur2((s.downUntil-Date.now())/1000) : 'Open',
       downOn: (((s.downUntil||0) > Date.now() && !s.admin) || (s.downPreview||0) > Date.now()) && !s.authOpen && !s.codeOpen,
       downAcct: s.account ? 'Logged in as '+(this.cloudMeta&&this.cloudMeta.email || s.account) : 'Not logged in', downIn: !s.account, downOut: !!s.account, downIsAdminAcct: !!(this.cloudMeta && ADMIN_EMAILS.includes(String(this.cloudMeta.email||'').toLowerCase())),
-      downLogin: ()=>this.openAuth('login'), downAdminOn: ()=>{ try { localStorage.removeItem('wl-admin-off'); } catch(e){} if (window.Arcade) window.Arcade.infiniteHints = true; this.setState({admin:true, adminOpen:true, admMsg:'Admin mode on. Press “Reopen now” to open the arcade for everyone.'}); }, downCode: ()=>this.setState({codeOpen:true, codeVal:'', codeMsg:''}), downLeft: fmtDur2(Math.max(0,(((s.downUntil||0) > Date.now() ? s.downUntil : (s.downPreview ? Date.now() + (parseFloat(s.downMin)||15)*60000 : 0))-Date.now())/1000)), downNote: s.downMsg || 'The arcade is closed for a little maintenance. Grab a snack — it reopens by itself when the timer hits zero.',
+      downLogin: ()=>this.openAuth('login'), downAdminOn: ()=>{ try { localStorage.removeItem('wl-admin-off'); } catch(e){} if (window.Arcade) window.Arcade.infiniteHints = true; this.setState({admin:true, adminOpen:true, admMsg:'Admin mode on.'}); this.adminShutdown(true, true); }, downCode: ()=>this.setState({codeOpen:true, codeVal:'', codeMsg:''}), downLeft: fmtDur2(Math.max(0,(((s.downUntil||0) > Date.now() ? s.downUntil : (s.downPreview ? Date.now() + (parseFloat(s.downMin)||15)*60000 : 0))-Date.now())/1000)), downNote: s.downMsg || 'The arcade is closed for a little maintenance. Grab a snack — it reopens by itself when the timer hits zero.',
       adminDownBanner: (s.downUntil||0) > Date.now() && s.admin, resetAll: ()=>this.adminResetAll(), resetAllLabel: s.admArm=='resetall' ? 'YES · WIPE EVERYONE' : 'FULL RESET · everyone',
       kickMin: s.kickMin||'', inKickMin: e=>this.setState({kickMin:e.target.value.slice(0,5)}),
       kickOn: (s.kickUntil||0) > Date.now() && !s.admin && !s.authOpen, kickLeft: fmtDur2(Math.max(0,((s.kickUntil||0)-Date.now())/1000)),
