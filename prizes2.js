@@ -545,7 +545,11 @@ W.mount = (root, api) => {
       E('div', {style:{marginTop:'6px', fontSize:'13px'}}, 'Next milestone: '+W.fmt(need)+' tickets'),
       E('div', {cls:'wlp-small'}, 'Milestones: '+[0,1,2,3,4,5].map(i=>W.fmt(1e7*Math.pow(1000,(p.rebirths||0)+i))).join(' → ')+' → …'),
       E('div', {cls:'wlp-bar', style:{margin:'6px 0'}}, E('div', {style:{width:pct+'%', background:'#F9BF01'}})),
-      E('div', {style:{fontWeight:700, color:'#015640', fontSize:'13px'}}, 'No button needed — the Rebirth happens the moment you reach '+W.fmt(need)+' tickets. You’ll earn about '+Math.max(1, W.lifetimeStars({...p, earned:Math.max(p.earned||0, need)}) - (p.stars||0))+' Golden Star(s).')));
+      E('div', {style:{fontWeight:700, color:'#015640', fontSize:'13px'}}, (api.autoRb && !api.autoRb() ? 'Auto Rebirth is off — press Rebirth now when you reach '+W.fmt(need)+' tickets.' : 'No button needed — the Rebirth happens the moment you reach '+W.fmt(need)+' tickets.')+' You’ll earn about '+Math.max(1, W.lifetimeStars({...p, earned:Math.max(p.earned||0, need)}) - (p.stars||0))+' Golden Star(s).')));
+    if (api.autoRb) { const on = api.autoRb(), ready = (p.tickets||0) >= need; const row = E('div', {style:{display:'flex', gap:'8px', flexWrap:'wrap', alignItems:'center', margin:'0 0 10px'}});
+      row.appendChild(E('button', {cls:'wlp-chip'+(on?' on':''), onclick:()=>{ api.setAutoRb(!on); api.sfx('blip'); render(); }}, 'Auto Rebirth: '+(on?'ON':'OFF')));
+      if (!on) { const b = E('button', {cls:'wlp-buy', style:{width:'auto', minWidth:'160px'}, onclick:()=>api.rebirthNow()}, ready ? '⭐ Rebirth now' : 'Rebirth at '+W.fmt(need)+' 🎟'); if (!ready) b.disabled = true; row.appendChild(b); }
+      row.appendChild(E('span', {cls:'wlp-small'}, on ? 'You Rebirth the moment you reach the milestone.' : 'Auto Rebirth is off: your tickets keep stacking past the milestone until you press Rebirth now.')); box.appendChild(row); }
     box.appendChild(perkCard());
     box.appendChild(E('div', {cls:'wlp-h'}, 'CABINET SKINS (UNLOCK WITH GOLDEN STARS)'));
     const sk = E('div', {style:{display:'flex', gap:'8px', flexWrap:'wrap'}});
