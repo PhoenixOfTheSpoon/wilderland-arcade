@@ -268,7 +268,7 @@ W.rebirthNeed = P => 1e7 * Math.pow(1000, P.rebirths||0);
 // Stars come from ALL tickets ever earned: total stars = cube root of (lifetime tickets ÷ 1M). Each Rebirth gives at least 1.
 W.lifetimeStars = P => Math.floor(Math.cbrt(Math.max(0, P.earned||0) / 1e6));
 W.rebirthStars = P => { const need = W.rebirthNeed(P); if ((P.tickets||0) < need) return 0; return Math.max(1, W.lifetimeStars(P) - (P.stars||0)); };
-// Rebirth: tickets, Multiplier upgrades, The Mines (miners, ore, mine upgrades — depth stays) and the Mines Workshop upgrades reset;
+// Rebirth: tickets, Multiplier upgrades, The Mines (miners, ore, mine upgrades — depth, gems and the Gem Tree stay) and the Mines Workshop upgrades reset;
 // every saved game restarts. Returns the profile patch plus how many Golden Stars were earned.
 W.doRebirth = P => { const stars = W.rebirthStars(P); if (!stars) return null;
   const idle = P.idle && typeof P.idle=='object' ? {...P.idle, grid:[1,0,0,0,0,0,0,0,0,0,0,0], up:{}, ore:0, hires:1, last:Date.now()} : P.idle;

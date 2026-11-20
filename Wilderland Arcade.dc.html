@@ -1343,7 +1343,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-11-25a';
+const BUILD = '2026-11-25b';
 const SCRIPTS = ['arcade-core.js','prizes2.js','economy.js','achievements.js','avatar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
@@ -1734,20 +1734,21 @@ class Component extends DCLogic {
     const gameM = g => (1+.2*glv(g)) * (pk.game[g]||1) * upgTixMult(P, g) * (E2 ? E2.ptGame(P, g) : 1);
     const gameRows = g => [['Machine Multiplier (lv '+glv(g)+')', f(1+.2*glv(g)), 'Tickets from this cabinet only'], ['Workshop upgrades & Ticket Booster', f(upgTixMult(P, g)), 'Tickets from this cabinet only'],
       ...(pk.game[g] ? [['Wilderland prize power', f(pk.game[g]), 'Tickets from this cabinet only']] : []), ...(P.ptFav==g ? [['Prestige Tree · favourite machine', f(E2.ptGame(P,g)), 'Tickets from this cabinet only']] : [])];
-    const I = P.idle || {}, IU = I.up || {}, iw = (P.upg||{}).idle || {};
+    const I = P.idle || {}, IU = I.up || {}, iw = (P.upg||{}).idle || {}, GTr = I.gtree || {};
     const cats = [
       {id:'all', e:'🎟', n:'All Tickets', d:'Boosts tickets from every game', rows:[['Ticket Multiplier (lv '+lvM('global')+')', f(M[0].eff(lvM('global'))), 'Every ticket you earn'], ['Golden Stars ('+(P.stars||0)+')', f(WP.breakdown(P)[1][1]), 'Every ticket you earn'],
         ['Collections ('+Object.keys(P.colDone||{}).length+')', f(WP.breakdown(P)[2][1]), 'Every ticket you earn'], ['Login streak', f(WP.breakdown(P)[3][1]), 'Every ticket you earn'], ['Wilderland prizes', f(pk.all), 'Every ticket you earn'],
         ['Achievements (Platinum & Diamond)', f(A2 && A2.bonus ? A2.bonus(P) : 1), 'Every ticket you earn'], ['Arcade Expansions', f(E2 ? E2.gameMult(P)/(pt.games||1) : 1), 'Tickets you earn by playing'], ['Combo streak', f(WP.breakdown(P)[8][1]), 'Game payouts while your combo lasts']]},
-      {id:'mineTix', e:'⛏️', n:'Mine Tickets', d:'Boosts tickets from The Mines only', rows: gameRows('idle')},
-      {id:'mineCrew', e:'👷', n:'Mine Crew', d:'Miners, hiring and digging speed in The Mines', total:(1+.25*(IU.cart||0))*(1+.1*(IU.drill||0)), rows:[
+      {id:'mineTix', e:'⛏️', n:'Mine Tickets', d:'Boosts tickets from The Mines only', rows: [...gameRows('idle'), ['Gem Market (Gem Tree lv '+(GTr.market||0)+')', f(1+.1*(GTr.market||0)), 'Tickets when you cash out ore · permanent']]},
+      {id:'mineCrew', e:'👷', n:'Mine Crew', d:'Miners, hiring and digging speed in The Mines', total:(1+.25*(IU.cart||0))*(1+.1*(IU.drill||0))*(1+.25*(GTr.ore||0)), rows:[
+        ['Miner slots (Gem Tree · Bigger Mine lv '+(GTr.slots||0)+')', (12+4*(GTr.slots||0))+' slots', 'How many miners you can have · permanent'], ['Gem-Powered Drills (Gem Tree lv '+(GTr.ore||0)+')', f(1+.25*(GTr.ore||0)), 'All Mines ore · permanent'], ['Veteran Crew (Gem Tree lv '+(GTr.vet||0)+')', '+'+(GTr.vet||0)+' levels', 'Level of new miners · permanent'], ['Night Owls (Gem Tree)', GTr.owl ? '75%' : '50%', 'Digging speed while you’re away · permanent'],
         ['Mine Carts (lv '+(IU.cart||0)+')', f(1+.25*(IU.cart||0)), 'Ore from every miner'], ['Deep Charges (lv '+(IU.drill||0)+')', f(1+.1*(IU.drill||0)), 'All ore'],
         ['Better Hires (lv '+(IU.hire||0)+')', '+'+(IU.hire||0)+' levels', 'Level of new miners'], ['Starter Crew (Workshop lv '+(iw.start||0)+')', '+'+(iw.start||0)+' levels', 'Level of new miners'],
         ['Miners’ Union Deal (Workshop lv '+(iw.cheap||0)+')', f(Math.pow(.85, iw.cheap||0)), 'Cost of hiring (lower is better)'], ['Foreman (lv '+(IU.auto||0)+'/100)', (IU.auto ? 'every '+(6*Math.pow(0.1/6,(Math.min(IU.auto,100)-1)/99)).toFixed(2)+' s' : 'off'), 'Automatic merges'],
         ['Night Shift (lv '+(IU.night||0)+')', (2+2*(IU.night||0))+' h', 'Digging while you’re away'], ['Best miner', 'Lv '+(I.best||1), 'Ore per second']]},
       {id:'mineTreasure', e:'💎', n:'Mine Treasure', d:'Gems, treasure rooms and lucky digs in The Mines', rows:[
         ['Gem Sense (lv '+(IU.gem||0)+'/20)', IU.gem ? 'gems '+Math.round(100-100*Math.max(.3,1-.035*IU.gem))+'% sooner' : 'off', 'Gems, rare gems, treasure & hazard warnings'], ['Lucky Strike (lv '+(IU.luck||0)+')', (2*(IU.luck||0))+'% for ×10', 'Taps on the dig face'],
-        ['Mine depth (layer '+Math.max(1, (P.stats.max||{}).mineDepth||1)+')', f(1+.2*(Math.max(1,(P.stats.max||{}).mineDepth||1)-1)), 'All ore'], ['Treasure rooms opened', String((P.stats.sum||{}).mineChests||0), 'One-time ore hauls']]},
+        ['Mine depth (layer '+Math.max(1, (P.stats.max||{}).mineDepth||1)+')', f(1+.2*(Math.max(1,(P.stats.max||{}).mineDepth||1)-1)), 'All ore'], ['Treasure rooms opened', String((P.stats.sum||{}).mineChests||0), 'One-time ore hauls'], ['Gem bank', String(Math.floor(I.gemBank||0))+' 💎', 'Spend in the Gem Tree'], ['Gem Magnet (Gem Tree lv '+(GTr.magnet||0)+')', (10*(GTr.magnet||0))+'% double gems', 'Gems you collect · permanent'], ['Golem Tamer (Gem Tree lv '+(GTr.boss||0)+')', f(1+.5*(GTr.boss||0)), 'Ore from Mines bosses · permanent']]},
       {id:'td', e:'🏰', n:'Tower Defense', d:'Gold, towers and tickets in Trailhead Defense', rows:[...gameRows('td'), ...(UPG.td||[]).filter(u=>u.k!='boost').map(u=>[u.n+' (lv '+(((P.upg||{}).td||{})[u.k]||0)+')', '+'+(((P.upg||{}).td||{})[u.k]||0)+' levels', u.d]),
         ['Gold Pans', 'no level cap', 'Gold paid every wave (upgrade them during a run)']]},
       {id:'games', e:'🕹️', n:'Per-Game Boosts', d:'Each cabinet’s own multiplier', rows: GAMES.filter(g=>g.id!='idle' && g.id!='td').map(g=>[g.title, f(gameM(g.id)), 'Tickets from '+g.title+' only'])},
