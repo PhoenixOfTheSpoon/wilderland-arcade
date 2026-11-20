@@ -144,6 +144,11 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
             <div style="font-size:13px; font-weight:500; color:#EDE9D8;">Beat {{ daily.target }} · {{ daily.status }}</div>
           </div>
 
+          <div onClick="{{ openExp }}" style="position:absolute; left:30px; top:858px; width:1060px; height:58px; border-radius:12px; background:linear-gradient(#123d31,#0b2e24); box-shadow:inset 0 -5px 0 #071f18; display:flex; align-items:center; gap:8px; padding:0 12px; box-sizing:border-box; cursor:pointer; overflow:hidden;">
+            <div style="font-size:10px; font-weight:700; letter-spacing:0.14em; color:#D5F367; line-height:1.15; flex-shrink:0;">ARCADE<br>EXPANSIONS</div>
+            <sc-if value="{{ expEmpty }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px; color:#b9cfc5;">Buy Arcade Expansions in the Prize Counter — they fill up this space</div></sc-if>
+            <sc-for list="{{ expFloor }}" as="xf" hint-placeholder-count="4"><div title="{{ xf.n }}" class="wl-pop" style="position:relative; width:44px; height:44px; flex-shrink:0; border-radius:12px; background:radial-gradient(circle at 35% 30%, #fff, #D5F367 55%, #00B451); box-shadow:inset 0 -4px 0 rgba(0,0,0,.18), 0 3px 6px rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; font-size:24px;">{{ xf.e }}<span style="position:absolute; right:-4px; bottom:-4px; background:#015640; color:#D5F367; font-size:9px; font-weight:800; padding:1px 5px; border-radius:999px;">{{ xf.lv }}</span></div></sc-for>
+          </div>
           <div onClick="{{ openPrizes }}" style="position:absolute; left:30px; top:790px; width:1060px; height:56px; border-radius:12px; background:linear-gradient(#5a3a1c,#3b2614); box-shadow:inset 0 -6px 0 #2a1b0e; display:flex; align-items:center; gap:8px; padding:0 12px; box-sizing:border-box; cursor:pointer; overflow:hidden;">
             <div style="font-size:10px; font-weight:700; letter-spacing:0.14em; color:#F9BF01; line-height:1.15; flex-shrink:0;">TROPHY<br>WALK</div>
             <sc-if value="{{ trophyEmpty }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px; color:#cfc6a8;">Complete a prize collection to put its trophy here · {{ trophyPct }}</div></sc-if>
@@ -872,7 +877,7 @@ const LEARN_GAMES = ['trace','rootout'];
 const TOPICS = [['add','Add'],['sub','Subtract'],['mult','Multiply'],['div','Divide'],['multi','Two-step'],['skip','Skip-count'],['spell','Spelling'],['mixed','Mix']];
 const PADS = {snake:{d:'udlr',a:[['Start',' ']]}, breakout:{d:'lr',a:[['Launch',' ']]}, flappy:{d:'',a:[['Flap',' ']]}, pong:{d:'ud',a:[['Serve',' ']]}, '2048':{d:'udlr',a:[]}, crossing:{d:'udlr',a:[['Start',' ']]}, stack:{d:'ldr',a:[['Rotate','ArrowUp'],['Drop',' '],['Hold','c'],['Saw','x']]}, connect4:{d:'lr',a:[['Drop',' ']]}};
 const SWIPE = ['snake','2048','crossing','stack'];
-const FW = 1120, FH = 860;
+const FW = 1120, FH = 930;
 const KIOSKS = [{id:'prize',x:850,y:50,w:230,h:200},{id:'daily',x:850,y:290,w:230,h:140},{id:'board',x:850,y:465,w:230,h:110},{id:'learn',x:850,y:605,w:230,h:110},{id:'shop',x:678,y:590,w:140,h:130}];
 const BOARD_KEY = 'wl-arcade-board-v3', UNAME_KEY = 'wl-arcade-usernames';
 const getJSON = (k,d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch(e) { return d; } };
@@ -1067,13 +1072,19 @@ const ACH = [
   {id:'reb3',cat:'Rebirth',tier:3,name:'Phoenix',desc:'Rebirth 3 times',p:s=>[s.rebirths||0,3]},
   {id:'reb10',cat:'Rebirth',tier:4,name:'Eternal',desc:'Rebirth 10 times',p:s=>[s.rebirths||0,10]},
   {id:'reb25',cat:'Rebirth',tier:4,name:'Timeless',desc:'Rebirth 25 times',p:s=>[s.rebirths||0,25]},
+  {id:'prest1',cat:'Rebirth',tier:3,name:'Diamond Hands',desc:'Prestige once (10 Rebirths) and earn a Diamond Star',p:s=>[Math.floor((s.rebirths||0)/10),1]},
+  {id:'prest3',cat:'Rebirth',tier:4,name:'Diamond Collector',desc:'Prestige 3 times',p:s=>[Math.floor((s.rebirths||0)/10),3]},
+  {id:'ptree1',cat:'Rebirth',tier:2,name:'Branching Out',desc:'Unlock a Prestige Tree node',p:s=>[Object.keys(s.ptree||{}).length,1]},
+  {id:'exp10',cat:'Arcade',tier:1,name:'Builder',desc:'Own 10 Arcade Expansion levels',p:s=>[window.WLE?window.WLE.expLevels(s):0,10]},
+  {id:'exp100',cat:'Arcade',tier:2,name:'Developer',desc:'Own 100 Arcade Expansion levels in one run',p:s=>[window.WLE?window.WLE.expLevels(s):0,100]},
+  {id:'galaxy',cat:'Arcade',tier:4,name:'Out of This World',desc:'Open the Galactic Fun Zone',p:s=>[((s.exp||{}).galaxy||0)?1:0,1]},
   {id:'crit1',cat:'Arcade',tier:1,name:'Gotcha!',desc:'Catch a golden critter',p:s=>[s.critters||0,1]},
   {id:'crit25',cat:'Arcade',tier:2,name:'Critter Keeper',desc:'Catch 25 golden critters',p:s=>[s.critters||0,25]},
   {id:'crit200',cat:'Arcade',tier:4,name:'Golden Zoo',desc:'Catch 200 golden critters',p:s=>[s.critters||0,200]},
   {id:'streak10',cat:'Learning',tier:2,name:'On a Roll',desc:'Get 10 learn-mode answers right in a row',p:s=>[mx(s,'eduStreak'),10]},
   {id:'streak30',cat:'Learning',tier:3,name:'Brainstorm',desc:'Get 30 learn-mode answers right in a row',p:s=>[mx(s,'eduStreak'),30]},
   {id:'streak100',cat:'Learning',tier:4,name:'Genius Mode',desc:'Get 100 learn-mode answers right in a row',p:s=>[mx(s,'eduStreak'),100]},
-  {id:'starPrize',cat:'Rebirth',tier:2,name:'Star Shopper',desc:'Buy a prize with Golden Stars',p:s=>[window.WLP&&window.WLP.perks?window.WLP.perks(s).count:0,1]},
+  {id:'starPrize',cat:'Rebirth',tier:2,name:'Star Shopper',desc:'Buy a Wilderland prize with Golden Stars',p:s=>[window.WLP&&window.WLP.perks?window.WLP.perks(s).count:0,1]},
   {id:'mult10',cat:'Rebirth',tier:1,name:'Multiplying',desc:'Ticket Multiplier level 10',p:s=>[((s.mult||{}).global)|0,10]},
   {id:'mult50',cat:'Rebirth',tier:2,name:'Exponential',desc:'Ticket Multiplier level 50',p:s=>[((s.mult||{}).global)|0,50]},
   {id:'mult200',cat:'Rebirth',tier:4,name:'Number Go Up',desc:'Ticket Multiplier level 200',p:s=>[((s.mult||{}).global)|0,200]},
@@ -1121,10 +1132,10 @@ const ACH = [
   {id:'lifer',cat:'Secret',tier:4,secret:true,name:'Lifer',desc:'Finish 1,000 games',p:s=>[plays(s),1000]},
 ];
 const KEY = 'wl-arcade-v1', ACCT_KEY = 'wl-arcade-accounts', SESSION_KEY = 'wl-arcade-session';
-const DEF = () => ({difficulty:'normal',speed:'normal',tickets:0,best:{},played:{},ach:[],prizes:{},daily:{date:'',done:false},earned:0,saves:{},savesV:2,stats:{max:{},sum:{}},username:'',edu:{on:false,topic:'add'},sessLog:[],days:{},adjSeen:0,idle:null,upg:{},avatar:{},cursor:'',resetSeen:0,mult:{},stars:0,starsSpent:0,exp:{},expUp:{},tree:{},clicks:0,critters:0,econV:0,rebirths:0,colDone:{},login:{},chal:{},combo:{},capsules:0,skin:'',learnTix:0});
+const DEF = () => ({difficulty:'normal',speed:'normal',tickets:0,best:{},played:{},ach:[],prizes:{},daily:{date:'',done:false},earned:0,saves:{},savesV:2,stats:{max:{},sum:{}},username:'',edu:{on:false,topic:'add'},sessLog:[],days:{},adjSeen:0,idle:null,upg:{},avatar:{},cursor:'',resetSeen:0,mult:{},stars:0,starsSpent:0,exp:{},expUp:{},tree:{},ptree:{},diaSpent:0,ptFav:'',clicks:0,critters:0,econV:0,rebirths:0,colDone:{},login:{},chal:{},combo:{},capsules:0,skin:'',learnTix:0});
 const PFIELDS = Object.keys(DEF());
 const loadP = key => { let d = {}; try { d = JSON.parse(localStorage.getItem(key)) || {}; } catch(e){} return normP(d); };
-const normP = d => { const P = Object.assign(DEF(), d||{}); P.stats = Object.assign({max:{},sum:{}}, P.stats||{}); P.stats.max = P.stats.max||{}; P.stats.sum = P.stats.sum||{}; P.saves = P.saves||{}; P.ach = Array.isArray(P.ach)?P.ach:[]; P.edu = Object.assign({on:false,topic:'add'}, P.edu||{}); P.sessLog = Array.isArray(P.sessLog)?P.sessLog:[]; P.days = P.days||{}; Object.keys(P.best||{}).forEach(k=>{ P.best[k] = safeScore(k, P.best[k]); }); ['tickets','earned'].forEach(k=>{ if (!isFinite(P[k]) || P[k] < 0) P[k] = 0; }); ['mult','colDone','login','chal','combo','upg','prizes','best','played','exp','expUp','tree'].forEach(k=>{ if (!P[k] || typeof P[k]!='object') P[k] = {}; }); if (P.savesV !== 2) { P.saves = {}; P.savesV = 2; } return P; };
+const normP = d => { const P = Object.assign(DEF(), d||{}); P.stats = Object.assign({max:{},sum:{}}, P.stats||{}); P.stats.max = P.stats.max||{}; P.stats.sum = P.stats.sum||{}; P.saves = P.saves||{}; P.ach = Array.isArray(P.ach)?P.ach:[]; P.edu = Object.assign({on:false,topic:'add'}, P.edu||{}); P.sessLog = Array.isArray(P.sessLog)?P.sessLog:[]; P.days = P.days||{}; Object.keys(P.best||{}).forEach(k=>{ P.best[k] = safeScore(k, P.best[k]); }); ['tickets','earned'].forEach(k=>{ if (!isFinite(P[k]) || P[k] < 0) P[k] = 0; }); ['mult','colDone','login','chal','combo','upg','prizes','best','played','exp','expUp','tree','ptree'].forEach(k=>{ if (!P[k] || typeof P[k]!='object') P[k] = {}; }); if (P.savesV !== 2) { P.saves = {}; P.savesV = 2; } return P; };
 const FB_ERR = {'auth/email-already-in-use':'That email already has an account. Switch to Log in.','auth/invalid-email':'That email doesn’t look right.','auth/weak-password':'That password is too weak — use at least 6 characters.','auth/invalid-credential':'Email or password is wrong.','auth/wrong-password':'Email or password is wrong.','auth/user-not-found':'Email or password is wrong.','auth/too-many-requests':'Too many tries. Wait a few minutes and try again.','auth/network-request-failed':'Can’t reach the server. Check your internet connection.','auth/operation-not-allowed':'That sign-in method is turned off in the Firebase console (Authentication → Sign-in method).','auth/user-disabled':'This account has been disabled.','auth/popup-closed-by-user':'The Google window was closed before sign-in finished.','auth/cancelled-popup-request':'The Google window was closed before sign-in finished.','auth/popup-blocked':'Your browser blocked the Google pop-up. Allow pop-ups for this site and try again.','auth/unauthorized-domain':'This website isn’t on Firebase’s list yet. Add it under Authentication → Settings → Authorized domains.','auth/account-exists-with-different-credential':'That email already has a password login. Log in with your email and password instead.','auth/operation-not-supported-in-this-environment':'Google sign-in doesn’t work here. Open the arcade’s own website instead.'};
 const fbErr = e => FB_ERR[e && e.code] || ('Something went wrong'+(e && e.code ? ' ('+e.code+')' : '')+'. Try again.');
 const getAccts = () => { try { return JSON.parse(localStorage.getItem(ACCT_KEY)) || {}; } catch(e) { return {}; } };
@@ -1142,7 +1153,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-11-21d';
+const BUILD = '2026-11-22a';
 const SCRIPTS = ['arcade-core.js','prizes2.js','economy.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-edu.js','games-idle.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
@@ -1156,7 +1167,7 @@ class Component extends DCLogic {
       immortal:false,autoHint:true,codeOpen:false,codeVal:'',codeMsg:'',admin:false,px:760,py:745,vw:(typeof window!='undefined'?window.innerWidth:1200),gameH:480,padOn:(typeof window!='undefined'&&(('ontouchstart' in window)||(window.matchMedia&&window.matchMedia('(pointer: coarse)').matches))),learnOpen:false,pinIn:'',pinNew:'',pinNew2:'',pinMsg:'',pinAsk:'',pinFails:0,pinLock:0,pinMode:'',lbOpen:false,lbGame:'_tix',lbMode:'all',uOpen:false,uVal:'',uMsg:'',clearArm:false,dir:[0,1],game:null,liveScore:0,payout:'',prizesOpen:false,toasts:[],scale:1,muted:false,
       authOpen:false,authMode:'signup',aEmail:'',aPass:'',aPass2:'',aName:'',aShow:false,aRemember:true,aBring:true,aMsg:'',aBusy:false,aFails:0,aLock:0,aTouched:false,
       achOpen:false,achFilter:'All'});
-    this.keys = {}; this.gameRef = React.createRef(); this.pzRef = React.createRef(); this.ckRef = React.createRef();
+    this.keys = {}; this.gameRef = React.createRef(); this.pzRef = React.createRef();
     this.ro = typeof ResizeObserver != 'undefined' ? new ResizeObserver(()=>this.onResize && this.onResize()) : null;
     this.wrapRef = el => { if (el && el !== this._wrapEl) { this._wrapEl = el; this.ro && this.ro.observe(el); this.onResize && this.onResize(); } };
     this.padHeld = {};
@@ -1194,7 +1205,7 @@ class Component extends DCLogic {
     this.setP({edu:{...this.P.edu, ...patch}}); window.Arcade && window.Arcade.sfx('blip'); if (remount) this.setState({liveScore:0, payout:''}); }
   addScore(g, s, edu){ if (!this.P.username || (g!='_none' && !(s>0))) return;
     if (this.state.cloud) { const C = window.WLCloud; if (!this.cloudUid || !C) return; const row = {uid:this.cloudUid, u:this.P.username, s:Math.max(0,Math.round(s)), edu:!!edu, d:today(), av:avEnc(this.P.avatar), al:(this.P.ach||[]).length};
-      if (g!='_none') C.postScore(g, row).catch(()=>{}); C.setTix(this.cloudUid, {...row, s:Math.max(0,Math.round(this.P.earned)), edu:false}).catch(()=>{});
+      if (g!='_none') C.postScore(g, row).catch(()=>{}); C.setTix(this.cloudUid, {...row, s:Math.max(0,Math.round(this.P.earned)), rb:this.P.rebirths||0}).catch(()=>{});
       this._bAt = {}; return; } const B = getJSON(BOARD_KEY,{e:[]}), k = this.profKey(), u = this.P.username;
     const av = avEnc(this.P.avatar), al = (this.P.ach||[]).length; if (g!='_none') { B.e.push({u, k, g, s, edu:!!edu, d:today(), av, al}); const mine = B.e.filter(x=>x.g==g).sort((a,b)=>b.s-a.s).slice(0,60); B.e = B.e.filter(x=>x.g!=g).concat(mine); }
     B.e = B.e.filter(x=>!(x.g=='_tix' && x.k==k)); B.e.push({u, k, g:'_tix', s:this.P.earned, edu:false, d:today(), av, al}); putJSON(BOARD_KEY, B); }
@@ -1219,7 +1230,7 @@ class Component extends DCLogic {
   async cloudLogin(u, carry, name){ if (this.state.game) this.closeAll(); let rec = null; try { rec = await window.WLCloud.loadProfile(u.uid); } catch(e){}
     let P = rec && rec.P ? normP(rec.P) : (carry ? normP({...this.P, saves:{}}) : normP(getJSON(KEY+':cloud:'+u.uid, {})));
     this.cloudUid = u.uid; this.acct = null; this.cloudMeta = {name: (rec && rec.name) || name || (u.email||'player').split('@')[0].slice(0,16), created: (rec && rec.created) || today(), email: u.email};
-    this.P = P; setTimeout(()=>this.logAct('join', 'came online · '+fmtN(P.tickets||0)+' 🎟 · '+(P.stars||0)+' ⭐'), 1500); this.setState({...P, account:u.email||u.displayName||'Player', authOpen:false, aBusy:false, aPass:'', aPass2:'', aMsg:'', aInfo:''}); this.persist(true);
+    this.P = P; setTimeout(()=>this.postTix(), 2500); setTimeout(()=>this.logAct('join', 'came online · '+fmtN(P.tickets||0)+' 🎟 · '+(P.stars||0)+' ⭐'), 1500); this.setState({...P, account:u.email||u.displayName||'Player', authOpen:false, aBusy:false, aPass:'', aPass2:'', aMsg:'', aInfo:''}); this.persist(true);
     try { const C = window.WLCloud, ra = C.resetAt ? C.resetAt() : 0;
       if (ra && rec && rec.P && (rec.updated||0) < ra && (this.P.resetSeen||0) < ra) { this.P = normP({username:this.P.username, avatar:this.P.avatar, savesV:2, resetSeen:ra}); this.setState({...this.P}); this.persist(true); this.toast('THE ARCADE WAS RESET · FRESH START FOR EVERYONE'); }
       if (ra && (this.P.resetSeen||0) < ra) { this.P = {...this.P, resetSeen:ra}; }
@@ -1239,6 +1250,8 @@ class Component extends DCLogic {
     catch(e) { this._cloudPending = false; this.setState({aBusy:false, aMsg:fbErr(e)}); window.Arcade && window.Arcade.sfx('bad'); } }
   async forgotPw(){ const email = (this.state.aEmail||'').trim().toLowerCase(); if (!EMAIL_RE.test(email)) return this.setState({aMsg:'Type your email address above first.', aInfo:''});
     try { await window.WLCloud.reset(email); this.setState({aInfo:'If that email has an account, a reset link is on its way. Check your inbox and spam folder.', aMsg:''}); } catch(e) { this.setState({aMsg:fbErr(e), aInfo:''}); } }
+  postTix(){ const C = window.WLCloud; if (!this.state.cloud || !C || !this.cloudUid || !this.P.username || this.state.admin) return;
+    C.setTix(this.cloudUid, {uid:this.cloudUid, u:this.P.username, s:Math.max(0,Math.round(this.P.earned||0)), d:today(), av:avEnc(this.P.avatar), al:(this.P.ach||[]).length, rb:this.P.rebirths||0}).then(()=>{ this._bAt = {}; }).catch(()=>{}); }
   needBoard(g){ if (!this.state.cloud || !window.WLCloud) return; this.cloudBoard = this.cloudBoard || {}; this._bAt = this._bAt || {}; this._bBusy = this._bBusy || {};
     if (this._bBusy[g] || (this._bAt[g] && Date.now()-this._bAt[g] < 30000)) return; this._bBusy[g] = true;
     window.WLCloud.top(g, 100).then(rows=>{ this.cloudBoard[g] = rows.map(r=>({u:r.u, k:r.uid, id:r.id, g, s:r.s, edu:!!r.edu, d:r.d, av:r.av||'', al:r.al||0})); this._bAt[g] = Date.now(); this._bBusy[g] = false; this.setState({lbTick:Date.now()}); })
@@ -1266,7 +1279,7 @@ class Component extends DCLogic {
       if (this.state.kickUntil > Date.now() && !this.state.admin) return;
       if (k=='t' && !this.state.chatOpen && !this.state.game && !this.state.codeOpen && !this.state.authOpen) { e.preventDefault(); this.openChat(); return; }
       if (this.state.chatOpen) return;
-      const S = this.state; if (S.game || S.clickOpen || S.shopOpen || S.avOpen || S.prizesOpen || S.codeOpen || S.authOpen || S.achOpen || S.learnOpen || S.lbOpen || S.uOpen) return;
+      const S = this.state; if (S.game || S.shopOpen || S.avOpen || S.prizesOpen || S.codeOpen || S.authOpen || S.achOpen || S.learnOpen || S.lbOpen || S.uOpen) return;
       if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k)) e.preventDefault();
       this.keys[k] = true;
       if ((k=='e'||k=='Enter') && this.near) this.near.act();
@@ -1285,7 +1298,7 @@ class Component extends DCLogic {
     let last = performance.now(), stepT = 0;
     const tick = now => {
       const dt = Math.min(.05,(now-last)/1000); last = now; const s = this.state;
-      if (!s.game && !s.clickOpen && !s.shopOpen && !s.avOpen && !s.prizesOpen && !s.codeOpen && !s.authOpen && !s.achOpen && !s.learnOpen && !s.lbOpen && !s.uOpen) {
+      if (!s.game && !s.shopOpen && !s.avOpen && !s.prizesOpen && !s.codeOpen && !s.authOpen && !s.achOpen && !s.learnOpen && !s.lbOpen && !s.uOpen) {
         const K = this.keys, dx = (K.ArrowRight||K.d?1:0)-(K.ArrowLeft||K.a?1:0), dy = (K.ArrowDown||K.s?1:0)-(K.ArrowUp||K.w?1:0);
         if (dx||dy) {
           const sp = (this.props.walkSpeed ?? 280) * dt / Math.hypot(dx,dy);
@@ -1433,10 +1446,11 @@ class Component extends DCLogic {
   checkRebirth(){ const W2 = window.WLP; if (!W2 || this.state.admin || this._rebirthing || !(this.P.tickets >= W2.rebirthNeed(this.P))) return;
     this._rebirthing = true;
     Promise.resolve().then(()=>{ try { if (this.state.game) this.closeAll(); const rb = W2.doRebirth(this.P); if (rb) { this.setP(rb.patch);
-        if (this._pzOff) { try { this._pzOff(); } catch(e){} this._pzOff = null; } if (this._ckOff) { try { this._ckOff(); } catch(e){} this._ckOff = null; } this.forceUpdate();
+        if (this._pzOff) { try { this._pzOff(); } catch(e){} this._pzOff = null; } this.forceUpdate();
         const info = {stars:rb.stars, total:this.P.stars, free:Math.max(0,(this.P.stars||0)-(this.P.starsSpent||0)), n:this.P.rebirths, next:W2.rebirthNeed(this.P), starMult:W2.starMult(this.P)};
-        if (window.WLE) window.WLE.celebrate(info); else W2.reveal(W2.rebirthCard(rb.stars, this.P.stars, this.P.rebirths), 'REBIRTH!', LOWFX);
-        this.toast('REBIRTH #'+this.P.rebirths+' · +'+rb.stars+' GOLDEN STAR'+(rb.stars>1?'S':'')); this.logAct('rebirth', 'REBIRTH #'+this.P.rebirths+' · +'+rb.stars+' ⭐'); } }
+        info.toDia = window.WLE ? window.WLE.toNextDia(this.P) : 0; if (window.WLE) window.WLE.celebrate(info); else W2.reveal(W2.rebirthCard(rb.stars, this.P.stars, this.P.rebirths), 'REBIRTH!', LOWFX);
+        this.toast('REBIRTH #'+this.P.rebirths+' · +'+rb.stars+' GOLDEN STAR'+(rb.stars>1?'S':'')); this.logAct('rebirth', 'REBIRTH #'+this.P.rebirths+' · +'+rb.stars+' ⭐');
+        if (window.WLE && this.P.rebirths % 10 === 0) { const E2 = window.WLE; E2.diamond({level:E2.prestige(this.P), rebirths:this.P.rebirths, free:E2.diaFree(this.P), open:()=>{ this._pzTab = 'prestige'; this.setState({prizesOpen:true}); }}); this.toast('PRESTIGE '+E2.prestige(this.P)+' · +1 DIAMOND STAR 💎'); this.logAct('rebirth', 'PRESTIGE '+E2.prestige(this.P)+' · +1 💎'); } } }
       finally { this._rebirthing = false; } }); }
   // ---- activity tracker (admins see it in Admin tools) ----
   logAct(k, t){ const C = window.WLCloud; if (!C || !C.logAct || !this.cloudUid || this.state.admin) return;
@@ -1449,17 +1463,24 @@ class Component extends DCLogic {
   openActivity(){ const C = window.WLCloud; if (!C || !C.actListen) return this.setState({actErr:'Activity needs the online database — open the real site and log in as jonah@wilderland.academy.'});
     if (!this._actOff) this._actOff = C.actListen(list => { if (!list) return this.setState({actErr:'Activity can’t load right now.'}); this.setState({actRows:list, actErr:''}); }); }
   closeActivity(){ if (this._actOff) { try { this._actOff(); } catch(e){} this._actOff = null; } }
-  econApi(){ return { P:()=>this.P, setP:pt=>this.setP(pt), toast:t=>this.toast(t), sfx:n=>window.Arcade && window.Arcade.sfx(n), admin:()=>!!this.state.admin, addTix:(n,f,c)=>this.addTix(n,f,c) }; }
+  econApi(){ return { P:()=>this.P, setP:pt=>this.setP(pt), toast:t=>this.toast(t), sfx:n=>window.Arcade && window.Arcade.sfx(n), admin:()=>!!this.state.admin, addTix:(n,f)=>this.addTix(n,f) }; }
   // One-time move to the new economy. Nothing is wiped: tickets, prizes, scores, stars and achievements all stay.
-  migrateEcon(){ const P = this.P;
-    if ((P.econV||0) === 3) { const tree = {...(P.tree||{})}; if (tree.click) { tree.tickets = Math.max(tree.tickets||0, tree.click); delete tree.click; } this.setP({econV:4, exp:{}, expUp:{}, tree}); return; }
-    if ((P.econV||0) >= 4) return; const had = (P.tickets||0) > 0 || Object.keys(P.played||{}).length > 0;
-    const lines = ['🎟 '+fmtN(P.tickets||0)+' tickets', '🏆 '+Object.keys(P.prizes||{}).length+' kinds of prizes kept', '⭐ '+(P.stars||0)+' Golden Stars', '🏅 '+(P.ach||[]).length+' achievements', '🛠 Workshop and multiplier levels kept until your next Rebirth'];
-    const idle = P.idle && typeof P.idle=='object' ? {...P.idle, last:Date.now()} : P.idle;
-    this.setP({econV:4, idle, exp:{}, expUp:{}}); if (had && window.WLE) window.WLE.welcome({lines}); }
-  // Golden Ticket clicks and critter rewards land here (batched)
-  addTix(n, from, clicks){ if (this.state.admin) return; n = Math.max(0, Math.round(n)); if (!n) return; const P = this.P;
-    this.setP({tickets:P.tickets+n, earned:P.earned+n, clicks:(P.clicks||0)+(clicks||0), combo: clicks ? {...(P.combo||{}), t:Date.now()} : P.combo}); if (from && window.WLE) window.WLE.fly(n, from); }
+  // One-time moves to the new economy. Nothing is wiped: tickets, prizes, scores, stars and achievements all stay.
+  migrateEcon(){ const P = this.P, v = P.econV||0; if (v >= 5) return; const E2 = window.WLE, W2 = window.WLP; if (!E2 || !W2) return;
+    const had = (P.tickets||0) > 0 || Object.keys(P.played||{}).length > 0;
+    // 1) Golden Ticket is gone: refund every ticket spent on click-only expansions, keep the other expansions.
+    const refund = E2.clickRefund(P), exp = {...(P.exp||{})}, expUp = {...(P.expUp||{})}; E2.clickKeys.forEach(k => { delete exp[k]; delete expUp[k]; });
+    // 2) Golden Stars now buy only Wilderland prizes: give back stars spent on the Star Tree, Mythic and Cosmic prizes.
+    const keep = W2.starCostOwned(P), back = Math.max(0, (P.starsSpent||0) - keep);
+    const patch = {econV:5, exp, expUp, tree:{}, starsSpent:Math.min(P.starsSpent||0, keep)}; if (refund > 0) patch.tickets = (P.tickets||0) + refund;
+    if (v < 3) patch.idle = P.idle && typeof P.idle=='object' ? {...P.idle, last:Date.now()} : P.idle;
+    this.setP(patch);
+    if (refund > 0) this.toast('REFUND · +'+fmtN(refund)+' TICKETS FOR GOLDEN TICKET UPGRADES');
+    if (back > 0) setTimeout(()=>this.toast('REFUND · +'+back+' GOLDEN STARS BACK TO SPEND ON WILDERLAND PRIZES'), 900);
+    if (v < 3 && had) window.WLE.welcome({lines:['🎟 '+fmtN(P.tickets||0)+' tickets', '🏆 '+Object.keys(P.prizes||{}).length+' kinds of prizes kept', '⭐ '+(P.stars||0)+' Golden Stars', '🏅 '+(P.ach||[]).length+' achievements', '🛠 Workshop and multiplier levels kept until your next Rebirth']}); }
+  // Golden critter rewards land here
+  addTix(n, from){ if (this.state.admin) return; n = Math.max(0, Math.round(n)); if (!n) return; const P = this.P;
+    this.setP({tickets:P.tickets+n, earned:P.earned+n}); if (from && window.WLE) window.WLE.fly(n, from); }
   previewDown(){ this.setState({downPreview:Date.now()+8000}); setTimeout(()=>this.setState({downPreview:0}), 8100); }
   async adminReloadAll(){ const s = this.state; if (!s.admin || !s.cloud || !this.cloudUid) return this.setState({admMsg:'Log in with an admin account (online) first.'});
     try { await window.WLCloud.reloadEveryone(); this.setState({admMsg:'Reloading every open arcade tab…'}); } catch(e) { this.setState({admMsg:'Couldn’t: '+(e && (e.code||e.message))+' · publish the new firestore.rules first.'}); } }
@@ -1525,7 +1546,7 @@ class Component extends DCLogic {
     else { window.Arcade && window.Arcade.sfx('bad'); this.setState({codeMsg:'Code not recognised', codeVal:''}); } }
   open(id){ this.keys = {}; this.setState({game:id, liveScore:0, payout:''}); }
   closeAll(){ const saved = this.unmountGame(); this.keys = {}; Object.keys(this.padHeld).forEach(k=>{ if (this.padHeld[k]) fireKey(k,'keyup'); }); this.padHeld = {};
-    this.setState({game:null, clickOpen:false, shopOpen:false, avOpen:false, prizesOpen:false, payout:'', authOpen:false, achOpen:false, learnOpen:false, lbOpen:false, uOpen:false, clearArm:false}); if (saved) this.toast('GAME SAVED · PICK IT UP ANY TIME'); }
+    this.setState({game:null, shopOpen:false, avOpen:false, prizesOpen:false, payout:'', authOpen:false, achOpen:false, learnOpen:false, lbOpen:false, uOpen:false, clearArm:false}); if (saved) this.toast('GAME SAVED · PICK IT UP ANY TIME'); }
   buy(p){
     const P = this.P; if (P.tickets < p.cost) { window.Arcade && window.Arcade.sfx('bad'); return; }
     const left = P.tickets - p.cost, patch = {tickets:left, prizes:{...P.prizes,[p.id]:(P.prizes[p.id]||0)+1}};
@@ -1667,10 +1688,12 @@ class Component extends DCLogic {
       uRules: unameRules(uv, !!uOwner && uOwner!==myK).map(([label,ok])=>({label, color: ok?'#015640':'#4a4a4a', dot: ok?'#00B451':'#b0ab95', mark: ok?'✓':'·'})),
       boardShadow: ni===NG+2?glow:base, learnShadow: ni===NG+3?glow:base, boardIcon: KIOSK_ICONS.board, learnIcon: KIOSK_ICONS.learn,
       lbLeader: (lbRows('_tix','all',1)[0]||{}).name || 'Nobody yet',
-      tickets: fmtN(P.tickets), multLabelHead: '×'+(window.WLP ? window.WLP.fmt(window.WLP.totalMult(P)) : '1')+' total'+((P.stars||0) ? ' · ⭐'+P.stars : ''), soundLabel: s.muted ? 'SOUND OFF' : 'SOUND ON',
+      tickets: fmtN(P.tickets), multLabelHead: '×'+(window.WLP ? window.WLP.fmt(window.WLP.totalMult(P)) : '1')+' total'+((P.stars||0) ? ' · ⭐'+P.stars : '')+(window.WLE && window.WLE.diamonds(P) ? ' · 💎'+window.WLE.diaFree(P) : ''), soundLabel: s.muted ? 'SOUND OFF' : 'SOUND ON',
       showCash: !!s.game && s.game!='idle', cashOutGame: ()=>this.cashOutGame(), cashLabel: s.admin ? 'Cash out · (admin)' : 'Cash out · '+fmtN(s.liveScore||0),
+      expFloor: window.WLE ? window.WLE.EXP.filter(x=>(P.exp||{})[x.k]).map(x=>({key:x.k+'-'+P.exp[x.k], e:x.e, n:x.n, lv:P.exp[x.k]})) : [], expEmpty: !window.WLE || !window.WLE.EXP.some(x=>(P.exp||{})[x.k]),
+      openExp: ()=>{ this.keys = {}; this._pzTab = 'exp'; this.setState({prizesOpen:true}); },
       openRebirth: ()=>{ this.keys = {}; this._pzTab = 'rebirth'; this.setState({prizesOpen:true}); },
-      rbPct: window.WLP ? Math.min(100, (P.tickets||0)/window.WLP.rebirthNeed(P)*100).toFixed(1)+'%' : '0%', rbShort: window.WLP ? fmtN(P.tickets||0)+' / '+fmtN(window.WLP.rebirthNeed(P)) : '', rbLabel: window.WLP ? 'Next Rebirth: '+fmtN(P.tickets||0)+' / '+fmtN(window.WLP.rebirthNeed(P))+' (automatic)' : '',
+      rbPct: window.WLP ? Math.min(100, (P.tickets||0)/window.WLP.rebirthNeed(P)*100).toFixed(1)+'%' : '0%', rbShort: window.WLP ? fmtN(P.tickets||0)+' / '+fmtN(window.WLP.rebirthNeed(P))+' · Prestige '+Math.floor((P.rebirths||0)/10)+' · Rebirth '+((P.rebirths||0)%10)+' / 10 to next 💎' : '', rbLabel: window.WLP ? 'Next Rebirth: '+fmtN(P.tickets||0)+' / '+fmtN(window.WLP.rebirthNeed(P))+' (automatic)' : '',
       fxLabel: LOWFX ? 'ANIMATIONS OFF' : 'ANIMATIONS ON', toggleFx: ()=>{ LOWFX = !LOWFX; try { localStorage.setItem('wl-arcade-lowfx', LOWFX?'1':'0'); } catch(e){} applyLowFx(LOWFX); if (window.Arcade) window.Arcade.lowFx = LOWFX; this.toast(LOWFX ? 'ANIMATIONS OFF · SMOOTHER ON SLOW DEVICES' : 'ANIMATIONS ON'); this.forceUpdate(); },
       toggleSound: ()=>{ const m=!s.muted; this.setState({muted:m}); if (window.Arcade) window.Arcade.muted = m; },
       wrapRef: this.wrapRef, gameRef: this.gameRef, pzRef: this.pzRef, scale: s.scale, floorTransform: 'scale(' + s.scale + ')', scaledH: Math.round(FH*s.scale),

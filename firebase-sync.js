@@ -42,10 +42,23 @@ const WLCloud = {
       tx.set(ref, { uid, name }); if (old && old.toLowerCase() !== key) tx.delete(doc(db, 'usernames', old.toLowerCase())); }); },
   // Leaderboard season: bump SEASON to start a fresh, empty leaderboard.
   postScore(game, row) { return addDoc(board(game), row); },
-  setTix(uid, row) { return addDoc(board('_tix'), row); },
-  async top(game, n = 100) { const r = await getDocs(query(board(game), orderBy('s', 'desc'), limit(game == '_tix' ? 300 : n)));
-    const hs = new Set(C.hiddenScores || []);
-    let rows = r.docs.map(d => ({ ...d.data(), id: d.id })).filter(x => !hs.has(x.id)); if (game == '_tix') { const seen = new Set(); rows = rows.filter(x => !seen.has(x.uid) && seen.add(x.uid)); } return rows.slice(0, n); },
+  // Overall ticket board: ONE always-current row per player, kept on the player's own username record
+  // (the existing rules let each player update the name they own). This replaced a row-per-game board that filled up
+  // with one player's old rows and stopped showing everyone else.
+  setTix(uid, row) { if (!row || !row.u) return Promise.resolve(); const key = String(row.u).toLowerCase();
+    return setDoc(doc(db, 'usernames', key), { uid, name: row.u, s: row.s, av: row.av || '', al: row.al || 0, d: row.d || '', rb: row.rb || 0, ss: SEASON }, { merge: true }); },
+  async top(game, n = 100) { const hs = new Set(C.hiddenScores || []);
+    if (game == '_tix') { const r = await getDocs(query(collection(db, 'usernames'), orderBy('s', 'desc'), limit(400)));
+      const fresh = r.docs.map(d => ({ ...d.data(), id: d.id, u: d.data().name })).filter(x => x.uid && x.ss === SEASON && !hs.has(x.id) && x.id !== '~admin');
+      if (fresh.length >= 25) return fresh.slice(0, n);
+      // While players are still moving over, also show each player's best row from the old board.
+      const have = new Set(fresh.map(x => x.uid)); let old = [];
+      try { const o = await getDocs(query(board('_tix'), orderBy('s', 'desc'), limit(1000))); const seen = new Set();
+        old = o.docs.map(d => ({ ...d.data(), id: d.id })).filter(x => !hs.has(x.id) && !have.has(x.uid) && !seen.has(x.uid) && seen.add(x.uid)); } catch (e) {}
+      return fresh.concat(old).sort((a, b) => b.s - a.s).slice(0, n); }
+    const r = await getDocs(query(board(game), orderBy('s', 'desc'), limit(400)));
+    // each player's best score only, so one player can't fill the whole board
+    const seen = new Set(); return r.docs.map(d => ({ ...d.data(), id: d.id })).filter(x => !hs.has(x.id) && !seen.has(x.uid) && seen.add(x.uid)).slice(0, n); },
 };
 // ---------- admin (writes go to the control record; only its owner can change it) ----------
 let ME = null; onAuthStateChanged(auth, u => { ME = u; });
@@ -56,7 +69,8 @@ WLCloud.ensureAdmin = async () => { if (!ME) return false; const cur = await get
 const hide = async (field, vals) => { const cur = await getDoc(CTRL); const list = new Set((cur.exists() && cur.data()[field]) || []); [].concat(vals).forEach(v => list.add(v)); return ctrlSet({ [field]: [...list].slice(-5000) }); };
 // Real deletes still work if the newer rules are ever published; otherwise the score is hidden for everyone.
 WLCloud.deleteScore = async (game, id) => { try { await deleteDoc(doc(db, 'boards', game + '@' + SEASON, 'scores', id)); } catch (e) { await hide('hiddenScores', id); } };
-WLCloud.deleteUserScores = async (game, uid) => { const r = await getDocs(query(board(game), where('uid', '==', uid))); const failed = [];
+WLCloud.deleteUserScores = async (game, uid) => { if (game == '_tix') { const r = await getDocs(query(collection(db, 'usernames'), where('uid', '==', uid))); const ids = r.docs.map(d => d.id).filter(id => id !== '~admin'); try { const o = await getDocs(query(board('_tix'), where('uid', '==', uid))); o.docs.forEach(d => ids.push(d.id)); } catch (e) {} if (ids.length) await hide('hiddenScores', ids); return ids.length; }
+  const r = await getDocs(query(board(game), where('uid', '==', uid))); const failed = [];
   for (const d of r.docs) { try { await deleteDoc(d.ref); } catch (e) { failed.push(d.id); } } if (failed.length) await hide('hiddenScores', failed); return r.size; };
 // Per-player adjustments: a list of {id, rm|all|upg|full}. The player's game applies any it hasn't seen yet.
 const addAdj = async (uid, item) => { const cur = await getDoc(CTRL); const adj = { ...((cur.exists() && cur.data().adj) || {}) }; adj[uid] = [...(adj[uid] || []), { id: Date.now(), ...item }].slice(-20); return ctrlSet({ adj }); };
