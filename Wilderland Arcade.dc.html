@@ -623,8 +623,8 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
           <div style="display:flex; gap:14px; align-items:center;"><img src="{{ avImg }}" alt="" style="width:96px; height:96px;">
             <div><div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#AB2372;">AVATAR STUDIO</div><div style="font-size:26px; font-weight:700; color:#015640;">{{ acctName }}</div>
-              <div style="font-size:13px; font-weight:500; color:#3d3d3d;">Level {{ avLevel }} · {{ avFrameName }} · every achievement levels you up</div><div style="font-size:12px; font-weight:600; color:#AB2372; margin-top:2px;">{{ avNext }}</div></div></div>
-          <button onClick="{{ closeAv }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer;">Done · Esc</button>
+              <div style="font-size:13px; font-weight:500; color:#3d3d3d;">Level {{ avLevel }} · {{ avFrameName }} · {{ avCount }}</div><div style="font-size:12px; font-weight:600; color:#AB2372; margin-top:2px;">{{ avNext }}</div></div></div>
+          <div style="display:flex; gap:6px;"><button onClick="{{ avRandom }}" style="background:#ffffff; color:#015640; border:1.5px solid #015640; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;">🎲 Surprise me</button><button onClick="{{ closeAv }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer;">Done · Esc</button></div>
         </div>
         <div style="display:flex; gap:6px; flex-wrap:wrap;"><sc-for list="{{ avTabs }}" as="t" hint-placeholder-count="7"><button onClick="{{ t.pick }}" style="border:none; border-radius:999px; padding:7px 14px; font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; background:{{ t.bg }}; color:{{ t.fg }};">{{ t.t }}</button></sc-for></div>
         <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(110px,1fr)); gap:10px;">
@@ -636,7 +636,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
             </button>
           </sc-for>
         </div>
-        <div style="font-size:12px; color:#4a4a4a;">Other players see your avatar on the leaderboard and in the Hall of Players at the entrance.</div>
+        <div style="font-size:12px; color:#4a4a4a;">Unlock looks with achievements — the rarest need Rebirths or a Prestige. Other players see your avatar on the leaderboard, in chat and in the Hall of Players at the entrance.</div>
       </div>
     </div>
   </sc-if>
@@ -969,38 +969,120 @@ const PRIZES = [
 const PTIER = {Common:{c:'#9a9a9b',bg:'#f6f3e6'},Rare:{c:'#64CDF5',bg:'#e6f6fd'},Epic:{c:'#AB2372',bg:'#fbe6f2'},Legendary:{c:'#DD8B03',bg:'#fff4d6'}};
 
 // ---------- Avatars: looks unlock as you earn achievements ----------
+// r = achievements needed · rb = Rebirths needed · pr = Prestige level needed
 const AVP = {
-  skin:{t:'Skin',o:[{n:'Peach',c:'#f2c9a0'},{n:'Tan',c:'#d9a066'},{n:'Brown',c:'#a86b3c'},{n:'Deep',c:'#6b4226'},{n:'Mint',c:'#9fe0c0',r:10},{n:'Lavender',c:'#d7b8f3',r:20},{n:'Gold',c:'#F9BF01',r:40}]},
-  shirt:{t:'Shirt',o:[{n:'Forest',c:'#00B451'},{n:'Lime',c:'#D5F367'},{n:'Sky',c:'#64CDF5'},{n:'Pink',c:'#EA55AB'},{n:'Gold',c:'#F9BF01',r:3},{n:'Ember',c:'#FF8A3C',r:6},{n:'Navy',c:'#014987',r:9},{n:'Midnight',c:'#121313',r:14},{n:'Rainbow',c:'rainbow',r:30}]},
-  hat:{t:'Hat',o:[{n:'None'},{n:'Cap'},{n:'Beanie',r:3},{n:'Headband',r:5},{n:'Ranger',r:8},{n:'Miner',r:12},{n:'Wizard',r:18},{n:'Astronaut',r:24},{n:'Crown',r:32},{n:'Halo',r:45}]},
-  face:{t:'Face',o:[{n:'Smile'},{n:'Grin',r:2},{n:'Wink',r:6},{n:'Shades',r:10},{n:'Star eyes',r:16},{n:'Visor',r:26}]},
-  gear:{t:'Back',o:[{n:'None'},{n:'Scarf',r:4},{n:'Backpack',r:9},{n:'Cape',r:15},{n:'Wings',r:22},{n:'Jetpack',r:30}]},
-  pet:{t:'Pet',o:[{n:'None'},{n:'Frog',r:5},{n:'Fox',r:13},{n:'Owl',r:20},{n:'Turtle',r:28},{n:'Dragon',r:40}]},
+  skin:{t:'Skin',o:[{n:'Peach',c:'#f2c9a0'},{n:'Tan',c:'#d9a066'},{n:'Brown',c:'#a86b3c'},{n:'Deep',c:'#6b4226'},{n:'Mint',c:'#9fe0c0',r:10},{n:'Lavender',c:'#d7b8f3',r:20},{n:'Gold',c:'#F9BF01',r:40},
+    {n:'Light',c:'#fbe0c8'},{n:'Olive',c:'#c19a6b'},{n:'Sky',c:'#a8dcf5',r:14},{n:'Bubblegum',c:'#f7a8cf',r:24},{n:'Zombie',c:'#9fbf7a',r:34},{n:'Silver',c:'#d7dde2',rb:3},{n:'Diamond',c:'#bff0ff',pr:1}]},
+  shirt:{t:'Shirt',o:[{n:'Forest',c:'#00B451'},{n:'Lime',c:'#D5F367'},{n:'Sky',c:'#64CDF5'},{n:'Pink',c:'#EA55AB'},{n:'Gold',c:'#F9BF01',r:3},{n:'Ember',c:'#FF8A3C',r:6},{n:'Navy',c:'#014987',r:9},{n:'Midnight',c:'#121313',r:14},{n:'Rainbow',c:'rainbow',r:30},
+    {n:'Red',c:'#FF4539'},{n:'Purple',c:'#8a4be0',r:2},{n:'Stripes',c:'#ffffff',pat:'stripes',r:7},{n:'Stars',c:'#014987',pat:'stars',r:11},{n:'Checkers',c:'#121313',pat:'check',r:17},{n:'Hoodie',c:'#9a9a9b',pat:'hood',r:21},{n:'Jersey',c:'#FF4539',pat:'jersey',r:27},{n:'Galaxy',c:'#2a1250',pat:'stars',rb:1},{n:'Diamond Armor',c:'#bff0ff',pat:'armor',pr:1}]},
+  hat:{t:'Hat',o:[{n:'None'},{n:'Cap'},{n:'Beanie',r:3},{n:'Headband',r:5},{n:'Ranger',r:8},{n:'Miner',r:12},{n:'Wizard',r:18},{n:'Astronaut',r:24},{n:'Crown',r:32},{n:'Halo',r:45},
+    {n:'Party Hat',r:2},{n:'Bunny Ears',r:7},{n:'Flower Crown',r:10},{n:'Chef',r:15},{n:'Cowboy',r:20},{n:'Top Hat',r:27},{n:'Pirate',r:35},{n:'Viking',r:50},{n:'Golden Laurel',rb:5},{n:'Diamond Crown',pr:1}]},
+  hair:{t:'Hair',o:[{n:'None'},{n:'Short'},{n:'Spiky',r:2},{n:'Swoop',r:4},{n:'Long'},{n:'Bob',r:3},{n:'Curly',r:6},{n:'Bun',r:8},{n:'Pigtails',r:10},{n:'Afro',r:12},{n:'Mohawk',r:18},{n:'Ponytail',r:22}]},
+  hairc:{t:'Hair color',o:[{n:'Brown',c:'#6b4226'},{n:'Black',c:'#1d1a17'},{n:'Blonde',c:'#f1cc5a'},{n:'Ginger',c:'#d9622b'},{n:'Silver',c:'#c9ccd1',r:6},{n:'Blue',c:'#2f7de0',r:9},{n:'Pink',c:'#EA55AB',r:13},{n:'Lime',c:'#B6E64A',r:19},{n:'Purple',c:'#8a4be0',r:26},{n:'Rainbow',c:'rainbow',r:38},{n:'Golden',c:'#F9BF01',rb:2},{n:'Diamond',c:'#9fe8ff',pr:1}]},
+  face:{t:'Face',o:[{n:'Smile'},{n:'Grin',r:2},{n:'Wink',r:6},{n:'Shades',r:10},{n:'Star eyes',r:16},{n:'Visor',r:26},
+    {n:'Surprised',r:1},{n:'Sleepy',r:4},{n:'Silly',r:8},{n:'Heart eyes',r:14},{n:'Determined',r:20},{n:'Robot',r:30},{n:'Laser eyes',rb:4}]},
+  acc:{t:'Extras',o:[{n:'None'},{n:'Freckles'},{n:'Rosy cheeks',r:2},{n:'Glasses',r:4},{n:'Round glasses',r:9},{n:'Mustache',r:12},{n:'Bandage',r:5},{n:'Earrings',r:15},{n:'Face paint',r:19},{n:'Monocle',r:25},{n:'Gold chain',r:33},{n:'Bow tie',r:7},{n:'Headphones',r:16},{n:'Diamond earrings',pr:1}]},
+  gear:{t:'Back',o:[{n:'None'},{n:'Scarf',r:4},{n:'Backpack',r:9},{n:'Cape',r:15},{n:'Wings',r:22},{n:'Jetpack',r:30},
+    {n:'Balloon',r:3},{n:'Guitar',r:11},{n:'Butterfly wings',r:18},{n:'Shield',r:25},{n:'Bat wings',r:36},{n:'Rocket',rb:3},{n:'Diamond wings',pr:1}]},
+  pet:{t:'Pet',o:[{n:'None'},{n:'Frog',r:5},{n:'Fox',r:13},{n:'Owl',r:20},{n:'Turtle',r:28},{n:'Dragon',r:40},
+    {n:'Cat',r:3},{n:'Puppy',r:7},{n:'Bunny',r:10},{n:'Penguin',r:16},{n:'Axolotl',r:23},{n:'Slime',r:31},{n:'Robot',r:44},{n:'Phoenix',rb:10},{n:'Unicorn',pr:1}]},
+  bg:{t:'Background',o:[{n:'Forest',c:'#015640'},{n:'Night',c:'#14204a'},{n:'Sunset',c:'sunset'},{n:'Ocean',c:'#0a5c8a'},{n:'Candy',c:'#c2427f',r:5},{n:'Lava',c:'lava',r:13},{n:'Starfield',c:'stars',r:21},{n:'Aurora',c:'aurora',r:32},{n:'Gold',c:'#b8860b',rb:1},{n:'Diamond',c:'diamond',pr:1}]},
 };
-const AVK = ['skin','shirt','hat','face','gear','pet'];
+const AVK = ['skin','shirt','hat','face','gear','pet','hair','hairc','acc','bg'];
+const AVTABS = ['hat','hair','hairc','face','acc','skin','shirt','gear','pet','bg'];
+const avOk = (o, P, adm) => adm || ((P.ach||[]).length >= (o.r||0) && (P.rebirths||0) >= (o.rb||0) && Math.floor((P.rebirths||0)/10) >= (o.pr||0));
+const avNeed = o => o.pr ? '🔒 Prestige '+o.pr : o.rb ? '🔒 '+o.rb+' Rebirth'+(o.rb>1?'s':'') : '🔒 '+o.r+' achievements';
 const avNorm = a => { const o = {}; AVK.forEach(k=>{ const v = a && a[k]|0; o[k] = v>=0 && v<AVP[k].o.length ? v : 0; }); if (!a || a.hat==null) o.hat = 1; return o; };
 const avEnc = a => AVK.map(k=>avNorm(a)[k]).join('.');
 const avDec = s => { const p = String(s||'').split('.').map(Number); const o = {}; AVK.forEach((k,i)=>o[k]=p[i]||0); return avNorm(o); };
 const avFrame = n => n>=45 ? {c:'#EA55AB',n:'Legend'} : n>=30 ? {c:'#F9BF01',n:'Gold'} : n>=15 ? {c:'#B9C4BF',n:'Silver'} : n>=5 ? {c:'#DD8B03',n:'Bronze'} : null;
-const avSVG = (a, lvl) => { a = avNorm(a); const sk = AVP.skin.o[a.skin].c, sc = AVP.shirt.o[a.shirt].c, fr = avFrame(lvl||0); let o = '';
-  if (sc=='rainbow') o += '<defs><linearGradient id="rb" x1="0" x2="1"><stop offset="0" stop-color="#FF4539"/><stop offset=".33" stop-color="#F9BF01"/><stop offset=".66" stop-color="#00B451"/><stop offset="1" stop-color="#64CDF5"/></linearGradient></defs>';
-  o += '<circle cx="32" cy="32" r="31" fill="#015640"/>';
+const RBG = '<linearGradient id="rb" x1="0" x2="1"><stop offset="0" stop-color="#FF4539"/><stop offset=".33" stop-color="#F9BF01"/><stop offset=".66" stop-color="#00B451"/><stop offset="1" stop-color="#64CDF5"/></linearGradient>';
+const avBG = c => { if (c=='sunset') return '<defs><linearGradient id="bgs" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff7a59"/><stop offset=".6" stop-color="#f9bf01"/><stop offset="1" stop-color="#ea55ab"/></linearGradient></defs><circle cx="32" cy="32" r="31" fill="url(#bgs)"/>';
+  if (c=='lava') return '<defs><radialGradient id="bgl"><stop offset="0" stop-color="#ffb02e"/><stop offset="1" stop-color="#8a1500"/></radialGradient></defs><circle cx="32" cy="32" r="31" fill="url(#bgl)"/>';
+  if (c=='stars') return '<circle cx="32" cy="32" r="31" fill="#0c0a24"/>'+[[12,14],[50,12],[44,26],[10,40],[54,44],[22,8],[30,18]].map(([x,y],i)=>'<circle cx="'+x+'" cy="'+y+'" r="'+(i%3?1:1.6)+'" fill="#fff">'+an('opacity','1;.3;1',1+i*.3)+'</circle>').join('');
+  if (c=='aurora') return '<defs><linearGradient id="bga" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0b2e24"/><stop offset=".5" stop-color="#00B451"><animate attributeName="stop-color" values="#00B451;#64CDF5;#a64be0;#00B451" dur="6s" repeatCount="indefinite"/></stop><stop offset="1" stop-color="#14204a"/></linearGradient></defs><circle cx="32" cy="32" r="31" fill="url(#bga)"/>';
+  if (c=='diamond') return '<defs><linearGradient id="bgd" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e9fbff"/><stop offset=".5" stop-color="#64CDF5"/><stop offset="1" stop-color="#4a5cff"/></linearGradient></defs><circle cx="32" cy="32" r="31" fill="url(#bgd)"/><path d="M10 20l6-6l6 6l-6 6zM44 12l4-4l4 4l-4 4z" fill="#fff" opacity=".7">'+an('opacity','.7;.2;.7',2)+'</path>';
+  return '<circle cx="32" cy="32" r="31" fill="'+c+'"/>'; };
+const avSVG = (a, lvl) => { a = avNorm(a); const sk = AVP.skin.o[a.skin].c, SH = AVP.shirt.o[a.shirt], sc = SH.c, fr = avFrame(lvl||0); let o = '<defs>'+RBG+'</defs>';
+  const hc0 = AVP.hairc.o[a.hairc].c, hc = hc0=='rainbow' ? 'url(#rb)' : hc0, HR = a.hair;
+  o += avBG(AVP.bg.o[a.bg].c);
   if (fr) o += '<circle cx="32" cy="32" r="29.5" fill="none" stroke="'+fr.c+'" stroke-width="3">'+(lvl>=45?an('stroke','#EA55AB;#64CDF5;#F9BF01;#EA55AB',3):'')+'</circle>';
   const G = a.gear; // behind body
   if (G==3) o += '<path d="M18 40q-6 16 0 22h28q6-6 0-22z" fill="#FF4539"/>';
   if (G==4) o += '<g>'+at('rotate','-6 32 42;6 32 42;-6 32 42',.8,SPLINE)+'<path d="M24 42q-16-14-20-2q4 10 20 8zM40 42q16-14 20-2q-4 10-20 8z" fill="#fff" stroke="#c9e8f5" stroke-width="1.5"/></g>';
   if (G==5) o += '<rect x="20" y="40" width="7" height="14" rx="3" fill="#c9ccd1"/><rect x="37" y="40" width="7" height="14" rx="3" fill="#c9ccd1"/><path d="M21 54l2.5 6l2.5-6M38 54l2.5 6l2.5-6" fill="#FF8A3C">'+an('opacity','1;.4;1',.3)+'</path>';
   if (G==2) o += '<rect x="19" y="40" width="26" height="16" rx="5" fill="#8D5B1D"/>';
+  if (G==6) o += '<path d="M48 44q2-14 2-24" stroke="#fff" stroke-width="1"/><g>'+at('translate','0 0;0 -2;0 0',1.4,SPLINE)+'<ellipse cx="50" cy="13" rx="7" ry="8.5" fill="#FF4539"/><path d="M48 21l2 2l2-2z" fill="#FF4539"/><ellipse cx="47.5" cy="10" rx="2" ry="3" fill="#fff" opacity=".5"/></g>';
+  if (G==7) o += '<g transform="rotate(-35 32 48)"><rect x="30" y="20" width="4" height="22" fill="#8D5B1D"/><ellipse cx="32" cy="48" rx="9" ry="10" fill="#DD8B03"/><circle cx="32" cy="47" r="3" fill="#5a3a1c"/></g>';
+  if (G==8) o += '<g>'+at('rotate','-5 32 44;5 32 44;-5 32 44',.6,SPLINE)+'<path d="M28 44q-18-20-22-6q2 8 22 8zM36 44q18-20 22-6q-2 8-22 8z" fill="#EA55AB"/><path d="M28 46q-14 6-12 12q6 0 12-10zM36 46q14 6 12 12q-6 0-12-10z" fill="#64CDF5"/></g>';
+  if (G==9) o += '<path d="M8 38h16v10q0 8-8 12q-8-4-8-12z" fill="#014987" stroke="#F9BF01" stroke-width="2"/><path d="M16 42v14M10 47h12" stroke="#F9BF01" stroke-width="2"/>';
+  if (G==10) o += '<path d="M26 42l-22-10l4 8l-6 2l6 4l-4 6zM38 42l22-10l-4 8l6 2l-6 4l4 6z" fill="#3b2a4a"/>';
+  if (G==11) o += '<g transform="rotate(20 46 40)"><rect x="42" y="26" width="9" height="24" rx="4.5" fill="#EDE9D8" stroke="#121313" stroke-width="1"/><path d="M42 30q4.5-10 9 0z" fill="#FF4539"/><circle cx="46.5" cy="36" r="2.4" fill="#64CDF5"/><path d="M43 50l3.5 8l3.5-8z" fill="#FF8A3C">'+an('opacity','1;.4;1',.25)+'</path></g>';
+  if (G==12) o += '<g>'+at('rotate','-5 32 42;5 32 42;-5 32 42',.8,SPLINE)+'<path d="M24 42l-18-12l4 12l-6 6l14-2zM40 42l18-12l-4 12l6 6l-14-2z" fill="#9fe8ff" stroke="#fff" stroke-width="1.5"/></g>';
+  // long hair goes behind the body and head
+  if (HR==4) o += '<path d="M18 28q0 18 4 24h20q4-6 4-24z" fill="'+hc+'"/>';
+  if (HR==8) o += '<circle cx="15" cy="34" r="5" fill="'+hc+'"/><circle cx="49" cy="34" r="5" fill="'+hc+'"/>';
+  if (HR==9) o += '<circle cx="32" cy="24" r="18" fill="'+hc+'"/>';
+  if (HR==11) o += '<path d="M42 20q12 4 8 22q-4-8-8-12z" fill="'+hc+'"/>';
+  // body + shirt patterns
   o += '<path d="M16 64q0-22 16-22t16 22z" fill="'+(sc=='rainbow'?'url(#rb)':sc)+'"/>';
+  const PAT = SH.pat;
+  if (PAT=='stripes') o += '<path d="M18 52h28M17 57h30M16 62h32" stroke="#FF4539" stroke-width="2.5"/>';
+  if (PAT=='stars') o += '<path d="M25 52l1 2.2l2.4.3l-1.8 1.6l.5 2.4l-2.1-1.2l-2.1 1.2l.5-2.4l-1.8-1.6l2.4-.3zM38 56l1 2.2l2.4.3l-1.8 1.6l.5 2.4l-2.1-1.2l-2.1 1.2l.5-2.4l-1.8-1.6l2.4-.3z" fill="#F9BF01"/><circle cx="31" cy="60" r="1" fill="#fff"/><circle cx="43" cy="51" r="1" fill="#fff"/>';
+  if (PAT=='check') o += '<path d="M20 50h6v6h-6zM32 50h6v6h-6zM26 56h6v6h-6zM38 56h6v6h-6z" fill="#fff"/>';
+  if (PAT=='hood') o += '<path d="M22 44q10 6 20 0" stroke="#6a6a6a" stroke-width="3" fill="none"/><path d="M29 47v7M35 47v7" stroke="#fff" stroke-width="1.5"/><rect x="25" y="56" width="14" height="6" rx="2" fill="#7d7d7d"/>';
+  if (PAT=='jersey') o += '<text x="32" y="60" text-anchor="middle" font-size="10" font-weight="700" font-family="sans-serif" fill="#fff">1</text><path d="M18 50h28" stroke="#fff" stroke-width="2"/>';
+  if (PAT=='armor') o += '<path d="M24 46l8 4l8-4l2 14h-20z" fill="#64CDF5" stroke="#fff" stroke-width="1.2"/><path d="M32 50l3 4l-3 4l-3-4z" fill="#fff"/>';
   o += '<circle cx="32" cy="28" r="13" fill="'+sk+'"/>';
   if (G==1) o += '<path d="M21 40q11 6 22 0v4q-11 6-22 0z" fill="#EA55AB"/><path d="M38 43l3 9l4-2z" fill="#EA55AB"/>';
+  // extras on the skin
+  const X = a.acc;
+  if (X==1) o += '<g fill="#a5643a" opacity=".8"><circle cx="23.5" cy="31" r=".9"/><circle cx="26" cy="32" r=".9"/><circle cx="24.5" cy="33.5" r=".9"/><circle cx="40.5" cy="31" r=".9"/><circle cx="38" cy="32" r=".9"/><circle cx="39.5" cy="33.5" r=".9"/></g>';
+  if (X==2) o += '<ellipse cx="23.5" cy="32" rx="3" ry="2" fill="#ff7aa8" opacity=".55"/><ellipse cx="40.5" cy="32" rx="3" ry="2" fill="#ff7aa8" opacity=".55"/>';
+  if (X==6) o += '<rect x="36" y="31" width="7" height="3.5" rx="1.2" fill="#f7e2c0" stroke="#d8b98c" stroke-width=".8" transform="rotate(-20 39.5 32.75)"/>';
+  if (X==8) o += '<path d="M21 31l4 1.5M21 34l4 .5M43 31l-4 1.5M43 34l-4 .5" stroke="#EA55AB" stroke-width="1.6" stroke-linecap="round"/>';
+  // face
   const F = a.face;
   if (F==3) o += '<rect x="21" y="24" width="9" height="6" rx="2" fill="#121313"/><rect x="34" y="24" width="9" height="6" rx="2" fill="#121313"/><path d="M30 26h4" stroke="#121313" stroke-width="2"/>';
   else if (F==4) o += '<path d="M26 23l1.3 2.7l3 .4l-2.2 2l.5 3l-2.6-1.4l-2.6 1.4l.5-3l-2.2-2l3-.4zM38 23l1.3 2.7l3 .4l-2.2 2l.5 3l-2.6-1.4l-2.6 1.4l.5-3l-2.2-2l3-.4z" fill="#F9BF01"/>';
   else if (F==5) o += '<rect x="20" y="23" width="24" height="7" rx="3.5" fill="#64CDF5"><animate attributeName="fill" values="#64CDF5;#D5F367;#64CDF5" dur="2s" repeatCount="indefinite"/></rect>';
   else if (F==2) o += '<circle cx="27" cy="27" r="2" fill="#121313"/><path d="M35 27h5" stroke="#121313" stroke-width="2" stroke-linecap="round"/>';
+  else if (F==6) o += '<circle cx="27" cy="27" r="2.6" fill="#fff" stroke="#121313" stroke-width="1.2"/><circle cx="37" cy="27" r="2.6" fill="#fff" stroke="#121313" stroke-width="1.2"/><circle cx="27" cy="27" r="1.1" fill="#121313"/><circle cx="37" cy="27" r="1.1" fill="#121313"/>';
+  else if (F==7) o += '<path d="M24.5 27.5q2.5 1.8 5 0M34.5 27.5q2.5 1.8 5 0" stroke="#121313" stroke-width="1.8" fill="none" stroke-linecap="round"/>';
+  else if (F==9) o += '<path d="M27 29.5l-3-3a1.8 1.8 0 0 1 3-2a1.8 1.8 0 0 1 3 2zM37 29.5l-3-3a1.8 1.8 0 0 1 3-2a1.8 1.8 0 0 1 3 2z" fill="#FF4539"/>';
+  else if (F==10) o += '<path d="M23 23l6 2M41 23l-6 2" stroke="#121313" stroke-width="2" stroke-linecap="round"/><circle cx="27" cy="27.5" r="2" fill="#121313"/><circle cx="37" cy="27.5" r="2" fill="#121313"/>';
+  else if (F==11) o += '<rect x="22" y="23.5" width="8" height="6" rx="1" fill="#c9ccd1" stroke="#121313" stroke-width="1"/><rect x="34" y="23.5" width="8" height="6" rx="1" fill="#c9ccd1" stroke="#121313" stroke-width="1"/><circle cx="26" cy="26.5" r="1.6" fill="#FF4539">'+an('opacity','1;.3;1',1)+'</circle><circle cx="38" cy="26.5" r="1.6" fill="#FF4539">'+an('opacity','1;.3;1',1)+'</circle>';
+  else if (F==12) o += '<circle cx="27" cy="27" r="2.2" fill="#FF4539"/><circle cx="37" cy="27" r="2.2" fill="#FF4539"/><path d="M27 27L4 30M37 27L60 30" stroke="#FF4539" stroke-width="1.6" opacity=".8">'+an('opacity','.9;.2;.9',.6)+'</path>';
   else o += '<circle cx="27" cy="27" r="2" fill="#121313"/><circle cx="37" cy="27" r="2" fill="#121313"/>';
-  o += F==1 ? '<path d="M26 33q6 6 12 0z" fill="#fff" stroke="#121313" stroke-width="1.5"/>' : '<path d="M27 33q5 4 10 0" stroke="#121313" stroke-width="2" fill="none" stroke-linecap="round"/>';
+  if (F==1) o += '<path d="M26 33q6 6 12 0z" fill="#fff" stroke="#121313" stroke-width="1.5"/>';
+  else if (F==6) o += '<ellipse cx="32" cy="34.5" rx="2.6" ry="3" fill="#121313"/>';
+  else if (F==7) o += '<path d="M29 34h6" stroke="#121313" stroke-width="2" stroke-linecap="round"/><text x="43" y="20" font-size="6" font-weight="700" font-family="sans-serif" fill="#fff">z</text>';
+  else if (F==8) o += '<path d="M27 33q5 4 10 0" stroke="#121313" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M30 34.5q2 5 4 0z" fill="#ff7aa8"/>';
+  else if (F==10) o += '<path d="M28 34h8" stroke="#121313" stroke-width="2" stroke-linecap="round"/>';
+  else if (F==11) o += '<rect x="26" y="32.5" width="12" height="3" rx="1" fill="#c9ccd1" stroke="#121313" stroke-width="1"/>';
+  else o += '<path d="M27 33q5 4 10 0" stroke="#121313" stroke-width="2" fill="none" stroke-linecap="round"/>';
+  // extras over the face
+  if (X==3) o += '<rect x="22" y="24" width="8" height="6" rx="1.5" fill="none" stroke="#121313" stroke-width="1.6"/><rect x="34" y="24" width="8" height="6" rx="1.5" fill="none" stroke="#121313" stroke-width="1.6"/><path d="M30 26.5h4" stroke="#121313" stroke-width="1.6"/>';
+  if (X==4) o += '<circle cx="27" cy="27" r="4" fill="none" stroke="#DD8B03" stroke-width="1.5"/><circle cx="37" cy="27" r="4" fill="none" stroke="#DD8B03" stroke-width="1.5"/><path d="M31 27h2" stroke="#DD8B03" stroke-width="1.5"/>';
+  if (X==5) o += '<path d="M25 31.5q3.5-2.5 7 0q3.5-2.5 7 0q-3.5 2-7 .5q-3.5 1.5-7-.5z" fill="#5a3a1c"/>';
+  if (X==7) o += '<circle cx="19.2" cy="31" r="1.6" fill="#F9BF01"/><circle cx="44.8" cy="31" r="1.6" fill="#F9BF01"/>';
+  if (X==9) o += '<circle cx="37" cy="27" r="4" fill="none" stroke="#F9BF01" stroke-width="1.5"/><path d="M41 28q2 8 0 14" stroke="#F9BF01" stroke-width="1" fill="none"/>';
+  if (X==10) o += '<path d="M23 42q9 7 18 0" stroke="#F9BF01" stroke-width="2.5" fill="none"/><circle cx="32" cy="45.5" r="2.2" fill="#F9BF01"/>';
+  if (X==11) o += '<path d="M32 43l-6-3v6zM32 43l6-3v6z" fill="#FF4539"/><circle cx="32" cy="43" r="1.6" fill="#b3001b"/>';
+  if (X==12) o += '<path d="M18 28a14 14 0 0 1 28 0" stroke="#121313" stroke-width="2.5" fill="none"/><rect x="15" y="25" width="6" height="9" rx="3" fill="#EA55AB"/><rect x="43" y="25" width="6" height="9" rx="3" fill="#EA55AB"/>';
+  if (X==13) o += '<path d="M19.2 30l1.8 2.4l-1.8 2.4l-1.8-2.4zM44.8 30l1.8 2.4l-1.8 2.4l-1.8-2.4z" fill="#9fe8ff" stroke="#fff" stroke-width=".6">'+an('opacity','1;.5;1',1.2)+'</path>';
+  // hair on top of the head (under the hat)
+  if (HR==1) o += '<path d="M19 27a13 13 0 0 1 26 0q-4-7-13-7t-13 7z" fill="'+hc+'"/>';
+  if (HR==2) o += '<path d="M19 25l2-9l4 5l3-8l4 7l4-8l3 8l4-5l2 10q-6-6-13-6t-13 6z" fill="'+hc+'"/>';
+  if (HR==3) o += '<path d="M19 27a13 13 0 0 1 26-2q-10-4-26 2z" fill="'+hc+'"/><path d="M20 22q8-8 22-3q-8 0-14 6z" fill="'+hc+'"/>';
+  if (HR==4 || HR==5) o += '<path d="M19 30a13 14 0 0 1 26 0q-2-9-13-9t-13 9z" fill="'+hc+'"/>'+(HR==5?'<path d="M19 28q-1 8 2 11h3q-3-4-2-11zM45 28q1 8-2 11h-3q3-4 2-11z" fill="'+hc+'"/>':'');
+  if (HR==6) o += [20,25,30,35,40,44,18,46].map((x,i)=>'<circle cx="'+x+'" cy="'+(i<6?17+(i%2)*2:24)+'" r="4.2" fill="'+hc+'"/>').join('');
+  if (HR==7) o += '<path d="M19 27a13 13 0 0 1 26 0q-4-7-13-7t-13 7z" fill="'+hc+'"/><circle cx="32" cy="12" r="5.5" fill="'+hc+'"/>';
+  if (HR==8) o += '<path d="M19 27a13 13 0 0 1 26 0q-4-7-13-7t-13 7z" fill="'+hc+'"/>';
+  if (HR==9) o += '<path d="M17 28q0-16 15-16t15 16q-4-8-15-8t-15 8z" fill="'+hc+'"/>';
+  if (HR==10) o += '<path d="M28 21l1-10l3 4l3-4l1 10z" fill="'+hc+'"/>';
+  if (HR==11) o += '<path d="M19 27a13 13 0 0 1 26 0q-4-7-13-7t-13 7z" fill="'+hc+'"/><circle cx="43" cy="19" r="2.5" fill="#EA55AB"/>';
+  // hats
   const H = a.hat;
   if (H==1) o += '<path d="M19 24a13 12 0 0 1 26 0z" fill="#FF4539"/><path d="M42 23h9q0 3-9 3z" fill="#FF4539"/>';
   if (H==2) o += '<path d="M19 25a13 13 0 0 1 26 0z" fill="#64CDF5"/><rect x="18" y="22" width="28" height="5" rx="2" fill="#014987"/><circle cx="32" cy="12" r="3.5" fill="#fff"/>';
@@ -1011,12 +1093,33 @@ const avSVG = (a, lvl) => { a = avNorm(a); const sk = AVP.skin.o[a.skin].c, sc =
   if (H==7) o += '<circle cx="32" cy="28" r="17" fill="#c9f0ff" fill-opacity=".35" stroke="#fff" stroke-width="3"/><path d="M22 20q4-5 9-5" stroke="#fff" stroke-width="2" fill="none"/>';
   if (H==8) o += '<path d="M19 20l3-10l5 6l5-9l5 9l5-6l3 10z" fill="#F9BF01"/><circle cx="32" cy="15" r="2" fill="#EA55AB"/>';
   if (H==9) o += '<ellipse cx="32" cy="8" rx="11" ry="3.5" fill="none" stroke="#F9BF01" stroke-width="2.5">'+an('cy','8;6;8',1.6,SPLINE)+'</ellipse>';
+  if (H==10) o += '<path d="M24 18l8-17l8 17z" fill="#64CDF5"/><path d="M26.5 13h11M28.5 8h7" stroke="#EA55AB" stroke-width="2.2"/><circle cx="32" cy="2" r="2.6" fill="#F9BF01"/>';
+  if (H==11) o += '<ellipse cx="25" cy="7" rx="3.5" ry="11" fill="#fff" stroke="#e8e4d4" stroke-width="1"/><ellipse cx="39" cy="7" rx="3.5" ry="11" fill="#fff" stroke="#e8e4d4" stroke-width="1"/><ellipse cx="25" cy="8" rx="1.6" ry="7" fill="#f7a8cf"/><ellipse cx="39" cy="8" rx="1.6" ry="7" fill="#f7a8cf"/>';
+  if (H==12) o += [[20,19,'#EA55AB'],[26,16,'#F9BF01'],[32,15,'#64CDF5'],[38,16,'#EA55AB'],[44,19,'#F9BF01']].map(([x,y,c])=>'<circle cx="'+x+'" cy="'+y+'" r="3.2" fill="'+c+'"/><circle cx="'+x+'" cy="'+y+'" r="1.1" fill="#fff"/>').join('')+'<path d="M18 21q14-8 28 0" stroke="#00B451" stroke-width="1.5" fill="none"/>';
+  if (H==13) o += '<path d="M21 20q-4-10 4-11q3-6 7-4q4-2 7 4q8 1 4 11z" fill="#ffffff" stroke="#e1ddcb" stroke-width="1"/><rect x="21" y="18" width="22" height="4" rx="1" fill="#f6f3e6" stroke="#e1ddcb" stroke-width="1"/>';
+  if (H==14) o += '<ellipse cx="32" cy="20" rx="21" ry="4.5" fill="#8D5B1D"/><path d="M22 20q0-11 4-11q3 3 6 0q3 3 6 0q4 0 4 11z" fill="#a8743a"/><rect x="22" y="17" width="20" height="2.5" fill="#5a3a1c"/>';
+  if (H==15) o += '<ellipse cx="32" cy="18" rx="17" ry="3.5" fill="#121313"/><rect x="23" y="2" width="18" height="16" rx="2" fill="#121313"/><rect x="23" y="13" width="18" height="3" fill="#AB2372"/>';
+  if (H==16) o += '<path d="M14 21q18-16 36 0q-18-5-36 0z" fill="#121313"/><path d="M19 20q13-12 26 0" fill="#121313"/><circle cx="32" cy="13" r="2.6" fill="#fff"/><path d="M30 13l4 0M32 11v4" stroke="#121313" stroke-width=".8"/>';
+  if (H==17) o += '<path d="M19 24a13 12 0 0 1 26 0z" fill="#9a9a9b"/><rect x="18" y="21" width="28" height="4" rx="1.5" fill="#8D5B1D"/><path d="M19 20q-8-4-6-14q4 8 9 9zM45 20q8-4 6-14q-4 8-9 9z" fill="#fffbe0" stroke="#c9ccd1" stroke-width="1"/>';
+  if (H==18) o += '<path d="M19 22q-2-6 4-6M45 22q2-6-4-6" stroke="#F9BF01" stroke-width="2.5" fill="none"/>'+[[20,18],[23,14],[27,12],[37,12],[41,14],[44,18]].map(([x,y])=>'<ellipse cx="'+x+'" cy="'+y+'" rx="2.6" ry="1.4" fill="#F9BF01" transform="rotate('+(x<32?-35:35)+' '+x+' '+y+')"/>').join('');
+  if (H==19) o += '<path d="M19 20l3-11l5 6l5-10l5 10l5-6l3 11z" fill="#9fe8ff" stroke="#fff" stroke-width="1.2"/><path d="M32 10l2.5 3l-2.5 3l-2.5-3z" fill="#4a5cff">'+an('opacity','1;.5;1',1.2)+'</path>';
+  // pets
   const PT = a.pet, px = 50, py = 52;
   if (PT==1) o += '<ellipse cx="'+px+'" cy="'+py+'" rx="8" ry="6" fill="#00B451"/><circle cx="'+(px-3)+'" cy="'+(py-5)+'" r="2.5" fill="#00B451"/><circle cx="'+(px+3)+'" cy="'+(py-5)+'" r="2.5" fill="#00B451"/><circle cx="'+(px-3)+'" cy="'+(py-5)+'" r="1" fill="#121313"/><circle cx="'+(px+3)+'" cy="'+(py-5)+'" r="1" fill="#121313"/>';
   if (PT==2) o += '<path d="M'+(px-8)+' '+(py-7)+'l3 6h10l3-6l-2 10q-3 6-6 6q-3 0-6-6z" fill="#FF8A3C"/><circle cx="'+(px-3)+'" cy="'+(py)+'" r="1.2" fill="#121313"/><circle cx="'+(px+3)+'" cy="'+(py)+'" r="1.2" fill="#121313"/>';
   if (PT==3) o += '<ellipse cx="'+px+'" cy="'+py+'" rx="7" ry="8" fill="#8D5B1D"/><circle cx="'+(px-3)+'" cy="'+(py-2)+'" r="3" fill="#fff"/><circle cx="'+(px+3)+'" cy="'+(py-2)+'" r="3" fill="#fff"/><circle cx="'+(px-3)+'" cy="'+(py-2)+'" r="1.3" fill="#121313"/><circle cx="'+(px+3)+'" cy="'+(py-2)+'" r="1.3" fill="#121313"/>';
   if (PT==4) o += '<ellipse cx="'+px+'" cy="'+(py+1)+'" rx="9" ry="6" fill="#00B451" stroke="#015640" stroke-width="2"/><circle cx="'+(px+9)+'" cy="'+(py-1)+'" r="3" fill="#9fe07a"/>';
   if (PT==5) o += '<g>'+at('translate','0 1;0 -2;0 1',1,SPLINE)+'<ellipse cx="'+px+'" cy="'+py+'" rx="8" ry="7" fill="#5B2A86"/><path d="M'+(px-8)+' '+(py-4)+'l-5-6l7 2zM'+(px+8)+' '+(py-4)+'l5-6l-7 2z" fill="#E9B9F7"/><circle cx="'+(px-3)+'" cy="'+(py-2)+'" r="1.4" fill="#F9BF01"/><circle cx="'+(px+3)+'" cy="'+(py-2)+'" r="1.4" fill="#F9BF01"/></g>';
+  const pet = (body, eyes, extra) => '<g transform="translate('+px+' '+py+')">'+body+(eyes||'<circle cx="-2.6" cy="-1" r="1.2" fill="#121313"/><circle cx="2.6" cy="-1" r="1.2" fill="#121313"/>')+(extra||'')+'</g>';
+  if (PT==6) o += pet('<path d="M-7-3l1-6l4 4h4l4-4l1 6q1 9-7 9t-7-9z" fill="#9a9a9b"/>', '', '<path d="M-1 2l1 1l1-1" stroke="#121313" stroke-width=".8" fill="none"/><path d="M7 3q5-1 4-6" stroke="#9a9a9b" stroke-width="2" fill="none"/>');
+  if (PT==7) o += pet('<ellipse cx="0" cy="0" rx="7" ry="6.5" fill="#d9a066"/><ellipse cx="-7" cy="-1" rx="2.4" ry="4.5" fill="#8D5B1D"/><ellipse cx="7" cy="-1" rx="2.4" ry="4.5" fill="#8D5B1D"/>', '', '<ellipse cx="0" cy="2" rx="1.6" ry="1.1" fill="#121313"/><path d="M0 3.5q0 2 1.4 2.4" stroke="#FF4539" stroke-width="1.2" fill="none"/>');
+  if (PT==8) o += pet('<ellipse cx="-2.5" cy="-9" rx="1.8" ry="5" fill="#fff"/><ellipse cx="2.5" cy="-9" rx="1.8" ry="5" fill="#fff"/><ellipse cx="0" cy="0" rx="6.5" ry="6" fill="#fff" stroke="#e1ddcb" stroke-width=".8"/>', '', '<circle cx="0" cy="1.5" r=".9" fill="#f7a8cf"/>');
+  if (PT==9) o += pet('<ellipse cx="0" cy="0" rx="6.5" ry="8" fill="#121313"/><ellipse cx="0" cy="1.5" rx="4.5" ry="6" fill="#fff"/><path d="M-1.5 -1l1.5 1.5l1.5-1.5z" fill="#F9BF01"/>', '<circle cx="-2.4" cy="-3" r="1" fill="#fff"/><circle cx="2.4" cy="-3" r="1" fill="#fff"/>');
+  if (PT==10) o += pet('<path d="M-9-5l-3-2M-9-2l-4 0M-9 1l-3 2M9-5l3-2M9-2l4 0M9 1l3 2" stroke="#EA55AB" stroke-width="1.6" stroke-linecap="round"/><ellipse cx="0" cy="0" rx="8.5" ry="6.5" fill="#f7a8cf"/>', '', '<path d="M-2 2.5q2 1.5 4 0" stroke="#121313" stroke-width=".9" fill="none"/>');
+  if (PT==11) o += '<g>'+at('translate','0 0;0 -1.5;0 0',.9,SPLINE)+pet('<path d="M-8 6q-1-12 8-12t8 12z" fill="#7be08a" opacity=".9"/><ellipse cx="-3" cy="-2" rx="1.6" ry="1" fill="#fff" opacity=".7"/>')+'</g>';
+  if (PT==12) o += pet('<rect x="-7" y="-6" width="14" height="12" rx="3" fill="#c9ccd1" stroke="#7d7d7d" stroke-width="1"/><path d="M0-6v-4" stroke="#7d7d7d" stroke-width="1.2"/><circle cx="0" cy="-10.5" r="1.4" fill="#FF4539">'+an('opacity','1;.2;1',.8)+'</circle>', '<rect x="-4.5" y="-2.5" width="3" height="2.5" fill="#64CDF5"/><rect x="1.5" y="-2.5" width="3" height="2.5" fill="#64CDF5"/>');
+  if (PT==13) o += '<g>'+at('translate','0 1;0 -2;0 1',.8,SPLINE)+pet('<path d="M-6 2q-8-10-4-14q2 6 6 8zM6 2q8-10 4-14q-2 6-6 8z" fill="#FF8A3C"/><ellipse cx="0" cy="0" rx="6" ry="7" fill="#FF4539"/><path d="M-2 6l2 7l2-7z" fill="#F9BF01"/>', '<circle cx="-2.4" cy="-1.5" r="1.1" fill="#F9BF01"/><circle cx="2.4" cy="-1.5" r="1.1" fill="#F9BF01"/>')+'</g>';
+  if (PT==14) o += pet('<ellipse cx="0" cy="0" rx="8" ry="6.5" fill="#fff" stroke="#e1ddcb" stroke-width=".8"/><path d="M-2-6l2-8l2 8z" fill="#F9BF01"/><path d="M-6-5q4-5 9-2" stroke="url(#rb)" stroke-width="2.4" fill="none"/>', '', '<circle cx="-4.5" cy="2" r="1" fill="#f7a8cf"/>');
   return svgURI(o); };
 
 // ---------- Cursors: unlocked with achievements ----------
@@ -1153,7 +1256,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-11-22a';
+const BUILD = '2026-11-22b';
 const SCRIPTS = ['arcade-core.js','prizes2.js','economy.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-edu.js','games-idle.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
@@ -1815,12 +1918,14 @@ class Component extends DCLogic {
       mostPlayed: !s.prizesOpen ? [] : (()=>{ const rows = GAMES.map(gm=>({id:gm.id, name:gm.title, color:gm.color, icon:ICON(gm.id), n:P.played[gm.id]||0, best:(P.best[gm.id]||0).toLocaleString()})).sort((a,b)=>b.n-a.n); const mxp = Math.max(1, ...rows.map(r=>r.n)); return rows.map((r,i)=>({...r, rank:i+1, w:Math.round(r.n/mxp*100)+'%', nLabel:r.n+(r.n==1?' play':' plays')})); })(),
       playedTotal: plays(P).toLocaleString()+' games finished in total · kept with your profile across every update',
       avImg: avSVG(P.avatar, (P.ach||[]).length), avLevel: (P.ach||[]).length, avFrameName: (avFrame((P.ach||[]).length)||{n:'No'}).n+' frame',
+      avCount: (()=>{ let t = 0, u = 0; AVK.forEach(k=>AVP[k].o.forEach(o=>{ t++; if (avOk(o, P, s.admin)) u++; })); return u+' / '+t+' looks unlocked'; })(),
+      avRandom: ()=>{ const a = {}; AVK.forEach(k=>{ const ok = AVP[k].o.map((o,i)=>[o,i]).filter(([o])=>avOk(o, P, s.admin)); a[k] = ok[Math.floor(Math.random()*ok.length)][1]; }); this.setP({avatar:a}); window.Arcade && window.Arcade.sfx('blip'); },
       avOpen: !!s.avOpen, openAv: ()=>{ this.keys = {}; this.setState({avOpen:true, avTab:s.avTab||'hat'}); }, closeAv: ()=>this.closeAll(),
-      avTabs: [...AVK.map(k=>[k,AVP[k].t]),['cursor','Cursor']].map(([id,t])=>({id, t, bg:(s.avTab||'hat')==id?'#015640':'#ffffff', fg:(s.avTab||'hat')==id?'#ffffff':'#015640', pick:()=>this.setState({avTab:id})})),
+      avTabs: [...AVTABS.map(k=>[k,AVP[k].t]),['cursor','Cursor']].map(([id,t])=>({id, t, bg:(s.avTab||'hat')==id?'#015640':'#ffffff', fg:(s.avTab||'hat')==id?'#ffffff':'#015640', pick:()=>this.setState({avTab:id})})),
       avOpts: !s.avOpen ? [] : (()=>{ const tab = s.avTab||'hat', n = (P.ach||[]).length, adm = s.admin, cur = avNorm(P.avatar);
         if (tab=='cursor') return CURSORS.map(c=>{ const ok = adm || n>=c.r, on = (P.cursor||'')==c.id; return {key:'c'+c.id, n:c.n, img: c.id ? svgURI('<g transform="translate(16 16)">'+c.s+'</g>') : svgURI('<path d="M20 12l0 34l9-9l6 14l6-3l-6-13l12 0z" fill="#fff" stroke="#121313" stroke-width="3"/>'), lockTxt: ok?(on?'Selected':''):'🔒 '+c.r+' achievements', border: on?'#015640':'transparent', bg: ok?'#ffffff':'#e8e4d4', op: ok?1:.55, pick:()=>{ if (!ok) { window.Arcade && window.Arcade.sfx('bad'); return; } this.setP({cursor:c.id}); applyCursor(c.id); window.Arcade && window.Arcade.sfx('blip'); }}; });
-        return AVP[tab].o.map((o,i)=>{ const ok = adm || n>=(o.r||0), on = cur[tab]==i; return {key:tab+i, n:o.n, img: avSVG({...cur, [tab]:i}, n), lockTxt: ok?(on?'Wearing':''):'🔒 '+o.r+' achievements', border: on?'#015640':'transparent', bg: ok?'#ffffff':'#e8e4d4', op: ok?1:.55, pick:()=>{ if (!ok) { window.Arcade && window.Arcade.sfx('bad'); return; } this.setP({avatar:{...cur, [tab]:i}}); window.Arcade && window.Arcade.sfx('blip'); }}; }); })(),
-      avNext: (()=>{ const n = (P.ach||[]).length; const all = [...AVK.flatMap(k=>AVP[k].o.map(o=>({r:o.r||0,n:o.n+' '+AVP[k].t.toLowerCase()}))), ...CURSORS.map(c=>({r:c.r,n:c.n+' cursor'}))].filter(x=>x.r>n).sort((a,b)=>a.r-b.r)[0]; return all ? 'Next unlock: '+all.n+' at '+all.r+' achievements ('+(all.r-n)+' to go)' : 'Everything unlocked. Legend!'; })(),
+        return AVP[tab].o.map((o,i)=>{ const ok = avOk(o, P, adm), on = cur[tab]==i; const look = {...cur, [tab]:i}; if (tab=='hair' || tab=='hairc') { look.hat = 0; if (tab=='hairc' && !look.hair) look.hair = 1; } return {key:tab+i, n:o.n, img: avSVG(look, n), lockTxt: ok?(on?'Wearing':''):avNeed(o), border: on?'#015640':'transparent', bg: ok?'#ffffff':'#e8e4d4', op: ok?1:.55, pick:()=>{ if (!ok) { window.Arcade && window.Arcade.sfx('bad'); return; } this.setP({avatar:{...cur, [tab]:i}}); window.Arcade && window.Arcade.sfx('blip'); }}; }); })(),
+      avNext: (()=>{ const n = (P.ach||[]).length; const all = [...AVK.flatMap(k=>AVP[k].o.filter(o=>!o.rb&&!o.pr).map(o=>({r:o.r||0,n:o.n+' '+AVP[k].t.toLowerCase()}))), ...CURSORS.map(c=>({r:c.r,n:c.n+' cursor'}))].filter(x=>x.r>n).sort((a,b)=>a.r-b.r)[0]; return all ? 'Next unlock: '+all.n+' at '+all.r+' achievements ('+(all.r-n)+' to go)' : 'Everything unlocked. Legend!'; })(),
       hallPlayers: lbRows('_tix','all',6), hallEmpty: lbRows('_tix','all',1).length==0,
       toasts: s.toasts,
     };

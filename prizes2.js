@@ -89,6 +89,13 @@ const COLS = [
  {id:'fall', n:'Fall Harvest', e:'🍂', col:'#DD8B03', b:1, s:5, k:1.5, season:'fall', items:
   '🍂|Fallen Leaf|Leaves change color as trees stop making green chlorophyll.;🎃|Pumpkin|Pumpkins are fruits.;🌽|Corn Cob|An ear of corn has about 800 kernels.;🍎|Harvest Apple|Over 7,500 kinds of apples exist.;🦃|Harvest Turkey|Only male turkeys gobble.;🥧|Pie Slice|Pumpkin pie with whipped cream.;🦔|Leaf Pile Hedgehog|Hibernates through winter.;🌰|Acorn|One oak can drop 10,000 acorns in a good year.;🦉|Harvest Moon Owl|The harvest moon rises right after sunset.;🍁|Golden Maple|The glow of October.'},
  // prestige (needs Golden Stars)
+ // ---- the most expensive prizes: price ladders that unlock one or two at a time as your Rebirths grow ----
+ {id:'treasure', n:'Legendary Treasures', e:'🏺', col:'#ff4539', r:5, ladder:[5e9, 1000], noCap:1, items:
+  '🏺|Ancient Arcade Urn|Full of tokens from 1979.;🗡️|Sword in the Cabinet|Only a true gamer can pull it out.;🪙|Coin of the First Quarter|The very first quarter ever played.;📜|Scroll of Infinite Lives|Read it and never lose again.;🧭|Compass to High Score|Always points to the top of the board.;🛡️|Shield of the Final Boss|Dented from a million battles.;🔱|Trident of Tickets|Spears tickets from the sea.;🏆|Cup of Champions|Too heavy to lift alone.'},
+ {id:'vault', n:'Vault of Wonders', e:'🏛️', col:'#4a5cff', r:6, ladder:[3e12, 1000], noCap:1, items:
+  '🪐|Ringed Planet|A whole planet, rings included.;🌠|Bottled Shooting Star|Make a wish. Any wish.;🌀|Pocket Galaxy|Spins forever on your shelf.;☄️|Captured Comet|Still a little warm.;🔭|Telescope of Tomorrow|Shows next week’s high scores.;🛸|Arcade Mothership|Holds a billion cabinets.;🌌|Nebula in a Jar|Glows every color at once.;⏳|Hourglass of Time|Pause any game, any time.;🌞|Tame Sun|Gentle, warm and very bright.;🕳️|Friendly Black Hole|Eats only bad luck.'},
+ {id:'diavault', n:'Diamond Vault', e:'💠', col:'#9fe8ff', r:7, starLadder:[500,1000,2500,5000,10000,25000,50000,100000,250000,1000000], items:
+  '💠|Diamond Joystick|Every move is a perfect move.;🦄|Crystal Unicorn|Gallops across the leaderboard.;🐲|Diamond Dragon|Breathes sparkles instead of fire.;🏯|Floating Sky Arcade|An arcade above the clouds.;🌈|Solid Rainbow|You can walk on it.;👁️|All-Seeing Gem|Sees every hidden secret.;🎇|Eternal Fireworks|The show never ends.;🌍|Wilderland Globe|The whole world, in your hands.;🪽|Wings of Legend|Lift any score to the sky.;♾️|The Infinity Ticket|Worth more than every ticket ever printed.'},
  {id:'golden', n:'Golden Hall', e:'⭐', col:'#F9BF01', prestige:1, items:
   '🌟|Golden Star Pin|For your first Rebirth.;🏅|Gilded Medal|Shines brighter every Rebirth.;👑|Golden Crown|Rule the arcade.;🗿|Golden Statue|They built a statue in your honor.;🦚|Golden Peacock|Feathers of pure light.;🐉|Golden Dragon|Hoards tickets instead of gold.;🏰|Golden Castle|Your own arcade kingdom.;🌋|Golden Volcano|Erupts with confetti.;🪐|Golden Planet|Ringed with ticket stubs.;☀️|Golden Sun|Brighter than a thousand Turbo runs.;🌌|Golden Galaxy|A billion golden stars.;♾️|The Infinite Ticket|Worth everything. And then some.'},
 ];
@@ -106,12 +113,12 @@ const build = classicArt => {
   COLS.forEach(C => { const items = [];
     if (C.classic) CLASSICS.forEach(([id,n,r,d],i) => items.push({id, n, d, e:CLASSIC_EMOJI[id], art:classicArt && classicArt[id], r:R.findIndex(x=>x.id==r), f:(i%4)/4}));
     else C.items.split(';').filter(Boolean).forEach((row, i, arr) => { const [e, n, d] = row.split('|');
-      let r, f; if (C.prestige) { r = 7; f = 0; } else { const pos = i * C.s / arr.length; r = C.b + Math.floor(pos); f = pos - Math.floor(pos); }
+      let r, f; if (C.prestige) { r = 7; f = 0; } else if (C.ladder || C.starLadder) { r = C.r; f = i / arr.length; } else { const pos = i * C.s / arr.length; r = C.b + Math.floor(pos); f = pos - Math.floor(pos); }
       items.push({id:C.id+'_'+i, n, d, e, r, f}); });
     items.forEach((it, i) => { it.col = C.id; it.colName = C.n;
-      it.price = C.prestige ? 1e12 * Math.pow(1000, i) : nice(R[it.r].base * (1 + 3*it.f) * (C.k||1));
+      it.price = C.prestige ? 1e12 * Math.pow(1000, i) : C.ladder ? nice(C.ladder[0] * Math.pow(C.ladder[1], i)) : C.starLadder ? 1e15 : nice(R[it.r].base * (1 + 3*it.f) * (C.k||1)); if (C.noCap) it.noCap = 1;
       // ONLY Wilderland prizes cost Golden Stars. Mythic and Cosmic cost tickets (Cosmic never comes from capsules).
-      if (C.prestige) it.sp = 10 * Math.pow(2, i); else if (it.r === 7) it.sp = 25 + Math.round(it.f * 35);
+      if (C.prestige) it.sp = 10 * Math.pow(2, i); else if (C.starLadder) it.sp = C.starLadder[i]; else if (it.r === 7) it.sp = 25 + Math.round(it.f * 35);
       if (C.season) it.season = C.season;
       CAT.push(it); BYID[it.id] = it; });
     C.size = items.length; });
@@ -252,7 +259,7 @@ const CAP_MAX_R = 5; CAPS.forEach(c => { for (let i = CAP_MAX_R+1; i < 8; i++) c
 W.CAPS = CAPS;
 const capPrice = (c, P) => nice(Math.min(c.price * Math.max(1, Math.pow(W.globalMult(P), .25)), W.rebirthNeed(P) * .3));
 const rollCap = (c, P) => { const tot = c.odds.slice(0, CAP_MAX_R+1).reduce((a,b)=>a+b,0); const r = Math.random()*tot; let acc = 0, tier = 0; for (let i=0;i<=CAP_MAX_R;i++) { if (!c.odds[i]) continue; acc += c.odds[i]; tier = i; if (r < acc) break; }
-  const pool = CAT.filter(it => it.r === tier && it.r <= CAP_MAX_R && !it.season && it.col !== 'golden' && !it.repeat); return pool[Math.floor(Math.random()*pool.length)] || CAT[0]; };
+  const pool = CAT.filter(it => it.r === tier && it.r <= CAP_MAX_R && !it.season && !it.noCap && it.col !== 'golden' && !it.repeat); return pool[Math.floor(Math.random()*pool.length)] || CAT[0]; };
 W.rollCap = rollCap;
 
 // ---------------- rebirth ----------------
