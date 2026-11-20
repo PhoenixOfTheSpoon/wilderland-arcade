@@ -64,12 +64,11 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
       <button onClick="{{ openAccount }}" style="background:{{ acctHeadBg }}; color:{{ acctHeadFg }}; border:1.5px solid #D5F367; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ acctHeadLabel }}</button>
       <button onClick="{{ openCode }}" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">{{ adminLabel }}</button>
       <button onClick="{{ toggleSound }}" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">{{ soundLabel }}</button>
-      <button onClick="{{ openClick }}" style="background:#F9BF01; color:#3d2900; border:none; border-radius:999px; padding:8px 14px; font-weight:800; font-size:13px; cursor:pointer;">🎟 CLICK</button>
       <button onClick="{{ openChat }}" title="Chat (T)" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">CHAT · T</button>
       <button onClick="{{ toggleFx }}" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">{{ fxLabel }}</button>
     </div>
   </header>
-  <div onClick="{{ openClick }}" title="{{ rbLabel }}" style="cursor:pointer; background:#0b2e24; padding:6px 16px; display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(213,243,103,.2);">
+  <div onClick="{{ openRebirth }}" title="{{ rbLabel }}" style="cursor:pointer; background:#0b2e24; padding:6px 16px; display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(213,243,103,.2);">
     <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:#F9BF01; white-space:nowrap;">⭐ NEXT REBIRTH</div>
     <div style="flex:1; height:10px; border-radius:999px; background:rgba(255,255,255,.1); overflow:hidden;"><div style="height:100%; width:{{ rbPct }}; background:linear-gradient(90deg,#00B451,#D5F367,#F9BF01); border-radius:999px; transition:width .4s;"></div></div>
     <div style="font-size:11px; font-weight:700; color:#EDE9D8; white-space:nowrap; font-variant-numeric:tabular-nums;">{{ rbShort }}</div>
@@ -94,8 +93,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
           <button onClick="{{ openPrizes }}" style="border:none; border-radius:14px; background:#AB2372; color:#ffffff; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:16px 10px; cursor:pointer; min-height:120px;">PRIZE COUNTER<br><span style="font-size:12px; font-weight:500; letter-spacing:0;">{{ prizesOwned }} claimed</span></button>
           <button onClick="{{ openLb }}" style="border:none; border-radius:14px; background:#121313; color:#F9BF01; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:10px; cursor:pointer; min-height:120px; display:flex; flex-direction:column; align-items:center; gap:4px;"><img src="{{ boardIcon }}" alt="" style="width:48px; height:48px;">LEADERBOARD</button>
           <button onClick="{{ openLearn }}" style="border:none; border-radius:14px; background:#014987; color:#ffffff; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:10px; cursor:pointer; min-height:120px; display:flex; flex-direction:column; align-items:center; gap:4px;"><img src="{{ learnIcon }}" alt="" style="width:48px; height:48px;">LEARNING DESK</button>
-          <button onClick="{{ openClick }}" style="border:none; border-radius:14px; background:linear-gradient(160deg,#fff3a8,#F9BF01 55%,#c88a00); color:#3d2900; font-family:inherit; font-weight:800; font-size:14px; letter-spacing:0.08em; padding:10px; cursor:pointer; min-height:120px; display:flex; flex-direction:column; align-items:center; gap:4px;"><span style="font-size:44px;">🎟️</span>GOLDEN TICKET</button>
-          <button onClick="{{ openShop }}" style="border:none; border-radius:14px; background:#2a1d12; color:#F9BF01; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:10px; cursor:pointer; min-height:120px; display:flex; flex-direction:column; align-items:center; gap:4px;"><img src="{{ shopIcon }}" alt="" style="width:48px; height:48px;">UPGRADE WORKSHOP<span style="font-size:11px; font-weight:500; letter-spacing:0; color:#EDE9D8;">{{ shopOwned }} levels · ∞</span></button>
+                    <button onClick="{{ openShop }}" style="border:none; border-radius:14px; background:#2a1d12; color:#F9BF01; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:10px; cursor:pointer; min-height:120px; display:flex; flex-direction:column; align-items:center; gap:4px;"><img src="{{ shopIcon }}" alt="" style="width:48px; height:48px;">UPGRADE WORKSHOP<span style="font-size:11px; font-weight:500; letter-spacing:0; color:#EDE9D8;">{{ shopOwned }} levels · ∞</span></button>
           <button onClick="{{ openAv }}" style="border:none; border-radius:14px; background:#015640; color:#D5F367; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:10px; cursor:pointer; min-height:120px; display:flex; flex-direction:column; align-items:center; gap:4px;"><img src="{{ avImg }}" alt="" style="width:52px; height:52px;">AVATAR STUDIO</button>
         </div>
       </sc-if>
@@ -140,16 +138,12 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
             <div style="font-size:10px; font-weight:600; color:#EDE9D8;">{{ shopOwned }} levels · ∞</div>
           </div>
 
-          <div onClick="{{ openClick }}" style="position:absolute; left:850px; top:290px; width:230px; height:140px; cursor:pointer; border-radius:14px; background:linear-gradient(160deg,#fff3a8,#F9BF01 55%,#c88a00); border:3px solid #a06c00; box-shadow:{{ dailyShadow }}; padding:12px 14px; box-sizing:border-box; display:flex; align-items:center; gap:10px; overflow:hidden;" class="wl-gold">
-            <div style="font-size:54px; line-height:1; filter:drop-shadow(0 4px 4px rgba(0,0,0,.3));" class="wl-bob">🎟️</div>
-            <div style="min-width:0;"><div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:#5a3d00;">CLICK ME</div><div style="font-size:21px; font-weight:800; color:#3d2900; line-height:1.05;">Golden Ticket</div><div style="font-size:12px; font-weight:600; color:#5a3d00;">Expansions · Star Tree</div></div>
+          <div onClick="{{ openDaily }}" style="position:absolute; left:850px; top:290px; width:230px; height:140px; cursor:pointer; border-radius:14px; background:#121313; border:3px solid #D5F367; box-shadow:{{ dailyShadow }}; padding:14px; box-sizing:border-box; display:flex; flex-direction:column; gap:4px;">
+            <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:#D5F367;">DAILY CHALLENGE</div>
+            <div style="font-size:22px; font-weight:700; color:#ffffff;">{{ daily.name }}</div>
+            <div style="font-size:13px; font-weight:500; color:#EDE9D8;">Beat {{ daily.target }} · {{ daily.status }}</div>
           </div>
 
-          <div onClick="{{ openClick }}" style="position:absolute; left:30px; top:858px; width:1060px; height:58px; border-radius:12px; background:linear-gradient(#123d31,#0b2e24); box-shadow:inset 0 -5px 0 #071f18; display:flex; align-items:center; gap:8px; padding:0 12px; box-sizing:border-box; cursor:pointer; overflow:hidden;">
-            <div style="font-size:10px; font-weight:700; letter-spacing:0.14em; color:#D5F367; line-height:1.15; flex-shrink:0;">ARCADE<br>EXPANSIONS</div>
-            <sc-if value="{{ expEmpty }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px; color:#b9cfc5;">Click the Golden Ticket and buy expansions — they fill up this space</div></sc-if>
-            <sc-for list="{{ expFloor }}" as="xf" hint-placeholder-count="4"><div title="{{ xf.n }}" class="wl-pop" style="position:relative; width:44px; height:44px; flex-shrink:0; border-radius:12px; background:radial-gradient(circle at 35% 30%, #fff, #D5F367 55%, #00B451); box-shadow:inset 0 -4px 0 rgba(0,0,0,.18), 0 3px 6px rgba(0,0,0,.35); display:flex; align-items:center; justify-content:center; font-size:24px;">{{ xf.e }}<span style="position:absolute; right:-4px; bottom:-4px; background:#015640; color:#D5F367; font-size:9px; font-weight:800; padding:1px 5px; border-radius:999px;">{{ xf.lv }}</span></div></sc-for>
-          </div>
           <div onClick="{{ openPrizes }}" style="position:absolute; left:30px; top:790px; width:1060px; height:56px; border-radius:12px; background:linear-gradient(#5a3a1c,#3b2614); box-shadow:inset 0 -6px 0 #2a1b0e; display:flex; align-items:center; gap:8px; padding:0 12px; box-sizing:border-box; cursor:pointer; overflow:hidden;">
             <div style="font-size:10px; font-weight:700; letter-spacing:0.14em; color:#F9BF01; line-height:1.15; flex-shrink:0;">TROPHY<br>WALK</div>
             <sc-if value="{{ trophyEmpty }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px; color:#cfc6a8;">Complete a prize collection to put its trophy here · {{ trophyPct }}</div></sc-if>
@@ -626,18 +620,6 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
     </div>
   </sc-if>
 
-  <sc-if value="{{ clickOpen }}" hint-placeholder-val="{{ false }}">
-    <div style="position:fixed; inset:0; background:rgba(11,46,36,.9); display:flex; align-items:flex-start; justify-content:center; z-index:50; overflow-y:auto; padding:16px 10px; box-sizing:border-box;">
-      <div style="background:#EDE9D8; border-radius:20px; padding:20px; width:1000px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:10px; color:#121313;">
-        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
-          <div><div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#8D5B1D;">THE GOLDEN TICKET</div><div style="font-size:28px; font-weight:700; color:#015640;">Click, expand, shine</div></div>
-          <button onClick="{{ closeClick }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;">Leave · Esc</button>
-        </div>
-        <div ref="{{ ckRef }}"></div>
-      </div>
-    </div>
-  </sc-if>
-
   <sc-if value="{{ shopOpen }}" hint-placeholder-val="{{ false }}">
     <div style="position:fixed; inset:0; background:rgba(27,19,12,.9); display:flex; align-items:safe center; justify-content:center; z-index:50; overflow-y:auto; padding:16px; box-sizing:border-box;">
       <div style="background:#EDE9D8; border-radius:20px; padding:22px; width:760px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:14px; color:#121313;">
@@ -874,7 +856,7 @@ const LEARN_GAMES = ['trace','rootout'];
 const TOPICS = [['add','Add'],['sub','Subtract'],['mult','Multiply'],['div','Divide'],['multi','Two-step'],['skip','Skip-count'],['spell','Spelling'],['mixed','Mix']];
 const PADS = {snake:{d:'udlr',a:[['Start',' ']]}, breakout:{d:'lr',a:[['Launch',' ']]}, flappy:{d:'',a:[['Flap',' ']]}, pong:{d:'ud',a:[['Serve',' ']]}, '2048':{d:'udlr',a:[]}, crossing:{d:'udlr',a:[['Start',' ']]}, stack:{d:'ldr',a:[['Rotate','ArrowUp'],['Drop',' '],['Hold','c'],['Saw','x']]}, connect4:{d:'lr',a:[['Drop',' ']]}};
 const SWIPE = ['snake','2048','crossing','stack'];
-const FW = 1120, FH = 930;
+const FW = 1120, FH = 860;
 const KIOSKS = [{id:'prize',x:850,y:50,w:230,h:200},{id:'daily',x:850,y:290,w:230,h:140},{id:'board',x:850,y:465,w:230,h:110},{id:'learn',x:850,y:605,w:230,h:110},{id:'shop',x:678,y:590,w:140,h:130}];
 const BOARD_KEY = 'wl-arcade-board-v3', UNAME_KEY = 'wl-arcade-usernames';
 const getJSON = (k,d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch(e) { return d; } };
@@ -1069,16 +1051,9 @@ const ACH = [
   {id:'reb3',cat:'Rebirth',tier:3,name:'Phoenix',desc:'Rebirth 3 times',p:s=>[s.rebirths||0,3]},
   {id:'reb10',cat:'Rebirth',tier:4,name:'Eternal',desc:'Rebirth 10 times',p:s=>[s.rebirths||0,10]},
   {id:'reb25',cat:'Rebirth',tier:4,name:'Timeless',desc:'Rebirth 25 times',p:s=>[s.rebirths||0,25]},
-  {id:'click100',cat:'Golden Ticket',tier:1,name:'Clicker',desc:'Click the Golden Ticket 100 times',p:s=>[s.clicks||0,100]},
-  {id:'click5k',cat:'Golden Ticket',tier:2,name:'Tap Dancer',desc:'Click the Golden Ticket 5,000 times',p:s=>[s.clicks||0,5000]},
-  {id:'click50k',cat:'Golden Ticket',tier:4,name:'Finger of Gold',desc:'Click the Golden Ticket 50,000 times',p:s=>[s.clicks||0,50000]},
-  {id:'exp10',cat:'Golden Ticket',tier:1,name:'Builder',desc:'Own 10 Arcade Expansion levels',p:s=>[window.WLE?window.WLE.expLevels(s):0,10]},
-  {id:'exp100',cat:'Golden Ticket',tier:2,name:'Developer',desc:'Own 100 Arcade Expansion levels',p:s=>[window.WLE?window.WLE.expLevels(s):0,100]},
-  {id:'exp500',cat:'Golden Ticket',tier:3,name:'Tycoon',desc:'Own 500 Arcade Expansion levels in one run',p:s=>[window.WLE?window.WLE.expLevels(s):0,500]},
-  {id:'galaxy',cat:'Golden Ticket',tier:4,name:'Out of This World',desc:'Open the Galactic Fun Zone',p:s=>[((s.exp||{}).galaxy||0)?1:0,1]},
-  {id:'crit1',cat:'Golden Ticket',tier:1,name:'Gotcha!',desc:'Catch a golden critter',p:s=>[s.critters||0,1]},
-  {id:'crit25',cat:'Golden Ticket',tier:2,name:'Critter Keeper',desc:'Catch 25 golden critters',p:s=>[s.critters||0,25]},
-  {id:'crit200',cat:'Golden Ticket',tier:4,name:'Golden Zoo',desc:'Catch 200 golden critters',p:s=>[s.critters||0,200]},
+  {id:'crit1',cat:'Arcade',tier:1,name:'Gotcha!',desc:'Catch a golden critter',p:s=>[s.critters||0,1]},
+  {id:'crit25',cat:'Arcade',tier:2,name:'Critter Keeper',desc:'Catch 25 golden critters',p:s=>[s.critters||0,25]},
+  {id:'crit200',cat:'Arcade',tier:4,name:'Golden Zoo',desc:'Catch 200 golden critters',p:s=>[s.critters||0,200]},
   {id:'streak10',cat:'Learning',tier:2,name:'On a Roll',desc:'Get 10 learn-mode answers right in a row',p:s=>[mx(s,'eduStreak'),10]},
   {id:'streak30',cat:'Learning',tier:3,name:'Brainstorm',desc:'Get 30 learn-mode answers right in a row',p:s=>[mx(s,'eduStreak'),30]},
   {id:'streak100',cat:'Learning',tier:4,name:'Genius Mode',desc:'Get 100 learn-mode answers right in a row',p:s=>[mx(s,'eduStreak'),100]},
@@ -1151,7 +1126,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-11-21b';
+const BUILD = '2026-11-21c';
 const SCRIPTS = ['arcade-core.js','prizes2.js','economy.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-edu.js','games-idle.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
@@ -1317,11 +1292,8 @@ class Component extends DCLogic {
   componentDidUpdate(){
     if (window.WLP && this._loginFor !== this.profKey()) { this._loginFor = this.profKey(); const W2 = window.WLP; setTimeout(()=>{ const l = W2.login(this.P); const c = W2.ensureChal({...this.P, ...(l||{})}, GAMES); if (l || c) { this.setP({...(l||{}), ...(c||{})}); if (l && l.login.streak > 1) this.toast('DAY '+l.login.streak+' LOGIN STREAK · BONUS ×'+W2.fmt(W2.globalMult(this.P))); } }, 400); }
     if (this.state.prizesOpen && this.pzRef.current && !this._pzOff && window.WLP) { const P0 = () => this.P;
-      this._pzOff = window.WLP.mount(this.pzRef.current, { P:P0, setP:pt=>this.setP(pt), toast:t=>this.toast(t), sfx:n=>window.Arcade && window.Arcade.sfx(n), admin:()=>!!this.state.admin, lowFx:()=>LOWFX,
+      this._pzOff = window.WLP.mount(this.pzRef.current, { P:P0, setP:pt=>this.setP(pt), toast:t=>this.toast(t), sfx:n=>window.Arcade && window.Arcade.sfx(n), admin:()=>!!this.state.admin, lowFx:()=>LOWFX, tab:(t=>{ this._pzTab = null; return t; })(this._pzTab),
         games:()=>GAMES, icon:id=>ICON(id), classicArt: Object.fromEntries(PRIZES.map(pz=>[pz.id, PZ(pz.art)])) }); }
-    if (this.state.clickOpen && this.ckRef.current && !this._ckOff && window.WLE) {
-      this._ckOff = window.WLE.mount(this.ckRef.current, this.econApi()); }
-    if (!this.state.clickOpen && this._ckOff) { try { this._ckOff(); } catch(e){} this._ckOff = null; }
     if (window.WLE && !this._econAttached) { this._econAttached = true; window.WLE.attach(this.econApi()); }
     if (window.WLE && window.WLP && this._welcomeFor !== this.profKey()) { this._welcomeFor = this.profKey(); setTimeout(()=>this.migrateEcon(), 600); }
     if (!this.state.prizesOpen && this._pzOff) { try { this._pzOff(); } catch(e){} this._pzOff = null; }
@@ -1450,10 +1422,12 @@ class Component extends DCLogic {
       finally { this._rebirthing = false; } }); }
   econApi(){ return { P:()=>this.P, setP:pt=>this.setP(pt), toast:t=>this.toast(t), sfx:n=>window.Arcade && window.Arcade.sfx(n), admin:()=>!!this.state.admin, addTix:(n,f,c)=>this.addTix(n,f,c) }; }
   // One-time move to the new economy. Nothing is wiped: tickets, prizes, scores, stars and achievements all stay.
-  migrateEcon(){ const P = this.P; if ((P.econV||0) >= 3) return; const had = (P.tickets||0) > 0 || Object.keys(P.played||{}).length > 0;
+  migrateEcon(){ const P = this.P;
+    if ((P.econV||0) === 3) { const tree = {...(P.tree||{})}; if (tree.click) { tree.tickets = Math.max(tree.tickets||0, tree.click); delete tree.click; } this.setP({econV:4, exp:{}, expUp:{}, tree}); return; }
+    if ((P.econV||0) >= 4) return; const had = (P.tickets||0) > 0 || Object.keys(P.played||{}).length > 0;
     const lines = ['🎟 '+fmtN(P.tickets||0)+' tickets', '🏆 '+Object.keys(P.prizes||{}).length+' kinds of prizes kept', '⭐ '+(P.stars||0)+' Golden Stars', '🏅 '+(P.ach||[]).length+' achievements', '🛠 Workshop and multiplier levels kept until your next Rebirth'];
     const idle = P.idle && typeof P.idle=='object' ? {...P.idle, last:Date.now()} : P.idle;
-    this.setP({econV:3, idle}); if (had && window.WLE) window.WLE.welcome({lines}); }
+    this.setP({econV:4, idle, exp:{}, expUp:{}}); if (had && window.WLE) window.WLE.welcome({lines}); }
   // Golden Ticket clicks and critter rewards land here (batched)
   addTix(n, from, clicks){ if (this.state.admin) return; n = Math.max(0, Math.round(n)); if (!n) return; const P = this.P;
     this.setP({tickets:P.tickets+n, earned:P.earned+n, clicks:(P.clicks||0)+(clicks||0), combo: clicks ? {...(P.combo||{}), t:Date.now()} : P.combo}); if (from && window.WLE) window.WLE.fly(n, from); }
@@ -1573,10 +1547,10 @@ class Component extends DCLogic {
     const eduOn = this.eduOn(), locked = this.locked(), hasCode = !!this.lockInfo().hash;
     const s = this.state, P = this.P, di = dailyIdx(), dg = GAMES[di], dailyDone = P.daily.date==today() && P.daily.done;
     const ni = this.findNear(), glow = '0 0 0 4px #D5F367, 0 12px 24px rgba(0,0,0,.3)', base = '0 10px 18px rgba(0,0,0,.22)';
-    const kiosk = [()=>this.setState({prizesOpen:true}), ()=>this.setState({clickOpen:true}), ()=>this.setState({lbOpen:true}), ()=>this.setState({learnOpen:true}), ()=>this.setState({shopOpen:true})];
+    const kiosk = [()=>this.setState({prizesOpen:true}), ()=>this.open(dg.id), ()=>this.setState({lbOpen:true}), ()=>this.setState({learnOpen:true}), ()=>this.setState({shopOpen:true})];
     this.near = ni==null ? null : ni<NG ? {act:()=>this.open(GAMES[ni].id)} : {act:kiosk[ni-NG]};
     const savedOf = id => !!(P.saves[id] || P.saves[id+'~edu']);
-    const nearLabel = ni==null ? '' : ni<NG ? 'PLAY '+GAMES[ni].title.toUpperCase()+(savedOf(GAMES[ni].id)?' · SAVED':'') : ['PRIZE COUNTER','GOLDEN TICKET','LEADERBOARD','LEARNING DESK','UPGRADE WORKSHOP'][ni-NG];
+    const nearLabel = ni==null ? '' : ni<NG ? 'PLAY '+GAMES[ni].title.toUpperCase()+(savedOf(GAMES[ni].id)?' · SAVED':'') : ['PRIZE COUNTER','DAILY: '+dg.title.toUpperCase(),'LEADERBOARD','LEARNING DESK','UPGRADE WORKSHOP'][ni-NG];
     const g = s.game && GAMES.find(x=>x.id==s.game);
     const [dx,dy] = s.dir;
     // achievements
@@ -1665,9 +1639,8 @@ class Component extends DCLogic {
       lbLeader: (lbRows('_tix','all',1)[0]||{}).name || 'Nobody yet',
       tickets: fmtN(P.tickets), multLabelHead: '×'+(window.WLP ? window.WLP.fmt(window.WLP.totalMult(P)) : '1')+' total'+((P.stars||0) ? ' · ⭐'+P.stars : ''), soundLabel: s.muted ? 'SOUND OFF' : 'SOUND ON',
       showCash: !!s.game && s.game!='idle', cashOutGame: ()=>this.cashOutGame(), cashLabel: s.admin ? 'Cash out · (admin)' : 'Cash out · '+fmtN(s.liveScore||0),
-      clickOpen: !!s.clickOpen, openClick: ()=>{ this.keys = {}; this.setState({clickOpen:true}); }, closeClick: ()=>this.closeAll(), ckRef: this.ckRef,
+      openRebirth: ()=>{ this.keys = {}; this._pzTab = 'rebirth'; this.setState({prizesOpen:true}); },
       rbPct: window.WLP ? Math.min(100, (P.tickets||0)/window.WLP.rebirthNeed(P)*100).toFixed(1)+'%' : '0%', rbShort: window.WLP ? fmtN(P.tickets||0)+' / '+fmtN(window.WLP.rebirthNeed(P)) : '', rbLabel: window.WLP ? 'Next Rebirth: '+fmtN(P.tickets||0)+' / '+fmtN(window.WLP.rebirthNeed(P))+' (automatic)' : '',
-      expFloor: window.WLE ? window.WLE.EXP.filter(x=>(P.exp||{})[x.k]).map(x=>({key:x.k+'-'+P.exp[x.k], e:x.e, n:x.n, lv:P.exp[x.k]})) : [], expEmpty: !window.WLE || !window.WLE.EXP.some(x=>(P.exp||{})[x.k]),
       fxLabel: LOWFX ? 'ANIMATIONS OFF' : 'ANIMATIONS ON', toggleFx: ()=>{ LOWFX = !LOWFX; try { localStorage.setItem('wl-arcade-lowfx', LOWFX?'1':'0'); } catch(e){} applyLowFx(LOWFX); if (window.Arcade) window.Arcade.lowFx = LOWFX; this.toast(LOWFX ? 'ANIMATIONS OFF · SMOOTHER ON SLOW DEVICES' : 'ANIMATIONS ON'); this.forceUpdate(); },
       toggleSound: ()=>{ const m=!s.muted; this.setState({muted:m}); if (window.Arcade) window.Arcade.muted = m; },
       wrapRef: this.wrapRef, gameRef: this.gameRef, pzRef: this.pzRef, scale: s.scale, floorTransform: 'scale(' + s.scale + ')', scaledH: Math.round(FH*s.scale),
@@ -1681,7 +1654,7 @@ class Component extends DCLogic {
       tierCounts: [1,2,3,4].map(t=>({c:TIER[t].c, label:TIER[t].n+' '+achAll.filter((a,i)=>ACH[i].tier==t && a.on).length+'/'+ACH.filter(a=>a.tier==t).length})),
       nextAch: achAll.filter(a=>!a.on && !a.secret).sort((a,b)=>b.pct-a.pct).slice(0,3),
       openAch: ()=>{ this.keys = {}; this.setState({achOpen:true}); }, closeAch: ()=>this.setState({achOpen:false}), achOpen: s.achOpen,
-      achFilters: ['All','Arcade','Machines','Learning','Golden Ticket','Collections','Rebirth','Secret','Unlocked','Locked'].map(f=>({label:f, bg: filt==f?'#015640':'#ffffff', fg: filt==f?'#ffffff':'#015640', pick:()=>this.setState({achFilter:f})})),
+      achFilters: ['All','Arcade','Machines','Learning','Collections','Rebirth','Secret','Unlocked','Locked'].map(f=>({label:f, bg: filt==f?'#015640':'#ffffff', fg: filt==f?'#ffffff':'#015640', pick:()=>this.setState({achFilter:f})})),
       achShown,
       // account
       acctHeadLabel: s.account ? '● '+(me?me.name:s.account) : 'SIGN UP / LOG IN', acctHeadBg: s.account ? 'transparent' : '#D5F367', acctHeadFg: s.account ? '#D5F367' : '#015640',

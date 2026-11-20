@@ -125,7 +125,7 @@ W.catalog = build;
 const PERK_GAMES = ['snake','breakout','flappy','pong','memory','whack','tictactoe','reaction','typing','simon','mines','connect4','td','crossing','stack','rootout','trace','idle'];
 const GNAME = {snake:'Snake',breakout:'Breakout',flappy:'Flapper',pong:'Pong',memory:'Memory Match',whack:'Whack-a-Gopher',tictactoe:'Tic-Tac-Toe',reaction:'Reaction Test',typing:'Typing Race',simon:'Simon Says',mines:'Minesweeper',connect4:'Connect 4',td:'Trailhead Defense',crossing:'Critter Crossing',stack:'Timber Stack',rootout:'Root Out',trace:'Trace & Write',idle:'The Mines'};
 const HEAD_EXP = [['claw','Claw Machine'],['booth','Prize Booth'],['snack','Snack Bar'],['row','Cabinet Row']];
-const PERK_KINDS = ['all','game','click','learn','jack','head','combo','critter','workshop','buff'];
+const PERK_KINDS = ['all','game','learn','jack','workshop','combo','critter','buff','game','all'];
 const r2 = x => Math.round(x*100)/100;
 const mkPerk = (k, s, si) => { const q = Math.pow(s, .75), w = Math.pow(s, .6);
   switch (k) {
@@ -193,9 +193,9 @@ const colMult = P => Math.pow(1.2, Object.keys(P.colDone||{}).length);
 const loginMult = P => 1 + Math.min(30, (P.login||{}).streak||0) * (lv(P,'daily') ? MSHOP[2].eff(lv(P,'daily')) : .01);
 const comboN = P => { const c = P.combo||{}, E2 = window.WLE, warm = E2 ? E2.comboWarmMs(P) : 300000; return c.t && Date.now() - c.t > warm ? 1 : (c.n||1); };
 const comboMult = P => { const E2 = window.WLE, cap = E2 ? E2.comboCap(P) : 10, str = E2 ? E2.comboStrength(P) : 1; return 1 + Math.min(cap, Math.max(0, comboN(P)-1)) * (lv(P,'combo') ? MSHOP[1].eff(lv(P,'combo')) : .01) * str; };
-W.globalMult = P => MSHOP[0].eff(lv(P,'global')) * starMult(P) * colMult(P) * loginMult(P) * W.perks(P).all;
+W.globalMult = P => MSHOP[0].eff(lv(P,'global')) * starMult(P) * colMult(P) * loginMult(P) * W.perks(P).all * (window.WLE ? window.WLE.treeAll(P) : 1);
 W.totalMult = (P, g) => W.globalMult(P) * comboMult(P) * (g ? GAME_UP.eff(glv(P,g)) * (W.perks(P).game[g]||1) : 1) * (window.WLE ? window.WLE.gameMult(P) : 1);
-W.breakdown = P => [['Ticket Multiplier', MSHOP[0].eff(lv(P,'global'))], ['Golden Stars ('+(P.stars||0)+')', starMult(P)], ['Collections ('+Object.keys(P.colDone||{}).length+')', colMult(P)], ['Login streak ('+(((P.login||{}).streak)||0)+' days)', loginMult(P)], ['Golden Star prizes', W.perks(P).all], ['Combo streak ('+(((P.combo||{}).n)||0)+')', comboMult(P)]];
+W.breakdown = P => [['Ticket Multiplier', MSHOP[0].eff(lv(P,'global'))], ['Golden Stars ('+(P.stars||0)+')', starMult(P)], ['Collections ('+Object.keys(P.colDone||{}).length+')', colMult(P)], ['Login streak ('+(((P.login||{}).streak)||0)+' days)', loginMult(P)], ['Golden Star prizes', W.perks(P).all], ['Star Tree', window.WLE ? window.WLE.treeAll(P) * window.WLE.gameMult(P) : 1], ['Combo streak ('+(((P.combo||{}).n)||0)+')', comboMult(P)]];
 
 // ---------------- hooks the arcade calls ----------------
 // A game paid out `tix` base tickets: apply multipliers, combo and lucky jackpots.
@@ -360,7 +360,7 @@ W.mount = (root, api) => {
   const wrap = E('div', {cls:'wlp'+(api.lowFx()?' wlp-low':'')}); root.appendChild(wrap);
   const P = () => api.P();
   const set = patch => { api.setP(patch); };
-  const tabs = [['shop','Prize Shop'],['trophy','Trophy Room'],['mult','Multipliers'],['chal','Challenges'],['caps','Capsules'],['rebirth','Rebirth ⭐'],['stats','Most Played']];
+  const tabs = [['shop','Prize Shop'],['trophy','Trophy Room'],['mult','Multipliers'],['chal','Challenges'],['caps','Capsules'],['rebirth','Rebirth ⭐'],['tree','Star Tree 🌳'],['stats','Most Played']];
   // keep challenges current
   { const p = W.ensureChal(P(), games); if (p) set(p); }
 
@@ -513,7 +513,7 @@ W.mount = (root, api) => {
   const rebirth = () => { const p = P(), box = E('div'), need = W.rebirthNeed(p), stars = W.rebirthStars(p), pct = Math.min(100, (p.tickets||0)/need*100);
     box.appendChild(E('div', {cls:'wlp-box', style:{border:'3px solid #F9BF01'}},
       E('div', {style:{fontWeight:800, fontSize:'20px', color:'#015640'}}, '⭐ Rebirth'),
-      E('div', {cls:'wlp-small'}, 'When you reach the milestone you Rebirth automatically: your tickets, Multiplier upgrades and Arcade Expansions reset, every game’s saved run restarts, the whole Upgrade Workshop resets, and The Mines clears its miners, ore and mine upgrades (you keep the depth you reached). In return you get Golden Stars: they boost every ticket forever (×'+W.fmt(starMult(p))+' right now), buy Star prizes with permanent powers and unlock Golden Hall prizes and cabinet skins — and The Mines’ max miner level grows 15% (now '+(function(){ let m = 30; for (let i=0;i<(p.rebirths||0);i++) m = Math.floor(m*1.15); return m; })()+'). You keep high scores, prizes, collections and achievements.'),
+      E('div', {cls:'wlp-small'}, 'When you reach the milestone you Rebirth automatically: your tickets and Multiplier upgrades reset, every game’s saved run restarts, the whole Upgrade Workshop resets, and The Mines clears its miners, ore and mine upgrades (you keep the depth you reached). In return you get Golden Stars: they boost every ticket forever (×'+W.fmt(starMult(p))+' right now), buy Star prizes with permanent powers and unlock Golden Hall prizes and cabinet skins — and The Mines’ max miner level grows 15% (now '+(function(){ let m = 30; for (let i=0;i<(p.rebirths||0);i++) m = Math.floor(m*1.15); return m; })()+'). You keep high scores, prizes, collections and achievements.'),
       E('div', {style:{marginTop:'10px', fontWeight:700}}, 'Rebirths: '+(p.rebirths||0)+' · Golden Stars earned: '+(p.stars||0)+' ('+freeStars(p)+' to spend) · star bonus ×'+W.fmt(starMult(p))),
       E('div', {style:{marginTop:'6px', fontSize:'13px'}}, 'Next milestone: '+W.fmt(need)+' tickets'),
       E('div', {cls:'wlp-small'}, 'Milestones: '+[0,1,2,3,4,5].map(i=>W.fmt(1e7*Math.pow(1000,(p.rebirths||0)+i))).join(' → ')+' → …'),
@@ -536,7 +536,8 @@ W.mount = (root, api) => {
     return box; };
 
   const render = () => { if (!live) return; renderHead(); body.innerHTML = '';
-    body.appendChild(({shop, trophy, mult, chal, caps, rebirth, stats}[tab] || shop)()); };
+    const tree = () => window.WLE ? window.WLE.treePanel({P, setP:set, sfx:api.sfx, toast:api.toast, admin:api.admin, rerender:()=>render()}) : E('div', null, 'Star Tree is loading…');
+    body.appendChild(({shop, trophy, mult, chal, caps, rebirth, tree, stats}[tab] || shop)()); };
   render();
   checkCols();
   return () => { live = false; wrap.remove(); };

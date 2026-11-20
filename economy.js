@@ -1,4 +1,4 @@
-// Wilderland Arcade · IDLE-FREE ECONOMY: Golden Ticket clicker, Arcade Expansions, Golden Critters & boosts, Star Tree.
+// Wilderland Arcade · IDLE-FREE ECONOMY: Golden Critters & boosts, Star Tree, rebirth celebration.
 // Rule: there is NO passive income. Tickets only come from playing games and clicking. Expansions only boost active play.
 (function(){
 'use strict';
@@ -33,7 +33,7 @@ const sumKind = (P, kind) => EXP.filter(x=>x.kind===kind).reduce((a,x)=>a + lvOf
 
 // ---------------- Star Tree (spend Golden Stars; the star BONUS uses all stars ever earned) ----------------
 const TREE = {
-  click: {n:'Clicking', e:'👆', nodes:[['Quick Fingers','Click power ×2'],['Golden Touch','Click power ×2'],['Ticket Tapper','Click power ×3'],['Click Legend','Click power ×3'],['Hand of Stars','Click power ×5']], m:[2,2,3,3,5]},
+  tickets: {n:'Tickets', e:'🎟️', nodes:[['Lucky Pocket','All tickets ×1.5'],['Ticket Magnet','All tickets ×1.5'],['Big Earner','All tickets ×2'],['Ticket Tycoon','All tickets ×2'],['Star Fortune','All tickets ×3']], m:[1.5,1.5,2,2,3]},
   games: {n:'Games', e:'🕹️', nodes:[['Warm Up','Game tickets +25%'],['Pro Player','Game tickets +50%'],['High Score Hero','Game tickets ×2'],['Arcade Master','Game tickets ×2'],['Wilderland Legend','Game tickets ×3']], m:[1.25,1.5,2,2,3]},
   learn: {n:'Learning', e:'📚', nodes:[['Bookworm','Learn bonus ×2'],['Quick Thinker','Learn bonus ×2'],['Brainy','Learn bonus ×3'],['Scholar','Learn-mode games pay ×1.5'],['Genius','Learn-mode games pay ×2']], m:[2,2,3,1.5,2]},
   luck:  {n:'Luck', e:'🍀', nodes:[['Critter Spotter','Golden Critters 25% more often'],['Long Boosts','Boosts last 25% longer'],['Lucky Streak','+5% Lucky Payout chance'],['Golden Hoard','Critter rewards ×2'],['Rainbow Luck','Critters 50% more often']], m:[1,1,1,1,1]},
@@ -46,13 +46,13 @@ const treeProd = (P,b,from=0,to=5) => { let m = 1; for (let i=from;i<Math.min(to
 E.starsFree = P => Math.max(0, (P.stars||0) - (P.starsSpent||0));
 const SP = (P,k) => window.WLP && window.WLP.perks ? window.WLP.perks(P)[k] : 1; // Golden Star prize powers
 E.critterRate = P => (tl(P,'luck')>=1?1.25:1) * (tl(P,'luck')>=5?1.5:1) * SP(P,'critter');
-E.buffLen = P => (1 + .10*lvOf(P,'snack')*expMul(P,'snack')) * (tl(P,'luck')>=2?1.25:1) * SP(P,'buff');
+E.buffLen = P => (tl(P,'luck')>=2?1.25:1) * SP(P,'buff');
 E.luckBonus = P => tl(P,'luck')>=3 ? .05 : 0;
 E.critterReward = P => Math.round((tl(P,'luck')>=4 ? 2 : 1) * SP(P,'buff') * 10) / 10;
 E.comboCap = P => 10 + (tl(P,'combo')>=1?5:0);
 E.comboStrength = P => treeProd(P,'combo',1,2) * treeProd(P,'combo',3,4) * SP(P,'combo');
 E.comboWarmMs = P => tl(P,'combo')>=5 ? Infinity : (tl(P,'combo')>=3 ? 10 : 5) * 60000;
-E.learnMult = P => treeProd(P,'learn',0,3) * (1 + .2*lvOf(P,'resort')*expMul(P,'resort'));
+E.learnMult = P => treeProd(P,'learn',0,3);
 E.learnGameMult = P => treeProd(P,'learn',3,5) * SP(P,'learn');
 
 // ---------------- boosts from Golden Critters (kept in memory, not saved) ----------------
@@ -64,8 +64,9 @@ E.buffMult = kind => live().reduce((m,b) => m * ((b.kind===kind || b.kind==='all
 const addBuff = (P, b) => { const len = b.s * 1000 * E.buffLen(P); BUFFS.push({...b, until: now() + len, len}); window.dispatchEvent(new Event('wl-buffs')); };
 
 // ---------------- multipliers used by the arcade ----------------
-E.allMult = P => 1 + sumKind(P,'all');
-E.gameMult = P => (1 + sumKind(P,'game')) * E.allMult(P) * treeProd(P,'games') * E.buffMult('game');
+E.allMult = P => 1; // (Arcade Expansions were removed)
+E.treeAll = P => treeProd(P,'tickets');
+E.gameMult = P => treeProd(P,'games') * E.buffMult('game');
 E.clickPower = P => { const base = 1 + lvOf(P,'claw')*expMul(P,'claw');
   const pct = 1 + sumKind(P,'clickPct');
   const glob = window.WLP ? window.WLP.globalMult(P) : 1;
@@ -146,16 +147,29 @@ const spawnCritter = () => { const fromLeft = Math.random() < .5, y = 90 + Math.
 const catchCritter = (c, ev) => { if (!host) return; c.remove(); const P = host.P(), R = E.critterReward(P);
   const r = Math.random(); let msg;
   if (r < .42) { addBuff(P, {kind:'all', m:7*R, s:30, n:'FRENZY ×'+(Math.round(7*R*10)/10)}); msg = 'FRENZY! Everything pays ×'+(Math.round(7*R*10)/10)+' for a bit'; }
-  else if (r < .66) { addBuff(P, {kind:'click', m:77*R, s:13, n:'CLICK STORM ×'+(Math.round(77*R*10)/10)}); msg = 'CLICK STORM! Golden Ticket clicks ×'+(Math.round(77*R*10)/10); }
+  else if (r < .66) { addBuff(P, {kind:'game', m:3*R, s:90, n:'DOUBLE TIME ×'+(Math.round(3*R*10)/10)}); msg = 'DOUBLE TIME! Games pay ×'+(Math.round(3*R*10)/10)+' for 90 seconds'; }
   else if (r < .86) { const need = window.WLP ? window.WLP.rebirthNeed(P) : 1e7; const gain = Math.min(Math.max(50, (P.tickets||0)*.15), need*.04) * R; host.addTix(Math.round(gain), {x:ev.clientX, y:ev.clientY}); msg = 'LUCKY JACKPOT! +'+fmt(gain)+' tickets'; }
   else { ticketRain(P); msg = 'TICKET RAIN! Click the falling tickets!'; }
   host.toast(msg); host.sfx('win'); host.setP({critters:(P.critters||0)+1}); };
-const ticketRain = P => { const val = Math.max(5, E.clickPower(P)*10*E.critterReward(P)); const end = now() + 9000*E.buffLen(P);
+const ticketRain = P => { const need = window.WLP ? window.WLP.rebirthNeed(P) : 1e7; const val = Math.max(5, Math.min(need*.0015, Math.max(20, (P.tickets||0)*.004)) * E.critterReward(P)); const end = now() + 9000*E.buffLen(P);
   const drop = () => { if (now() > end) return; const t = el('div', {cls:'wle-rain', style:{left:(20 + Math.random()*(innerWidth-60))+'px', top:'-50px', animationDuration:(3 + Math.random()*2)+'s'}}, '🎟️');
     t.onclick = e => { e.stopPropagation(); t.remove(); host.addTix(Math.round(val), {x:e.clientX, y:e.clientY}); window.Arcade && window.Arcade.tone && window.Arcade.tone(900+Math.random()*400,.05,'triangle',.04); };
     document.body.appendChild(t); setTimeout(()=>t.remove(), 5200); setTimeout(drop, 260); }; drop(); };
 
-// ---------------- the Golden Ticket screen ----------------
+// ---------------- Star Tree panel (shown inside the Prize Counter) ----------------
+E.treePanel = api => { ensureCss(); const p = api.P(), box = el('div', {cls:'wle'});
+  box.appendChild(el('div', {cls:'wle-card', style:{marginBottom:'10px'}}, el('div', {style:{fontWeight:800, fontSize:'18px', color:'#015640'}}, '⭐ Star Tree · '+E.starsFree(p)+' stars to spend'),
+    el('div', {cls:'wle-small'}, 'Spend Golden Stars from Rebirths on permanent upgrades. They never reset. Every star you’ve EARNED still boosts all payouts — spending them here doesn’t lower that bonus. Buy each branch in order.')));
+  const grid = el('div', {style:{display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(170px,1fr))', gap:'10px'}});
+  Object.entries(TREE).forEach(([b, T]) => { const L = tl(p,b), col = el('div', {cls:'wle-card'}, el('div', {style:{fontWeight:800, color:'#015640', marginBottom:'6px'}}, T.e+' '+T.n));
+    T.nodes.forEach(([n,d], i) => { const own = i < L, next = i === L, can = next && E.starsFree(p) >= TCOST[i];
+      const node = el('div', {cls:'wle-node '+(own?'own':next?'next':'lock'), onclick:()=>{ if (api.admin && api.admin()) return api.toast('ADMIN MODE · SHOPPING DISABLED'); if (!can) return api.sfx('bad'); const pp = api.P(); api.setP({tree:{...(pp.tree||{}), [b]:L+1}, starsSpent:(pp.starsSpent||0)+TCOST[i]}); api.sfx('win'); api.toast('STAR TREE · '+n.toUpperCase()); api.rerender(); }},
+        el('div', null, n), el('div', {style:{fontWeight:500}}, d), el('div', {style:{fontSize:'11px'}}, own ? '✓ owned' : TCOST[i]+' ⭐'));
+      col.appendChild(node); if (i < 4) col.appendChild(el('div', {style:{height:'6px', width:'3px', background:own?'#F9BF01':'#d9d5c3', margin:'0 auto'}})); });
+    grid.appendChild(col); });
+  box.appendChild(grid); return box; };
+
+// ---------------- the old Golden Ticket screen (no longer shown) ----------------
 E.mount = (root, api) => {
   ensureCss(); E.attach(api);
   let tab = api.tab || 'click', buyN = 1, clicks = [], pend = 0, pendC = 0, pendT = null, alive = true;
@@ -267,7 +281,7 @@ E.celebrate = (info) => { ensureCss(); const o = el('div', {cls:'wle-celebrate'}
     el('div', {style:{fontWeight:800, fontSize:'32px', color:'#015640', margin:'4px 0'}}, '+'+info.stars+' Golden Star'+(info.stars>1?'s':'')+'!'),
     el('div', {style:{fontSize:'14px', color:'#3d3d3d', marginBottom:'10px'}}, 'You now have '+info.total+' Golden Stars ('+info.free+' to spend in the Star Tree). Every payout is now ×'+fmt(info.starMult)+' from stars.'),
     el('div', {style:{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px', textAlign:'left', fontSize:'13px'}},
-      el('div', {style:{background:'#fff1ef', borderRadius:'12px', padding:'10px'}}, el('b', {style:{color:'#B3001B'}}, 'Reset to zero'), el('div', null, '• Tickets'), el('div', null, '• Arcade Expansions'), el('div', null, '• Upgrade Workshop'), el('div', null, '• Multiplier shop'), el('div', null, '• Saved game runs'), el('div', null, '• The Mines (depth kept)')),
+      el('div', {style:{background:'#fff1ef', borderRadius:'12px', padding:'10px'}}, el('b', {style:{color:'#B3001B'}}, 'Reset to zero'), el('div', null, '• Tickets'), el('div', null, '• Upgrade Workshop'), el('div', null, '• Multiplier shop'), el('div', null, '• Saved game runs'), el('div', null, '• The Mines (depth kept)')),
       el('div', {style:{background:'#eefbe8', borderRadius:'12px', padding:'10px'}}, el('b', {style:{color:'#007a37'}}, 'You keep forever'), el('div', null, '• Golden Stars & Star Tree'), el('div', null, '• Prizes & collections'), el('div', null, '• Achievements'), el('div', null, '• High scores'), el('div', null, '• Avatar & cosmetics'))),
     el('div', {style:{marginTop:'12px', fontWeight:700, color:'#015640'}}, 'Next Rebirth at '+fmt(info.next)+' tickets'),
     el('button', {cls:'wle-btn', style:{marginTop:'14px', padding:'12px 26px', fontSize:'15px'}, onclick:()=>o.remove()}, 'Let’s go!'));
@@ -282,7 +296,7 @@ E.welcome = (info) => { ensureCss(); const o = el('div', {cls:'wle-celebrate', s
     el('div', {style:{fontSize:'48px'}}, '🎟️'), el('div', {style:{fontWeight:800, fontSize:'26px', color:'#015640'}}, 'Welcome to the new arcade!'),
     el('div', {style:{fontSize:'14px', color:'#3d3d3d', margin:'6px 0 10px'}}, 'Your save moved over. Here’s what you have:'),
     el('div', {style:{textAlign:'left', fontSize:'14px', background:'#f6f3e6', borderRadius:'12px', padding:'10px 14px', lineHeight:1.7}}, ...info.lines.map(l => el('div', null, '✓ '+l))),
-    el('div', {style:{textAlign:'left', fontSize:'13px', marginTop:'10px', lineHeight:1.6}}, el('b', null, 'New: '), 'the Golden Ticket you can click, 12 Arcade Expansions, Golden Critters with boosts, the Star Tree, and Rebirth that happens automatically at each milestone. There is no passive income anymore — tickets come from playing and clicking.'),
+    el('div', {style:{textAlign:'left', fontSize:'13px', marginTop:'10px', lineHeight:1.6}}, el('b', null, 'New: '), 'Golden Critters with boosts, the Star Tree in the Prize Counter, Star prizes with permanent powers, and Rebirth that happens automatically at each milestone. There is no passive income — tickets come from playing.'),
     el('button', {cls:'wle-btn', style:{marginTop:'14px', padding:'12px 26px', fontSize:'15px'}, onclick:()=>o.remove()}, 'Start playing'));
   o.appendChild(card); document.body.appendChild(o); };
 
