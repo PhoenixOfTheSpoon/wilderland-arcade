@@ -6,6 +6,7 @@
 'use strict';
 const V = {};
 let AVP = null, AVK = [], TABS = [], svg = null, CURSORS = [];
+const FULL = ['pants','shoes'];   // these tabs show the full-body picture
 const fmt = n => window.WLP ? window.WLP.fmt(n) : String(Math.round(n));
 const nice = x => { x = Number(x); if (x !== x) return 0; if (!(x < 1e300)) return 1e300; if (x < 100) return Math.round(x); const p = Math.pow(10, Math.floor(Math.log10(x)) - 1); return Math.min(1e300, Math.round(x / p) * p); };
 const RC = ['#9aa5a1','#00B451','#2fa8e0','#a64be0','#f2a900','#ff4539','#4a5cff','#ff5fd2']; // same rarity colors as the Prize Counter
@@ -18,6 +19,7 @@ V.price = o => nice(Math.min(250 * Math.pow(1.45, o.r||0), 5e6));
 V.status = (P, cat, i, adm) => { const o = AVP[cat].o[i]; if (!o) return {own:false};
   const bought = !!(P.avOwn||{})[V.key(cat,i)]; let how = 'free', own = true, label = 'Starter item', rar = 0, price = 0;
   if (o.wp) { const it = window.WLP && window.WLP.catalog ? window.WLP.catalog().find(x => x.id === o.wp) : null; how = 'wp'; own = !!(P.prizes||{})[o.wp]; label = 'Comes with the Wilderland prize “'+(it ? it.n : o.n)+'” (Golden Stars)'; rar = 7; }
+  else if (o.one) { how = 'one'; own = !!(window.WLH && window.WLH.norm(P).own.theone); label = 'Only for owners of the pet THE ONE'; rar = 7; }
   else if (o.pr) { how = 'pr'; own = Math.floor((P.rebirths||0)/10) >= o.pr; label = 'Unlocked at Prestige '+o.pr+' ('+(o.pr*10)+' Rebirths)'; rar = 6; }
   else if (o.rb) { how = 'rb'; own = (P.rebirths||0) >= o.rb; label = 'Unlocked at '+o.rb+' Rebirth'+(o.rb>1?'s':''); rar = 5; }
   else if (o.ac) { how = 'ac'; own = (P.ach||[]).length >= o.ac; label = 'Unlocked by: earn '+o.ac+' achievements'; rar = 2; }
@@ -70,16 +72,16 @@ V.mount = (root, api) => { ensureCss(); let tab = api.tab || TABS[0], tryOn = nu
   const wrap = E('div', {cls:'wlv'}); root.appendChild(wrap);
   const P = () => api.P(), adm = () => !!(api.admin && api.admin());
   const cur = () => api.norm(P().avatar);
-  const equip = (k, i) => { api.setP({avatar:{...cur(), [k]:i}}); tryOn = null; api.sfx('blip'); render(); };
+  const equip = (k, i) => { const c = cur(); api.setP({avatar:{...c, [k]: AVP[k].multi ? (c[k] ^ (1<<i)) : i}}); tryOn = null; api.sfx('blip'); render(); };
   const buy = (k, i) => { const p = P(), st = V.status(p, k, i, adm()); if (st.own) return equip(k, i); if (st.how !== 'shop') return api.sfx('bad');
     if (adm()) { api.toast('ADMIN MODE · SHOPPING DISABLED'); return; }
     if ((p.tickets||0) < st.price) { api.sfx('bad'); msg = 'You need '+fmt(st.price - (p.tickets||0))+' more tickets for that.'; render(); return; }
     api.setP({tickets:(p.tickets||0) - st.price, avOwn:{...(p.avOwn||{}), [V.key(k,i)]:true}, avatar:{...cur(), [k]:i}}); tryOn = null; msg = ''; api.sfx('win'); api.toast('AVATAR SHOP · '+AVP[k].o[i].n.toUpperCase()); render(); };
-  const randomize = () => { const p = P(), a = {}; AVK.forEach(k => { const ok = AVP[k].o.map((o,i)=>i).filter(i => V.status(p, k, i, adm()).own); a[k] = ok[Math.floor(Math.random()*ok.length)] || 0; }); api.setP({avatar:a}); tryOn = null; api.sfx('blip'); render(); };
-  const render = () => { wrap.innerHTML = ''; const p = P(), a = cur(), lvl = api.level(p), look = tryOn ? {...a, [tryOn[0]]:tryOn[1]} : a;
+  const randomize = () => { const p = P(), a = {}; AVK.forEach(k => { const ok = AVP[k].o.map((o,i)=>i).filter(i => V.status(p, k, i, adm()).own); a[k] = AVP[k].multi ? 0 : (ok[Math.floor(Math.random()*ok.length)] || 0); }); api.setP({avatar:a}); tryOn = null; api.sfx('blip'); render(); };
+  const render = () => { wrap.innerHTML = ''; const p = P(), a = cur(), lvl = api.level(p), look = tryOn ? {...a, [tryOn[0]]: AVP[tryOn[0]].multi ? (a[tryOn[0]] | (1<<tryOn[1])) : tryOn[1]} : a;
     // top: preview + info + presets
     const tst = tryOn ? V.status(p, tryOn[0], tryOn[1], adm()) : null;
-    const prev = E('div', {cls:'wlv-prev'}, tryOn ? E('div', {cls:'wlv-try'}, 'TRYING ON') : null, E('img', {src: svg(look, lvl), alt:'Your avatar'}),
+    const prev = E('div', {cls:'wlv-prev'}, tryOn ? E('div', {cls:'wlv-try'}, 'TRYING ON') : null, E('div', {style:{display:'flex', gap:'6px', alignItems:'flex-end', justifyContent:'center'}}, E('img', {src: svg(look, lvl), alt:'Your avatar'}), E('img', {src: svg(look, lvl, {full:true}), alt:'Full body', title:'Full body (how you look on the arcade floor)', style:{width:'64px', height:'96px'}})),
       E('div', {style:{fontWeight:800, color:'#015640', marginTop:'4px'}}, api.name()), api.title() ? E('div', {style:{fontSize:'12px', fontWeight:700, color:'#AB2372'}}, '“'+api.title()+'”') : null);
     if (tryOn) { const o = AVP[tryOn[0]].o[tryOn[1]]; prev.append(...[E('div', {cls:'wlv-lk', style:{marginTop:'6px'}}, o.n+' · '+tst.label),
       tst.how === 'shop' ? E('button', {cls:'wlv-btn gold', style:{marginTop:'6px'}, onclick:()=>buy(tryOn[0], tryOn[1])}, 'Buy for '+fmt(tst.price)+' 🎟') : null,
@@ -87,7 +89,7 @@ V.mount = (root, api) => { ensureCss(); let tab = api.tab || TABS[0], tryOn = nu
     const presets = E('div', {style:{display:'flex', gap:'8px', flexWrap:'wrap'}});
     [0,1,2].forEach(n => { const ps = (p.avPresets||[])[n]; presets.appendChild(E('div', {cls:'wlv-preset'}, ps ? E('img', {src: svg(api.norm(ps), lvl), alt:''}) : E('div', {style:{width:'44px', height:'44px', borderRadius:'50%', background:'#ece8d6', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'18px', color:'#9a9a9b'}}, n+1),
       E('div', {style:{display:'flex', gap:'4px'}}, E('button', {cls:'wlv-chip', title:'Save this outfit to slot '+(n+1), onclick:()=>{ const arr = [...(p.avPresets||[null,null,null])]; while (arr.length < 3) arr.push(null); const pp0 = P(); arr[n] = {...cur(), _pet:(pp0.pets||{}).active||null, _title:pp0.title||''}; api.setP({avPresets:arr}); api.toast('OUTFIT + PET + TITLE SAVED TO SLOT '+(n+1)); api.sfx('blip'); render(); }}, 'Save'),
-        ps ? E('button', {cls:'wlv-chip on', title:'Wear outfit '+(n+1), onclick:()=>{ const pa = api.norm(ps), fixed = {}; AVK.forEach(k => { fixed[k] = V.status(P(), k, pa[k], adm()).own ? pa[k] : cur()[k]; }); const pp1 = P(), pt = {}; if (ps._pet && window.WLH && window.WLH.owns(pp1, ps._pet)) pt.pets = {...window.WLH.norm(pp1), active:ps._pet}; if (ps._title != null) pt.title = ps._title; api.setP({avatar:fixed, ...pt}); tryOn = null; api.sfx('blip'); render(); }}, 'Wear') : null))); });
+        ps ? E('button', {cls:'wlv-chip on', title:'Wear outfit '+(n+1), onclick:()=>{ const pa = api.norm(ps), fixed = {}; AVK.forEach(k => { fixed[k] = AVP[k].multi ? AVP[k].o.reduce((m, o, i) => (pa[k] & (1<<i)) && V.status(P(), k, i, adm()).own ? m | (1<<i) : m, 0) : V.status(P(), k, pa[k], adm()).own ? pa[k] : cur()[k]; }); const pp1 = P(), pt = {}; if (ps._pet && window.WLH && window.WLH.owns(pp1, ps._pet)) pt.pets = {...window.WLH.norm(pp1), active:ps._pet}; if (ps._title != null) pt.title = ps._title; api.setP({avatar:fixed, ...pt}); tryOn = null; api.sfx('blip'); render(); }}, 'Wear') : null))); });
     const pins = api.pins();
     const info = E('div', {style:{display:'flex', flexDirection:'column', gap:'10px', minWidth:0}},
       E('div', {cls:'wlv-small'}, 'Level '+lvl+' · '+V.allOwned(p, adm())+' / '+V.totalCount()+' items owned · 🎟 '+fmt(p.tickets||0)+' to spend in the Avatar Shop'),
@@ -107,12 +109,12 @@ V.mount = (root, api) => { ensureCss(); let tab = api.tab || TABS[0], tryOn = nu
       wrap.appendChild(g); return; }
     if (AVP[tab].note) wrap.appendChild(E('div', {cls:'wlv-small', style:{marginBottom:'6px'}}, AVP[tab].note));
     const g = E('div', {cls:'wlv-grid'});
-    AVP[tab].o.forEach((o, i) => { const st = V.status(p, tab, i, adm()), on = a[tab] === i, t = tryOn && tryOn[0]==tab && tryOn[1]==i;
-      const lookI = {...a, [tab]:i}; if (tab=='hair' || tab=='hairc') { lookI.hat = 0; if (tab=='hairc' && !lookI.hair) lookI.hair = 1; }
+    AVP[tab].o.forEach((o, i) => { const st = V.status(p, tab, i, adm()), multi = AVP[tab].multi, on = multi ? !!(a[tab] & (1<<i)) : a[tab] === i, t = tryOn && tryOn[0]==tab && tryOn[1]==i;
+      const lookI = {...a, [tab]: multi ? (1<<i) : i}; if (tab=='hair' || tab=='hairc') { lookI.hat = 0; if (tab=='hairc' && !lookI.hair) lookI.hair = 1; }
       const b = E('button', {cls:'wlv-opt'+(on?' on':'')+(st.own?'':' lock')+(t?' try':''), style:{'--rc':st.rc}, title: o.n+' · '+st.rn+' · '+st.label,
           onclick:()=>{ if (st.own) return equip(tab, i); tryOn = [tab, i]; api.sfx('blip'); render(); }},
-        E('span', {cls:'wlv-rar'}), E('img', {src: svg(lookI, lvl), alt:''}), E('span', {cls:'wlv-nm'}, o.n),
-        E('span', {cls:'wlv-lk'}, st.own ? (on ? 'Wearing' : '') : st.how === 'shop' ? '🎟 '+fmt(st.price) : '🔒 '+st.label));
+        E('span', {cls:'wlv-rar'}), E('img', {src: svg(lookI, lvl, FULL.includes(tab) ? {full:true} : null), alt:'', style: FULL.includes(tab) ? {height:'84px', width:'56px'} : null}), E('span', {cls:'wlv-nm'}, o.n),
+        E('span', {cls:'wlv-lk'}, st.own ? (on ? (AVP[tab].multi ? 'On · tap to remove' : 'Wearing') : (AVP[tab].multi ? 'Tap to add' : '')) : st.how === 'shop' ? '🎟 '+fmt(st.price) : '🔒 '+st.label));
       g.appendChild(b); });
     wrap.appendChild(g);
     wrap.appendChild(E('div', {cls:'wlv-small', style:{marginTop:'10px'}}, 'Tap a locked item to try it on. Starter items are free; others come from the Avatar Shop (tickets), achievements, Rebirths, Prestige, or Wilderland prizes. The colored dot shows its rarity. Other players see your avatar on the leaderboard, in chat and on the floor.')); };
