@@ -416,7 +416,7 @@ H.mount = (root, api) => { H.ensureCss(); const wrap = E('div', {cls:'wlh'}); ro
   const renderHead = () => { head.innerHTML = ''; const p = P(), n = H.norm(p), a = H.active(p), h = H.home(p);
     head.append(E('div', {style:{display:'flex', gap:'8px', flexWrap:'wrap', alignItems:'center', marginBottom:'10px'}},
       E('div', {style:{background:'#D5F367', color:'#015640', borderRadius:'999px', padding:'7px 14px', fontWeight:800}}, '🎟 '+fmt(p.tickets||0)),
-      E('div', {style:{background:'#F9BF01', color:'#121313', borderRadius:'999px', padding:'7px 14px', fontWeight:800}}, '⭐ '+freeStars(p)+' Golden Stars'),
+      E('div', {style:{background:'#F9BF01', color:'#121313', borderRadius:'999px', padding:'7px 14px', fontWeight:800}}, '⭐ '+fmt(freeStars(p))+' Golden Stars'),
       E('div', {style:{background:'#015640', color:'#D5F367', borderRadius:'999px', padding:'7px 14px', fontWeight:800}}, '🐾 '+Object.keys(n.own).length+' / '+PETS.length+' pets'),
       E('div', {style:{background:'#fff', color:'#015640', borderRadius:'999px', padding:'7px 14px', fontWeight:800}}, TIERS[h.tier].e+' '+TIERS[h.tier].n),
       a ? E('div', {cls:'wlh-small'}, 'Active: '+a.pet.n+' · Lv '+a.lv+' · '+H.perkText(a.pet, a.lv)) : null));

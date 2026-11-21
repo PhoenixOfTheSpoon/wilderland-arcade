@@ -409,7 +409,7 @@ W.mount = (root, api) => {
     const top = E('div', {style:{display:'flex', gap:'8px', flexWrap:'wrap', alignItems:'center', marginBottom:'10px'}},
       E('div', {style:{background:'#D5F367', color:'#015640', borderRadius:'999px', padding:'7px 14px', fontWeight:800}}, '🎟 '+W.fmt(p.tickets||0)+' tickets'),
       E('div', {style:{background:'#015640', color:'#D5F367', borderRadius:'999px', padding:'7px 14px', fontWeight:800}, title:'Total multiplier on every game'}, '×'+W.fmt(W.totalMult(p))+' total multiplier'),
-      E('div', {style:{background:'#F9BF01', color:'#121313', borderRadius:'999px', padding:'7px 14px', fontWeight:800}}, '⭐ '+freeStars(p)+' to spend · '+(p.stars||0)+' earned'),
+      E('div', {style:{background:'#F9BF01', color:'#121313', borderRadius:'999px', padding:'7px 14px', fontWeight:800}}, '⭐ '+W.fmt(freeStars(p))+' to spend · '+W.fmt(p.stars||0)+' earned'),
       ...(window.WLE && window.WLE.diamonds(p) ? [E('div', {style:{background:'#C7F1EE', color:'#06324a', borderRadius:'999px', padding:'7px 14px', fontWeight:800}}, '💎 '+window.WLE.diaFree(p)+' Diamond Stars')] : []),
       E('div', {cls:'wlp-small'}, W.ownedCount(p)+' / '+W.total()+' prizes · '+Object.keys(p.colDone||{}).length+' / '+COLS.length+' collections'));
     const opt = E('div', {style:{display:'flex', gap:'6px', flexWrap:'wrap', alignItems:'center', marginBottom:'8px'}}, E('span', {style:{fontSize:'12px', fontWeight:700, color:'#015640'}}, 'BUY'));
@@ -559,7 +559,7 @@ W.mount = (root, api) => {
     box.appendChild(E('div', {cls:'wlp-box', style:{border:'3px solid #F9BF01'}},
       E('div', {style:{fontWeight:800, fontSize:'20px', color:'#015640'}}, '⭐ Rebirth'),
       E('div', {cls:'wlp-small'}, 'When you reach the milestone you Rebirth automatically: your tickets and Multiplier upgrades reset, every game’s saved run restarts, the whole Upgrade Workshop resets, and The Mines clears its miners, ore and mine upgrades (you keep the depth you reached). In return you get Golden Stars: they boost every ticket forever (×'+W.fmt(starMult(p))+' right now), buy Star prizes with permanent powers and unlock Golden Hall prizes and cabinet skins — and The Mines’ max miner level grows 15% (now '+(function(){ let m = 30; for (let i=0;i<(p.rebirths||0);i++) m = Math.floor(m*1.15); return m; })()+'). You keep high scores, prizes, collections and achievements.'),
-      E('div', {style:{marginTop:'10px', fontWeight:700}}, 'Rebirths: '+(p.rebirths||0)+' · Prestige '+(window.WLE?window.WLE.prestige(p):0)+' ('+(window.WLE?window.WLE.diaFree(p):0)+' 💎 to spend · Rebirth '+((p.rebirths||0)%10)+' / 10 to next Diamond Star) · Golden Stars earned: '+(p.stars||0)+' ('+freeStars(p)+' to spend) · star bonus ×'+W.fmt(starMult(p))),
+      E('div', {style:{marginTop:'10px', fontWeight:700}}, 'Rebirths: '+(p.rebirths||0)+' · Prestige '+(window.WLE?window.WLE.prestige(p):0)+' ('+(window.WLE?window.WLE.diaFree(p):0)+' 💎 to spend · Rebirth '+((p.rebirths||0)%10)+' / 10 to next Diamond Star) · Golden Stars earned: '+(p.stars||0)+' ('+W.fmt(freeStars(p))+' to spend) · star bonus ×'+W.fmt(starMult(p))),
       E('div', {style:{marginTop:'6px', fontSize:'13px'}}, 'Next milestone: '+W.fmt(need)+' tickets'),
       E('div', {cls:'wlp-small'}, 'Milestones: '+[0,1,2,3,4,5].map(i=>W.fmt(1e7*Math.pow(1000,(p.rebirths||0)+i))).join(' → ')+' → …'),
       E('div', {cls:'wlp-bar', style:{margin:'6px 0'}}, E('div', {style:{width:pct+'%', background:'#F9BF01'}})),
@@ -610,7 +610,7 @@ W.mount = (root, api) => {
     const host = E('div'); box.appendChild(host); setTimeout(() => { if (live && tab=='avatar') avOff = api.avatar(host); }, 0); return box; };
   // ----- Wilderland prizes (Golden Stars) -----
   const wild = () => { const p = P(), box = E('div');
-    box.appendChild(E('div', {cls:'wlp-box', style:{border:'3px solid #F9BF01'}}, E('div', {style:{fontWeight:800, fontSize:'18px', color:'#015640'}}, '⭐ Wilderland prizes · '+freeStars(p)+' Golden Stars to spend'),
+    box.appendChild(E('div', {cls:'wlp-box', style:{border:'3px solid #F9BF01'}}, E('div', {style:{fontWeight:800, fontSize:'18px', color:'#015640'}}, '⭐ Wilderland prizes · '+W.fmt(freeStars(p))+' Golden Stars to spend'),
       E('div', {cls:'wlp-small'}, 'The rarest prizes. They cost Golden Stars (earned by Rebirthing) and each one gives a permanent power that survives every Rebirth.')));
     box.appendChild(perkCard());
     const gg = E('div', {cls:'wlp-grid', style:{marginTop:'10px'}}); const list = CAT.filter(it => isStar(it) && match(it.n, it.d) && (!affordOnly || freeStars(p) >= starPrice(it,p)));
