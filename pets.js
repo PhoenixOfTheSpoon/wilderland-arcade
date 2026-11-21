@@ -31,15 +31,42 @@ const dk = (hex, f) => { const m = /^#([0-9a-f]{6})$/i.exec(hex||''); if (!m) re
 const wag = (o, d) => '<g>'+at('rotate', '-12 '+o+';14 '+o+';-12 '+o, d||1.1)+'';
 const SP = {
   // THE ONE: a pitch-black crowned dragon with bat wings, ice-blue horns, golden eyes and a pink scarf
-  theone: c => '<g>'+at('rotate','0 -9 -2;-16 -9 -2;0 -9 -2',.8)+'<path d="M-9 -2q-8 -16 -24 -12q4 4 2 7q-6 0 -8 4q6 0 6 5q-5 1 -5 5q10 -4 16 0q4 -6 13 -4z" fill="#1d1d26" stroke="#4a4a5c" stroke-width="1"/><path d="M-20 -6l3 4l-3 4l-3 -4z" fill="#64CDF5"/></g>'
-    +'<g>'+at('rotate','0 9 -2;16 9 -2;0 9 -2',.8)+'<path d="M9 -2q8 -16 24 -12q-4 4 -2 7q6 0 8 4q-6 0 -6 5q5 1 5 5q-10 -4 -16 0q-4 -6 -13 -4z" fill="#1d1d26" stroke="#4a4a5c" stroke-width="1"/><path d="M20 -6l3 4l-3 4l-3 -4z" fill="#64CDF5"/></g>'
-    +wag('12 12',1.3)+'<path d="M11 12q13 3 13 -8l4 -2l-2 5l-3 -1q0 11 -12 10z" fill="#0b0b10"/></g>'
-    +'<path d="M-9 -9q-6 -6 -4 -14q3 6 8 9zM9 -9q6 -6 4 -14q-3 6 -8 9z" fill="#64CDF5"/>'
-    +'<ellipse cx="0" cy="4" rx="14" ry="13" fill="#0b0b10"/><ellipse cx="-4" cy="-2" rx="6" ry="4" fill="#ffffff" opacity=".08"/><ellipse cx="0" cy="9" rx="8" ry="6" fill="#1c1c26"/>'
-    +'<circle cx="-5" cy="0" r="3.4" fill="#F9BF01"/><circle cx="5" cy="0" r="3.4" fill="#F9BF01"/><ellipse cx="-5" cy="0" rx="1" ry="2.6" fill="#000"/><ellipse cx="5" cy="0" rx="1" ry="2.6" fill="#000"/><circle cx="-4" cy="-1.2" r=".7" fill="#fff"/><circle cx="6" cy="-1.2" r=".7" fill="#fff"/>'
-    +'<path d="M-3 6.5q3 2 6 0" stroke="#4a4a5c" stroke-width="1" fill="none"/><path d="M1 7l1 2l1 -2z" fill="#fff"/>'
-    +'<path d="M-10 12q10 6 20 0l1 3q-11 6 -22 0z" fill="#EA55AB"/><path d="M5 14l4 7l3 -1l-3 -6z" fill="#EA55AB"/>'
-    +'<path d="M-9 -11l-1 -9l5 4l5 -7l5 7l5 -4l-1 9z" fill="#F9BF01" stroke="#c48a00" stroke-width="1"/><circle cx="0" cy="-15" r="1.8" fill="#EA55AB"/>',
+  theone: c => {
+    // pitch-black crowned dragon: void-flame aura, a spinning event-horizon ring, glowing veined wings, burning gold eyes, rising embers
+    const A = (attr, v, d) => an(attr, v, d), R = (v, d) => at('rotate', v, d);
+    let s = '<defs><radialGradient id="oneAura"><stop offset="0" stop-color="#000" stop-opacity="0"/><stop offset=".55" stop-color="#3a0a6a" stop-opacity=".55"/><stop offset=".8" stop-color="#64CDF5" stop-opacity=".35"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>'
+      +'<linearGradient id="oneRing" x1="0" x2="1"><stop offset="0" stop-color="#ff5fd2"/><stop offset=".5" stop-color="#64CDF5"/><stop offset="1" stop-color="#b48cff"/></linearGradient>'
+      +'<radialGradient id="oneBody" cx=".4" cy=".3"><stop offset="0" stop-color="#2a2a3a"/><stop offset=".6" stop-color="#0b0b12"/><stop offset="1" stop-color="#000"/></radialGradient>'
+      +'<linearGradient id="oneWing" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a1030"/><stop offset="1" stop-color="#05050a"/></linearGradient>'
+      +'<radialGradient id="oneEye"><stop offset="0" stop-color="#fff6b0"/><stop offset=".5" stop-color="#F9BF01"/><stop offset="1" stop-color="#ff7a1a"/></radialGradient></defs>';
+    // void aura + flame tendrils
+    s += '<circle r="30" fill="url(#oneAura)">'+A('r','28;31;28',1.8)+'</circle>';
+    s += '<g opacity=".8">'+R('0;360',14)+[0,1,2,3,4,5].map(i => '<path transform="rotate('+(i*60)+')" d="M0 -18q6 -6 2 -13q5 3 4 9q3 -2 2 -6q4 5 -1 11z" fill="'+(i%2?'#3a0a6a':'#1a2a5a')+'"/>').join('')+'</g>';
+    // event-horizon ring (tilted, spinning)
+    s += '<g transform="rotate(-18)"><ellipse rx="27" ry="7" fill="none" stroke="url(#oneRing)" stroke-width="1.6" stroke-dasharray="10 4 2 4" opacity=".95">'+A('stroke-dashoffset','0;40',2)+'</ellipse></g>';
+    // wings with glowing veins
+    const wing = side => '<g>'+R('0 '+(9*side)+' -2;'+(-18*side)+' '+(9*side)+' -2;0 '+(9*side)+' -2',.9)+'<g transform="scale('+side+' 1)"><path d="M9 -2q6 -20 26 -16q-5 4 -3 8q7 0 9 5q-7 0 -7 6q5 1 5 6q-11 -5 -17 0q-4 -7 -13 -5z" fill="url(#oneWing)" stroke="#64CDF5" stroke-width=".8"/>'
+      +'<path d="M10 -2l22 -13M11 0l25 -4M11 2l20 6" stroke="#64CDF5" stroke-width=".7" opacity=".7">'+A('opacity','.25;.9;.25',1.6)+'</path><path d="M24 -8l3 4l-3 4l-3 -4z" fill="#64CDF5">'+A('opacity','.5;1;.5',1.2)+'</path></g></g>';
+    s += wing(-1) + wing(1);
+    // tail with a crystal tip
+    s += wag('12 12',1.3)+'<path d="M11 12q13 3 13 -8l4 -2l-2 5l-3 -1q0 11 -12 10z" fill="#05050a" stroke="#3a3a55" stroke-width=".6"/><path d="M27 -8l3 3l-3 3l-3 -3z" fill="#ff5fd2"/></g>';
+    // horns
+    s += '<path d="M-9 -9q-7 -6 -5 -15q4 7 9 10zM9 -9q7 -6 5 -15q-4 7 -9 10z" fill="#64CDF5" stroke="#bff0ff" stroke-width=".5"/>';
+    // body + scales
+    s += '<ellipse cx="0" cy="4" rx="14" ry="13" fill="url(#oneBody)" stroke="#3a3a55" stroke-width=".6"/><path d="M-6 10q6 4 12 0M-5 13q5 3 10 0" stroke="#2a2a40" stroke-width=".8" fill="none"/>';
+    // burning eyes
+    s += '<g><circle cx="-5" cy="0" r="5" fill="#F9BF01" opacity=".25">'+A('r','4;6;4',1.4)+'</circle><circle cx="5" cy="0" r="5" fill="#F9BF01" opacity=".25">'+A('r','4;6;4',1.4)+'</circle></g>'
+      +'<circle cx="-5" cy="0" r="3.4" fill="url(#oneEye)"/><circle cx="5" cy="0" r="3.4" fill="url(#oneEye)"/><ellipse cx="-5" cy="0" rx=".9" ry="2.7" fill="#000"/><ellipse cx="5" cy="0" rx=".9" ry="2.7" fill="#000"/><circle cx="-4" cy="-1.3" r=".7" fill="#fff"/><circle cx="6" cy="-1.3" r=".7" fill="#fff"/>';
+    s += '<path d="M-3 6.5q3 2 6 0" stroke="#4a4a5c" stroke-width="1" fill="none"/><path d="M-1.5 7l.8 2l.8 -2zM1 7l.8 2l.8 -2z" fill="#fff"/>';
+    // pink scarf blowing
+    s += '<path d="M-10 12q10 6 20 0l1 3q-11 6 -22 0z" fill="#EA55AB"/><g>'+R('0 6 14;12 6 14;0 6 14',1.1)+'<path d="M5 14l5 7l3 -1l-4 -6z" fill="#EA55AB"/></g>';
+    // crown with a pulsing gem
+    s += '<path d="M-9 -11l-1 -9l5 4l5 -7l5 7l5 -4l-1 9z" fill="#F9BF01" stroke="#c48a00" stroke-width="1"/><circle cx="-6" cy="-15" r=".9" fill="#64CDF5"/><circle cx="6" cy="-15" r=".9" fill="#64CDF5"/><circle cx="0" cy="-15" r="2" fill="#EA55AB">'+A('r','1.6;2.4;1.6',1)+'</circle>';
+    // rising embers
+    s += [[-16,0],[14,4],[-8,10],[18,-6],[0,14]].map(([x,y],i) => '<circle cx="'+x+'" cy="'+y+'" r="1" fill="'+(i%2?'#64CDF5':'#b48cff')+'">'+A('cy',y+';'+(y-26),(1.6+i*.3).toFixed(1))+A('opacity','1;0',(1.6+i*.3).toFixed(1))+'</circle>').join('');
+    // lightning crackle
+    s += '<path d="M-22 -14l4 6l-3 1l5 8" stroke="#bff0ff" stroke-width="1" fill="none" opacity="0">'+A('opacity','0;0;0;1;0;0;0;0',3)+'</path><path d="M22 8l-4 -6l3 -1l-5 -8" stroke="#bff0ff" stroke-width="1" fill="none" opacity="0">'+A('opacity','0;0;0;0;0;0;1;0',3.4)+'</path>';
+    return '<g transform="scale(.78)">'+s+'</g>'; },
   gopher: c => '<ellipse cx="0" cy="4" rx="15" ry="14" fill="url(#pg)"/><circle cx="-11" cy="-8" r="4" fill="'+c[1]+'"/><circle cx="11" cy="-8" r="4" fill="'+c[1]+'"/><ellipse cx="0" cy="8" rx="9" ry="8" fill="'+c[2]+'"/>'+eyes(-2,5.5)+'<ellipse cx="0" cy="3" rx="2.4" ry="1.7" fill="#5a3a2a"/><rect x="-2" y="5" width="4" height="4" rx="1" fill="#fff"/>'+cheeks(3,9),
   owl: c => '<path d="M-14 -10l4 6M14 -10l-4 6" stroke="'+c[1]+'" stroke-width="4" stroke-linecap="round"/><ellipse cx="0" cy="3" rx="14" ry="17" fill="url(#pg)"/><ellipse cx="0" cy="8" rx="9" ry="10" fill="'+c[2]+'"/><path d="M-14 0q-6 10 0 16M14 0q6 10 0 16" fill="'+c[1]+'"/><circle cx="-5.5" cy="-3" r="5.5" fill="#fff"/><circle cx="5.5" cy="-3" r="5.5" fill="#fff"/>'+eyes(-3,5.5,2.8)+'<path d="M-2 1l2 4l2-4z" fill="#F9BF01"/>',
   frog: c => '<ellipse cx="0" cy="6" rx="17" ry="12" fill="url(#pg)"/><circle cx="-8" cy="-5" r="6" fill="'+c[0]+'"/><circle cx="8" cy="-5" r="6" fill="'+c[0]+'"/>'+eyes(-5,8,3)+'<ellipse cx="0" cy="10" rx="10" ry="6" fill="'+c[2]+'"/><path d="M-6 4q6 4 12 0" stroke="#121313" stroke-width="1.3" fill="none"/>'+cheeks(5,11)+'<ellipse cx="-14" cy="16" rx="5" ry="2.5" fill="'+c[1]+'"/><ellipse cx="14" cy="16" rx="5" ry="2.5" fill="'+c[1]+'"/>',
@@ -83,15 +110,18 @@ const hatSVG = (h, y) => { y = y||-14; switch(h) {
   default: return ''; } };
 // Evolutions: Lv 10 sparkle markings · Lv 25 grown up + glowing crest · Lv 50 legendary aura and halo
 // Pets go to Lv 500 with 10 forms. Lv 100+ forms add their own looks: Elder aura, orbiting stars, light wings, star ring, rainbow aura, leaf crown.
-const MAXLV = 500, EVO_AT = [0, 10, 25, 50, 100, 150, 200, 300, 400, 500];
+const MAXLV = Infinity, EVO_AT = [0, 10, 25, 50, 100, 150, 200, 300, 400, 500, 750, 1000, 1500, 2000, 3000, 5000];
 const evoOf = lv => { let e = 0; for (let i = 1; i < EVO_AT.length; i++) if (lv >= EVO_AT[i]) e = i; return e; };
-const EVO_N = ['Baby', 'Young', 'Grown', 'Legendary', 'Elder', 'Mythic', 'Ascended', 'Celestial', 'Eternal', 'Wilderland Spirit'];
+const EVO_N = ['Baby', 'Young', 'Grown', 'Legendary', 'Elder', 'Mythic', 'Ascended', 'Celestial', 'Eternal', 'Wilderland Spirit', 'Primordial', 'Infinite', 'Cosmic Titan', 'World Guardian', 'Starborn', 'Beyond'];
 H.MAXLV = MAXLV; H.EVO_AT = EVO_AT; H.EVO_N = EVO_N; H.evoOf = evoOf;
 H.nextEvo = lv => { const e = evoOf(lv); return e < EVO_AT.length-1 ? {lv:EVO_AT[e+1], n:EVO_N[e+1]} : null; };
 let gid = 0;
 H.petInner = (pet, o) => { o = o || {}; const lv = o.lv || 1, ev = evoOf(lv), c = tint(pet.c, o.variant|0), id = 'pg'+(++gid);
   let s = '<defs>'+shade(id, c[0] == '#ffffff' ? '#ffffff' : dk(c[0], 1.25), dk(c[0], .78))+(ev >= 8 ? '<radialGradient id="'+id+'rb"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".6" stop-color="#ff5fd2"/><stop offset=".8" stop-color="#64CDF5"/><stop offset="1" stop-color="#D5F367" stop-opacity="0"/></radialGradient>' : '')+'</defs>';
-  if (pet.r >= 8) s += '<circle r="27" fill="#2a0a4a" opacity=".35">'+an('r','25;29;25',2.4)+'</circle><circle r="23" fill="none" stroke="#64CDF5" stroke-width="1" stroke-dasharray="1 5" opacity=".9">'+an('stroke-dashoffset','0;12',1.5)+'</circle>';
+  // forms past Wilderland Spirit: a coloured backdrop and a second ring that spins the other way, more stars each form
+  if (ev >= 10) { const col = ['#ff7a1a','#64CDF5','#b48cff','#00B451','#F9BF01','#ffffff'][Math.min(5, ev-10)];
+    s += '<circle r="31" fill="'+col+'" opacity=".18">'+an('opacity','.12;.28;.12',2)+'</circle><circle r="30" fill="none" stroke="'+col+'" stroke-width="1.2" stroke-dasharray="2 3" opacity=".9">'+an('stroke-dashoffset','0;-20',2.5)+'</circle>'
+      +Array.from({length:ev-7}, (_, i) => { const a = i/(ev-7)*Math.PI*2; return '<circle cx="'+(Math.cos(a)*29).toFixed(1)+'" cy="'+(Math.sin(a)*29).toFixed(1)+'" r="1.4" fill="'+col+'">'+an('r','1;2;1',1+i*.15)+'</circle>'; }).join(''); }
   if (ev >= 8) s += '<circle r="29" fill="url(#'+id+'rb)" opacity=".55">'+an('opacity','.35;.65;.35',2.5)+'</circle>';
   if (ev >= 6) { const wc = ev >= 9 ? '#D5F367' : '#ffffff'; s += '<g fill="'+wc+'" stroke="'+(ev >= 9 ? '#00B451' : '#b48cff')+'" stroke-width="1" opacity=".9"><path d="M-6 0q-17 -16 -24 -4q8 -2 11 6q-7 0 -9 7q10 -3 22 -6z"/><path d="M6 0q17 -16 24 -4q-8 -2 -11 6q7 0 9 7q-10 -3 -22 -6z"/></g>'; }
   if (ev >= 4) s += '<circle r="26" fill="none" stroke="'+(ev >= 9 ? '#00B451' : ev >= 5 ? '#b48cff' : '#64CDF5')+'" stroke-width="1.6" stroke-dasharray="3 4" opacity=".8">'+an('stroke-dashoffset','0;14',2)+'</circle>';
@@ -261,12 +291,22 @@ const TIERS = [
   {n:'Mountain Keep',     e:'🏔️', grid:[11,8], rooms:['living','pets','bed','trophy','library'], mul:.2},
   {n:'Wilderland Castle', e:'🏰', grid:[12,8], rooms:['living','pets','bed','trophy','library','hall'], mul:.3},
   {n:'Sky Citadel',       e:'☁️', grid:[12,9], rooms:['living','pets','bed','trophy','library','hall','sky'], mul:.45},
+  // beyond the clouds: every tier adds a room that comes with its own built-in furniture
+  {n:'Moon Palace',         e:'🌙', grid:[13,9],  room:'moon',    mul:.65, sky:'#0b1030', col:'#d8dcff'},
+  {n:'Star Forge Fortress', e:'⭐', grid:[13,10], room:'forge',   mul:.9,  sky:'#1a0f2a', col:'#ff9f3a'},
+  {n:'Crystal Spire',       e:'💎', grid:[14,10], room:'spire',   mul:1.2, sky:'#10203a', col:'#9fd8ff'},
+  {n:'Ocean Temple',        e:'🐚', grid:[14,10], room:'ocean',   mul:1.6, sky:'#0a3a5a', col:'#3fd2c8'},
+  {n:'Volcano Lair',        e:'🌋', grid:[14,11], room:'lava',    mul:2.1, sky:'#2a0a06', col:'#ff5a2a'},
+  {n:'Aurora Observatory',  e:'🌌', grid:[15,11], room:'aurora',  mul:2.7, sky:'#06142a', col:'#6affc8'},
+  {n:'Galaxy Dome',         e:'🪐', grid:[15,11], room:'galaxy',  mul:3.5, sky:'#050418', col:'#b48cff'},
+  {n:'Wilderland Heaven',   e:'🌲', grid:[16,12], room:'heaven',  mul:5,   sky:'#e8fff0', col:'#00B451'},
 ];
+TIERS.forEach((T, i) => { if (!T.rooms) T.rooms = [...TIERS[i-1].rooms, T.room]; });
 H.TIERS = TIERS;
-const ROOMS = {living:'Living Room', pets:'Pet Corner', bed:'Bedroom', trophy:'Trophy Room', library:'Library', hall:'Great Hall', sky:'Sky Deck', yard:'Yard & Garden'};
-const ROOM_LOOK = {living:['#c9a77a','#8a6a44','#e8d6b0'], pets:['#a8d08a','#5a8a4a','#e8f5d8'], bed:['#b8a8d8','#6a5a9a','#ece4ff'], trophy:['#d8c08a','#8a6a2a','#fff3d0'], library:['#a8784a','#5a3a1c','#e8d0b0'], hall:['#c8c8d8','#6a6a8a','#f0f0ff'], sky:['#bfe6ff','#64CDF5','#ffffff'], yard:['#7cc46a','#3f8a3c','#d8f0c8']};
-H.homeCost = (P, t) => t <= 0 ? 0 : nice(Math.min(need(P)*.5, Math.max(2000*Math.pow(4, t), need(P) * [0,.003,.01,.03,.08,.18,.35][t])));   // always below your next Rebirth
-H.home = P => { const h = P.home && typeof P.home == 'object' ? P.home : {}; return {tier:h.tier|0, rooms:h.rooms || {}, inv:h.inv || {}, flag:h.flag || '#00B451', name:h.name || ''}; };
+const ROOMS = {living:'Living Room', pets:'Pet Corner', bed:'Bedroom', trophy:'Trophy Room', library:'Library', hall:'Great Hall', sky:'Sky Deck', yard:'Yard & Garden', moon:'Moon Garden', forge:'Star Forge', spire:'Crystal Gallery', ocean:'Coral Hall', lava:'Lava Lounge', aurora:'Aurora Deck', galaxy:'Galaxy Bridge', heaven:'Spirit Grove'};
+const ROOM_LOOK = {living:['#c9a77a','#8a6a44','#e8d6b0'], pets:['#a8d08a','#5a8a4a','#e8f5d8'], bed:['#b8a8d8','#6a5a9a','#ece4ff'], trophy:['#d8c08a','#8a6a2a','#fff3d0'], library:['#a8784a','#5a3a1c','#e8d0b0'], hall:['#c8c8d8','#6a6a8a','#f0f0ff'], sky:['#bfe6ff','#64CDF5','#ffffff'], yard:['#7cc46a','#3f8a3c','#d8f0c8'], moon:['#c8ccea','#5a5e8a','#eef0ff'], forge:['#8a5a3a','#3a2014','#ffcf8a'], spire:['#bfe6ff','#4a7ab0','#ffffff'], ocean:['#7ad8d0','#1a6a7a','#d8fff8'], lava:['#5a2a1a','#2a0a06','#ff9f6a'], aurora:['#2a4a5a','#0a1a2a','#9affd8'], galaxy:['#2a1f4a','#0a0618','#d8c8ff'], heaven:['#d8ffe0','#5ac87a','#ffffff']};
+H.homeCost = (P, t) => t <= 0 ? 0 : nice(Math.min(need(P)*.5, Math.max(2000*Math.pow(4, t), need(P) * ([0,.003,.01,.03,.08,.18,.35][t] || Math.min(.5, .38 + (t-7)*.016)))));   // always below your next Rebirth
+H.home = P => { const h = P.home && typeof P.home == 'object' ? P.home : {}; return {...h, tier:h.tier|0, rooms:h.rooms || {}, inv:h.inv || {}, flag:h.flag || '#00B451', name:h.name || ''}; };
 // furniture: w×h in grid cells; set = themed set (bonus when all its pieces are placed); yard items only go outside
 const F_ = (id, n, w, h, set, src, extra) => ({id, n, w, h, set, src, ...(extra||{})});
 const FURN = [
@@ -281,6 +321,16 @@ const FURN = [
   F_('arcade','Mini Arcade Cabinet',1,2,'',{ach:'variety:2'}), F_('piano','Little Piano',2,1,'',{ach:'simon_plays:1'}),
   F_('fence','Picket Fence',2,1,'',{t:0},{yard:1}), F_('path','Stone Path',1,1,'',{t:0},{yard:1}), F_('tree','Oak Tree',2,2,'',{t:0},{yard:1}), F_('flowers','Flower Bed',2,1,'',{t:0},{yard:1}),
   F_('mailbox','Mailbox',1,1,'',{t:0},{yard:1}), F_('flag','Flag Pole',1,2,'',{t:0},{yard:1, flag:1}), F_('pond','Duck Pond',3,2,'',{t:2},{yard:1}), F_('gnome','Garden Gnome',1,1,'',{t:1},{yard:1}), F_('swing','Tire Swing',1,2,'',{t:1},{yard:1}),
+  // built-in pieces: each new room beyond the Sky Citadel comes furnished
+  ...[['moon',  [['moonfount','Moon Fountain',2,2,'⛲'],['scope','Star Telescope',1,2,'🔭'],['moonlamp','Moon Lamp',1,1,'🌙'],['moonbench','Crater Bench',2,1,'🪨']]],
+      ['forge', [['anvil','Star Anvil',2,1,'⚒️'],['furnace','Star Furnace',2,2,'🔥'],['sword','Legend Blade',1,2,'🗡️'],['gemrack','Gem Rack',1,1,'💠']]],
+      ['spire', [['prism','Giant Prism',2,2,'🔷'],['cthrone','Crystal Throne',2,2,'💎'],['harp','Crystal Harp',1,2,'🎼'],['cglow','Glow Shard',1,1,'✨']]],
+      ['ocean', [['tank','Coral Aquarium',3,2,'🐠'],['clam','Pearl Clam Bed',2,2,'🦪'],['anchor','Old Anchor',1,2,'⚓'],['shellamp','Shell Lamp',1,1,'🐚']]],
+      ['lava',  [['lavapool','Lava Hot Tub',3,2,'♨️'],['obsid','Obsidian Sofa',2,1,'🛋️'],['dragegg','Dragon Egg Stand',1,1,'🥚'],['magma','Magma Lamp',1,1,'🌋']]],
+      ['aurora',[['bigscope','Great Observatory',2,3,'🔭'],['globe','Star Globe',1,1,'🌐'],['skybed','Hammock in the Sky',3,1,'🌌'],['comet','Comet Lamp',1,1,'☄️']]],
+      ['galaxy',[['helm','Ship\u2019s Helm',2,2,'🛸'],['planets','Planet Mobile',2,2,'🪐'],['blackhole','Tiny Black Hole',1,1,'🕳️'],['astro','Astro Statue',1,2,'👨‍🚀']]],
+      ['heaven',[['worldtree','World Tree',3,3,'🌳'],['spring','Spirit Spring',2,2,'💧'],['shrine','Wilderland Shrine',2,2,'⛩️'],['wisps','Wisp Lanterns',1,1,'🏮']]]]
+    .flatMap(([rm, list]) => list.map(([id, n, w, h, e]) => F_(id, n, w, h, '', {built:rm}, {emo:e, light:1}))),
 ];
 H.FURN = FURN;
 const SETS = {cozy:{n:'Cozy Cabin', e:'🛋️'}, crystal:{n:'Crystal Cave', e:'💎'}, space:{n:'Space Station', e:'🚀'}, ruins:{n:'Ancient Ruins', e:'🏛️'}, royal:{n:'Royal Castle', e:'👑'}};
@@ -288,6 +338,7 @@ H.SETS = SETS;
 const fById = id => FURN.find(f => f.id == id);
 H.furnPrice = (P, f) => nice(Math.max(150, need(P) * .0015) * Math.pow(1.9, f.src.t || 0) * (f.w*f.h > 3 ? 1.6 : 1));
 H.furnStatus = (P, f) => { const s = f.src, ti = s.t != null ? s.t : null;
+  if (s.built) { const bt = TIERS.findIndex(T => T.room == s.built); return {free:H.home(P).tier >= bt, how:'Built into the '+TIERS[bt].n+' ('+ROOMS[s.built]+')'}; }
   if (ti != null) { const t = H.home(P).tier; return t >= ti ? {buy:true, price:H.furnPrice(P, f), how:'Shop · '+fmt(H.furnPrice(P, f))+' 🎟'} : {how:'Shop · unlocks with the '+TIERS[ti].n}; }
   if (s.ach) { const [fa, t] = s.ach.split(':'); return {free:((P.at||{})[fa]|0) > +t, how:'Achievement reward'}; }
   if (s.mine) return s.mine.depth ? {free:st(P,'mineDepth') >= s.mine.depth, how:'Mine treasure · reach layer '+s.mine.depth} : {free:st(P,'mineChests') >= s.mine.chests, how:'Mine treasure · open '+s.mine.chests+' treasure rooms'};
@@ -297,7 +348,7 @@ H.furnStatus = (P, f) => { const s = f.src, ti = s.t != null ? s.t : null;
 // how many of an item you have in total (placed + in inventory); reward items give one free copy
 const placedCount = (h, id) => Object.values(h.rooms).reduce((a, r) => a + (r||[]).filter(x => x.i == id).length, 0);
 H.setsDone = P => { const h = H.home(P); return Object.keys(SETS).filter(k => FURN.filter(f => f.set == k).every(f => placedCount(h, f.id) > 0)); };
-H.homeMult = P => (1 + TIERS[Math.min(6, H.home(P).tier)].mul) * Math.pow(1.03, H.setsDone(P).length);
+H.homeMult = P => (1 + TIERS[Math.min(TIERS.length-1, H.home(P).tier)].mul) * Math.pow(1.03, H.setsDone(P).length);
 
 // ---------------- furniture art (drawn in a w*40 × h*40 box) ----------------
 const night = () => { const hr = new Date().getHours(); return hr < 7 || hr >= 19; };
@@ -349,7 +400,9 @@ H.furnSVG = (f, P) => { const W = f.w*40, Hh = f.h*40, low = lowFx(); let s = ''
     case 'pond': s = '<ellipse cx="60" cy="40" rx="56" ry="34" fill="#2f7de0"/><ellipse cx="60" cy="40" rx="48" ry="27" fill="#64CDF5"/><g>'+(low?'':'<animateTransform attributeName="transform" type="translate" values="0 0;20 4;0 0" dur="6s" repeatCount="indefinite"/>')+'<ellipse cx="44" cy="38" rx="7" ry="5" fill="#F9BF01"/><circle cx="50" cy="33" r="3.5" fill="#F9BF01"/><path d="M53 33l3 1l-3 1z" fill="#FF8A3C"/></g>'; break;
     case 'gnome': s = '<path d="M10 22l10 -20l10 20z" fill="#FF4539"/><circle cx="20" cy="24" r="6" fill="#f2c9a0"/><path d="M14 26q6 10 12 0" fill="#fff"/>'+box(12,30,16,8,'#2f7de0',3); break;
     case 'swing': s = '<path d="M20 0v40" stroke="#8D5B1D" stroke-width="2"/><g>'+(low?'':'<animateTransform attributeName="transform" type="rotate" values="-8 20 0;8 20 0;-8 20 0" dur="2.4s" repeatCount="indefinite"/>')+'<path d="M20 0v44" stroke="#5a3a1c" stroke-width="1.5"/><ellipse cx="20" cy="56" rx="12" ry="8" fill="#2a2a30"/><ellipse cx="20" cy="56" rx="6" ry="3.5" fill="#7cc46a"/></g>'; break;
-    default: s = box(4,4,W-8,Hh-8,'#c9a77a',4);
+    default: if (f.emo) { const col = (TIERS.find(T => T.room == f.src.built) || {}).col || '#F9BF01', fs = Math.min(W, Hh)*.7;
+      s = '<ellipse cx="'+W/2+'" cy="'+(Hh-6)+'" rx="'+(W/2-4)+'" ry="5" fill="rgba(0,0,0,.25)"/>'+'<circle cx="'+W/2+'" cy="'+Hh/2+'" r="'+(Math.min(W,Hh)/2-3)+'" fill="'+col+'" opacity=".3">'+(low?'':'<animate attributeName="opacity" values=".2;.45;.2" dur="2.4s" repeatCount="indefinite"/>')+'</circle>'+'<text x="'+W/2+'" y="'+(Hh/2+fs*.35)+'" font-size="'+fs+'" text-anchor="middle">'+f.emo+'</text>'; break; }
+      s = box(4,4,W-8,Hh-8,'#c9a77a',4);
   }
   return s; };
 H.furnImg = (f, P) => 'data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+(f.w*40)+' '+(f.h*40)+'">'+H.furnSVG(f, P)+'</svg>');
@@ -362,7 +415,15 @@ H.houseSVG = (t, P) => { const n = night(), sky = n ? '#14204a' : '#bfe6ff', fc 
   if (t == 3) s += '<rect y="52" width="64" height="12" fill="#2f7de0"/><path d="M8 50v-18h48v18z" fill="#a8784a"/><path d="M4 32l28 -16l28 16z" fill="#5a3a1c"/>'+win(13,36)+win(29,36)+win(45,36)+'<rect x="28" y="42" width="8" height="8" fill="#3a2414"/>';
   if (t == 4) s += '<path d="M0 50l16 -30l14 22l12 -18l22 26z" fill="#8a8e94"/><path d="M14 50v-20h36v20z" fill="#9a9a9b"/><path d="M14 30h36M14 30v-4h6v4m6 0v-4h6v4m6 0v-4h6v4" stroke="#7a7a7d" stroke-width="2" fill="none"/>'+win(20,36)+win(38,36)+'<path d="M28 50v-8q4 -4 8 0v8z" fill="#3a2414"/>';
   if (t == 5) s += '<rect x="10" y="26" width="10" height="24" fill="#c8c8d8"/><rect x="44" y="26" width="10" height="24" fill="#c8c8d8"/><rect x="18" y="32" width="28" height="18" fill="#d8d8e8"/><path d="M8 26l7 -10l7 10zM42 26l7 -10l7 10z" fill="#a64be0"/>'+win(12,32)+win(46,32)+'<path d="M28 50v-10q4 -5 8 0v10z" fill="#5a3a1c"/><path d="M32 32v-14" stroke="#9a9a9b" stroke-width="1.4"/><path d="M32 18h8l-2 3l2 3h-8z" fill="'+fc+'"/>';
-  if (t >= 6) s += '<ellipse cx="32" cy="52" rx="26" ry="7" fill="#fff"/><ellipse cx="20" cy="50" rx="10" ry="6" fill="#fff"/><ellipse cx="46" cy="50" rx="10" ry="6" fill="#fff"/><rect x="18" y="24" width="28" height="24" fill="#f0f0ff"/><rect x="14" y="18" width="8" height="30" fill="#e0e8ff"/><rect x="42" y="18" width="8" height="30" fill="#e0e8ff"/><path d="M12 18l6 -10l6 10zM40 18l6 -10l6 10zM24 24l8 -14l8 14z" fill="#64CDF5"/>'+win(28,30)+'<circle cx="32" cy="10" r="2" fill="#F9BF01">'+an('opacity','1;.3;1',1.5)+'</circle>';
+  if (t == 6) s += '<ellipse cx="32" cy="52" rx="26" ry="7" fill="#fff"/><ellipse cx="20" cy="50" rx="10" ry="6" fill="#fff"/><ellipse cx="46" cy="50" rx="10" ry="6" fill="#fff"/><rect x="18" y="24" width="28" height="24" fill="#f0f0ff"/><rect x="14" y="18" width="8" height="30" fill="#e0e8ff"/><rect x="42" y="18" width="8" height="30" fill="#e0e8ff"/><path d="M12 18l6 -10l6 10zM40 18l6 -10l6 10zM24 24l8 -14l8 14z" fill="#64CDF5"/>'+win(28,30)+'<circle cx="32" cy="10" r="2" fill="#F9BF01">'+an('opacity','1;.3;1',1.5)+'</circle>';
+  if (t >= 7) { const T = TIERS[t], c = T.col, low = lowFx();
+    // a themed sky, then a tall palace in the tier colour with its emoji on top; higher tiers get more towers and floating islands
+    s = '<rect width="64" height="64" rx="12" fill="'+T.sky+'"/>'+Array.from({length:10}, (_, i) => '<circle cx="'+((i*23)%60+2)+'" cy="'+((i*17)%30+3)+'" r=".9" fill="'+(t == 14 ? '#00B451' : '#fff')+'" opacity=".8"/>').join('')
+      +'<ellipse cx="32" cy="56" rx="28" ry="7" fill="'+c+'" opacity=".45"/>';
+    const tw = Math.min(5, t-5); for (let k = 0; k < tw; k++) { const x = 32 + (k - (tw-1)/2)*10, hh = 20 + (k == Math.floor(tw/2) ? 14 : 6); s += '<rect x="'+(x-4)+'" y="'+(54-hh)+'" width="8" height="'+hh+'" rx="2" fill="'+c+'"/><path d="M'+(x-5)+' '+(54-hh)+'l5 -7l5 7z" fill="#fff" opacity=".85"/>'+win(x-3, 58-hh+6); }
+    s += '<rect x="16" y="40" width="32" height="14" rx="3" fill="'+c+'" opacity=".9"/><path d="M28 54v-8q4 -4 8 0v8z" fill="rgba(0,0,0,.45)"/>'
+      +'<circle cx="32" cy="12" r="7" fill="#fff" opacity=".25">'+(low?'':'<animate attributeName="r" values="6;8;6" dur="2s" repeatCount="indefinite"/>')+'</circle><text x="32" y="16" font-size="11" text-anchor="middle">'+T.e+'</text>'
+      +'<path d="M44 '+(30)+'v-8l6 3l-6 3" fill="'+fc+'"/>'; }
   return 'data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'+s+'</svg>'); };
 
 // =====================================================================================================================
@@ -382,15 +443,18 @@ const MOUNTS = [
   {k:'cart', n:'Minecart', sp:1.3, how:'Reach layer 25 of The Mines', ok:P=>st(P,'mineDepth') >= 25},
   {k:'cloud', n:'Cloud', sp:1.45, how:'Prestige 1', ok:P=>prestige(P) >= 1},
   {k:'drake', n:'Baby Dragon', sp:1.6, how:'6 Golden Stars (Wilderland mount)', star:6},
+  {k:'theone', n:'THE ONE', sp:2.5, how:'Comes with the pet THE ONE', ok:()=>false, pet:'theone'},
 ];
 H.MOUNTS = MOUNTS;
-H.ride = P => { const m = (P.mounts||{}).on; return m && (P.mounts.own||{})[m] ? MOUNTS.find(x => x.k == m) : null; };
+const ownsMount = (P, k) => !!(((P.mounts||{}).own||{})[k] || (k == 'theone' && H.norm(P).own.theone));   // own THE ONE pet → you can ride it too
+H.ride = P => { const m = (P.mounts||{}).on; return m && ownsMount(P, m) ? MOUNTS.find(x => x.k == m) : null; };
 H.speed = P => { const m = H.ride(P); return m ? m.sp : 1; };
 H.mountSVG = k => { let s = '';
   if (k == 'snail') s = '<path d="M4 54q0 -8 10 -8h34q8 0 8 8z" fill="#c9ccd1"/><circle cx="26" cy="38" r="14" fill="#e9b9f7"/><path d="M26 38m-9 0a9 9 0 1 1 9 9a6 6 0 1 1 -6 -6a2 2 0 1 1 2 2" stroke="#a64be0" stroke-width="2.4" fill="none"/><path d="M50 46q0 -10 6 -14" stroke="#c9ccd1" stroke-width="3" fill="none"/>';
   if (k == 'cart') s = '<path d="M8 36h48l-6 16h-36z" fill="#6a6d72"/><path d="M8 36h48" stroke="#4b4d50" stroke-width="4"/><circle cx="20" cy="54" r="5" fill="#121313"/><circle cx="44" cy="54" r="5" fill="#121313"/><circle cx="20" cy="54" r="2" fill="#9a9a9b"/><circle cx="44" cy="54" r="2" fill="#9a9a9b"/>';
   if (k == 'cloud') s = '<g>'+at('translate','0 1;0 -2;0 1',1.6)+'<ellipse cx="32" cy="50" rx="26" ry="9" fill="#fff"/><circle cx="18" cy="46" r="9" fill="#fff"/><circle cx="34" cy="42" r="11" fill="#fff"/><circle cx="48" cy="46" r="8" fill="#fff"/><ellipse cx="32" cy="54" rx="22" ry="4" fill="#e0e8ff"/></g>';
   if (k == 'drake') s = '<g>'+at('rotate','0 14 40;-20 14 40;0 14 40',.7)+'<path d="M14 40q-14 -16 -14 4q8 -2 12 4z" fill="#F9BF01"/></g><g>'+at('rotate','0 50 40;20 50 40;0 50 40',.7)+'<path d="M50 40q14 -16 14 4q-8 -2 -12 4z" fill="#F9BF01"/></g><ellipse cx="32" cy="48" rx="22" ry="11" fill="#00B451"/><path d="M52 44q10 -6 8 -16l-6 4z" fill="#00B451"/><circle cx="57" cy="30" r="2" fill="#121313"/><path d="M10 50q-8 2 -8 -6" stroke="#00B451" stroke-width="5" fill="none"/>';
+  if (k == 'theone') s = '<g transform="translate(32 34) scale(1.15)">'+SP.theone()+'</g>';
   return 'data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">'+s+'</svg>'); };
 
 // =====================================================================================================================
@@ -488,7 +552,7 @@ H.mount = (root, api) => { H.ensureCss(); const wrap = E('div', {cls:'wlh'}); ro
         E('div', {style:{flex:'1 1 260px', minWidth:0, display:'flex', flexDirection:'column', gap:'6px'}},
           E('div', {cls:'wlh-tier', style:{color:r.c}}, r.n.toUpperCase()+' · '+EVO_N[evoOf(lv)].toUpperCase()), E('div', {style:{fontWeight:800, fontSize:'20px', color:'#015640'}}, pet.n),
           E('div', {style:{fontWeight:700, color:'#AB2372', fontSize:'13px'}}, PERK[pet.perk.k].e+' Perk: '+H.perkText(pet, lv)+(lv < 60 ? '  →  next level: '+H.perkText(pet, lv+1) : ' · MAX')),
-          E('div', {cls:'wlh-small'}, 'Level '+lv+' / '+MAXLV+(lv<MAXLV?' · '+fmt(d.xp)+' / '+fmt(nx)+' XP':' · MAX')+(H.nextEvo(lv) ? ' · next form: '+H.nextEvo(lv).n+' at Lv '+H.nextEvo(lv).lv : ' · final form!')), E('div', {cls:'wlh-bar'}, E('div', {style:{width:pct+'%'}})),
+          E('div', {cls:'wlh-small'}, 'Level '+fmt(lv)+' · '+fmt(d.xp)+' / '+fmt(nx)+' XP · no level limit'+(H.nextEvo(lv) ? ' · next form: '+H.nextEvo(lv).n+' at Lv '+H.nextEvo(lv).lv : ' · final form!')), E('div', {cls:'wlh-bar'}, E('div', {style:{width:pct+'%'}})),
           E('div', {style:{display:'flex', gap:'6px', flexWrap:'wrap', marginTop:'4px'}},
             E('button', {cls:'wlh-btn'+(n.active==pet.id?' alt':''), onclick:()=>{ const nn = H.norm(P()); set({pets:{...nn, active: nn.active == pet.id ? null : pet.id}}); api.sfx('blip'); api.toast(nn.active == pet.id ? 'PET PUT AWAY' : pet.n.toUpperCase()+' IS NOW YOUR ACTIVE PET'); render(); }}, n.active==pet.id ? 'Put away' : 'Make active'),
             E('button', {cls:'wlh-btn gold', onclick:feed}, '🍓 Feed a treat ('+n.treats+')')),
@@ -541,7 +605,14 @@ H.mount = (root, api) => { H.ensureCss(); const wrap = E('div', {cls:'wlh'}); ro
     api.sfx(best.r >= 3 ? 'win' : 'coin'); render(); };
 
   // ---------------- HOME ----------------
-  const home = () => { const p = P(), h = H.home(p), T = TIERS[h.tier], box = E('div'), nt = night(), hr = new Date().getHours();
+  // rooms beyond the Sky Citadel come furnished: the first time you open one, its built-in pieces are placed for you
+  const furnishBuiltIns = () => { const pp = P(), hh = H.home(pp), T0 = TIERS[hh.tier]; let rooms2 = null, flags = {};
+    T0.rooms.forEach(rmk => { if (hh['built_'+rmk]) return; const list = FURN.filter(f => f.src.built == rmk); if (!list.length) return;
+      const T1 = TIERS.find(T => T.room == rmk), [gw2] = T1.grid, placed = [...(hh.rooms[rmk] || [])]; let x = 1, y = 2, rowH = 0;
+      list.forEach(f => { if (x + f.w > gw2 - 1) { x = 1; y += rowH + 1; rowH = 0; } placed.push({i:f.id, x, y, rot:0}); x += f.w + 1; rowH = Math.max(rowH, f.h); flags['got_'+f.id] = 1; });
+      rooms2 = {...(rooms2 || hh.rooms), [rmk]:placed}; flags['built_'+rmk] = 1; });
+    if (rooms2) { set({home:{...hh, ...flags, rooms:rooms2}}); api.toast('NEW ROOM FURNISHED · BUILT-IN PIECES ARE IN PLACE'); } };
+  const home = () => { furnishBuiltIns(); const p = P(), h = H.home(p), T = TIERS[h.tier], box = E('div'), nt = night(), hr = new Date().getHours();
     const rooms = [...T.rooms, 'yard']; if (!rooms.includes(room)) room = rooms[0];
     // header: tier, upgrade, bonus
     const next = TIERS[h.tier+1], cost = next ? H.homeCost(p, h.tier+1) : 0;
@@ -587,10 +658,19 @@ H.mount = (root, api) => { H.ensureCss(); const wrap = E('div', {cls:'wlh'}); ro
     // night lighting: dim the room, lamps glow (drawn inside the lamp art)
     if (nt) rm.appendChild(E('div', {style:{position:'absolute', inset:0, background:'rgba(20,30,80,.28)', pointerEvents:'none', zIndex:40}}));
     else if (hr >= 17) rm.appendChild(E('div', {style:{position:'absolute', inset:0, background:'rgba(255,160,60,.12)', pointerEvents:'none', zIndex:40}}));
+    // see-through preview of the piece you're placing: follows the mouse; on a touch screen the first tap moves it, a second tap on the same spot places it
+    let ghost = null, gx = -1, gy = -1;
+    const cellOf = e => { const r = rm.getBoundingClientRect(); return [Math.floor((e.clientX-r.left)/(CS*zoom)), Math.floor((e.clientY-r.top)/(CS*zoom))]; };
+    const showGhost = (x, y) => { const f = fById(placing); if (!f) return; const px = Math.max(0, Math.min(x, gw - f.w)), py = Math.max(0, Math.min(y, gh - f.h)), ok = fits(f, px, py, 0); gx = px; gy = py;
+      if (!ghost) { ghost = E('img', {src:H.furnImg(f, p), alt:'', style:{position:'absolute', width:f.w*CS+'px', height:f.h*CS+'px', pointerEvents:'none', zIndex:45, opacity:'.55', borderRadius:'6px', transition:'left .06s, top .06s'}}); rm.appendChild(ghost); }
+      Object.assign(ghost.style, {left:px*CS+'px', top:py*CS+'px', outline:'3px dashed '+(ok ? '#00B451' : '#FF4539'), background: ok ? 'rgba(0,180,81,.15)' : 'rgba(255,69,57,.2)'}); };
+    if (placing) rm.addEventListener('pointermove', e => { if (e.pointerType != 'mouse') return; const [x, y] = cellOf(e); showGhost(x, y); });
+    if (placing) rm.addEventListener('pointerleave', () => { if (ghost) { ghost.remove(); ghost = null; } });
     // tap an empty spot to place the chosen item
-    rm.onpointerdown = e => { if (e.target !== rm && !e.target.style.backgroundImage) return; const r = rm.getBoundingClientRect(), x = Math.floor((e.clientX-r.left)/(CS*zoom)), y = Math.floor((e.clientY-r.top)/(CS*zoom));
+    rm.onpointerdown = e => { if (e.target !== rm && !e.target.style.backgroundImage) return; const [x, y] = cellOf(e);
       if (!placing) { sel = null; render(); return; } const f = fById(placing); const hh = H.home(P()), have = hh.inv[f.id]|0;
-      if (have <= 0) { placing = null; render(); return; } const px = Math.min(x, gw - f.w), py = Math.min(y, gh - f.h);
+      if (have <= 0) { placing = null; render(); return; } const px = Math.max(0, Math.min(x, gw - f.w)), py = Math.max(0, Math.min(y, gh - f.h));
+      if (e.pointerType != 'mouse' && (px !== gx || py !== gy)) { showGhost(x, y); api.sfx('blip'); return; }   // touch: first tap previews
       if (!fits(f, px, py, 0)) { api.toast('NO ROOM THERE · TRY ANOTHER SPOT'); api.sfx('bad'); return; }
       const list = [...items, {i:f.id, x:px, y:py, rot:0}]; set({home:{...hh, inv:{...hh.inv, [f.id]:have-1}, rooms:{...hh.rooms, [room]:list.map(({i,x,y,rot})=>({i,x,y,rot:rot?1:0}))}}}); api.sfx('coin'); if (have-1 <= 0) placing = null; render(); };
     // pinch / wheel zoom
@@ -607,7 +687,7 @@ H.mount = (root, api) => { H.ensureCss(); const wrap = E('div', {cls:'wlh'}); ro
         E('button', {cls:'wlh-btn alt', onclick:()=>{ if (!fits(f, it.x, it.y, !it.rot, it.k)) { api.toast('NO ROOM TO ROTATE HERE'); return api.sfx('bad'); } save(items.map(o => o.k === it.k ? {...o, rot:o.rot?0:1} : o)); api.sfx('blip'); render(); }}, '⟳ Rotate'),
         E('button', {cls:'wlh-btn', style:{background:'#FF4539'}, onclick:()=>{ const hh = H.home(P()); const list = items.filter(o => o.k !== it.k); set({home:{...hh, inv:{...hh.inv, [f.id]:(hh.inv[f.id]|0)+1}, rooms:{...hh.rooms, [room]:list.map(({i,x,y,rot})=>({i,x,y,rot:rot?1:0}))}}}); sel = null; api.sfx('blip'); render(); }}, '✕ Remove'),
         E('button', {cls:'wlh-chip', onclick:()=>{ sel = null; render(); }}, 'Done')); }
-    else if (placing) tools.append(E('b', {style:{color:'#AB2372'}}, 'Tap an empty spot to place your '+fById(placing).n), E('button', {cls:'wlh-chip', onclick:()=>{ placing = null; render(); }}, 'Cancel'));
+    else if (placing) tools.append(E('b', {style:{color:'#AB2372'}}, 'Move over the room to preview your '+fById(placing).n+' (on a touch screen: tap once to preview, tap the same spot again to place). Green = fits, red = no room.'), E('button', {cls:'wlh-chip', onclick:()=>{ placing = null; render(); }}, 'Cancel'));
     else tools.append(E('span', {cls:'wlh-small'}, 'Pick something from your storage, then tap the room to place it. Tap furniture to move, rotate or put it away.'));
     box.appendChild(tools);
     // storage + shop
@@ -632,10 +712,11 @@ H.mount = (root, api) => { H.ensureCss(); const wrap = E('div', {cls:'wlh'}); ro
     box.appendChild(g);
     box.appendChild(E('div', {cls:'wlh-box', style:{marginTop:'12px'}}, E('div', {style:{fontWeight:800, fontSize:'18px', color:'#015640'}}, '🐌 Mounts'), E('div', {cls:'wlh-small'}, 'Rare rides for the arcade floor. A mount makes you walk faster. Only one can be ridden at a time.')));
     const mg = E('div', {cls:'wlh-grid'}), M = p.mounts || {}, own = M.own || {};
-    MOUNTS.forEach(m => { const has = own[m.k], on = M.on == m.k, card = E('div', {cls:'wlh-card'+(on?' on':''), style:{'--rc': m.star ? '#ff5fd2' : '#2fa8e0', cursor:'default'}}, E('img', {src:H.mountSVG(m.k), alt:'', style:{width:'72px', height:'72px'}}), E('div', {cls:'wlh-nm'}, m.n), E('div', {cls:'wlh-small'}, 'Walk ×'+m.sp.toFixed(2)));
+    MOUNTS.forEach(m => { const has = ownsMount(p, m.k), on = M.on == m.k, card = E('div', {cls:'wlh-card'+(on?' on':''), style:{'--rc': m.star ? '#ff5fd2' : '#2fa8e0', cursor:'default'}}, E('img', {src:H.mountSVG(m.k), alt:'', style:{width:'72px', height:'72px'}}), E('div', {cls:'wlh-nm'}, m.n), E('div', {cls:'wlh-small'}, 'Walk ×'+m.sp.toFixed(2)));
       if (has) card.appendChild(E('button', {cls:'wlh-btn'+(on?' alt':''), onclick:()=>{ set({mounts:{...M, own, on: on ? '' : m.k}}); api.sfx('blip'); render(); }}, on ? 'Get off' : 'Ride'));
       else if (m.price) { const pr = m.price(p), b = E('button', {cls:'wlh-btn', onclick:()=>{ if (api.admin()) return api.toast('ADMIN MODE · SHOPPING DISABLED'); const pp = P(); if ((pp.tickets||0) < pr) return api.sfx('bad'); set({tickets:pp.tickets - pr, mounts:{...(pp.mounts||{}), own:{...((pp.mounts||{}).own||{}), [m.k]:1}, on:m.k}}); api.sfx('win'); render(); }}, fmt(pr)+' 🎟'); if ((p.tickets||0) < pr) b.disabled = true; card.appendChild(b); }
       else if (m.star) { const b = E('button', {cls:'wlh-btn gold', onclick:()=>{ if (api.admin()) return api.toast('ADMIN MODE · SHOPPING DISABLED'); const pp = P(); if (freeStars(pp) < m.star) return api.sfx('bad'); set({starsSpent:(pp.starsSpent||0) + m.star, mounts:{...(pp.mounts||{}), own:{...((pp.mounts||{}).own||{}), [m.k]:1}, on:m.k}}); api.sfx('win'); render(); }}, m.star+' ⭐'); if (freeStars(p) < m.star) b.disabled = true; card.appendChild(b); }
+      else if (m.pet) card.appendChild(E('div', {style:{fontSize:'10px', color:'#AB2372', fontWeight:700}}, '🔒 '+m.how));
       else if (m.ok(p)) card.appendChild(E('button', {cls:'wlh-btn gold', onclick:()=>{ const pp = P(); set({mounts:{...(pp.mounts||{}), own:{...((pp.mounts||{}).own||{}), [m.k]:1}, on:m.k}}); api.sfx('win'); render(); }}, 'Claim'));
       else card.appendChild(E('div', {style:{fontSize:'10px', color:'#AB2372', fontWeight:700}}, '🔒 '+m.how));
       mg.appendChild(card); });
