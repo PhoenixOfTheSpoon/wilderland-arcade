@@ -70,6 +70,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
       <button onClick="{{ openChat }}" title="Chat (T)" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">CHAT · T</button>
       <button onClick="{{ toggleAutoRb }}" title="Rebirth automatically when you reach the milestone" style="background:{{ autoRbBg }}; color:{{ autoRbFg }}; border:1.5px solid #F9BF01; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;">{{ autoRbLabel }}</button>
       <sc-if value="{{ rbReady }}" hint-placeholder-val="{{ false }}"><button onClick="{{ rebirthNow }}" style="background:#F9BF01; color:#121313; border:none; border-radius:999px; padding:8px 14px; font-weight:800; font-size:13px; cursor:pointer; white-space:nowrap;">⭐ REBIRTH NOW</button></sc-if>
+ <button onClick="{{ siteFsBtn }}" title="Full screen for the whole site (Y)" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;">⛶ FULL SCREEN · Y</button>
       <button onClick="{{ toggleFx }}" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">{{ fxLabel }}</button>
     </div>
   </header>
@@ -351,7 +352,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
           <div ref="{{ gameRef }}" style="position:absolute; left:{{ gameLeft }}px; top:{{ gameTop }}px; width:{{ gameW }}px; min-height:480px; transform:scale({{ gameScale }}); transform-origin:0 0;"></div>
         </div>
         <sc-if value="{{ padShow }}" hint-placeholder-val="{{ false }}">
-          <div onContextMenu="{{ noMenu }}" style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; touch-action:none; user-select:none; -webkit-user-select:none;">
+          <div onContextMenu="{{ noMenu }}" style="display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; touch-action:none; user-select:none; -webkit-user-select:none; position:{{ padPos }}; left:10px; right:10px; bottom:{{ padBottom }}; z-index:{{ padZ }};">
             <div style="display:grid; grid-template-columns:repeat(3,56px); grid-template-rows:repeat(2,52px); gap:6px;">
               <sc-for list="{{ padDpad }}" as="b" hint-placeholder-count="6"><button onPointerDown="{{ b.down }}" onPointerUp="{{ b.up }}" onPointerLeave="{{ b.up }}" onPointerCancel="{{ b.up }}" aria-label="{{ b.aria }}" style="visibility:{{ b.vis }}; border:none; border-radius:14px; background:#015640; color:#D5F367; font-size:20px; font-weight:700; cursor:pointer; touch-action:none;">{{ b.label }}</button></sc-for>
             </div>
@@ -1392,7 +1393,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-11-27b';
+const BUILD = '2026-11-27c';
 const SCRIPTS = ['arcade-core.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
@@ -1403,7 +1404,7 @@ class Component extends DCLogic {
     if (acct && !getAccts()[acct]) acct = null;
     this.acct = acct; this.P = loadP(this.profKey());
     this.state = Object.assign({}, this.P, {account:acct,
-      calOpen:(typeof location!='undefined' && location.hash=='#calendar'),immortal:false,autoHint:true,codeOpen:false,codeVal:'',codeMsg:'',admin:false,px:760,py:905,vw:(typeof window!='undefined'?window.innerWidth:1200),gameH:480,padOn:(typeof window!='undefined'&&(('ontouchstart' in window)||(window.matchMedia&&window.matchMedia('(pointer: coarse)').matches))),learnOpen:false,pinIn:'',pinNew:'',pinNew2:'',pinMsg:'',pinAsk:'',pinFails:0,pinLock:0,pinMode:'',lbOpen:false,lbGame:'_tix',lbMode:'all',uOpen:false,uVal:'',uMsg:'',clearArm:false,dir:[0,1],game:null,liveScore:0,payout:'',prizesOpen:false,toasts:[],scale:1,muted:false,
+      calOpen:(typeof location!='undefined' && location.hash=='#calendar'),immortal:false,autoHint:true,codeOpen:false,codeVal:'',codeMsg:'',admin:false,px:760,py:905,vw:(typeof window!='undefined'?window.innerWidth:1200),gameH:480,padOn:(()=>{ try { const v = localStorage.getItem('wl-pad'); if (v) return v == '1'; } catch(e){} return typeof window!='undefined'&&(('ontouchstart' in window)||(window.matchMedia&&window.matchMedia('(pointer: coarse)').matches)); })(),learnOpen:false,pinIn:'',pinNew:'',pinNew2:'',pinMsg:'',pinAsk:'',pinFails:0,pinLock:0,pinMode:'',lbOpen:false,lbGame:'_tix',lbMode:'all',uOpen:false,uVal:'',uMsg:'',clearArm:false,dir:[0,1],game:null,liveScore:0,payout:'',prizesOpen:false,toasts:[],scale:1,muted:false,
       authOpen:false,authMode:'signup',aEmail:'',aPass:'',aPass2:'',aName:'',aShow:false,aRemember:true,aBring:true,aMsg:'',aBusy:false,aFails:0,aLock:0,aTouched:false,
       achOpen:false,achFilter:'All'});
     this.keys = {}; this.gameRef = React.createRef(); this.pzRef = React.createRef(); this.achRef = React.createRef(); this.avRef = React.createRef(); this.homeRef = React.createRef(); this.calRef = React.createRef();
@@ -1519,6 +1520,7 @@ class Component extends DCLogic {
     this.kd = e => {
       const k = e.key.length==1 ? e.key.toLowerCase() : e.key;
       if (k=='Escape') { if (this.state.fs) { this.setFs(false); return; } if (this.state.chatOpen) { this.closeChat(); return; } this.closeAll(); this.setState({codeOpen:false}); return; }
+      if (k=='y' && !this.state.game && !this.state.chatOpen && !(e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName))) { e.preventDefault(); this.siteFs(); return; }
       if (k=='y' && this.state.game && !(e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) && !(this.state.game=='typing' && !e.shiftKey)) { e.preventDefault(); this.setFs(!this.state.fs); return; }
       const tg = e.target && e.target.tagName; if (tg=='INPUT' || tg=='TEXTAREA' || tg=='SELECT') return;
       if (this.state.kickUntil > Date.now() && !this.state.admin) return;
@@ -1743,6 +1745,8 @@ class Component extends DCLogic {
     if (!this._actOff) this._actOff = C.actListen(list => { if (!list) return this.setState({actErr:'Activity can’t load right now.'}); this.setState({actRows:list, actErr:''}); }); }
   closeActivity(){ if (this._actOff) { try { this._actOff(); } catch(e){} this._actOff = null; } }
   // Full screen: the game box fills the screen and the game scales to fit without stretching (works on phones too).
+  // Full screen for the whole site (floor, shop, calendar…): the browser's own full screen
+  siteFs(){ try { if (document.fullscreenElement) document.exitFullscreen().catch(()=>{}); else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(()=>{}); else if (document.documentElement.webkitRequestFullscreen) document.documentElement.webkitRequestFullscreen(); } catch(e){} setTimeout(()=>this.setState({vw:window.innerWidth, vh:window.innerHeight}), 300); }
   setFs(on){ if (!!this.state.fs === !!on) return; this.setState({fs:!!on, vw:window.innerWidth, vh:window.innerHeight});
     try { if (on && document.documentElement.requestFullscreen && !document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{}); if (!on && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(()=>{}); } catch(e){}
     setTimeout(()=>this.setState({vw:window.innerWidth, vh:window.innerHeight}), 250); window.Arcade && window.Arcade.sfx('blip'); }
@@ -1889,7 +1893,9 @@ class Component extends DCLogic {
     try { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(v)); hx = [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join(''); } catch(e) {}
     if (hx == '711125e6da98be03f5351f602a547a86121f7e33f8f5f21ff6868b83900be16e') { try { localStorage.removeItem('wl-admin-off'); } catch(e){} if (window.Arcade) window.Arcade.infiniteHints = true; this.setState(s=>({admin:true, codeOpen:false, hint: s.hint ? {...s.hint, left:Infinity} : s.hint})); window.Arcade && window.Arcade.sfx('win'); this.toast('ADMIN MODE · INFINITE HINTS UNTIL RELOAD'); }
     else { window.Arcade && window.Arcade.sfx('bad'); this.setState({codeMsg:'Code not recognised', codeVal:''}); } }
-  open(id){ this.keys = {}; this.setState({game:id, liveScore:0, payout:''}); }
+  open(id){ this.keys = {}; this.setState({game:id, liveScore:0, payout:''});
+    const touch = typeof window != 'undefined' && (window.innerWidth < 820 || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches));
+    let autoFs = true; try { autoFs = localStorage.getItem('wl-autofs') !== '0'; } catch(e){} if (touch && autoFs && !this.state.fs) this.setFs(true); }
   closeAll(){ const saved = this.unmountGame(); this.keys = {}; Object.keys(this.padHeld).forEach(k=>{ if (this.padHeld[k]) fireKey(k,'keyup'); }); this.padHeld = {};
     setTimeout(()=>window.WLA && window.WLA.pump(), 400); if (this.state.fs) this.setFs(false);
     this.setState({game:null, homeOpen:false, sugOpen:false, shopOpen:false, avOpen:false, prizesOpen:false, payout:'', authOpen:false, achOpen:false, learnOpen:false, lbOpen:false, uOpen:false, clearArm:false}); if (saved) this.toast('GAME SAVED · PICK IT UP ANY TIME'); }
@@ -1965,7 +1971,9 @@ class Component extends DCLogic {
     // layout
     const vw = s.vw || 1200, narrow = vw < 760, GW = (s.game && GAMEW[s.game]) || 480, modalW = Math.min(GW+40, vw-16), modalPad = vw<560 ? 12 : 20;
     const vh = s.vh || (typeof window!='undefined' ? window.innerHeight : 800), GH = s.gameH||480, fsOn = !!(s.fs && s.game);
-    const gameScale = fsOn ? Math.min((vw-8)/GW, (vh-56)/GH) : Math.min(1, (modalW-2*modalPad)/GW);
+    const padRes = fsOn && s.game && PADS[s.game] && s.padOn ? 128 : 0;
+    // full screen fits the whole game on screen; the windowed view also shrinks tall games to fit the screen height
+    const gameScale = fsOn ? Math.min((vw-8)/GW, (vh-56-padRes)/GH) : Math.max(.45, Math.min(1, (modalW-2*modalPad)/GW, (vh-110)/GH));
     // learn tracking
     const log = P.sessLog || [], learnLog = log.filter(e=>e.edu||e.learn), sumL = learnLog.reduce((a,e)=>a+e.d,0), okN = learnLog.reduce((a,e)=>a+e.ok,0), badN = learnLog.reduce((a,e)=>a+e.bad,0);
     const td = P.days[today()] || {l:0,r:0};
@@ -1985,8 +1993,8 @@ class Component extends DCLogic {
       narrow, wide: !narrow, mainPad: narrow ? '14px 12px' : '20px 24px', headPad: narrow ? '12px 14px' : '14px 24px', floorH: FH,
       modalW, modalPad, gameScale, gameBoxW: Math.round(GW*gameScale), gameBoxH: Math.round(GH*gameScale), gameW: GW, fsOn, liveScoreFmt: fmtN(s.liveScore||0), toggleFs: ()=>this.setFs(!s.fs), fsExit: vw < 560 ? 'Exit · Y' : 'Exit full screen · Y', fsLabel: s.game=='typing' ? '⛶ Full screen · Shift+Y' : '⛶ Full screen · Y',
       boxPos: fsOn ? 'fixed' : 'relative', boxInset: fsOn ? '0' : 'auto', boxZ: fsOn ? 700 : 'auto', boxBg: fsOn ? '#0b2e24' : 'transparent', boxWcss: fsOn ? '100vw' : Math.round(GW*gameScale)+'px', boxHcss: fsOn ? '100vh' : Math.round(GH*gameScale)+'px',
-      gameLeft: fsOn ? Math.max(0, Math.round((vw - GW*gameScale)/2)) : 0, gameTop: fsOn ? 48 + Math.max(0, Math.round((vh - 52 - GH*gameScale)/2)) : 0, boxRef: this.boxRef, boxTouch: s.game && SWIPE.includes(s.game) ? 'none' : 'manipulation',
-      padAvail: !!pad, padShow: !!pad && s.padOn, togglePad: ()=>this.setState({padOn:!s.padOn}), padLabel: s.padOn ? 'Touch pad · ON' : 'Touch pad · OFF', padBg: s.padOn ? '#015640' : '#D9D9D9', padFg: s.padOn ? '#D5F367' : '#4a4a4a',
+      gameLeft: fsOn ? Math.max(0, Math.round((vw - GW*gameScale)/2)) : 0, gameTop: fsOn ? 48 + Math.max(0, Math.round((vh - 52 - padRes - GH*gameScale)/2)) : 0, padPos: fsOn ? 'fixed' : 'static', padBottom: fsOn ? 'max(10px, env(safe-area-inset-bottom))' : 'auto', padZ: fsOn ? 720 : 'auto', boxRef: this.boxRef, boxTouch: s.game && SWIPE.includes(s.game) ? 'none' : 'manipulation',
+      padAvail: !!pad, padShow: !!pad && s.padOn, togglePad: ()=>{ try { localStorage.setItem('wl-pad', s.padOn ? '0' : '1'); } catch(e){} this.setState({padOn:!s.padOn}); }, padLabel: s.padOn ? 'Touch pad · ON' : 'Touch pad · OFF', padBg: s.padOn ? '#015640' : '#D9D9D9', padFg: s.padOn ? '#D5F367' : '#4a4a4a',
       padDpad: pad ? [[null,''],['ArrowUp','▲','u'],[null,''],['ArrowLeft','◀','l'],['ArrowDown','▼','d'],['ArrowRight','▶','r']].map(([k,l,c])=>({...(k?mkPad(k):{down:()=>{},up:()=>{}}), label:l, aria: k ? k.replace('Arrow','')+' arrow' : 'blank', vis: k && pad.d.includes(c) ? 'visible' : 'hidden'})) : [],
       padActs: pad ? pad.a.map(([l,k],i)=>({...mkPad(k), label:l, bg: i==0 ? '#D5F367' : '#ffffff'})) : [],
       // learn mode
@@ -2059,6 +2067,7 @@ class Component extends DCLogic {
           cardPetImg: a ? W.petImg(a.pet, {lv:a.lv, variant:d.v, hat:d.hat, collar:d.col, mood:pm}) : W.petSil(W.PETS[0]), cardHomeImg: W.houseSVG(h.tier, P),
           cardPetName: a ? a.pet.n+' · Lv '+a.lv : 'No active pet · tap to pick one', cardHomeName: W.TIERS[h.tier].e+' '+W.TIERS[h.tier].n+(m ? ' · riding '+m.n : ''),
           emoteBtns: W.EMOTES.map((e2,i)=>({key:e2.k, e:e2.e, t:e2.n+' (key '+(i+1)+')'+(e2.ok(P)?'':' · locked: '+e2.how), op:e2.ok(P)?1:.35, go:()=>this.emote(e2.k)})) }; })(),
+      siteFsBtn: ()=>this.siteFs(),
       calOpen: !!s.calOpen, goArcade: ()=>this.setView('arcade'), goCal: ()=>this.setView('calendar'),
       arcSel: s.calOpen ? 'false' : 'true', calSel: s.calOpen ? 'true' : 'false', arcBg: s.calOpen ? 'transparent' : '#D5F367', arcFg: s.calOpen ? '#D5F367' : '#015640', calBg: s.calOpen ? '#D5F367' : 'transparent', calFg: s.calOpen ? '#015640' : '#D5F367',
       calWho: (this.cloudMeta && ADMIN_EMAILS.includes(String(this.cloudMeta.email||'').toLowerCase())) ? 'Signed in as admin · you can edit events' : 'Same events for everyone · tap an event for details',

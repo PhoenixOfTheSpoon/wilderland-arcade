@@ -267,7 +267,10 @@ W.rollCap = rollCap;
 W.rebirthNeed = P => Math.min(1e300, 1e7 * Math.pow(1000, P.rebirths||0));   // never Infinity, even after 100 Rebirths
 // Stars come from ALL tickets ever earned: total stars = cube root of (lifetime tickets ÷ 1M). Each Rebirth gives at least 1.
 W.lifetimeStars = P => Math.floor(Math.cbrt(Math.max(0, P.earned||0) / 1e6));
-W.rebirthStars = P => { const need = W.rebirthNeed(P); if ((P.tickets||0) < need) return 0; return Math.max(1, W.lifetimeStars(P) - (P.stars||0)); };
+// Golden Stars per Rebirth: the lifetime-ticket formula, but never less than +25% of the stars you already have
+// (plus a little more for every Rebirth), so a Rebirth always feels worth it — even for huge accounts.
+W.rebirthStars = P => { const need = W.rebirthNeed(P); if ((P.tickets||0) < need) return 0; const have = P.stars||0, rb = P.rebirths||0;
+  return Math.min(1e300, Math.max(W.lifetimeStars(P) - have, Math.ceil(have*.25), 2 + rb)); };
 // Rebirth: tickets, Multiplier upgrades, The Mines (miners, ore, mine upgrades — depth, gems and the Gem Tree stay) and the Mines Workshop upgrades reset;
 // every saved game restarts. Returns the profile patch plus how many Golden Stars were earned.
 W.doRebirth = P => { const stars = W.rebirthStars(P); if (!stars) return null;
@@ -275,7 +278,7 @@ W.doRebirth = P => { const stars = W.rebirthStars(P); if (!stars) return null;
   const upg = {}; // the whole Upgrade Workshop resets
   const hs = W.headStart(P); Object.assign(upg, hs.upg); // Golden Star head starts survive
   return {stars, patch:{tickets:0, mult:{}, exp:hs.exp, expUp:{}, combo:{}, stars:(P.stars||0)+stars, rebirths:(P.rebirths||0)+1, saves:{}, idle, upg}}; };
-W.rebirthCard = (stars, total, n) => ({n:'+'+stars+' Golden Star'+(stars>1?'s':''), d:'Every ticket is now worth ×'+W.fmt(Math.pow(1.5,total))+'. Your next milestone is '+W.fmt(1e7*Math.pow(1000,n))+' tickets.', e:'⭐', r:7, colName:'Rebirth #'+n});
+W.rebirthCard = (stars, total, n) => ({n:'+'+W.fmt(stars)+' Golden Star'+(stars>1?'s':''), d:'Every ticket is now worth ×'+W.fmt(Math.pow(1.5,total))+'. Your next milestone is '+W.fmt(1e7*Math.pow(1000,n))+' tickets.', e:'⭐', r:7, colName:'Rebirth #'+n});
 const SKINS = [{id:'',n:'Classic',stars:0},{id:'gold',n:'Gold Trim',stars:1},{id:'neon',n:'Neon Glow',stars:3},{id:'galaxy',n:'Galaxy',stars:6},{id:'rainbow',n:'Wilderland Rainbow',stars:10}];
 W.SKINS = SKINS;
 W.skinStyle = id => ({gold:'0 0 0 3px #F9BF01, 0 0 16px rgba(249,191,1,.6)', neon:'0 0 0 3px #64CDF5, 0 0 18px #EA55AB', galaxy:'0 0 0 3px #4a5cff, 0 0 22px rgba(166,75,224,.8)', rainbow:'0 0 0 3px #ff5fd2, 0 0 14px #64CDF5, 0 0 26px #F9BF01'})[id] || '';

@@ -119,6 +119,8 @@ A.register('idle', { mount(host, api){
   const addGems = (n, x, y) => { if (Math.random() < .1*GL2('magnet') + (A.petGems||0)) n *= 2; S.gemBank = (S.gemBank||0) + n; if (x != null) float(x, y-40, '+'+n+' 💎', '#bff0ff'); };
   // repair saves that overflowed to Infinity / NaN before this fix
   { const F = v => (v = Number(v), v !== v) ? 0 : v > 1e300 ? 1e300 : v < 0 ? 0 : v; S.ore = F(S.ore); S.life = F(S.life); S.gemBank = S.gemBank == null ? S.gemBank : F(S.gemBank); }
+  // one-time fix: the Infinity repair set lifetime ore to the maximum, which jumped players to the last layer
+  if (!S.fixLife) { if (S.life >= 1e299) S.life = 0; S.fixLife = 1; }
   const U = k => S.up[k] || 0; let codeMsg = '';
 
   const W = 480; let H = 610;

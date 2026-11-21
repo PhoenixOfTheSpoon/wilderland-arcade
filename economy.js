@@ -186,7 +186,7 @@ const catchCritter = (c, ev) => { if (!host) return; c.remove(); const P = host.
 // tap one to catch it for double value, or let it land — every ticket that lands still goes into your counter.
 let rainOn = null;
 const ticketRain = P => { const need = window.WLP ? window.WLP.rebirthNeed(P) : 1e7; const val = Math.max(5, Math.round(Math.min(need*.0015, Math.max(20, (P.tickets||0)*.004)) * E.critterReward(P)));
-  const dur = 9000*E.buffLen(P); if (rainOn) { rainOn.end += dur; return; }
+  const dur = Math.min(60000, 9000*E.buffLen(P)); if (rainOn) { rainOn.end = Math.min(now() + 90000, rainOn.end + dur); return; }   // a rain lasts at most a minute (and up to 90 s if stacked)
   const dpr = Math.min(2, window.devicePixelRatio||1), cv = el('canvas', {cls:'wle-raincv', 'aria-hidden':'true'}), pill = el('div', {cls:'wle-rainpill'}); document.body.append(cv, pill);
   const g = cv.getContext('2d'); let W = 0, H = 0; const size = () => { W = innerWidth; H = innerHeight; cv.width = W*dpr; cv.height = H*dpr; g.setTransform(dpr,0,0,dpr,0,0); }; size(); addEventListener('resize', size);
   const R = rainOn = {end: now() + dur, total:0, caught:0, landed:0, pend:0}, tix = [], low = () => reduced(), every = () => low() ? 520 : 260;
@@ -293,8 +293,8 @@ E.celebrate = (info) => { ensureCss(); const o = el('div', {cls:'wle-celebrate'}
   const card = el('div', {cls:'card'},
     el('div', {style:{fontSize:'52px'}}, '🌟'),
     el('div', {style:{fontWeight:800, letterSpacing:'.2em', color:'#AB2372', fontSize:'13px'}}, 'REBIRTH #'+info.n),
-    el('div', {style:{fontWeight:800, fontSize:'32px', color:'#015640', margin:'4px 0'}}, '+'+info.stars+' Golden Star'+(info.stars>1?'s':'')+'!'),
-    el('div', {style:{fontSize:'14px', color:'#3d3d3d', marginBottom:'10px'}}, 'You now have '+info.total+' Golden Stars ('+info.free+' to spend on Wilderland prizes). Every payout is now ×'+fmt(info.starMult)+' from stars.'+(info.toDia ? ' '+info.toDia+' more Rebirth'+(info.toDia==1?'':'s')+' to your next 💎 Diamond Star.' : '')),
+    el('div', {style:{fontWeight:800, fontSize:'32px', color:'#015640', margin:'4px 0'}}, '+'+fmt(info.stars)+' Golden Star'+(info.stars>1?'s':'')+'!'),
+    el('div', {style:{fontSize:'14px', color:'#3d3d3d', marginBottom:'10px'}}, 'You now have '+fmt(info.total)+' Golden Stars ('+fmt(info.free)+' to spend on Wilderland prizes). Every payout is now ×'+fmt(info.starMult)+' from stars.'+(info.toDia ? ' '+info.toDia+' more Rebirth'+(info.toDia==1?'':'s')+' to your next 💎 Diamond Star.' : '')),
     el('div', {style:{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px', textAlign:'left', fontSize:'13px'}},
       el('div', {style:{background:'#fff1ef', borderRadius:'12px', padding:'10px'}}, el('b', {style:{color:'#B3001B'}}, 'Reset to zero'), el('div', null, '• Tickets'), el('div', null, '• Arcade Expansions'), el('div', null, '• Upgrade Workshop'), el('div', null, '• Multiplier shop'), el('div', null, '• Saved game runs'), el('div', null, '• The Mines (depth kept)')),
       el('div', {style:{background:'#eefbe8', borderRadius:'12px', padding:'10px'}}, el('b', {style:{color:'#007a37'}}, 'You keep forever'), el('div', null, '• Golden Stars & Wilderland prizes'), el('div', null, '• Diamond Stars & Prestige Tree'), el('div', null, '• Prizes & collections'), el('div', null, '• Achievements'), el('div', null, '• High scores'), el('div', null, '• Avatar & cosmetics'))),
