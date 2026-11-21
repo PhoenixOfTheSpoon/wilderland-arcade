@@ -110,7 +110,7 @@ A.register('secrets', { mount(host, api){
   // dialogue: a queue of lines, tap to continue
   let lines = [], onDone = null;
   const say = (ls, done) => { lines = [].concat(ls); onDone = done || null; nextLine(); };
-  const nextLine = () => { talk.innerHTML = ''; if (!lines.length) { talk.append(H('span', {style:{opacity:.6}}, 'Tap things in the picture to look around.')); const d = onDone; onDone = null; if (d) d(); return; }
+  const nextLine = () => { talk.innerHTML = ''; if (!lines.length) { { const sc2 = SCENES[Math.min(view, SCENES.length-1)]; talk.append(H('span', {style:{opacity:.75}}, S.solved[sc2.id] ? (view < S.ch && view < SCENES.length-1 ? 'Solved! Tap “Go to '+SCENES[view+1].n+'” below to keep going — or hunt for secrets here.' : 'Solved! Look around for hidden secrets.') : 'Tap things in the picture to look around. The dashed circle is the puzzle — 💡 Hint helps if you’re stuck.')); } const d = onDone; onDone = null; if (d) d(); return; }
     const l = lines.shift(); talk.append(H('div', null, l), H('div', {style:{fontSize:'11px', fontWeight:700, color:'#AB2372', marginTop:'4px'}}, lines.length ? 'tap to continue ▸' : 'tap ✓')); };
   talk.onclick = () => { A.sfx('blip'); nextLine(); };
   const scene = () => SCENES[Math.min(S.ch, SCENES.length-1)];
@@ -120,7 +120,7 @@ A.register('secrets', { mount(host, api){
       H('div', {style:{fontWeight:800, fontSize:'18px', color:C.gold}}, title), body, btn('Close', closeModal)); stage.append(modal); };
   const solve = id => { if (S.solved[id]) return; const sc = SCENES.find(x => x.id == id); S.solved[id] = 1; if (sc.reward && !S.items.includes(sc.reward)) S.items.push(sc.reward); closeModal(); A.sfx('win');
     const got = pay('p_'+id, 120*(SCENES.indexOf(sc)+1), 'SECRETS'); stat(api, 'secretsChapters', solvedN()); api.score(score());
-    say([sc.next, 'You got: '+ITEMS[sc.reward]+(got ? ' · +'+got.toLocaleString()+' tickets' : '')], () => { if (id == 'vault') finale(); else { S.ch = Math.max(S.ch, SCENES.indexOf(sc)+1); save(); render(); story(); } }); save(); render(); };
+    say([sc.next, 'You got: '+ITEMS[sc.reward]+(got ? ' · +'+got.toLocaleString()+' tickets' : '')], () => { if (id == 'vault') finale(); else { S.ch = Math.max(S.ch, SCENES.indexOf(sc)+1); view = SCENES.indexOf(sc)+1; save(); render(); story(); } }); save(); render(); };
   const finale = () => { S.done = true; const all = found() >= N_SECRETS; const got = pay('finale', 1500, 'SECRETS'); stat(api, 'secretsDone', 1); api.score(score()); save(); render();
     say(['Juniper smiles. “Every arcade needs a keeper. I think it’s time I had a helper.”', 'You are now a Keeper of the Wilderland Arcade! 🌲'+(got ? ' · +'+got.toLocaleString()+' tickets' : ''),
       all ? 'Juniper leans in and whispers: “You found ALL '+N_SECRETS+' secrets. Nobody has ever done that. The arcade itself thanks you.” ✨' : 'Juniper winks: “There are still '+(N_SECRETS - found())+' secrets hiding in these places. A true keeper finds them all.”'],
@@ -191,7 +191,8 @@ A.register('secrets', { mount(host, api){
     const layer = H('div', {style:{position:'absolute', inset:0}}); stage.append(layer);
     spots(sc).forEach(s => layer.append(H('button', {'aria-label':'look', style:{position:'absolute', left:(s.x - s.r)/480*100+'%', top:(s.y - s.r)/300*100+'%', width:(s.r*2)/480*100+'%', height:(s.r*2)/300*100+'%', borderRadius:'50%', border: s.ring ? '2px dashed rgba(249,191,1,.55)' : 'none', background:'transparent', cursor:'pointer', padding:0}, onclick:() => { A.sfx('blip'); s.fn(); }})));
     if (modal) stage.append(modal);
-    inv.innerHTML = ''; inv.append(H('b', {style:{color:C.gold}}, 'Bag:')); if (!S.items.length) inv.append(H('span', {style:{opacity:.6}}, 'empty'));
+    inv.innerHTML = ''; if (S.solved[sc.id] && view < S.ch && view < SCENES.length-1) inv.append(btn('➡ Go to '+SCENES[view+1].n, () => { view++; closeModal(); render(); story(); }, C.lime, '#015640'));
+    inv.append(H('b', {style:{color:C.gold}}, 'Bag:')); if (!S.items.length) inv.append(H('span', {style:{opacity:.6}}, 'empty'));
     S.items.forEach(k => inv.append(H('span', {style:{background:'rgba(255,255,255,.12)', borderRadius:'999px', padding:'4px 10px'}}, ITEMS[k])));
     if (S.done) inv.append(btn('↺ Play the story again', () => { const keep = {paid:S.paid, secrets:S.secrets}; S = {...fresh(), ...keep}; view = 0; save(); render(); story(); }));
   };
