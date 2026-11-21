@@ -1,0 +1,133 @@
+{
+  "_howToEdit": [
+    "This file holds every event on the Wilderland Calendar. Everyone who visits the site sees the same events.",
+    "To change the calendar: edit the list under \"events\" below (or use the Edit events panel while signed in as jonah@wilderland.academy and download a new copy of this file), then upload this file to the site folder. Changes go live as soon as the upload finishes.",
+    "Each event: id (any unique word), title, start (YYYY-MM-DD), end (optional last day for multi-day events), allDay (true/false), time and endTime (24-hour HH:MM, ignored when allDay is true), location, description, category, link (optional web address).",
+    "category is one of: classes, trips, holiday, deadline, clubs, arcade, special.",
+    "repeat (optional): {\"freq\": \"daily\" | \"weekly\" | \"monthly\", \"interval\": 1, \"until\": \"YYYY-MM-DD\", \"days\": [1,2,3,4,5]}. days is only for weekly repeats: 0 = Sunday ... 6 = Saturday.",
+    "arcade events show a banner in the arcade on their days. They are display-only and do not change ticket payouts."
+  ],
+  "events": [
+    {
+      "id": "double-tickets-nov",
+      "title": "Double Tickets Weekend",
+      "start": "2026-11-20",
+      "end": "2026-11-22",
+      "allDay": true,
+      "location": "Wilderland Arcade",
+      "description": "Celebrate the weekend in the arcade! Play your favorite cabinets with friends.",
+      "category": "arcade"
+    },
+    {
+      "id": "thanksgiving-break",
+      "title": "Thanksgiving Break · No School",
+      "start": "2026-11-25",
+      "end": "2026-11-27",
+      "allDay": true,
+      "location": "",
+      "description": "No classes Wednesday through Friday. Enjoy time with your family!",
+      "category": "holiday"
+    },
+    {
+      "id": "math-club",
+      "title": "Math Club",
+      "start": "2026-11-04",
+      "allDay": false,
+      "time": "15:30",
+      "endTime": "16:30",
+      "location": "Room 12",
+      "description": "Puzzles, games and brain teasers. All grades welcome.",
+      "category": "clubs",
+      "repeat": { "freq": "weekly", "interval": 1, "until": "2027-06-30" }
+    },
+    {
+      "id": "morning-reading",
+      "title": "Morning Reading Time",
+      "start": "2026-11-02",
+      "allDay": false,
+      "time": "08:30",
+      "endTime": "09:00",
+      "location": "Classroom",
+      "description": "Bring your library book and read quietly to start the day.",
+      "category": "classes",
+      "repeat": { "freq": "weekly", "interval": 1, "days": [1, 2, 3, 4, 5], "until": "2027-06-30" }
+    },
+    {
+      "id": "art-class",
+      "title": "Art Class",
+      "start": "2026-11-06",
+      "allDay": false,
+      "time": "13:00",
+      "endTime": "14:00",
+      "location": "Art Studio",
+      "description": "This month: painting with watercolors. Wear clothes that can get messy!",
+      "category": "classes",
+      "repeat": { "freq": "weekly", "interval": 1, "until": "2027-06-30" }
+    },
+    {
+      "id": "reading-log-due",
+      "title": "Reading Log Due",
+      "start": "2026-12-01",
+      "allDay": false,
+      "time": "15:00",
+      "endTime": "15:30",
+      "location": "Turn in to your teacher",
+      "description": "Hand in your November reading log, signed by a grown-up.",
+      "category": "deadline"
+    },
+    {
+      "id": "museum-trip",
+      "title": "Field Trip: Natural History Museum",
+      "start": "2026-12-04",
+      "allDay": false,
+      "time": "09:00",
+      "endTime": "14:00",
+      "location": "City Natural History Museum",
+      "description": "We'll see dinosaur fossils and the gem hall. Bring a packed lunch and a signed permission slip.",
+      "category": "trips",
+      "link": "https://wilderland.academy"
+    },
+    {
+      "id": "arcade-tournament",
+      "title": "Monthly Arcade Tournament",
+      "start": "2026-12-05",
+      "allDay": false,
+      "time": "14:00",
+      "endTime": "16:00",
+      "location": "Wilderland Arcade",
+      "description": "Friendly high-score challenge on the daily cabinet. Check the leaderboard!",
+      "category": "arcade",
+      "repeat": { "freq": "monthly", "interval": 1, "until": "2027-06-30" }
+    },
+    {
+      "id": "winter-concert",
+      "title": "Winter Concert",
+      "start": "2026-12-17",
+      "allDay": false,
+      "time": "18:00",
+      "endTime": "19:30",
+      "location": "School Gym",
+      "description": "Every class sings a song. Families welcome!",
+      "category": "special"
+    },
+    {
+      "id": "winter-break",
+      "title": "Winter Break · No School",
+      "start": "2026-12-21",
+      "end": "2027-01-01",
+      "allDay": true,
+      "location": "",
+      "description": "School is closed. See you in the new year!",
+      "category": "holiday"
+    },
+    {
+      "id": "science-fair-deadline",
+      "title": "Science Fair Projects Due",
+      "start": "2027-01-15",
+      "allDay": true,
+      "location": "Library",
+      "description": "Bring your poster and experiment to the library before school starts.",
+      "category": "deadline"
+    }
+  ]
+}

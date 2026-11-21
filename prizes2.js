@@ -486,16 +486,19 @@ W.mount = (root, api) => {
         box.appendChild(card); }); }
     box.appendChild(perkCard());
     box.appendChild(E('div', {cls:'wlp-h'}, 'UPGRADES · PAID IN TICKETS · RESET ON REBIRTH'));
-    const up = (n, d, l, max, cost, now, next, buyFn) => { const maxed = l >= max, c = maxed ? 0 : nice(cost), can = !maxed && (p.tickets||0) >= c;
-      const b = E('button', {cls:'wlp-buy', style:{width:'auto', minWidth:'110px'}, onclick:buyFn}, maxed ? 'MAXED' : W.fmt(c)+' 🎟'); if (!can) b.disabled = true;
+    // Bulk buy (×1 / ×10 / ×100 / Max at the top): how many levels you can afford now, and what they cost together
+    const lvPlan = (costFn, L, max, tix) => { const want = qty === 'max' ? 1e4 : qty, need = W.rebirthNeed(P()); let n = 0, cost = 0;
+      while (n < want && L+n < max) { const c = nice(costFn(L+n)); if (cost + c > tix || c >= need) break; cost += c; n++; } return {n, cost}; };
+    const up = (n, d, l, max, cost, now, next, buyFn, costFn) => { const maxed = l >= max, pl = costFn ? lvPlan(costFn, l, max, p.tickets||0) : {n:0, cost:0}, c = maxed ? 0 : pl.n ? pl.cost : nice(cost), can = !maxed && (pl.n > 0 || (!costFn && (p.tickets||0) >= c));
+      const b = E('button', {cls:'wlp-buy', style:{width:'auto', minWidth:'110px'}, onclick:buyFn}, maxed ? 'MAXED' : (pl.n > 1 ? '×'+pl.n+' · ' : '')+W.fmt(c)+' 🎟'); if (!can) b.disabled = true;
       return E('div', {cls:'wlp-row', style:{marginBottom:'6px'}}, E('div', {style:{flex:1, minWidth:0}}, E('div', {style:{fontWeight:700, color:'#015640'}}, n+'  ', E('span', {style:{fontSize:'11px', color:'#8a8a8a'}}, 'level '+l+(max<999?' / '+max:''))), E('div', {cls:'wlp-small'}, d), E('div', {style:{fontSize:'12px', fontWeight:700, color:'#AB2372'}}, 'Now: '+now+(maxed?'':'  →  Next: '+next))), b); };
     MSHOP.forEach(m => { const l = lv(p,m.k); box.appendChild(up(m.n, m.d, l, m.max, m.cost(l), l ? m.show(l) : (m.k=='global'?'×1':'off'), m.show(l+1), () => {
-      const pp = P(), L = lv(pp,m.k), c = nice(m.cost(L)); if (api.admin()) return api.toast('ADMIN MODE · SHOPPING DISABLED'); if (L >= m.max || (pp.tickets||0) < c) return api.sfx('bad');
-      set({tickets:pp.tickets-c, mult:{...(pp.mult||{}), [m.k]:L+1}}); api.sfx('coin'); render(); })); });
+      const pp = P(), L = lv(pp,m.k), pl = lvPlan(m.cost, L, m.max, pp.tickets||0); if (api.admin()) return api.toast('ADMIN MODE · SHOPPING DISABLED'); if (!pl.n) return api.sfx('bad');
+      set({tickets:pp.tickets-pl.cost, mult:{...(pp.mult||{}), [m.k]:L+pl.n}}); api.sfx('coin'); if (pl.n > 1) api.toast(m.n.toUpperCase()+' +'+pl.n+' LEVELS'); render(); }, m.cost)); });
     box.appendChild(E('div', {cls:'wlp-h'}, 'MACHINE MULTIPLIERS · ×0.2 MORE PER LEVEL'));
     games.filter(g=>g.id!='2048').forEach(g => { const l = glv(p,g.id); box.appendChild(up(g.title, 'Only for '+g.title, l, GAME_UP.max, GAME_UP.cost(l), '×'+GAME_UP.eff(l).toFixed(1), '×'+GAME_UP.eff(l+1).toFixed(1), () => {
-      const pp = P(), L = glv(pp,g.id), c = nice(GAME_UP.cost(L)); if (api.admin()) return api.toast('ADMIN MODE · SHOPPING DISABLED'); if (L >= GAME_UP.max || (pp.tickets||0) < c) return api.sfx('bad');
-      const m = {...(pp.mult||{})}; m.game = {...(m.game||{}), [g.id]:L+1}; set({tickets:pp.tickets-c, mult:m}); api.sfx('coin'); render(); })); });
+      const pp = P(), L = glv(pp,g.id), pl = lvPlan(GAME_UP.cost, L, GAME_UP.max, pp.tickets||0); if (api.admin()) return api.toast('ADMIN MODE · SHOPPING DISABLED'); if (!pl.n) return api.sfx('bad');
+      const m = {...(pp.mult||{})}; m.game = {...(m.game||{}), [g.id]:L+pl.n}; set({tickets:pp.tickets-pl.cost, mult:m}); api.sfx('coin'); if (pl.n > 1) api.toast(g.title.toUpperCase()+' MULTIPLIER +'+pl.n+' LEVELS'); render(); }, GAME_UP.cost)); });
     return box; };
 
   const chal = () => { const p = P(), box = E('div'), C = p.chal||{};

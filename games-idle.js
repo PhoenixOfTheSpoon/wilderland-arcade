@@ -104,6 +104,8 @@ A.register('idle', { mount(host, api){
   const learn = A.learnOn();
   const fresh = () => ({v:1, ore:0, life:0, grid:[1,0,0,0,0,0,0,0,0,0,0,0], hires:1, up:{}, last:Date.now(), tix:{d:'',n:0}, gems:0, geodes:0, best:1});
   let S = (api.stored && api.stored.v==1) ? JSON.parse(JSON.stringify(api.stored)) : fresh();
+  // miners above today's level cap (from older versions) keep their level and still get drawn
+  if (Array.isArray(S.grid)) ensureLV(Math.max(MAXL, ...S.grid.map(v => v|0)));
   S.up = S.up || {}; S.tix = S.tix || {d:'',n:0}; S.chests = S.chests || {}; S.gtree = S.gtree || {}; if (!Array.isArray(S.grid) || !S.grid.length) S.grid = fresh().grid;
   if (S.gemBank == null) S.gemBank = (S.gems||0) + (S.geodes||0);   // gems you already found count toward the Gem Tree
   const GL2 = k => S.gtree[k] || 0, SLOTS = () => 12 + 4*GL2('slots');
@@ -212,7 +214,7 @@ A.register('idle', { mount(host, api){
     sellArm = 0; const v = fin(sellVal(L)); S.grid[i] = 0; S.ore = fin(S.ore + v); const p = cell(i);
     float(p.x+CW/2, p.y+20, '+'+fmt(v)+' ORE', C.gold); burst(p.x+CW/2, p.y+CH/2, '#FF8A3C', 12); sel = -1; A.sfx('coin'); paintBar(); };
   let quietMerges = 0;
-  const merge = (a, b, quiet) => { const L = S.grid[a]; if (!L || S.grid[b]!==L || L>=MAXL || a===b) return false;
+  const merge = (a, b, quiet) => { const L = S.grid[a]; if (L+1 >= LV.length) ensureLV(L+1); if (!L || S.grid[b]!==L || L>=MAXL || a===b) return false;
     S.grid[b] = L+1; S.grid[a] = 0; const p = cell(b);
     if (!quiet || (quietMerges++ % 6 == 0)) { burst(p.x+CW/2, p.y+CH/2, LV[L+1].c, quiet ? 6 : 26); if (!quiet) { shake = .15; A.sfx('point'); } else A.tone(700,.02,'square',.015); }
     if (L+1 > (S.best||1)) { S.best = L+1; say('NEW MINER: '+LV[L+1].n.toUpperCase(), fmt(lvRate(L+1)*mult())+' ore/s each', LV[L+1].c); stat(api,'minerLevel',L+1); }
@@ -548,7 +550,7 @@ A.register('idle', { mount(host, api){
       g.fillStyle = msg.col; g.font = '700 15px '+A.font; g.fillText(msg.txt, (w-56)/2, VIEW.y+99, w-100); if (msg.sub) { g.fillStyle = '#EDE9D8'; g.font = '500 12px '+A.font; g.fillText(msg.sub, (w-56)/2, VIEW.y+119, w-100); } g.globalAlpha = 1; } };
 
   // ---------- loop ----------
-  let barT = 0, scT = 0;
+  let barT = 0, scT = 0, drawErr = 0;
   const offL = A.loop(dt => { t += dt; const r = rate(); const active = Date.now() - (A.lastAct||0) < 15000; if (active && (!busy || shop || mapO)) give(r*dt);
     shake = Math.max(0, shake-dt); comboT -= dt; if (comboT <= 0) combo = 0; trouble = Math.max(0, trouble - dt); if (sellArm > 0) { sellArm -= dt; if (sellArm <= 0) paintBar(); }
     // camera: keys pan, follow the dig face, smooth easing between layers
@@ -580,7 +582,7 @@ A.register('idle', { mount(host, api){
     else if (follow) { camT.y = tunY(d) - VIEW.h/camT.z*.55; clampCam(camT); }
     barT -= dt; if (barT <= 0) { barT = .4; paintBar(); } scT -= dt; if (scT <= 0) { scT = 1; api.score(Math.floor(S.ore)); }
     saveT -= dt; if (saveT <= 0) { saveT = 10; persist(); }
-    draw(); });
+    try { draw(); } catch(e) { if (!drawErr) { drawErr = 1; console.error('Mines draw error', e); } } });
 
   // ---------- Night Shift: away from the arcade, miners keep digging at half speed (2 h + 2 h per Night Shift level) ----------
   const away = Math.max(0, (Date.now() - (S.last||Date.now()))/1000), cap = (2 + 2*U('night'))*3600, secs = Math.min(away, cap), earned = rate()*secs*(GL2('owl') ? .75 : .5);
