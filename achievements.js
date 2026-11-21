@@ -201,7 +201,7 @@ A.mount = (root, api) => { ensureCss(); let cat = api.cat || 'All', sort = 'defa
     // header: completion, bonus, title, showcase
     const titles = A.titles(p), cur = A.title(p);
     const sel = E('select', {style:{fontFamily:'inherit', fontSize:'13px', fontWeight:'700', borderRadius:'10px', padding:'6px 8px', border:'1.5px solid #015640', color:'#015640', maxWidth:'100%'}, 'aria-label':'Title shown under your name', onchange:e => { api.setP({title:e.target.value}); api.sfx('blip'); render(); }},
-      E('option', {value:''}, titles.length ? '— no title —' : 'Earn titles from achievements'), ...titles.map(x => { const o = E('option', {value:x.n}, '“'+x.n+'” · '+BY[x.f].name); if (x.n === cur) o.selected = true; return o; }));
+      E('option', {value:''}, titles.length ? '— no title —' : 'Earn titles from achievements'), ...titles.map(x => { const o = E('option', {value:x.n}, '“'+x.n+'” · '+(BY[x.f] ? BY[x.f].name : 'Pets & Home')); if (x.n === cur) o.selected = true; return o; }));
     const pins = A.pins(p);
     wrap.appendChild(E('div', {cls:'wla-box', style:{display:'flex', gap:'14px', flexWrap:'wrap', alignItems:'center', marginBottom:'10px'}},
       E('div', {style:{flex:'1 1 200px', minWidth:0}}, E('div', {style:{fontWeight:800, fontSize:'22px', color:'#015640'}}, pct+'% complete'),
