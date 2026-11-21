@@ -1372,11 +1372,22 @@ const ACH = [
   {id:'lifer',cat:'Secret',tier:4,secret:true,name:'Lifer',desc:'Finish 1,000 games',p:s=>[plays(s),1000]},
 ];
 const KEY = 'wl-arcade-v1', ACCT_KEY = 'wl-arcade-accounts', SESSION_KEY = 'wl-arcade-session';
-const DEF = () => ({difficulty:'normal',speed:'normal',tickets:0,savedAt:0,best:{},played:{},ach:[],prizes:{},daily:{date:'',done:false},earned:0,saves:{},savesV:2,stats:{max:{},sum:{}},username:'',edu:{on:false,topic:'add'},sessLog:[],days:{},adjSeen:0,idle:null,upg:{},avatar:{},cursor:'',resetSeen:0,at:{},achV:0,title:'',achPins:[],avOwn:{},avPresets:[],mult:{},stars:0,starsSpent:0,exp:{},expUp:{},tree:{},ptree:{},diaSpent:0,ptFav:'',autoRb:true,mineBud:null,pets:null,home:null,mounts:null,clicks:0,critters:0,econV:0,rebirths:0,colDone:{},login:{},chal:{},combo:{},capsules:0,skin:'',learnTix:0});
+const DEF = () => ({difficulty:'normal',speed:'normal',tickets:0,savedAt:0,lifeTix:0,wipeAt:0,best:{},played:{},ach:[],prizes:{},daily:{date:'',done:false},earned:0,saves:{},savesV:2,stats:{max:{},sum:{}},username:'',edu:{on:false,topic:'add'},sessLog:[],days:{},adjSeen:0,idle:null,upg:{},avatar:{},cursor:'',resetSeen:0,at:{},achV:0,title:'',achPins:[],avOwn:{},avPresets:[],mult:{},stars:0,starsSpent:0,exp:{},expUp:{},tree:{},ptree:{},diaSpent:0,ptFav:'',autoRb:true,mineBud:null,pets:null,home:null,mounts:null,clicks:0,critters:0,econV:0,rebirths:0,colDone:{},login:{},chal:{},combo:{},capsules:0,skin:'',learnTix:0});
 const PFIELDS = Object.keys(DEF());
 const loadP = key => { let d = {}; try { d = JSON.parse(localStorage.getItem(key)) || {}; } catch(e){} return normP(d); };
 const fin = v => { v = Number(v); return v !== v ? 0 : v > 1e300 ? 1e300 : v < -1e300 ? -1e300 : v; };
-const normP = d => { const P = Object.assign(DEF(), d||{}); P.tickets = Math.max(0, fin(P.tickets)); P.earned = Math.max(0, fin(P.earned)); P.stats = Object.assign({max:{},sum:{}}, P.stats||{}); P.stats.max = P.stats.max||{}; P.stats.sum = P.stats.sum||{}; P.saves = P.saves||{}; P.ach = Array.isArray(P.ach)?P.ach:[]; P.edu = Object.assign({on:false,topic:'add'}, P.edu||{}); P.sessLog = Array.isArray(P.sessLog)?P.sessLog:[]; P.days = P.days||{}; Object.keys(P.best||{}).forEach(k=>{ P.best[k] = safeScore(k, P.best[k]); }); ['tickets','earned'].forEach(k=>{ if (!isFinite(P[k]) || P[k] < 0) P[k] = 0; }); ['mult','colDone','login','chal','combo','upg','prizes','best','played','exp','expUp','tree','ptree','at','avOwn'].forEach(k=>{ if (!P[k] || typeof P[k]!='object') P[k] = {}; }); if (P.savesV !== 2) { P.saves = {}; P.savesV = 2; } return P; };
+const normP = d => { const P = Object.assign(DEF(), d||{}); P.tickets = Math.max(0, fin(P.tickets)); P.earned = Math.max(0, fin(P.earned)); P.stats = Object.assign({max:{},sum:{}}, P.stats||{}); P.stats.max = P.stats.max||{}; P.stats.sum = P.stats.sum||{}; P.saves = P.saves||{}; P.ach = Array.isArray(P.ach)?P.ach:[]; P.edu = Object.assign({on:false,topic:'add'}, P.edu||{}); P.sessLog = Array.isArray(P.sessLog)?P.sessLog:[]; P.days = P.days||{}; Object.keys(P.best||{}).forEach(k=>{ P.best[k] = safeScore(k, P.best[k]); }); ['tickets','earned'].forEach(k=>{ if (!isFinite(P[k]) || P[k] < 0) P[k] = 0; }); ['mult','colDone','login','chal','combo','upg','prizes','best','played','exp','expUp','tree','ptree','at','avOwn'].forEach(k=>{ if (!P[k] || typeof P[k]!='object') P[k] = {}; }); if (P.savesV !== 2) { P.saves = {}; P.savesV = 2; } P.lifeTix = Math.max(fin(Number(P.lifeTix)||0), P.earned||0, P.tickets||0); return P; };
+// ---------- hidden backup saves ----------
+// Every profile keeps a hidden "best" copy on this device (localStorage + IndexedDB) and in the cloud. "Best" = the most tickets EVER earned
+// (lifeTix only goes up — spending and Rebirths never lower it). When the game loads, whichever copy has the higher lifeTix wins, so a
+// rollback can't lose progress. A deliberate reset sets wipeAt, and copies older than that are ignored.
+const BK = 'wl-bk:';
+const pickBest = (cands, minAt) => { let wipe = minAt||0; cands.forEach(c => { if (c && c.wipeAt > wipe) wipe = c.wipeAt; });
+  const ok = cands.filter(c => c && typeof c == 'object' && (c.savedAt||0) >= wipe);
+  ok.sort((a,b) => ((b.lifeTix||0) - (a.lifeTix||0)) || ((b.savedAt||0) - (a.savedAt||0))); return ok[0] || null; };
+const idb = (() => { let p = null; const open = () => p || (p = new Promise((res, rej) => { try { const r = indexedDB.open('wl-arcade-bk', 1); r.onupgradeneeded = () => r.result.createObjectStore('bk'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); } catch(e) { rej(e); } }));
+  return { get: k => open().then(db => new Promise(res => { try { const q = db.transaction('bk').objectStore('bk').get(k); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); } catch(e) { res(null); } })).catch(() => null),
+    put: (k, v) => open().then(db => { try { db.transaction('bk', 'readwrite').objectStore('bk').put(v, k); } catch(e){} }).catch(() => {}) }; })();
 const FB_ERR = {'auth/email-already-in-use':'That email already has an account. Switch to Log in.','auth/invalid-email':'That email doesn’t look right.','auth/weak-password':'That password is too weak — use at least 6 characters.','auth/invalid-credential':'Email or password is wrong.','auth/wrong-password':'Email or password is wrong.','auth/user-not-found':'Email or password is wrong.','auth/too-many-requests':'Too many tries. Wait a few minutes and try again.','auth/network-request-failed':'Can’t reach the server. Check your internet connection.','auth/operation-not-allowed':'That sign-in method is turned off in the Firebase console (Authentication → Sign-in method).','auth/user-disabled':'This account has been disabled.','auth/popup-closed-by-user':'The Google window was closed before sign-in finished.','auth/cancelled-popup-request':'The Google window was closed before sign-in finished.','auth/popup-blocked':'Your browser blocked the Google pop-up. Allow pop-ups for this site and try again.','auth/unauthorized-domain':'This website isn’t on Firebase’s list yet. Add it under Authentication → Settings → Authorized domains.','auth/account-exists-with-different-credential':'That email already has a password login. Log in with your email and password instead.','auth/operation-not-supported-in-this-environment':'Google sign-in doesn’t work here. Open the arcade’s own website instead.'};
 const fbErr = e => FB_ERR[e && e.code] || ('Something went wrong'+(e && e.code ? ' ('+e.code+')' : '')+'. Try again.');
 const getAccts = () => { try { return JSON.parse(localStorage.getItem(ACCT_KEY)) || {}; } catch(e) { return {}; } };
@@ -1394,7 +1405,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-11-28d';
+const BUILD = '2026-11-29a';
 const SCRIPTS = ['arcade-core.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
@@ -1403,7 +1414,7 @@ class Component extends DCLogic {
     super(p);
     let acct = null; try { acct = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY); } catch(e){}
     if (acct && !getAccts()[acct]) acct = null;
-    this.acct = acct; this.P = loadP(this.profKey());
+    this.acct = acct; this.P = loadP(this.profKey()); { const b = pickBest([this.P, getJSON(BK+this.profKey(), null)]); if (b && b !== this.P) this.P = normP(b); }
     this.state = Object.assign({}, this.P, {account:acct,
       calOpen:(typeof location!='undefined' && location.hash=='#calendar'),immortal:false,autoHint:true,codeOpen:false,codeVal:'',codeMsg:'',admin:false,px:760,py:905,vw:(typeof window!='undefined'?window.innerWidth:1200),gameH:480,padOn:(()=>{ try { const v = localStorage.getItem('wl-pad'); if (v) return v == '1'; } catch(e){} return typeof window!='undefined'&&(('ontouchstart' in window)||(window.matchMedia&&window.matchMedia('(pointer: coarse)').matches)); })(),learnOpen:false,pinIn:'',pinNew:'',pinNew2:'',pinMsg:'',pinAsk:'',pinFails:0,pinLock:0,pinMode:'',lbOpen:false,lbGame:'_tix',lbMode:'all',uOpen:false,uVal:'',uMsg:'',clearArm:false,dir:[0,1],game:null,liveScore:0,payout:'',prizesOpen:false,toasts:[],scale:1,muted:false,
       authOpen:false,authMode:'signup',aEmail:'',aPass:'',aPass2:'',aName:'',aShow:false,aRemember:true,aBring:true,aMsg:'',aBusy:false,aFails:0,aLock:0,aTouched:false,
@@ -1464,18 +1475,22 @@ class Component extends DCLogic {
     const first = !this.P.username; this.setP({username:v}); if (first) { Object.entries(this.P.best).forEach(([g,s])=>{ if (GAMES.some(x=>x.id==g)) this.addScore(g,s,false); }); this.addScore('_none',0); }
     this.setState({uOpen:false, uMsg:''}); this.toast(first ? 'YOU’RE ON THE BOARD, '+v.toUpperCase() : 'USERNAME CHANGED TO '+v.toUpperCase()); }
   profKey(){ return this.cloudUid ? KEY+':cloud:'+this.cloudUid : this.acct ? KEY+':acct:'+this.acct : KEY; }
-  persist(now){ if (this._tabOff) return; this.P.savedAt = Date.now(); const o = {}; PFIELDS.forEach(k=>o[k]=this.P[k]); try { localStorage.setItem(this.profKey(), JSON.stringify(o)); } catch(e){}
-    if (this.cloudUid && window.WLCloud) { clearTimeout(this._cs); const uid = this.cloudUid, meta = {...this.cloudMeta}; const go = () => { window.WLCloud.saveProfile(uid, o, meta).catch(()=>{}); }; if (now) go(); else this._cs = setTimeout(go, 2500); } }
+  persist(now){ if (this._tabOff) return; this.P.savedAt = Date.now(); this.P.lifeTix = Math.max(this.P.lifeTix||0, this.P.tickets||0); const o = {}; PFIELDS.forEach(k=>o[k]=this.P[k]); try { localStorage.setItem(this.profKey(), JSON.stringify(o)); } catch(e){}
+    const bkKey = BK+this.profKey(); this._bkLife = this._bkLife || {}; if (this._bkLife[bkKey] == null) this._bkLife[bkKey] = (getJSON(bkKey, {}).lifeTix) || 0;
+    let bk = null; if ((o.lifeTix||0) >= this._bkLife[bkKey] || this._bkForce) { this._bkLife[bkKey] = o.lifeTix||0; bk = o;
+      if (now || this._bkForce || Date.now() - (this._bkT||0) > 15000) { this._bkT = Date.now(); this._bkForce = false; try { localStorage.setItem(bkKey, JSON.stringify(o)); } catch(e){} idb.put(bkKey, o); } }
+    if (this.cloudUid && window.WLCloud) { clearTimeout(this._cs); const uid = this.cloudUid, meta = {...this.cloudMeta}; const go = () => { window.WLCloud.saveProfile(uid, o, meta, bk ? JSON.stringify(bk) : null).catch(()=>{}); }; if (now) go(); else this._cs = setTimeout(go, 2500); } }
   startCloud(){ const C = window.WLCloud; if (!C || this._cloudOn) return; this._cloudOn = true; this.setState({cloud:true, cloudStatus:'on'});
     C.onAuth(u => { if (this._cloudPending) return; if (u) { if (this.cloudUid !== u.uid) this.cloudLogin(u); } else if (this.cloudUid) this.cloudReset(); }); }
   async cloudLogin(u, carry, name){ if (this.state.game) this.closeAll(); let rec = null; try { rec = await window.WLCloud.loadProfile(u.uid); } catch(e){}
     // use whichever copy is newer: the cloud one, or the one saved on this device (so a cloud save that didn't finish can't roll you back)
     const local = getJSON(KEY+':cloud:'+u.uid, null), lt = local && local.savedAt || 0, ct = rec && rec.P && rec.P.savedAt || 0;
-    let P = rec && rec.P ? normP(local && lt > ct ? local : rec.P) : (carry ? normP({...this.P, saves:{}}) : normP(local || {}));
+    const best = pickBest([rec && rec.P, rec && rec.bk, local, getJSON(BK+KEY+':cloud:'+u.uid, null)], (window.WLCloud.resetAt && window.WLCloud.resetAt()) || 0);
+    let P = best ? normP(best) : (carry ? normP({...this.P, saves:{}}) : normP(local || {}));
     this.cloudUid = u.uid; this.acct = null; this.cloudMeta = {name: (rec && rec.name) || name || (u.email||'player').split('@')[0].slice(0,16), created: (rec && rec.created) || today(), email: u.email};
     this.P = P; setTimeout(()=>this.postTix(), 2500); setTimeout(()=>this.logAct('join', 'came online · '+fmtN(P.tickets||0)+' 🎟 · '+(P.stars||0)+' ⭐'), 1500); this.setState({...P, account:u.email||u.displayName||'Player', authOpen:false, aBusy:false, aPass:'', aPass2:'', aMsg:'', aInfo:''}); this.persist(true);
     try { const C = window.WLCloud, ra = C.resetAt ? C.resetAt() : 0;
-      if (ra && rec && rec.P && (rec.updated||0) < ra && (this.P.resetSeen||0) < ra) { this.P = normP({username:this.P.username, avatar:this.P.avatar, savesV:2, resetSeen:ra}); this.setState({...this.P}); this.persist(true); this.toast('THE ARCADE WAS RESET · FRESH START FOR EVERYONE'); }
+      if (ra && rec && rec.P && (rec.updated||0) < ra && (this.P.resetSeen||0) < ra) { this.P = normP({username:this.P.username, avatar:this.P.avatar, savesV:2, resetSeen:ra, wipeAt:ra}); this._bkForce = true; this.setState({...this.P}); this.persist(true); this.toast('THE ARCADE WAS RESET · FRESH START FOR EVERYONE'); }
       if (ra && (this.P.resetSeen||0) < ra) { this.P = {...this.P, resetSeen:ra}; }
       this.applyAdj(); this.checkKick();
       if (ADMIN_EMAILS.includes(String(u.email||'').toLowerCase()) && C.ensureAdmin) { C.ensureAdmin().then(ok=>{ if (!ok) this.toast('WARNING: THE ADMIN CONTROL RECORD IS OWNED BY ANOTHER ACCOUNT'); }).catch(()=>{}); }
@@ -1483,7 +1498,7 @@ class Component extends DCLogic {
     } catch(e){}
     if (carry) { try { localStorage.removeItem(KEY); } catch(e){} }
     try { localStorage.removeItem(SESSION_KEY); sessionStorage.removeItem(SESSION_KEY); } catch(e){}
-    this.cloudBoard = {}; this.stat('account',1); }
+    this.cloudBoard = {}; this.stat('account',1); setTimeout(() => this.checkBackup(), 500); }
   cloudReset(){ this.persist(true); this.cloudUid = null; this.cloudMeta = null; this.acct = null; this.P = loadP(KEY); this.cloudBoard = {}; this.setState({...this.P, account:null, authOpen:false}); }
   async cloudAuth(kind, email, pw, name){ const s = this.state, C = window.WLCloud; this.setState({aBusy:true, aMsg:'', aInfo:''}); this._cloudPending = true;
     try { const u = kind=='google' ? await C.google(s.aRemember) : kind=='signup' ? await C.signUp(email, pw, s.aRemember) : await C.signIn(email, pw, s.aRemember);
@@ -1506,13 +1521,16 @@ class Component extends DCLogic {
       const old = (s.ach||[]).length; if (window.WLAV) s.avOwn = window.WLAV.migrate(s, old); let moved = 0; for (let i = 0; i < 4; i++) { const r0 = WA.eval(s); if (!r0.newly.length) break; s.at = r0.at; moved += r0.newly.length; } s.achV = 2; s.ach = WA.achList(s.at); this._achMoved = moved; return {s, newly:[]}; }
     for (let i = 0; i < 6; i++) { const r = WA.eval(s); if (!r.newly.length) break; let tix = 0; r.newly.forEach(x => { tix += WA.tixReward(s, x.t); }); s = {...s, at:r.at, tickets:s.tickets+tix, earned:s.earned+tix}; all = all.concat(r.newly); }
     s.ach = WA.achList(s.at); return {s, newly:all}; }
-  setP(patch){ ['tickets','earned'].forEach(k => { if (k in patch) patch[k] = fin(patch[k]); }); const r = this.evalAch({...this.P, ...patch}); this.P = r.s; this.persist(); this.setState({...this.P}); this.checkRebirth();
+  setP(patch){ ['tickets','earned'].forEach(k => { if (k in patch) patch[k] = fin(patch[k]); }); if ('tickets' in patch && patch.tickets > (this.P.tickets||0)) patch.lifeTix = fin((this.P.lifeTix||0) + (patch.tickets - (this.P.tickets||0))); const r = this.evalAch({...this.P, ...patch}); this.P = r.s; this.persist(); this.setState({...this.P}); this.checkRebirth();
     if (r.newly.length && window.WLA && !this.state.admin) { window.WLA.queue(r.newly, this.P); this.petMood('party', 5000); }
     if (this._achMoved) { const n = this._achMoved; this._achMoved = 0; setTimeout(()=>this.toast('ACHIEVEMENTS 2.0 · '+n+' TIERS CARRIED OVER FROM YOUR OLD TROPHIES'), 1200); } }
   stat(k, v, mode){ if (this.state.admin && k!='account' && k!='resumes') return; const st = this.P.stats;
     if (mode=='add') this.setP({stats:{...st, sum:{...st.sum, [k]:(st.sum[k]||0)+v}}});
     else { if ((st.max[k]||0) >= v) return; this.setP({stats:{...st, max:{...st.max, [k]:v}}}); } }
-  componentDidMount(){
+  // the IndexedDB copy is read after loading; if it has more lifetime tickets, it wins
+  checkBackup(){ const key = BK+this.profKey(); idb.get(key).then(b => { if (!b || this.profKey() !== key.slice(BK.length)) return; const best = pickBest([this.P, b]);
+    if (best === b && (b.lifeTix||0) > (this.P.lifeTix||0)) { this.P = normP(b); this.setState({...this.P}); this.persist(true); this.toast('RESTORED YOUR BEST SAVE · '+fmtN(b.tickets||0)+' TICKETS', true); } }); }
+  componentDidMount(){ setTimeout(() => this.checkBackup(), 800);
     this.onDown = e => { const d = (e && e.detail) || {}; this.setState({downUntil:d.until||0, downMsg:d.msg||''}); if (d.until > Date.now() && !this.state.admin && this.state.game) this.closeAll(); };
     window.addEventListener('wl-down', this.onDown); this.onCtrl = () => { this.applyAdj(); this.checkKick(); }; window.addEventListener('wl-ctrl', this.onCtrl); if (window.WLCloud && window.WLCloud.down) this.onDown({detail:window.WLCloud.down()});
     this.downIv = setInterval(()=>{ if (this.state.kickUntil) { if (Date.now() > this.state.kickUntil) this.setState({kickUntil:0}); else this.setState({downTick:Date.now()}); } const u = this.state.downUntil||0; if (u && Date.now() < u + 1500) this.setState({downTick:Date.now()}); else if (u && Date.now() >= u + 1500) this.setState({downUntil:0}); }, 1000);
@@ -1665,7 +1683,7 @@ class Component extends DCLogic {
     if (id=='bests') { this.setP({best:{}}); this.setState({admArm:'', admMsg:'All your high scores are cleared.'}); }
     if (id=='saves') { this.setP({saves:{}}); this.setState({admArm:'', admMsg:'All your saved games are cleared.'}); }
     if (id=='ach') { this.P = {...this.P, ach:[], stats:{max:{},sum:{}}}; this.persist(true); this.setState({...this.P, admArm:'', admMsg:'Achievements and stats reset. Ones you still qualify for will unlock again.'}); }
-    if (id=='all') { this.P = normP({username:P.username, edu:P.edu, savesV:2}); this.persist(true); this.setState({...this.P, admArm:'', admMsg:'Your profile is reset to a fresh start (username and learn settings kept).'}); await fixTix(); }
+    if (id=='all') { this.P = normP({username:P.username, edu:P.edu, savesV:2, wipeAt:Date.now()}); this._bkForce = true; this.persist(true); this.setState({...this.P, admArm:'', admMsg:'Your profile is reset to a fresh start (username and learn settings kept).'}); await fixTix(); }
     this.persist(true); window.Arcade && window.Arcade.sfx('coin'); }
   async adminPlayer(x, kind){ const s = this.state; if (!s.admin) return; const key = kind+':'+x.k;
     if (s.admArm !== key) return this.setState({admArm:key, admMsg:''});
@@ -1802,7 +1820,7 @@ class Component extends DCLogic {
       try { await window.WLCloud.resetEveryone(); this.setState({admArm:'', admMsg:'Full reset done. Every open arcade tab reloads now and starts fresh with an empty leaderboard.'}); }
       catch(e) { this.setState({admArm:'', admMsg: String(e && e.code||'').includes('permission') ? 'Firebase said no. Make sure you’re logged in as jonah@wilderland.academy (log out and back in once so your game sets up the admin control record), then try again.' : 'Couldn’t reset: '+(e && (e.code||e.message))}); } return; }
     try { Object.keys(localStorage).filter(k=>k.startsWith(KEY)).forEach(k=>{ const P2 = getJSON(k, null); if (P2 && typeof P2=='object') putJSON(k, {username:P2.username, avatar:P2.avatar, savesV:2}); }); } catch(e){}
-    putJSON(BOARD_KEY, {e:[]}); this.P = normP({username:this.P.username, avatar:this.P.avatar, savesV:2}); this.persist(true); this.setState({...this.P, admArm:'', admMsg:'Full reset done on this device.'}); }
+    putJSON(BOARD_KEY, {e:[]}); this.P = normP({username:this.P.username, avatar:this.P.avatar, savesV:2, wipeAt:Date.now()}); this._bkForce = true; this.persist(true); this.setState({...this.P, admArm:'', admMsg:'Full reset done on this device.'}); }
   async adminDelete(g, x){ const s = this.state, key = 'del:'+(x.id||x.k+x.s); if (!s.admin) return;
     if (s.admArm !== key) return this.setState({admArm:key, admMsg:''});
     if (s.cloud) { const C = window.WLCloud; try { if (g=='_tix') await C.deleteUserScores('_tix', x.k); else await C.deleteScore(g, x.id); this._bAt = {}; this.cloudBoard = {}; this.setState({admArm:'', admMsg:'Removed '+x.u+' ('+x.s.toLocaleString()+').'}); }

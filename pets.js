@@ -167,7 +167,7 @@ const PETS = [
   P_('dragonling','Wilderland Dragonling','dragon',['#00B451','#F9BF01','#D5F367'],7,{star:8},{k:'allTix'}),
   P_('rainbowfox','Prism the Rainbow Fox','fox',['#ff5fd2','#64CDF5','#fff3b0'],7,{star:12},{k:'critter'}),
   P_('celestia','Celestia the Sky Wisp','wisp',['#ffffff','#ff5fd2','#bff0ff'],7,{star:16},{k:'learn'}),
-  // THE ONE — the final rarity: collect every other pet, or hatch it from a Wilderland Egg (1%)
+  // THE ONE — the final rarity: collect every other pet, or hatch it from a Wilderland Egg (0.00001%)
   P_('theone','THE ONE','theone',['#0b0b10','#1d1d26','#64CDF5'],8,{one:1},{k:'allTix'}),
 ];
 H.PETS = PETS;
@@ -183,10 +183,14 @@ const PERK = {
   combo:   {n:'Combo', e:'🔥', per:.5, d:'more tickets while your combo is going'},
   game:    {n:'Favourite Game', e:'🕹️', per:1.5, d:'more tickets from one cabinet'},
 };
-const RMUL = [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 7];
+const RMUL = [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 50];
 const GNAME = g => { const W = window.WLP; return (W && W.gname && W.gname(g)) || ({crossing:'Critter Crossing', rootout:'Root Out', snake:'Snake', breakout:'Breakout', td:'Trailhead Defense', flappy:'Flapper', space:'Star Ranger', reaction:'Reaction Test'})[g] || g; };
 H.perkPct = (pet, lv) => Math.round(PERK[pet.perk.k].per * RMUL[pet.r] * (Math.min(60, lv) + Math.max(0, Math.min(lv, MAXLV) - 60)*.25) * 100) / 100;
-H.perkText = (pet, lv) => { const k = pet.perk.k, p = H.perkPct(pet, lv); return '+'+p+'% '+(k == 'game' ? GNAME(pet.perk.g)+' tickets' : k == 'gems' ? 'double-gem chance' : PERK[k].d.replace(/^more /,'')); };
+// THE ONE has EVERY perk at once (×50 strength): all tickets, every game, Mines tickets, Learn, combo, gems, plus critters/boosts (capped at +300%)
+const ONE_CAP = {critter:3, buff:3};
+H.onePct = (k, lv) => { const v = PERK[k].per * RMUL[8] * (Math.min(60, lv) + Math.max(0, Math.min(lv, MAXLV) - 60)*.25); return Math.round(Math.min(v, ONE_CAP[k] ? ONE_CAP[k]*100 : Infinity)*100)/100; };
+H.perkText = (pet, lv) => { if (pet.r >= 8) return 'EVERY perk: +'+fmt(H.onePct('allTix', lv))+'% all tickets · +'+fmt(H.onePct('game', lv))+'% every game · +'+fmt(H.onePct('mineTix', lv))+'% Mines · +'+fmt(H.onePct('learn', lv))+'% Learn · +'+fmt(H.onePct('combo', lv))+'% combo · +'+fmt(H.onePct('critter', lv))+'% critters & boosts · +'+fmt(H.onePct('gems', lv))+'% double gems';
+  const k = pet.perk.k, p = H.perkPct(pet, lv); return '+'+p+'% '+(k == 'game' ? GNAME(pet.perk.g)+' tickets' : k == 'gems' ? 'double-gem chance' : PERK[k].d.replace(/^more /,'')); };
 
 // ---------------- profile data ----------------
 H.norm = P => { const p = P.pets && typeof P.pets == 'object' ? P.pets : {};
@@ -196,7 +200,7 @@ H.xpFor = lv => 10*Math.pow(lv-1, 2);
 H.treatXp = lv => 60 * Math.max(1, Math.floor(lv/10));   // treats give more XP as your pet grows
 H.owns = (P, id) => !!H.norm(P).own[id];
 H.active = P => { const n = H.norm(P); const id = n.active && n.own[n.active] ? n.active : null; return id ? {pet:byId(id), d:n.own[id], lv:H.lv(n.own[id].xp)} : null; };
-H.perkVal = (P, k, g) => { const a = H.active(P); if (!a || !a.pet || a.pet.perk.k !== k) return 0; if (k == 'game' && a.pet.perk.g !== g) return 0; return H.perkPct(a.pet, a.lv) / 100; };
+H.perkVal = (P, k, g) => { const a = H.active(P); if (a && a.pet && a.pet.r >= 8) return H.onePct(k, a.lv) / 100; if (!a || !a.pet || a.pet.perk.k !== k) return 0; if (k == 'game' && a.pet.perk.g !== g) return 0; return H.perkPct(a.pet, a.lv) / 100; };
 // multipliers used by the economy
 H.petAll = P => 1 + H.perkVal(P, 'allTix');
 H.petGame = (P, g) => (1 + H.perkVal(P, 'game', g)) * (g == 'idle' ? 1 + H.perkVal(P, 'mineTix') : 1) * (1 + H.perkVal(P, 'combo') * Math.min(1, (((P.combo||{}).n)||1) > 1 ? 1 : 0));
@@ -217,7 +221,7 @@ H.status = (P, pet) => { const s = pet.src, n = H.norm(P);
     const c = st(P,'mineChests'); return {can:c >= s.mine.chests, how:'Mine treasure: open '+s.mine.chests+' treasure rooms ('+c+'/'+s.mine.chests+')'}; }
   if (s.boss) { const [k, v] = Object.entries(s.boss)[0], c = st(P,k), nm = {spaceBoss:'Star Ranger bosses', tdBoss:'Trailhead Defense bosses', mineGolem:'Cave Golems', rootBoss:'Kudzu Kings', mineCore:'the Armageddon Core'}[k] || k;
     return {can:c >= v, how:'Boss drop: defeat '+nm+' ('+Math.min(c,v)+'/'+v+')'}; }
-  if (s.one) { const c = PETS.filter(x => x.id != pet.id && n.own[x.id]).length, all = PETS.length - 1; return {can:c >= all, how:'THE ONE appears when you own every other pet ('+c+'/'+all+') — or hatch it from a Wilderland Egg (1%)'}; }
+  if (s.one) { const c = PETS.filter(x => x.id != pet.id && n.own[x.id]).length, all = PETS.length - 1; return {can:c >= all, how:'THE ONE appears when you own every other pet ('+c+'/'+all+') — or hatch it from a Wilderland Egg (0.00001%)'}; }
   if (s.pr) return {can:prestige(P) >= s.pr, how:'Prestige reward: reach Prestige '+s.pr+' ('+prestige(P)+'/'+s.pr+')'};
   return {how:'?'}; };
 H.shopPrice = (P, pet) => nice(Math.min(1500*Math.pow(7, pet.r) * (1 + PETS.indexOf(pet)%3*.15), need(P)*.3));
@@ -239,7 +243,7 @@ const EGGS = [
   {id:'crystal',n:'Crystal Egg', e:'💠', mul:.02,  min:5e3,  odds:[0,45,35,15,5,0], c:'#2fa8e0'},
   {id:'royal',  n:'Royal Egg', e:'👑', mul:.12,  min:5e4,  odds:[0,0,40,35,20,5], c:'#a64be0'},
   {id:'cosmic', n:'Cosmic Egg', e:'🌌', mul:.25,  min:5e5,  odds:[0,0,0,0,35,40,25,0], c:'#4a5cff'},
-  {id:'wild',   n:'Wilderland Egg', e:'🌲', mul:.4, min:5e6, odds:[0,0,0,0,0,45,35,19,1], c:'#015640'},
+  {id:'wild',   n:'Wilderland Egg', e:'🌲', mul:.4, min:5e6, odds:[0,0,0,0,0,45,35,19.99999,0.00001], c:'#015640'},
 ];
 H.EGGS = EGGS;
 H.eggPrice = (P, e) => nice(Math.max(e.min, need(P)*e.mul));

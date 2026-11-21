@@ -34,8 +34,8 @@ const WLCloud = {
   async google(remember) { await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence); const p = new GoogleAuthProvider(); p.setCustomParameters({ prompt: 'select_account' }); return (await signInWithPopup(auth, p)).user; },
   signOut: () => signOut(auth),
   reset: email => sendPasswordResetEmail(auth, email),
-  async loadProfile(uid) { const s = await getDoc(doc(db, 'profiles', uid)); if (!s.exists()) return null; const d = s.data(); let P = null; try { P = JSON.parse(d.data); } catch (e) {} return { P, name: d.name || '', created: d.created || '', updated: (d.updated && d.updated.toMillis) ? d.updated.toMillis() : 0 }; },
-  saveProfile(uid, P, meta) { if (FROZEN) return Promise.resolve(); return setDoc(doc(db, 'profiles', uid), { data: JSON.stringify(P), name: (meta && meta.name) || '', created: (meta && meta.created) || '', updated: serverTimestamp() }, { merge: true }); },
+  async loadProfile(uid) { const s = await getDoc(doc(db, 'profiles', uid)); if (!s.exists()) return null; const d = s.data(); let P = null, bk = null; try { P = JSON.parse(d.data); } catch (e) {} try { bk = d.bk ? JSON.parse(d.bk) : null; } catch (e) {} return { P, bk, name: d.name || '', created: d.created || '', updated: (d.updated && d.updated.toMillis) ? d.updated.toMillis() : 0 }; },
+  saveProfile(uid, P, meta, bk) { if (FROZEN) return Promise.resolve(); const data = JSON.stringify(P), extra = bk && data.length + bk.length < 850000 ? { bk } : {}; return setDoc(doc(db, 'profiles', uid), { ...extra, data, name: (meta && meta.name) || '', created: (meta && meta.created) || '', updated: serverTimestamp() }, { merge: true }); },
   claimUsername(name, uid, old) { const key = name.toLowerCase();
     return runTransaction(db, async tx => { const ref = doc(db, 'usernames', key), s = await tx.get(ref);
       if (s.exists() && s.data().uid !== uid) throw Object.assign(new Error('taken'), { code: 'taken' });
