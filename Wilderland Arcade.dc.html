@@ -1070,6 +1070,7 @@ const AVP = {
   frame:{t:'Frame',note:'The ring around your avatar card. “Level” shows your achievement level frame.',o:[{n:'Level'},{n:'None'},{n:'Wood'},{n:'Leafy',a:'variety:0'},{n:'Gold',a:'rebirths:0'},{n:'Neon',a:'combo:2'},{n:'Rainbow',a:'avItems:2'},{n:'Platinum',a:'plays:3'},{n:'Diamond',pr:1}]},
   trail:{t:'Trail',note:'What you leave behind when you walk the arcade floor.',o:[{n:'None',e:''},{n:'Footprints',e:'👣'},{n:'Leaves',e:'🍃',a:'rootout_plays:0'},{n:'Sparkles',e:'✨',a:'plays:1'},{n:'Stars',e:'⭐',a:'earned:2'},{n:'Hearts',e:'💗',r:8},{n:'Bubbles',e:'🫧',r:12},{n:'Notes',e:'🎵',a:'simon_plays:0'},{n:'Rainbow',e:'🌈',a:'collections:2'},{n:'Diamonds',e:'💎',pr:1},{n:'Core Flames',e:'🔥',a:'mineCore:0'},{n:'Deep Crystals',e:'💠',a:'mineDepth:2'}]},
   fx:{t:'Face FX',multi:1,note:'These STACK — tap as many as you like (laser eyes + flames + scar …). Tap again to take one off.',o:[{n:'Laser eyes',rb:1},{n:'Fire eyes',r:12},{n:'Glowing eyes',r:6},{n:'Tears',r:2},{n:'Scar',r:5},{n:'Blush',r:1},{n:'Sweat drop',r:3},{n:'Angry mark',r:4},{n:'Sparkles',r:8},{n:'Demon horns',r:14},{n:'Halo glow',r:10},{n:'Lightning aura',r:18},{n:'Shadow aura',r:20},{n:'Speed lines (INTENSE)',r:9},{n:'Ice breath',r:15},{n:'Rainbow glow',pr:1}]},
+  bstyle:{t:'Body style',critterOnly:1,note:'Patterns and finishes for animal bodies — they work with every body and every colour.',o:[{n:'Plain'},{n:'Spotted',r:2},{n:'Striped',r:3},{n:'Fluffy',r:4},{n:'Freckled',r:1},{n:'Sparkly',r:6},{n:'Crystal',r:10},{n:'Cyber',r:12},{n:'Shadow',r:14},{n:'Glow outline',r:9},{n:'Patchwork',r:7},{n:'Galaxy',r:16},{n:'Leopard',r:8},{n:'Tiger',r:8},{n:'Stitched',r:5},{n:'Tie-dye',r:11},{n:'Golden shine',rb:2},{n:'Rainbow',pr:1}]},
   pants:{t:'Pants',note:'Your lower half — it shows on the arcade floor and in the full-body preview.',o:[{n:'Match outfit'},{n:'Jeans'},{n:'Shorts'},{n:'Cargo',r:3},{n:'Joggers',r:2},{n:'Plaid',r:6},{n:'Skirt',r:4},{n:'Kilt',r:9},{n:'Pajamas',r:5},{n:'Ranger pants',a:'rootout_plays:1'},{n:'Galaxy',r:14},{n:'Lava',r:16},{n:'Rainbow',r:18},{n:'Robot legs',a:'typing_plays:2'},{n:'Knight armor',r:20},{n:'Gold',rb:2},{n:'Diamond',pr:1}]},
   crest:{t:'Cool Emblem',note:'A second, hand-drawn badge for the other side of your outfit. Animated, glowing and very cool.',o:[{n:'None'},{n:'Infinity Flame',r:6},{n:'Thunder Shield',r:8},{n:'Dragon Sigil',r:14},{n:'Galaxy Orb',r:10},{n:'Royal Seal',r:12},{n:'Phoenix Wing',r:16},{n:'Diamond Core',pr:1},{n:'Neon Star',r:5},{n:'Wolf Moon',r:11},{n:'Atom',r:9},{n:'Pixel Heart',r:3},{n:'Rune Circle',r:18},{n:'Black Hole',r:22},{n:'Golden Sun',rb:2},{n:'Yin & Yang',r:7},{n:'Crossed Swords',r:13},{n:'Wilderland Tree',r:4},{n:'Comet',r:15},{n:'Ice Crystal',r:10},{n:'Skull & Roses',r:20},{n:'THE ONE',one:1}]},
   shoes:{t:'Shoes',o:[{n:'Sneakers'},{n:'Boots'},{n:'Sandals',r:1},{n:'High-tops',r:3},{n:'Light-up',r:8},{n:'Rocket boots',r:15},{n:'Roller skates',r:10},{n:'Bunny slippers',r:6},{n:'Cowboy boots',r:9},{n:'Flippers',r:5},{n:'Ice skates',r:12},{n:'Gold',rb:1},{n:'Diamond',pr:1},{n:'Paws'}]},
@@ -1077,8 +1078,8 @@ const AVP = {
 };
 // Wilderland prizes each add an emblem (appended in catalog order, so saved choices stay put).
 const avEmblems = () => { if (AVP.emblem.done || !window.WLP || !window.WLP.catalog) return; AVP.emblem.done = 1; window.WLP.catalog().filter(it => it.r === 7).forEach(it => AVP.emblem.o.push({n:it.n, e:it.e, wp:it.id, wild:1})); };
-const AVK = ['skin','shirt','hat','face','gear','pet','hair','hairc','acc','bg','body','main','accent','eye','frame','trail','emblem','fx','pants','shoes','crest'];
-const AVTABS = ['body','main','accent','skin','eye','hat','hair','hairc','face','fx','acc','shirt','pants','shoes','gear','pet','emblem','crest','frame','bg','trail'];
+const AVK = ['skin','shirt','hat','face','gear','pet','hair','hairc','acc','bg','body','main','accent','eye','frame','trail','emblem','fx','pants','shoes','crest','bstyle'];
+const AVTABS = ['body','bstyle','main','accent','skin','eye','hat','hair','hairc','face','fx','acc','shirt','pants','shoes','gear','pet','emblem','crest','frame','bg','trail'];
 const avNorm = a => { avEmblems(); const o = {}; AVK.forEach(k=>{ const v = a && a[k]|0; o[k] = AVP[k].multi ? (v>=0 && v < (1<<AVP[k].o.length) ? v : 0) : (v>=0 && v<AVP[k].o.length ? v : 0); }); if (!a || a.hat==null) o.hat = 1; return o; };
 const avEnc = a => AVK.map(k=>avNorm(a)[k]).join('.');
 // The active pet rides along on leaderboards and chat: an extra ".p<index>-<level>" part that older versions simply ignore.
@@ -1113,9 +1114,14 @@ const critterHead = (B, M, C) => { const sh = '<ellipse cx="27" cy="20" rx="6" r
     case 12: { const sc = '<path d="M24 34q2-2 4 0M30 37q2-2 4 0M36 34q2-2 4 0M22 25q2-2 4 0M38 25q2-2 4 0" stroke="'+C+'" stroke-width="1" fill="none" opacity=".55"/>';
       return '<path d="M21 20q-9-10-5-17q2 7 9 11z" fill="'+C+'" stroke="#5a3a1c" stroke-width=".7"/><path d="M43 20q9-10 5-17q-2 7-9 11z" fill="'+C+'" stroke="#5a3a1c" stroke-width=".7"/><path d="M17 26l-5-3l4 6zM47 26l5-3l-4 6z" fill="'+M+'"/><path d="M27 15l2-5l2 4l1-5l2 5l2-4l2 5" fill="'+C+'"/><ellipse cx="32" cy="28" rx="14" ry="13" fill="'+M+'"/><ellipse cx="32" cy="22" rx="9" ry="4" fill="#fff" opacity=".12"/>'+sc+'<ellipse cx="32" cy="37.5" rx="8.5" ry="4.6" fill="#fff" opacity=".18"/><ellipse cx="29.5" cy="38.6" rx="1" ry=".7" fill="#121313"/><ellipse cx="34.5" cy="38.6" rx="1" ry=".7" fill="#121313"/>'; }
     case 13: return '<path d="M20 18q-9-2-11-10q4 2 6 0q1 4 5 3q-2-4 1-6q2 5 3 9zM44 18q9-2 11-10q-4 2-6 0q-1 4-5 3q2-4-1-6q-2 5-3 9z" fill="'+C+'"/><ellipse cx="32" cy="29" rx="12.5" ry="13" fill="'+M+'"/><ellipse cx="32" cy="36" rx="7.5" ry="5.5" fill="'+M+'" stroke="#5a3a1c" stroke-width=".6"/><circle cx="29.5" cy="36" r="1.1" fill="#121313"/><circle cx="34.5" cy="36" r="1.1" fill="#121313"/>'+sh;
-    case 14: { const g = (x, y, dx, dy) => '<path d="M'+x+' '+y+'q'+(dx*.6)+' '+(dy-3)+' '+dx+' '+dy+'" stroke="'+C+'" stroke-width="2.6" fill="none" stroke-linecap="round"/><circle cx="'+(x+dx)+'" cy="'+(y+dy)+'" r="1.6" fill="'+C+'"/>';
-      return '<g>'+at('rotate','-3 32 29;3 32 29;-3 32 29',1.6,SPLINE)+g(19,24,-8,-7)+g(18,28,-10,-1)+g(19,32,-8,5)+g(45,24,8,-7)+g(46,28,10,-1)+g(45,32,8,5)+'</g>'
-        +'<ellipse cx="32" cy="29" rx="15" ry="12.5" fill="'+M+'"/><ellipse cx="32" cy="34" rx="8" ry="4" fill="#fff" opacity=".25"/><circle cx="22" cy="32" r="2.2" fill="'+C+'" opacity=".45"/><circle cx="42" cy="32" r="2.2" fill="'+C+'" opacity=".45"/>'+sh; }
+    case 14: { // axolotl: wide soft head, feathery gill fronds, little spots and a pale chin
+      const fr = (x, y, dx, dy, w) => { const ex = x+dx, ey = y+dy, nx = -dy/Math.hypot(dx,dy), ny = dx/Math.hypot(dx,dy);
+        return '<path d="M'+x+' '+y+'Q'+(x+dx*.5+nx*2)+' '+(y+dy*.5+ny*2)+' '+ex+' '+ey+'" stroke="'+C+'" stroke-width="'+w+'" fill="none" stroke-linecap="round"/>'
+          +[.35,.6,.85].map(k => { const px = x+dx*k, py = y+dy*k; return '<path d="M'+px+' '+py+'l'+(nx*2.2+dx*.08)+' '+(ny*2.2+dy*.08)+'M'+px+' '+py+'l'+(-nx*2.2+dx*.08)+' '+(-ny*2.2+dy*.08)+'" stroke="'+C+'" stroke-width="1.1" stroke-linecap="round" opacity=".85"/>'; }).join(''); };
+      return '<g>'+at('rotate','-4 32 28;4 32 28;-4 32 28',1.8,SPLINE)+fr(20,24,-9,-8,2.4)+fr(18.5,28.5,-11,-1.5,2.4)+fr(20,33,-9,6,2.4)+fr(44,24,9,-8,2.4)+fr(45.5,28.5,11,-1.5,2.4)+fr(44,33,9,6,2.4)+'</g>'
+        +'<ellipse cx="32" cy="29.5" rx="15.5" ry="12.5" fill="'+M+'"/><ellipse cx="32" cy="35.5" rx="10" ry="5" fill="#fff" opacity=".28"/>'
+        +'<circle cx="24" cy="22" r="1.1" fill="'+C+'" opacity=".35"/><circle cx="40" cy="21" r="1.3" fill="'+C+'" opacity=".35"/><circle cx="36" cy="19" r=".8" fill="'+C+'" opacity=".35"/>'
+        +'<ellipse cx="22" cy="32.5" rx="2.6" ry="1.6" fill="'+C+'" opacity=".5"/><ellipse cx="42" cy="32.5" rx="2.6" ry="1.6" fill="'+C+'" opacity=".5"/>'+sh; }
   } return ''; };
 const FRAMES = [null, null, {c:'#8D5B1D', w:4, d:'2 0'}, {c:'#00B451', w:3, leaf:1}, {c:'#F9BF01', w:3.5}, {c:'#D5F367', w:3, neon:1}, {c:'url(#rb)', w:3.5}, {c:'#9fe8e3', w:3.5}, {c:'#64CDF5', w:4, dia:1}];
 const avPet = (PT, px, py, big) => { let o = '';
@@ -1264,6 +1270,29 @@ const avCrest = (k, x, y) => { const T = s => '<g transform="translate('+x+' '+y
     case 20: return T('<circle r="5.6" fill="#121313"/><path d="M-2.4 0a2.4 2.4 0 1 1 4.8 0v1.4h-4.8z" fill="#f3efe0"/><circle cx="-1" cy="-.4" r=".7" fill="#121313"/><circle cx="1" cy="-.4" r=".7" fill="#121313"/><circle cx="-3.6" cy="3.4" r="1.2" fill="#FF4539"/><circle cx="3.6" cy="3.4" r="1.2" fill="#FF4539"/>');
     case 21: return T('<circle r="5.6" fill="#05050a" stroke="#64CDF5" stroke-width="1"/><path d="M-2.6 -1.6q1.5 -1.4 2.2 0q-1.2 1 -2.2 0zM2.6 -1.6q-1.5 -1.4 -2.2 0q1.2 1 2.2 0z" fill="#F9BF01"/><path d="M-3 -3.6l1 -1.6l1 1l1 -1.4l1 1.4l1 -1l1 1.6z" fill="#F9BF01"/>'+'<circle r="6.6" fill="none" stroke="#b48cff" stroke-width=".6" opacity=".7">'+an('r','6;7.2;6',1.4)+'</circle>');
   } return ''; };
+// body styles: drawn over an animal head, clipped to the head
+const avStyle = (k, M, C) => { const clip = '<clipPath id="hdc"><ellipse cx="32" cy="29" rx="14.5" ry="13"/></clipPath>'; let s = '';
+  const dk = lum(M) > .5 ? 'rgba(0,0,0,.22)' : 'rgba(255,255,255,.22)';
+  switch (k) {
+    case 1: s = [[24,22,2],[38,20,2.4],[42,30,1.8],[22,33,1.6],[30,17,1.4]].map(([x,y,r])=>'<circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="'+dk+'"/>').join(''); break;
+    case 2: s = '<path d="M18 22q4 2 8 0M18 28q4 2 7 0M46 22q-4 2-8 0M46 28q-4 2-7 0M29 16q3 3 6 0" stroke="'+dk+'" stroke-width="2" fill="none" stroke-linecap="round"/>'; break;
+    case 3: return '<path d="M18 22l-3-2l2 4l-3 1l3 2M46 22l3-2l-2 4l3 1l-3 2M27 16l2-4l2 3l2-4l2 3l2-3l1 5" fill="'+M+'" stroke="'+M+'" stroke-width="1.4" stroke-linejoin="round"/>';
+    case 4: s = '<g fill="'+dk+'">'+[[24,31],[26,33],[22,33.5],[40,31],[38,33],[42,33.5]].map(([x,y])=>'<circle cx="'+x+'" cy="'+y+'" r=".8"/>').join('')+'</g>'; break;
+    case 5: s = [[22,20],[40,18],[44,32],[20,34],[33,15]].map(([x,y],i)=>'<path d="M'+x+' '+(y-2)+'l.7 1.4l1.4.6l-1.4.6l-.7 1.4l-.7-1.4l-1.4-.6l1.4-.6z" fill="#fff">'+an('opacity','1;.2;1',1+i*.25)+'</path>').join(''); break;
+    case 6: s = '<path d="M20 20l6 4l-5 3zM44 18l-5 6l6 1zM28 36l4-5l4 5z" fill="#bff0ff" opacity=".55"/><path d="M22 21l3 2" stroke="#fff" stroke-width="1"/>'; break;
+    case 7: s = '<path d="M18 24h6v4h5M46 22h-7v6h-4M26 36v-3h12v3" stroke="#3affd5" stroke-width="1" fill="none" opacity=".9"/><circle cx="29" cy="28" r="1" fill="#3affd5"/><circle cx="35" cy="28" r="1" fill="#3affd5"/>'; break;
+    case 8: s = '<rect x="10" y="10" width="44" height="40" fill="url(#shd)"/>'; return '<defs><linearGradient id="shd" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#000" stop-opacity=".05"/><stop offset="1" stop-color="#1a0a2a" stop-opacity=".6"/></linearGradient>'+clip+'</defs><g clip-path="url(#hdc)">'+s+'</g>';
+    case 9: return '<ellipse cx="32" cy="29" rx="15.5" ry="14" fill="none" stroke="'+C+'" stroke-width="1.6" opacity=".9">'+an('opacity','.9;.35;.9',1.4)+'</ellipse>';
+    case 10: s = '<path d="M17 16h12v12h-12z" fill="'+C+'" opacity=".45"/><path d="M33 28h14v14h-14z" fill="'+dk+'"/><path d="M29 16v12M17 28h12M33 28v14" stroke="#fff" stroke-width=".7" stroke-dasharray="1.5 1.5" opacity=".7"/>'; break;
+    case 11: s = '<rect x="10" y="10" width="44" height="40" fill="#2a1250" opacity=".55"/>'+[[22,20],[38,18],[42,30],[26,34],[32,24],[19,29]].map(([x,y],i)=>'<circle cx="'+x+'" cy="'+y+'" r="'+(i%2?.7:1)+'" fill="#fff">'+an('opacity','1;.3;1',1+i*.3)+'</circle>').join(''); break;
+    case 12: s = [[23,20],[39,19],[43,30],[21,32],[31,16],[35,34]].map(([x,y])=>'<path d="M'+(x-2)+' '+y+'a2 2 0 1 1 4 0" stroke="'+(lum(M)>.5?'#5a3a1c':'#121313')+'" stroke-width="1.2" fill="none"/><circle cx="'+x+'" cy="'+(y+.4)+'" r=".8" fill="'+(lum(M)>.5?'#8D5B1D':'#3a3a3a')+'"/>').join(''); break;
+    case 13: s = '<path d="M18 20l6 3l-6 2M46 20l-6 3l6 2M18 30l5 1l-5 2M46 30l-5 1l5 2M30 15l2 4l2-4" stroke="#121313" stroke-width="1.6" fill="none" stroke-linejoin="round"/>'; break;
+    case 14: return '<path d="M21 19l4 5M23 20.5l-2.4 1.4M24.5 22.5l-2.4 1.4M42 34l-4 3M41 33l1 2M39 35l1 2" stroke="#5a3a1c" stroke-width="1" fill="none"/>';
+    case 15: s = '<circle cx="24" cy="22" r="7" fill="#ff5fd2" opacity=".35"/><circle cx="40" cy="24" r="7" fill="#64CDF5" opacity=".35"/><circle cx="32" cy="34" r="7" fill="#F9BF01" opacity=".35"/>'; break;
+    case 16: s = '<path d="M20 18q8-6 24 0" stroke="#fff6b0" stroke-width="3" fill="none" opacity=".55"/><rect x="10" y="10" width="44" height="40" fill="#F9BF01" opacity=".18"/>'; break;
+    case 17: s = '<rect x="10" y="10" width="44" height="40" fill="url(#rb)" opacity=".35"/>'; break;
+  }
+  return '<defs>'+clip+'</defs><g clip-path="url(#hdc)">'+s+'</g>'; };
 const avSVG = (a, lvl, opts) => { a = avNorm(a); opts = opts || {}; const B = a.body, BD = BODY[B], sk = AVP.skin.o[a.skin].c, SH = AVP.shirt.o[a.shirt], sc = SH.c; let o = '<defs>'+RBG+'</defs>';
   const mc0 = AVP.main.o[a.main].c, ac0 = AVP.accent.o[a.accent].c, M = B ? (mc0 || BD.m) : sk, C = B ? (ac0 == 'rainbow' ? 'url(#rb)' : (ac0 || BD.a)) : sk, ec = AVP.eye.o[a.eye].c || '#121313';
   if (opts.petOnly) return svgURI('<defs>'+RBG+'</defs>'+avPet(a.pet, 32, 38, true));
@@ -1317,6 +1346,7 @@ const avSVG = (a, lvl, opts) => { a = avNorm(a); opts = opts || {}; const B = a.
   if (PAT=='lab') o += '<path d="M28 43l4 10l4-10" stroke="#d8d2bd" stroke-width="1.5" fill="none"/><path d="M32 53v11" stroke="#d8d2bd" stroke-width="1"/><rect x="36" y="54" width="5" height="5" rx="1" fill="none" stroke="#d8d2bd" stroke-width="1"/><path d="M37.5 54v-3" stroke="#2f7de0" stroke-width="1.2"/>';
   if (PAT=='armor') o += '<path d="M24 46l8 4l8-4l2 14h-20z" fill="#64CDF5" stroke="#fff" stroke-width="1.2"/><path d="M32 50l3 4l-3 4l-3-4z" fill="#fff"/>';
   o += B ? critterHead(B, M, C) : '<circle cx="32" cy="28" r="13" fill="'+sk+'"/>';
+  if (B && a.bstyle) o += avStyle(a.bstyle, M, C);
   if (B && lum(M) < .35) o += '<circle cx="27" cy="27" r="3.2" fill="#fff"/><circle cx="37" cy="27" r="3.2" fill="#fff"/>';
   if (G==1) o += '<path d="M21 40q11 6 22 0v4q-11 6-22 0z" fill="#EA55AB"/><path d="M38 43l3 9l4-2z" fill="#EA55AB"/>';
   if (a.crest) o += avCrest(a.crest, 38.5, 54);
@@ -1557,7 +1587,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-11-29f';
+const BUILD = '2026-11-29g';
 const SCRIPTS = ['arcade-core.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js','games-secrets.js'];
 const fmt = n => Math.round(n).toLocaleString();
 

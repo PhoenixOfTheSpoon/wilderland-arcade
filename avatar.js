@@ -106,7 +106,7 @@ V.mount = (root, api) => { ensureCss(); let tab = api.tab || TABS[0], tryOn = nu
     wrap.appendChild(E('div', {cls:'wlv-top'}, prev, info));
     // tabs
     const tb = E('div', {style:{display:'flex', gap:'6px', flexWrap:'wrap', margin:'12px 0 8px'}});
-    [...TABS, 'cursor'].forEach(k => { if (k == 'skin' && a.body) return; if (k !== 'skin' && k !== 'cursor' && AVP[k].kidOnly && a.body) return;
+    [...TABS, 'cursor'].forEach(k => { if (k == 'skin' && a.body) return; if (k !== 'skin' && k !== 'cursor' && AVP[k].kidOnly && a.body) return; if (k !== 'cursor' && AVP[k].critterOnly && !a.body) return;
       tb.appendChild(E('button', {cls:'wlv-chip'+(tab==k?' on':''), onclick:()=>{ tab = k; tryOn = null; render(); }}, k=='cursor' ? 'Cursor' : AVP[k].t)); });
     wrap.appendChild(tb);
     if (tab === 'cursor') { const g = E('div', {cls:'wlv-grid'}); CURSORS.forEach(c => { const ok = adm() || lvl >= c.r, on = (p.cursor||'') == c.id;
