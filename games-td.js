@@ -355,7 +355,10 @@ A.register('td', { w:720, mount(host, api){
   const selLbl = el('div',{flex:1,minWidth:'160px',color:'#fff',fontWeight:700,fontSize:'12px'});
   const upBtn = mk('',()=>upgrade()), sellBtn = mk('',()=>sell()), modeBtn = mk('',()=>{ if (!sel) return; sel.mode = {first:'strong',strong:'close',close:'first'}[sel.mode||'first']; ui(); }), doneBtn = mk('Done',()=>{ sel = null; ui(); });
   selRow.append(selLbl,upBtn,sellBtn,modeBtn,doneBtn);
-  const upgrade = () => { if (!sel || sel.lvl>=MAXLV(sel)) return; const cst = upCost(sel); if (gold<cst) return A.sfx('bad'); gold -= cst; sel.spent += cst; sel.lvl++; A.sfx('coin');
+  // Bulk buy: the arcade-wide ×1 / ×10 / ×100 / Max setting upgrades several levels at once
+  const bulkQ = () => { try { const v = JSON.parse(localStorage.getItem('wl-prize-qty')); return v === 'max' ? 1e4 : (+v || 1); } catch(e) { return 1; } };
+  const upPlan = t => { let n = 0, tot = 0; const L0 = t.lvl, mx = MAXLV(t), want = bulkQ(); while (n < want && L0+n < mx) { const c = upCost({...t, lvl:L0+n}); if (tot + c > gold) break; tot += c; n++; } return {n, tot}; };
+  const upgrade = () => { if (!sel || sel.lvl>=MAXLV(sel)) return; const pl = upPlan(sel); if (!pl.n) return A.sfx('bad'); gold -= pl.tot; sel.spent += pl.tot; sel.lvl += pl.n; A.sfx('coin');
     if (!perf) for (let i=0;i<12;i++) addFx('spark',OX+sel.c*T+T/2,OY+sel.r*T+T/2,Math.random()*TAU,20+Math.random()*40,i%2?C.gold:C.lime,.5); ui(); };
   const sell = () => { if (!sel) return; gold += sellVal(sel); towers = towers.filter(t=>t!==sel); sel = null; A.sfx('flip'); ui(); };
   const paintBtn = (x,on,ok) => { x.style.background = on ? C.lime : ok ? '#ffffff' : 'rgba(255,255,255,.25)'; x.style.color = on ? C.forest : ok ? C.forest : '#d8e6df'; x.style.cursor = ok ? 'pointer' : 'not-allowed'; };
@@ -363,7 +366,7 @@ A.register('td', { w:720, mount(host, api){
   let uiSig = '';
   const ui = (force) => {
     const playing = state=='build' || state=='wave';
-    const sig = [state, quiz?1:0, sel?towers.indexOf(sel)+':'+sel.lvl+':'+(sel.mode||'')+':'+(sel.buff||0):'', build, aim, spd, perf, mode, wave, Math.floor(between), queue.length-qi+enemies.length, TIDS.map(id=>gold>=TW[id].cost?1:0).join(''), Object.keys(cds).map(k=>Math.ceil(cds[k])).join(','), sel ? (gold>=upCost(sel)?1:0) : ''].join('|');
+    const sig = [sel ? upPlan(sel).n : 0, state, quiz?1:0, sel?towers.indexOf(sel)+':'+sel.lvl+':'+(sel.mode||'')+':'+(sel.buff||0):'', build, aim, spd, perf, mode, wave, Math.floor(between), queue.length-qi+enemies.length, TIDS.map(id=>gold>=TW[id].cost?1:0).join(''), Object.keys(cds).map(k=>Math.ceil(cds[k])).join(','), sel ? (gold>=upCost(sel)?1:0) : ''].join('|');
     if (!force && sig === uiSig) return; uiSig = sig;
     quizRow.style.display = quiz && state=='build' ? 'flex' : 'none';
     menuRow.style.display = playing ? 'none' : 'flex'; towerRow.style.display = playing ? 'grid' : 'none';
@@ -381,7 +384,7 @@ A.register('td', { w:720, mount(host, api){
     spdBtn.textContent = 'X · Speed '+spd+'×'; paintBtn(spdBtn,spd!=1,true); perfBtn.textContent = 'Perf '+(perf?'ON':'OFF'); paintBtn(perfBtn,perf,true);
     if (sel) { const D = TW[sel.type], S = tstat(sel), mx = MAXLV(sel);
       selLbl.textContent = D.n+' · Lv '+sel.lvl+(sel.buff?' · boosted +'+Math.round(sel.buff*100)+'%':'')+(D.range ? (D.dmg ? ' · '+Math.round(S.dmg)+' dmg' : '')+(D.buff ? ' · +'+Math.round(S.tbuff*100)+'% to nearby towers' : '')+(D.poison ? ' · poison '+Math.round(S.poison)+'/s' : '') : ' · now +'+S.inc+' gold/wave → next level +'+tstat({...sel, lvl:sel.lvl+1}).inc+' gold/wave (no level cap)');
-      upBtn.textContent = sel.lvl>=mx ? 'Max level' : 'U · Upgrade '+upCost(sel); paintBtn(upBtn,false,sel.lvl<mx && gold>=upCost(sel));
+      { const pl = upPlan(sel); upBtn.textContent = sel.lvl>=mx ? 'Max level' : 'U · Upgrade '+(pl.n > 1 ? '×'+pl.n+' · '+pl.tot : upCost(sel)); paintBtn(upBtn,false,sel.lvl<mx && gold>=upCost(sel)); }
       sellBtn.textContent = 'Sell +'+sellVal(sel); paintBtn(sellBtn,false,true);
       modeBtn.style.display = D.range && !D.buff && !D.pulse ? '' : 'none'; modeBtn.textContent = 'Target · '+({first:'First',strong:'Strong',close:'Close'}[sel.mode||'first']); paintBtn(modeBtn,false,true); paintBtn(doneBtn,false,true); } };
   const at = e => { const r = c.getBoundingClientRect(), x = (e.clientX-r.left)*W/r.width, y = (e.clientY-r.top)*H/r.height; return {x,y,cc:Math.floor((x-OX)/T),rr:Math.floor((y-OY)/T)}; };

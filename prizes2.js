@@ -516,17 +516,22 @@ W.mount = (root, api) => {
     if (x.rw.k=='tix') { if (!api.admin()) set({chal:chal2, tickets:(p.tickets||0)+x.rw.v, earned:(p.earned||0)+x.rw.v}); else set({chal:chal2}); api.sfx('win'); api.toast('CHALLENGE COMPLETE · +'+W.fmt(x.rw.v)+' TICKETS'); render(); }
     else { set({chal:chal2}); openCap(CAPS.find(c=>c.id==x.rw.v)||CAPS[0], true); render(); } };
 
+  // how many capsules the ×1 / ×10 / ×100 / Max setting opens at once (Max stops at 1,000)
+  const capN = (c, p) => Math.max(1, Math.min(qty === 'max' ? 1000 : qty, Math.floor((p.tickets||0) / capPrice(c, p))));
   const openCap = (c, free) => { const p = P(), price = capPrice(c,p); if (api.admin() && !free) return api.toast('ADMIN MODE · SHOPPING DISABLED');
     if (!free && (p.tickets||0) < price) { api.sfx('bad'); return api.toast('NEED '+W.fmt(price-(p.tickets||0))+' MORE TICKETS'); }
-    const it = rollCap(c, p), prizes = {...(p.prizes||{}), [it.id]:((p.prizes||{})[it.id]||0)+1};
-    set({tickets:(p.tickets||0)-(free?0:price), prizes, capsules:(p.capsules||0)+1}); reveal(it, (free?'FREE ':'')+c.n.toUpperCase()+' · '+R[it.r].n.toUpperCase()); checkCols(); render(); };
+    const n = free ? 1 : capN(c, p), prizes = {...(p.prizes||{})}, got = []; for (let i = 0; i < n; i++) { const it = rollCap(c, {...p, prizes}); prizes[it.id] = (prizes[it.id]||0)+1; got.push(it); }
+    set({tickets:(p.tickets||0)-(free?0:price*n), prizes, capsules:(p.capsules||0)+n});
+    const best = got.reduce((a, b) => b.r > a.r ? b : a, got[0]);
+    if (n > 1) { const by = {}; got.forEach(it => by[it.r] = (by[it.r]||0)+1); api.toast('OPENED '+n+' CAPSULES · '+Object.keys(by).sort((a,b)=>b-a).map(r => by[r]+' '+R[r].n).join(', ')); }
+    reveal(best, (free?'FREE ':'')+(n > 1 ? 'BEST OF '+n+' · ' : '')+c.n.toUpperCase()+' · '+R[best.r].n.toUpperCase()); checkCols(); render(); };
   const caps = () => { const p = P(), box = E('div');
     box.appendChild(E('div', {cls:'wlp-box'}, E('div', {style:{fontWeight:800, fontSize:'18px', color:'#015640'}}, 'Mystery Capsules'), E('div', {cls:'wlp-small'}, 'Paid with tickets only — never real money. The exact odds are printed on every capsule. Capsules only hold Common to Mythic prizes — Cosmic and Wilderland prizes can only be bought with Golden Stars. Duplicates add to your count in the Trophy Room.')));
     const g = E('div', {style:{display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))', gap:'10px', marginTop:'10px'}});
     CAPS.forEach(c => { const price = capPrice(c,p), can = (p.tickets||0) >= price;
       const odds = E('div', {style:{display:'grid', gridTemplateColumns:'1fr auto', gap:'1px 8px', fontSize:'12px', margin:'6px 0'}});
       R.forEach((r,i) => { if (!c.odds[i]) return; odds.append(E('span', {cls:r.rainbow?'wlp-rain':'', style:{color:r.c, fontWeight:700}}, r.n), E('b', null, c.odds[i]+'%')); });
-      const b = E('button', {cls:'wlp-buy', onclick:()=>openCap(c,false)}, 'Open · '+W.fmt(price)+' 🎟'); if (!can) b.disabled = true;
+      const cn = capN(c, p), b = E('button', {cls:'wlp-buy', onclick:()=>openCap(c,false)}, (cn > 1 ? 'Open ×'+cn+' · '+W.fmt(price*cn) : 'Open · '+W.fmt(price))+' 🎟'); if (!can) b.disabled = true;
       g.appendChild(E('div', {cls:'wlp-box', style:{border:'3px solid '+c.col, textAlign:'center'}}, E('div', {style:{fontSize:'52px'}}, '🥚'), E('div', {style:{fontWeight:800, color:c.col, fontSize:'17px'}}, c.n), E('div', {cls:'wlp-small'}, 'ODDS FOR EACH RARITY:'), odds, b)); });
     box.appendChild(g); box.appendChild(E('div', {cls:'wlp-small', style:{marginTop:'8px'}}, 'You’ve opened '+(p.capsules||0)+' capsules. Capsule prices grow a little as your multiplier grows.')); return box; };
 
@@ -601,7 +606,7 @@ W.mount = (root, api) => {
     list.forEach(it => gg.appendChild(prizeCard(it))); if (!list.length) gg.appendChild(E('div', {cls:'wlp-small'}, 'No Wilderland prizes match.'));
     box.appendChild(E('button', {cls:'wlp-chip'+(affordOnly?' on':''), style:{margin:'10px 0 4px'}, onclick:()=>{ affordOnly = !affordOnly; renderBody(); }}, 'Can afford')); box.appendChild(gg); return box; };
   const renderBody = () => { if (!live) return; if (avOff) { try { avOff(); } catch(e){} avOff = null; } body.innerHTML = '';
-    const eapi = bump => ({P, setP:set, sfx:api.sfx, toast:api.toast, admin:api.admin, games:api.games, rerender:k=>{ bumpK = k; render(); }, bump, buyN:expN, setBuyN:n=>{ expN = n; }});
+    const eapi = bump => ({P, setP:set, sfx:api.sfx, toast:api.toast, admin:api.admin, games:api.games, rerender:k=>{ bumpK = k; render(); }, bump, buyN: qty === 'max' ? 1e4 : qty, setBuyN:n=>{ qty = n >= 1e4 ? 'max' : n; try { localStorage.setItem('wl-prize-qty', JSON.stringify(qty)); } catch(e){} }});
     const exp = () => window.WLE ? window.WLE.expPanel(eapi(bumpK)) : E('div', null, 'Loading…');
     const prestige = () => window.WLE ? window.WLE.ptPanel(eapi()) : E('div', null, 'Loading…');
     body.appendChild(({upg, shop, avatar, wild, trophy, mult, chal, caps, exp, rebirth, prestige, stats}[tab] || shop)()); bumpK = null; };

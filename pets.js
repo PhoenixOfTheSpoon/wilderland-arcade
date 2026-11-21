@@ -405,6 +405,9 @@ const E = (tag, props, ...kids) => { const e = document.createElement(tag); if (
     if (k == 'style') { for (const s in v) { if (s.startsWith('--')) e.style.setProperty(s, v[s]); else e.style[s] = v[s]; } } else if (k.startsWith('on')) e[k] = v; else if (k == 'cls') e.className = v; else e.setAttribute(k, v); }
   kids.flat().forEach(c => { if (c == null || c === false) return; e.appendChild(typeof c == 'object' ? c : document.createTextNode(String(c))); }); return e; };
 
+const getQ = () => { try { const v = JSON.parse(localStorage.getItem('wl-prize-qty')); return v === 'max' ? 'max' : (+v || 1); } catch(e) { return 1; } };
+const setQ = v => { try { localStorage.setItem('wl-prize-qty', JSON.stringify(v)); } catch(e){} };
+const qN = cap => { const q = getQ(); return q === 'max' ? cap : Math.min(cap, q); };
 H.mount = (root, api) => { H.ensureCss(); const wrap = E('div', {cls:'wlh'}); root.appendChild(wrap); let tab = api.tab || 'pets', live = true, sel = null, placing = null, room = 'living', zoom = 1, dexF = -1, wanderIv = null, petSel = null;
   const P = () => api.P(), set = p => api.setP(p), R = RAR();
   const head = E('div'), body = E('div'); wrap.append(head, body);
@@ -415,6 +418,9 @@ H.mount = (root, api) => { H.ensureCss(); const wrap = E('div', {cls:'wlh'}); ro
       E('div', {style:{background:'#015640', color:'#D5F367', borderRadius:'999px', padding:'7px 14px', fontWeight:800}}, '🐾 '+Object.keys(n.own).length+' / '+PETS.length+' pets'),
       E('div', {style:{background:'#fff', color:'#015640', borderRadius:'999px', padding:'7px 14px', fontWeight:800}}, TIERS[h.tier].e+' '+TIERS[h.tier].n),
       a ? E('div', {cls:'wlh-small'}, 'Active: '+a.pet.n+' · Lv '+a.lv+' · '+H.perkText(a.pet, a.lv)) : null));
+    const bq = E('div', {style:{display:'flex', gap:'5px', alignItems:'center', flexWrap:'wrap', marginBottom:'8px'}}, E('b', {style:{fontSize:'12px', color:'#015640'}}, 'BUY'));
+    [1, 10, 100, 'max'].forEach(v => bq.appendChild(E('button', {cls:'wlh-chip'+(getQ()===v?' on':''), onclick:()=>{ setQ(v); render(); }}, v === 'max' ? 'Max' : '×'+v)));
+    bq.appendChild(E('span', {cls:'wlh-small'}, 'for eggs, treats, furniture and home upgrades')); head.append(bq);
     const tb = E('div', {cls:'wlh-tabs'}); [['pets','🐾 My Pets'],['dex','📖 Pet Dex'],['eggs','🥚 Eggs & Treats'],['home','🏠 Home'],['emotes','💃 Emotes & Mounts']].forEach(([id,t]) => tb.appendChild(E('button', {cls:'wlh-tab'+(tab==id?' on':''), onclick:()=>{ tab = id; sel = null; placing = null; render(); }}, t)));
     head.append(tb); };
   const petCard = (pet, p, onclick) => { const n = H.norm(p), d = n.own[pet.id], r = R[pet.r], lv = d ? H.lv(d.xp) : 1;
@@ -433,7 +439,7 @@ H.mount = (root, api) => { H.ensureCss(); const wrap = E('div', {cls:'wlh'}); ro
         api.sfx('blip'); api.toast(['BOING!','WHEEE!','HIGH FIVE!','ZOOMIES!'][Math.floor(Math.random()*4)]+' · +15 XP'+(r2.up?' · LEVEL '+r2.up+'!':'')); if (r2.evo) api.toast(pet.n.toUpperCase()+' EVOLVED · '+r2.evo.toUpperCase()); render(); };
       big.onclick = play;
       const feed = () => { const pp = P(), nn = H.norm(pp); if (nn.treats <= 0) { api.toast('NO TREATS · BUY SOME IN EGGS & TREATS'); api.sfx('bad'); return; }
-        const r2 = H.addXp(pp, 60, pet.id); set({pets:{...r2.patch.pets, treats:nn.treats-1}}); api.sfx('coin'); api.toast('YUM! +60 XP'+(r2.up?' · LEVEL '+r2.up+'!':'')); if (r2.evo) api.toast(pet.n.toUpperCase()+' EVOLVED · '+r2.evo.toUpperCase()); render(); };
+        const k = Math.max(1, Math.min(qN(nn.treats), nn.treats)), r2 = H.addXp(pp, 60*k, pet.id); set({pets:{...r2.patch.pets, treats:nn.treats-k}}); api.sfx('coin'); api.toast('YUM! +'+(60*k)+' XP'+(k > 1 ? ' ('+k+' treats)' : '')+(r2.up?' · LEVEL '+r2.up+'!':'')); if (r2.evo) api.toast(pet.n.toUpperCase()+' EVOLVED · '+r2.evo.toUpperCase()); render(); };
       const custom = (k, v) => { const pp = P(), nn = H.norm(pp); set({pets:{...nn, own:{...nn.own, [pet.id]:{...nn.own[pet.id], [k]:v}}}}); api.sfx('blip'); render(); };
       const cust = E('div', {style:{display:'flex', flexDirection:'column', gap:'6px'}});
       const hatRow = E('div', {style:{display:'flex', gap:'4px', flexWrap:'wrap', alignItems:'center'}}, E('b', {style:{fontSize:'12px', color:'#015640', width:'54px'}}, 'Hat'));
@@ -484,25 +490,31 @@ H.mount = (root, api) => { H.ensureCss(); const wrap = E('div', {cls:'wlh'}); ro
     EGGS.forEach(e => { const price = H.eggPrice(p, e), can = (p.tickets||0) >= price;
       const odds = E('div', {style:{display:'grid', gridTemplateColumns:'1fr auto', gap:'1px 8px', fontSize:'11px', width:'100%', textAlign:'left'}}); e.odds.forEach((o, i) => { if (o) odds.append(E('span', {style:{color:R[i].c, fontWeight:700}}, R[i].n), E('b', null, o+'%')); });
       odds.append(E('span', {style:{color:R[6].c, fontWeight:700}}, 'Cosmic'), E('b', null, '0%'), E('span', {style:{color:R[7].c, fontWeight:700}}, 'Wilderland'), E('b', null, '0%'));
-      const b = E('button', {cls:'wlh-btn', onclick:()=>hatch(e)}, 'Hatch · '+fmt(price)+' 🎟'); if (!can) b.disabled = true;
+      const en = Math.max(1, Math.min(qN(500), Math.floor((p.tickets||0)/price))), b = E('button', {cls:'wlh-btn', onclick:()=>hatch(e)}, (en > 1 ? 'Hatch ×'+en+' · '+fmt(price*en) : 'Hatch · '+fmt(price))+' 🎟'); if (!can) b.disabled = true;
       g.appendChild(E('div', {cls:'wlh-card', style:{'--rc':e.c, cursor:'default'}}, E('div', {style:{fontSize:'48px', lineHeight:1.1}}, e.e), E('div', {cls:'wlh-nm', style:{fontSize:'15px'}}, e.n), odds, b)); });
     box.appendChild(g);
-    const tp = nice(Math.max(150, need(p)*.0008)), tb = E('button', {cls:'wlh-btn gold', onclick:()=>{ if (api.admin()) return api.toast('ADMIN MODE · SHOPPING DISABLED'); const pp = P(); if ((pp.tickets||0) < tp*5) return api.sfx('bad'); const nn = H.norm(pp); set({tickets:pp.tickets - tp*5, pets:{...nn, treats:nn.treats + 5}}); api.sfx('coin'); api.toast('+5 TREATS'); render(); }}, 'Buy 5 treats · '+fmt(tp*5)+' 🎟');
+    const tp = nice(Math.max(150, need(p)*.0008)), packs = Math.max(1, Math.min(qN(1000), Math.floor((p.tickets||0)/(tp*5)))), tb = E('button', {cls:'wlh-btn gold', onclick:()=>{ if (api.admin()) return api.toast('ADMIN MODE · SHOPPING DISABLED'); const pp = P(), k = Math.max(1, Math.min(qN(1000), Math.floor((pp.tickets||0)/(tp*5)))); if ((pp.tickets||0) < tp*5*k) return api.sfx('bad'); const nn = H.norm(pp); set({tickets:pp.tickets - tp*5*k, pets:{...nn, treats:nn.treats + 5*k}}); api.sfx('coin'); api.toast('+'+(5*k)+' TREATS'); render(); }}, 'Buy '+(5*packs)+' treats · '+fmt(tp*5*packs)+' 🎟');
     if ((p.tickets||0) < tp*5) tb.disabled = true;
     box.appendChild(E('div', {cls:'wlh-box', style:{marginTop:'10px', display:'flex', gap:'10px', alignItems:'center', flexWrap:'wrap'}}, E('div', {style:{fontSize:'34px'}}, '🍓'), E('div', {style:{flex:'1 1 200px'}}, E('b', {style:{color:'#015640'}}, 'Pet Treats · you have '+n.treats), E('div', {cls:'wlh-small'}, 'Feed one to any pet for +60 XP. Treats never run out on their own.')), tb));
     return box; };
   const hatch = e => { if (api.admin()) return api.toast('ADMIN MODE · SHOPPING DISABLED'); const p = P(), price = H.eggPrice(p, e); if ((p.tickets||0) < price) return api.sfx('bad');
-    const pet = H.hatch(p, e.id), nn = H.norm(p); let patch = {tickets:p.tickets - price};
-    if (nn.own[pet.id]) { const r2 = H.addXp(p, 100*(pet.r+1), pet.id); patch.pets = {...r2.patch.pets, eggs:{...nn.eggs, [e.id]:(nn.eggs[e.id]|0)+1}}; set(patch); hatchShow(pet, 'DUPLICATE · +'+100*(pet.r+1)+' XP'); }
-    else { patch.pets = {...nn, own:{...nn.own, [pet.id]:{xp:0}}, eggs:{...nn.eggs, [e.id]:(nn.eggs[e.id]|0)+1}, active: nn.active && nn.own[nn.active] ? nn.active : pet.id}; set(patch); hatchShow(pet, 'HATCHED!'); api.toast('HATCHED · '+pet.n.toUpperCase()+'!'); }
-    api.sfx(pet.r >= 3 ? 'win' : 'coin'); render(); };
+    const n = Math.max(1, Math.min(qN(500), Math.floor((p.tickets||0)/price))), nn = H.norm(p), own = {...nn.own}; let fresh = [], best = null, dupXp = 0;
+    for (let i = 0; i < n; i++) { const pet = H.hatch(p, e.id); if (!best || pet.r > best.r) best = pet;
+      if (own[pet.id]) { own[pet.id] = {...own[pet.id], xp:(own[pet.id].xp||0) + 100*(pet.r+1)}; dupXp += 100*(pet.r+1); } else { own[pet.id] = {xp:0}; fresh.push(pet); } }
+    set({tickets:p.tickets - price*n, pets:{...nn, own, eggs:{...nn.eggs, [e.id]:(nn.eggs[e.id]|0)+n}, active: nn.active && nn.own[nn.active] ? nn.active : (fresh[0]||best).id}});
+    const show = fresh.length ? fresh.reduce((a, b) => b.r > a.r ? b : a) : best;
+    hatchShow(show, n > 1 ? 'HATCHED '+n+' EGGS · '+fresh.length+' NEW PET'+(fresh.length==1?'':'S')+(dupXp ? ' · +'+fmt(dupXp)+' BONUS XP' : '') : fresh.length ? 'HATCHED!' : 'DUPLICATE · +'+dupXp+' XP');
+    if (fresh.length) api.toast('NEW: '+fresh.slice(0,4).map(x => x.n.toUpperCase()).join(', ')+(fresh.length > 4 ? ' +'+(fresh.length-4)+' MORE' : ''));
+    api.sfx(best.r >= 3 ? 'win' : 'coin'); render(); };
 
   // ---------------- HOME ----------------
   const home = () => { const p = P(), h = H.home(p), T = TIERS[h.tier], box = E('div'), nt = night(), hr = new Date().getHours();
     const rooms = [...T.rooms, 'yard']; if (!rooms.includes(room)) room = rooms[0];
     // header: tier, upgrade, bonus
     const next = TIERS[h.tier+1], cost = next ? H.homeCost(p, h.tier+1) : 0;
-    const up = next ? E('button', {cls:'wlh-btn gold', onclick:()=>{ if (api.admin()) return api.toast('ADMIN MODE · SHOPPING DISABLED'); const pp = P(), hh = H.home(pp); if ((pp.tickets||0) < cost) return api.sfx('bad'); set({tickets:pp.tickets - cost, home:{...hh, tier:hh.tier+1}}); api.sfx('win'); api.toast('HOME UPGRADED · '+TIERS[hh.tier+1].n.toUpperCase()+'!'); if (api.log) api.log('home', 'upgraded to '+TIERS[hh.tier+1].n); render(); }}, 'Upgrade to '+next.n+' · '+fmt(cost)+' 🎟') : E('div', {style:{fontWeight:800, color:'#00B451'}}, '★ Top tier reached!');
+    const tierPlan = pp => { const hh = H.home(pp); let t = hh.tier, spent = 0, k = 0; while (k < qN(6) && t < TIERS.length-1) { const c = H.homeCost(pp, t+1); if (spent + c > (pp.tickets||0)) break; spent += c; t++; k++; } return {t, spent, k}; };
+    const tp0 = tierPlan(p);
+    const up = next ? E('button', {cls:'wlh-btn gold', onclick:()=>{ if (api.admin()) return api.toast('ADMIN MODE · SHOPPING DISABLED'); const pp = P(), hh = H.home(pp), pl = tierPlan(pp); if (!pl.k) return api.sfx('bad'); set({tickets:pp.tickets - pl.spent, home:{...hh, tier:pl.t}}); api.sfx('win'); api.toast('HOME UPGRADED · '+TIERS[pl.t].n.toUpperCase()+'!'); if (api.log) api.log('home', 'upgraded to '+TIERS[pl.t].n); render(); }}, tp0.k > 1 ? 'Upgrade ×'+tp0.k+' to '+TIERS[tp0.t].n+' · '+fmt(tp0.spent)+' 🎟' : 'Upgrade to '+next.n+' · '+fmt(cost)+' 🎟') : E('div', {style:{fontWeight:800, color:'#00B451'}}, '★ Top tier reached!');
     if (next && (p.tickets||0) < cost) up.disabled = true;
     const done = H.setsDone(p);
     box.appendChild(E('div', {cls:'wlh-box', style:{display:'flex', gap:'12px', alignItems:'center', flexWrap:'wrap'}}, E('img', {src:H.houseSVG(h.tier, p), alt:'', style:{width:'84px', height:'84px'}}),
@@ -572,7 +584,7 @@ H.mount = (root, api) => { H.ensureCss(); const wrap = E('div', {cls:'wlh'}); ro
       const card = E('div', {cls:'wlh-card'+(placing==f.id?' on':''), style:{'--rc': f.set ? '#a64be0' : '#c9c4b0'}}, f.set ? E('div', {cls:'wlh-tier', style:{color:'#a64be0'}}, SETS[f.set].e+' '+SETS[f.set].n.toUpperCase()) : null,
         E('img', {src:H.furnImg(f, p), alt:'', style:{width:Math.min(80, f.w*30)+'px', height:Math.min(80, f.h*30)+'px', objectFit:'contain'}}), E('div', {cls:'wlh-nm'}, f.n), E('div', {cls:'wlh-small', style:{fontSize:'10px'}}, have+' in storage · '+placed+' placed'));
       if (have > 0) card.appendChild(E('button', {cls:'wlh-btn', onclick:()=>{ placing = f.id; sel = null; render(); }}, 'Place'));
-      if (s.buy) { const b = E('button', {cls:'wlh-btn alt', onclick:()=>{ if (api.admin()) return api.toast('ADMIN MODE · SHOPPING DISABLED'); const pp = P(), hh2 = H.home(pp); if ((pp.tickets||0) < s.price) return api.sfx('bad'); set({tickets:pp.tickets - s.price, home:{...hh2, inv:{...hh2.inv, [f.id]:(hh2.inv[f.id]|0)+1}}}); api.sfx('coin'); render(); }}, 'Buy · '+fmt(s.price)+' 🎟'); if ((p.tickets||0) < s.price) b.disabled = true; card.appendChild(b); }
+      if (s.buy) { const fn = Math.max(1, Math.min(qN(100), Math.floor((p.tickets||0)/s.price))), b = E('button', {cls:'wlh-btn alt', onclick:()=>{ if (api.admin()) return api.toast('ADMIN MODE · SHOPPING DISABLED'); const pp = P(), hh2 = H.home(pp), k = Math.max(1, Math.min(qN(100), Math.floor((pp.tickets||0)/s.price))); if ((pp.tickets||0) < s.price*k) return api.sfx('bad'); set({tickets:pp.tickets - s.price*k, home:{...hh2, inv:{...hh2.inv, [f.id]:(hh2.inv[f.id]|0)+k}}}); api.sfx('coin'); if (k > 1) api.toast('+'+k+' '+f.n.toUpperCase()); render(); }}, (fn > 1 ? 'Buy ×'+fn+' · '+fmt(s.price*fn) : 'Buy · '+fmt(s.price))+' 🎟'); if ((p.tickets||0) < s.price) b.disabled = true; card.appendChild(b); }
       else if (s.free && !got) card.appendChild(E('button', {cls:'wlh-btn gold', onclick:()=>{ const hh2 = H.home(P()); set({home:{...hh2, ['got_'+f.id]:1, inv:{...hh2.inv, [f.id]:(hh2.inv[f.id]|0)+1}}}); api.sfx('win'); api.toast('CLAIMED · '+f.n.toUpperCase()); render(); }}, 'Claim reward'));
       else if (!s.free && !got) card.appendChild(E('div', {style:{fontSize:'10px', color:'#AB2372', fontWeight:700}}, '🔒 '+s.how));
       if (s.how && (s.buy || got)) card.appendChild(E('div', {style:{fontSize:'9.5px', color:'#8a8a8a'}}, s.buy ? '' : s.how));

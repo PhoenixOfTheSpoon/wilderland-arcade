@@ -93,6 +93,12 @@ const GT = [
   {k:'owl',    e:'🦉', n:'Night Owls',          d:'Away digging at 75% speed instead of 50%', max:1,  cost:()=>60,                 fx:l=>l?'75% while away':'50% while away'},
   {k:'boss',   e:'🪨', n:'Golem Tamer',         d:'Bosses drop +50% ore',                    max:5,  cost:l=>25*Math.pow(1.8,l),   fx:l=>'×'+(1+.5*l).toFixed(1)+' boss ore'},
 ];
+// Bulk buy: shares the ×1 / ×10 / ×100 / Max setting with the rest of the arcade
+const getQ = () => { try { const v = JSON.parse(localStorage.getItem('wl-prize-qty')); return v === 'max' ? 'max' : (+v || 1); } catch(e) { return 1; } };
+const setQ = v => { try { localStorage.setItem('wl-prize-qty', JSON.stringify(v)); } catch(e){} };
+const qN = cap => { const q = getQ(); return q === 'max' ? cap : Math.min(cap, q); };
+// how many levels of an upgrade you can afford right now (and their total cost)
+const plan = (costFn, L, max, bank) => { let n = 0, tot = 0; const want = qN(5000); while (n < want && L+n < max) { const c = Math.min(1e300, Math.ceil(costFn(L+n))); if (tot + c > bank) break; tot += c; n++; } return {n, tot}; };
 const fmt = n => { n = Math.max(0, n); if (!isFinite(n)) return '∞'; if (n < 10 && n % 1) return n.toFixed(1); if (n < 1000) return String(Math.floor(n));
   const u = ['K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc','UDc','DDc','TDc']; if (n >= 1e45) return n.toExponential(2).replace('e+','e');
   let i = -1; while (n >= 1000 && i < u.length-1) { n /= 1000; i++; } return (n < 10 ? n.toFixed(2) : n < 100 ? n.toFixed(1) : Math.floor(n)) + u[i]; };
@@ -205,7 +211,8 @@ A.register('idle', { mount(host, api){
 
   // ---------- actions ----------
   const persist = () => { S.last = Date.now(); try { api.store && api.store(S); } catch(e){} };
-  const hire = () => { if (busy) return; const cost = hireCost(), i = S.grid.indexOf(0);
+  const hire = () => { if (busy) return; const want = qN(S.grid.length); let k = 0; while (k < want && S.grid.indexOf(0) >= 0 && S.ore >= hireCost()) { hireOne(true); k++; } if (k > 1) { say('HIRED '+k+' MINERS', 'Buy amount: '+(getQ()==='max'?'Max':'×'+getQ())+' · change it in Upgrades', C.lime); paintBar(); return; } if (k == 1) return; hireOne(); };
+  const hireOne = quiet => { const cost = hireCost(), i = S.grid.indexOf(0);
     if (i<0) { say('NO ROOM','Merge two matching miners to free a spot', '#ffb3ab'); A.sfx('bad'); return; }
     if (S.ore < cost) { say('NEED '+fmt(cost)+' ORE','Tap the dig face to dig faster', '#ffb3ab'); A.sfx('bad'); return; }
     S.ore -= cost; S.hires++; S.grid[i] = hireLv(); const p = cell(i); burst(p.x+CW/2, p.y+CH/2, LV[S.grid[i]].c, 14); A.sfx('coin'); paintBar(); };
@@ -274,7 +281,8 @@ A.register('idle', { mount(host, api){
   const disarm = () => { const sp = toScreen(hazard.x, hazard.y), n = Math.max(30, rate()*12) * (GL()>=17 ? 2 : 1); give(n); float(sp.x, sp.y-20, 'DISARMED +'+fmt(n), C.lime); burst(sp.x, sp.y, C.lime, 16); A.sfx('coin'); hazard = null; hazardT = 70 + Math.random()*60; };
 
   // ---------- shop overlay ----------
-  let shop = null;
+  let shop = null, shopQ = null, shopRender = null, gemRender = null, gemQ = null;
+  const rerenderAll = () => { if (shopQ) shopQ(); if (shopRender) shopRender(); if (gemQ) gemQ(); if (gemRender) gemRender(); paintBar(); };
   const upDesc = (u, l) => { if (u.id=='auto') return l ? 'Auto-merges a matching pair every '+sec(foreInt(l))+(l<FORE_MAX ? ' · next level: every '+sec(foreInt(l+1)) : ' · max speed!') : 'Auto-merges matching miners · Lv1 merges every 6 s · Lv100 every 0.1 s';
     if (u.id=='gem') return (l ? 'Now: '+GEM.slice(1, l+1).filter((x,i)=>i>=Math.max(0,l-2)).join(' · ') : 'Better gems, treasure and hazard warnings')+(l<GEM_MAX ? ' · Next (Lv '+(l+1)+'): '+GEM[l+1] : ' · All 20 levels unlocked!');
     return u.d; };
@@ -282,19 +290,23 @@ A.register('idle', { mount(host, api){
     shop = el('div',{position:'absolute',inset:0,background:'rgba(27,19,12,.97)',zIndex:30,display:'flex',flexDirection:'column',padding:'14px',boxSizing:'border-box',gap:'8px',color:'#fff',overflow:'auto'});
     const head = el('div',{display:'flex',justifyContent:'space-between',alignItems:'center'});
     head.append(el('div',{fontWeight:700,fontSize:'20px',color:C.gold},'Mine Upgrades'));
-    const close = el('button',{fontFamily:A.font,fontWeight:700,fontSize:'14px',border:'none',borderRadius:'999px',padding:'8px 16px',background:C.lime,color:C.forest,cursor:'pointer'},'Back to digging'); close.onclick = () => { shop.remove(); shop = null; busy = false; };
+    const close = el('button',{fontFamily:A.font,fontWeight:700,fontSize:'14px',border:'none',borderRadius:'999px',padding:'8px 16px',background:C.lime,color:C.forest,cursor:'pointer'},'Back to digging'); close.onclick = () => { shop.remove(); shop = null; shopQ = shopRender = null; busy = false; };
     const gemB = el('button',{fontFamily:A.font,fontWeight:700,fontSize:'14px',border:'none',borderRadius:'999px',padding:'8px 14px',background:'#64CDF5',color:'#06324a',cursor:'pointer'},'💎 Gem Tree'); gemB.onclick = () => openGemTree();
     const hb = el('div',{display:'flex',gap:'6px'}); hb.append(gemB, close); head.append(hb); shop.append(head);
     const oreLine = el('div',{fontSize:'14px',color:'#EDE9D8'}); shop.append(oreLine);
+    const qRow = () => { const r = el('div',{display:'flex',gap:'5px',alignItems:'center',flexWrap:'wrap'}); r.append(el('span',{fontSize:'12px',fontWeight:700,color:C.gold},'BUY'));
+      [1,10,100,'max'].forEach(v => { const x = el('button',{fontFamily:A.font,fontWeight:700,fontSize:'12px',border:'1.5px solid '+C.gold,borderRadius:'999px',padding:'4px 10px',cursor:'pointer',background:getQ()===v?C.gold:'transparent',color:getQ()===v?'#2a1d12':C.gold}, v==='max'?'Max':'×'+v); x.onclick = () => { setQ(v); A.sfx('blip'); rerenderAll(); }; r.append(x); });
+      r.append(el('span',{fontSize:'11px',color:'#cfc6a8'},'upgrades · Gem Tree · hiring')); return r; };
+    const qHolder = el('div'); qHolder.append(qRow()); shop.append(qHolder); shopQ = () => { qHolder.innerHTML = ''; qHolder.append(qRow()); };
     const list = el('div',{display:'flex',flexDirection:'column',gap:'8px'}); shop.append(list);
     const render = () => { oreLine.textContent = '⛏ '+fmt(S.ore)+' ore · Upgrades cost ore, not tickets'; list.innerHTML = '';
-      UPS.forEach(u => { const l = U(u.id), maxed = l >= u.max, cost = Math.min(BIG, Math.ceil(u.cost(l))), can = !maxed && S.ore >= cost;
+      UPS.forEach(u => { const l = U(u.id), maxed = l >= u.max, pl = plan(u.cost, l, u.max, S.ore), cost = pl.n ? pl.tot : Math.min(BIG, Math.ceil(u.cost(l))), can = !maxed && pl.n > 0;
         const row = el('div',{display:'flex',alignItems:'center',gap:'10px',background:'rgba(255,255,255,.07)',borderRadius:'12px',padding:'10px 12px'});
         const txt = el('div',{flex:'1',minWidth:0}); txt.append(el('div',{fontWeight:700,fontSize:'15px'},u.n+'  '), el('div',{fontSize:'12px',color:'#cfc6a8',lineHeight:1.35},upDesc(u,l)+' · level '+l+(u.max<999?'/'+u.max:'')));
         const pips = el('div',{display:'flex',gap:'2px',marginTop:'4px',flexWrap:'wrap'}); if (u.max<=25) for (let k=0;k<u.max;k++) pips.append(el('div',{width:'9px',height:'5px',borderRadius:'3px',background:k<l?C.gold:'rgba(255,255,255,.18)'}));
         else if (u.max==FORE_MAX) pips.append(el('div',{width:'100%',height:'6px',borderRadius:'3px',background:'linear-gradient(90deg,'+C.gold+' '+l+'%,rgba(255,255,255,.18) '+l+'%)'})); txt.append(pips);
-        const b = el('button',{fontFamily:A.font,fontWeight:700,fontSize:'14px',border:'none',borderRadius:'999px',padding:'9px 12px',minWidth:'96px',cursor:can?'pointer':'default',background:maxed?'rgba(255,255,255,.12)':can?C.gold:'rgba(255,255,255,.18)',color:maxed?'#cfc6a8':can?'#2a1d12':'#cfc6a8'}, maxed?'MAXED':fmt(cost)+' ore');
-        b.onclick = () => { if (!can) { A.sfx('bad'); return; } S.ore -= cost; S.up[u.id] = l+1; A.sfx('coin'); persist(); render(); paintBar(); };
+        const b = el('button',{fontFamily:A.font,fontWeight:700,fontSize:'14px',border:'none',borderRadius:'999px',padding:'9px 12px',minWidth:'96px',cursor:can?'pointer':'default',background:maxed?'rgba(255,255,255,.12)':can?C.gold:'rgba(255,255,255,.18)',color:maxed?'#cfc6a8':can?'#2a1d12':'#cfc6a8'}, maxed?'MAXED':(pl.n > 1 ? '×'+pl.n+' · ' : '')+fmt(cost)+' ore');
+        b.onclick = () => { const q = plan(u.cost, U(u.id), u.max, S.ore); if (!q.n) { A.sfx('bad'); return; } S.ore -= q.tot; S.up[u.id] = U(u.id)+q.n; A.sfx('coin'); persist(); render(); paintBar(); };
         row.append(txt, b); list.append(row); });
       const info = el('div',{fontSize:'12px',color:'#cfc6a8',lineHeight:'1.5',marginTop:'4px'});
       info.innerHTML = 'Layer <b style="color:#fff">'+(depthIdx()+1)+'/100 · '+DEPTHS[depthIdx()].n+'</b> (+'+(depthIdx()*20)+'% ore). Dig more lifetime ore to reach deeper layers.<br>Miners dig while you’re playing, and keep digging at '+(GL2('owl')?'75%':'half')+' speed while you’re away for up to '+(2+2*U('night'))+' hours (Night Shift adds more).'+(extraStart()?'<br>Extra hire levels past the top miner: <b style="color:#fff">+'+(extraStart()*15)+'% ore</b>.':'')+'<br>Selling ore: 9 ore = 1 ticket, 900 = 10, 1M = 333 · no daily limit.';
@@ -314,27 +326,28 @@ A.register('idle', { mount(host, api){
         render(); };
       go.onclick = redeem; codeRow.append(el('div',{fontWeight:700,fontSize:'12px',color:C.gold,letterSpacing:'.08em'},'CODE'), inp, go, cmsg);
       list.append(codeRow, calmB, info); };
-    render(); wrap.append(shop); };
+    shopRender = render; render(); wrap.append(shop); };
 
   // ---------- Gem Tree overlay (permanent, paid in gems) ----------
   let gemO = null;
-  const openGemTree = () => { if (gemO) return; if (shop) { shop.remove(); shop = null; } busy = true; A.sfx('blip');
+  const openGemTree = () => { if (gemO) return; if (shop) { shop.remove(); shop = null; shopQ = shopRender = null; } busy = true; A.sfx('blip');
     gemO = el('div',{position:'absolute',inset:0,background:'radial-gradient(circle at 50% 0%,#1d3a5a,#0b1220 70%)',zIndex:32,display:'flex',flexDirection:'column',padding:'14px',boxSizing:'border-box',gap:'8px',color:'#fff',overflow:'auto'});
     const head = el('div',{display:'flex',justifyContent:'space-between',alignItems:'center',gap:'8px'}); head.append(el('div',{fontWeight:700,fontSize:'20px',color:'#bff0ff'},'💎 Gem Tree'));
-    const close = el('button',{fontFamily:A.font,fontWeight:700,fontSize:'14px',border:'none',borderRadius:'999px',padding:'8px 16px',background:C.lime,color:C.forest,cursor:'pointer'},'Back to digging'); close.onclick = () => { gemO.remove(); gemO = null; busy = false; };
+    const close = el('button',{fontFamily:A.font,fontWeight:700,fontSize:'14px',border:'none',borderRadius:'999px',padding:'8px 16px',background:C.lime,color:C.forest,cursor:'pointer'},'Back to digging'); close.onclick = () => { gemO.remove(); gemO = null; gemQ = gemRender = null; busy = false; };
     head.append(close); gemO.append(head);
-    const bank = el('div',{fontSize:'14px',color:'#dff6ff',lineHeight:1.45}); const list = el('div',{display:'flex',flexDirection:'column',gap:'8px'}); gemO.append(bank, list);
+    const bank = el('div',{fontSize:'14px',color:'#dff6ff',lineHeight:1.45}); const list = el('div',{display:'flex',flexDirection:'column',gap:'8px'}); const gq = el('div'); gemQ = () => { gq.innerHTML = ''; const r = el('div',{display:'flex',gap:'5px',alignItems:'center',flexWrap:'wrap'}); r.append(el('span',{fontSize:'12px',fontWeight:700,color:'#bff0ff'},'BUY'));
+      [1,10,100,'max'].forEach(v => { const x = el('button',{fontFamily:A.font,fontWeight:700,fontSize:'12px',border:'1.5px solid #64CDF5',borderRadius:'999px',padding:'4px 10px',cursor:'pointer',background:getQ()===v?'#64CDF5':'transparent',color:getQ()===v?'#06324a':'#bff0ff'}, v==='max'?'Max':'×'+v); x.onclick = () => { setQ(v); A.sfx('blip'); rerenderAll(); }; r.append(x); }); gq.append(r); }; gemQ(); gemO.append(bank, gq, list);
     const render = () => { bank.innerHTML = '<b style="font-size:18px">💎 '+fmt(S.gemBank||0)+' gems</b><br>Permanent upgrades for The Mines — they <b>never reset</b>, not even when you Rebirth. Earn gems by grabbing gems in the rock (rare ones give more), opening treasure rooms (+3), beating Cave Golems (+5) and the Armageddon Core (+100).'; list.innerHTML = '';
-      GT.forEach(n => { const l = GL2(n.k), maxed = l >= n.max, cost = Math.ceil(n.cost(l)), can = !maxed && (S.gemBank||0) >= cost;
+      GT.forEach(n => { const l = GL2(n.k), maxed = l >= n.max, pl = plan(n.cost, l, n.max, S.gemBank||0), cost = pl.n ? pl.tot : Math.ceil(n.cost(l)), can = !maxed && pl.n > 0;
         const row = el('div',{display:'flex',alignItems:'center',gap:'10px',background:'rgba(191,240,255,.08)',border:'1px solid rgba(191,240,255,.18)',borderRadius:'12px',padding:'10px 12px'});
         const txt = el('div',{flex:'1',minWidth:0}); txt.append(el('div',{fontWeight:700,fontSize:'15px'},n.e+' '+n.n), el('div',{fontSize:'12px',color:'#b9d6e6',lineHeight:1.35},n.d+' · level '+l+'/'+n.max), el('div',{fontSize:'12px',fontWeight:700,color:'#bff0ff'},'Now: '+n.fx(l)+(maxed?' · MAXED':' → next: '+n.fx(l+1))));
         const pips = el('div',{display:'flex',gap:'2px',marginTop:'4px'}); for (let k=0;k<n.max;k++) pips.append(el('div',{width:Math.max(6, Math.min(14, 120/n.max))+'px',height:'5px',borderRadius:'3px',background:k<l?'#64CDF5':'rgba(255,255,255,.18)'})); txt.append(pips);
-        const b = el('button',{fontFamily:A.font,fontWeight:700,fontSize:'14px',border:'none',borderRadius:'999px',padding:'9px 12px',minWidth:'92px',cursor:can?'pointer':'default',background:maxed?'rgba(255,255,255,.12)':can?'#64CDF5':'rgba(255,255,255,.18)',color:maxed?'#b9d6e6':can?'#06324a':'#b9d6e6'}, maxed?'MAXED':cost+' 💎');
-        b.onclick = () => { if (!can) { A.sfx('bad'); return; } S.gemBank -= cost; S.gtree[n.k] = l+1; A.sfx('win');
+        const b = el('button',{fontFamily:A.font,fontWeight:700,fontSize:'14px',border:'none',borderRadius:'999px',padding:'9px 12px',minWidth:'92px',cursor:can?'pointer':'default',background:maxed?'rgba(255,255,255,.12)':can?'#64CDF5':'rgba(255,255,255,.18)',color:maxed?'#b9d6e6':can?'#06324a':'#b9d6e6'}, maxed?'MAXED':(pl.n > 1 ? '×'+pl.n+' · ' : '')+fmt(cost)+' 💎');
+        b.onclick = () => { const q = plan(n.cost, GL2(n.k), n.max, S.gemBank||0); if (!q.n) { A.sfx('bad'); return; } S.gemBank -= q.tot; S.gtree[n.k] = GL2(n.k)+q.n; A.sfx('win');
           if (n.k == 'slots') { while (S.grid.length < SLOTS()) S.grid.push(0); relayout(); }
           stat(api,'mineGemTree',Object.values(S.gtree).reduce((a,x)=>a+x,0)); persist(); render(); paintBar(); };
         row.append(txt, b); list.append(row); }); };
-    render(); wrap.append(gemO); };
+    gemRender = render; render(); wrap.append(gemO); };
 
   // ---------- overview map of all 100 layers (zoom + scroll) ----------
   let mapO = null;

@@ -232,7 +232,7 @@ E.expPanel = api => { ensureCss(); const p = api.P(), need = window.WLP ? window
     el('div', {cls:'wle-small'}, 'Expansions only boost what you earn by PLAYING — they never make tickets on their own. Costs rise every level. Special upgrades unlock at levels 1, 10, 25, 50, 100, 150 and 200. All expansions reset on every Rebirth.'),
     el('div', {style:{marginTop:'6px', fontWeight:700, color:'#015640', fontSize:'13px'}}, 'From expansions now: games ×'+fmt((1+sumKind(p,'game'))*E.allMult(p))+' · everything ×'+fmt(E.allMult(p)))));
   const bn = el('div', {style:{display:'flex', gap:'6px', alignItems:'center', marginBottom:'8px', flexWrap:'wrap'}}, el('b', {style:{color:'#015640', fontSize:'13px'}}, 'Buy:'));
-  [1,10,100].forEach(n => bn.appendChild(el('button', {cls:'wle-btn'+(buyN==n?'':' alt'), onclick:()=>{ api.setBuyN(n); api.rerender(); }}, '×'+n))); box.appendChild(bn);
+  [1,10,100,1e4].forEach(n => bn.appendChild(el('button', {cls:'wle-btn'+(buyN==n?'':' alt'), onclick:()=>{ api.setBuyN(n); api.rerender(); }}, n >= 1e4 ? 'Max' : '×'+n))); box.appendChild(bn);
   EXP.forEach((x, idx) => { const L = lvOf(p,x.k), c = E.expCost(x,L), can = (p.tickets||0) >= c && c < need, hidden = idx > 0 && lvOf(p, EXP[idx-1].k) === 0 && L === 0 && (p.tickets||0) < x.base*.3;
     if (hidden) { box.appendChild(el('div', {cls:'wle-row', style:{opacity:.5}}, el('div', {cls:'wle-ic', style:{filter:'grayscale(1) brightness(.6)'}}, '?'), el('div', {style:{flex:1}}, el('b', null, '???'), el('div', {cls:'wle-small'}, 'Unlocks when you’re close to '+fmt(x.base)+' tickets')))); return; }
     const ic = el('div', {cls:'wle-ic'+(api.bump===x.k?' bump':'')}, x.e);
