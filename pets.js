@@ -1,5 +1,5 @@
 // Wilderland Arcade · PETS & HOMES (window.WLH)
-// 44 pets (levels, perks, care, collars, hats, colour variants, evolutions at Lv 10/25/50), a Pet Dex, ticket-only pet eggs,
+// 45 pets (levels up to 500, perks, care, collars, hats, colour variants, 10 forms from Lv 10 to Lv 500), a Pet Dex, ticket-only pet eggs,
 // a Home that grows from Forest Cabin to Sky Citadel with a grid room editor, furniture sets, trophy shelves, a pet corner and a yard,
 // plus emotes and rare mounts. Everything here is permanent: Rebirth never touches P.pets, P.home, P.emotes or P.mounts.
 (function(){
@@ -57,7 +57,7 @@ const SP = {
 const SPECIES = Object.keys(SP);
 // variants: colour variants unlock at pet Lv 5 and Lv 20
 const tint = (c, v) => v == 1 ? [c[1], c[0], c[2]] : v == 2 ? ['#F9BF01', '#ffffff', '#fff3b0'] : c;
-const HATS = [{n:'No hat'},{n:'Bow',lv:1},{n:'Party Hat',lv:3},{n:'Cap',lv:6},{n:'Flower',lv:10},{n:'Wizard Hat',lv:18},{n:'Crown',lv:30}];
+const HATS = [{n:'No hat'},{n:'Bow',lv:1},{n:'Party Hat',lv:3},{n:'Cap',lv:6},{n:'Flower',lv:10},{n:'Wizard Hat',lv:18},{n:'Crown',lv:30},{n:'Halo',lv:100},{n:'Star Crown',lv:300}];
 const COLLARS = ['','#FF4539','#00B451','#64CDF5','#F9BF01','#EA55AB','#8a4be0','#121313'];
 const hatSVG = (h, y) => { y = y||-14; switch(h) {
   case 1: return '<path d="M-6 '+(y+2)+'l-6 -4v8zM6 '+(y+2)+'l6 -4v8z" fill="#EA55AB"/><circle cx="0" cy="'+(y+2)+'" r="2.4" fill="#ff8fc8"/>';
@@ -66,20 +66,31 @@ const hatSVG = (h, y) => { y = y||-14; switch(h) {
   case 4: return '<circle cx="7" cy="'+(y+1)+'" r="2.4" fill="#F9BF01"/>'+[0,1,2,3,4].map(i=>'<circle cx="'+(7+Math.cos(i*1.26)*3.6)+'" cy="'+(y+1+Math.sin(i*1.26)*3.6)+'" r="2.2" fill="#ff8fc8"/>').join('');
   case 5: return '<path d="M-10 '+(y+3)+'h20l-10 -18z" fill="#5B2A86"/><circle cx="-1" cy="'+(y-5)+'" r="1.2" fill="#F9BF01"/><circle cx="3" cy="'+(y-1)+'" r="1" fill="#F9BF01"/>';
   case 6: return '<path d="M-8 '+(y+3)+'l-1 -9l5 4l4 -7l4 7l5 -4l-1 9z" fill="#F9BF01" stroke="#c48a00" stroke-width="1"/><circle cx="0" cy="'+(y-1)+'" r="1.5" fill="#FF4539"/>';
+  case 7: return '<ellipse cx="0" cy="'+(y-5)+'" rx="9" ry="2.8" fill="none" stroke="#fff6b0" stroke-width="2.2"/><ellipse cx="0" cy="'+(y-5)+'" rx="9" ry="2.8" fill="none" stroke="#F9BF01" stroke-width=".8"/>';
+  case 8: return '<path d="M-9 '+(y+3)+'l-2 -10l5 4l2 -8l4 6l4 -6l2 8l5 -4l-2 10z" fill="#bff0ff" stroke="#64CDF5" stroke-width="1"/><path d="M0 '+(y-12)+'l1.4 2.8l3 .4l-2.2 2l.6 3l-2.8 -1.5l-2.8 1.5l.6 -3l-2.2 -2l3 -.4z" fill="#F9BF01"/>';
   default: return ''; } };
 // Evolutions: Lv 10 sparkle markings · Lv 25 grown up + glowing crest · Lv 50 legendary aura and halo
-const evoOf = lv => lv >= 50 ? 3 : lv >= 25 ? 2 : lv >= 10 ? 1 : 0;
-const EVO_N = ['Baby', 'Young', 'Grown', 'Legendary'];
+// Pets go to Lv 500 with 10 forms. Lv 100+ forms add their own looks: Elder aura, orbiting stars, light wings, star ring, rainbow aura, leaf crown.
+const MAXLV = 500, EVO_AT = [0, 10, 25, 50, 100, 150, 200, 300, 400, 500];
+const evoOf = lv => { let e = 0; for (let i = 1; i < EVO_AT.length; i++) if (lv >= EVO_AT[i]) e = i; return e; };
+const EVO_N = ['Baby', 'Young', 'Grown', 'Legendary', 'Elder', 'Mythic', 'Ascended', 'Celestial', 'Eternal', 'Wilderland Spirit'];
+H.MAXLV = MAXLV; H.EVO_AT = EVO_AT; H.EVO_N = EVO_N; H.evoOf = evoOf;
+H.nextEvo = lv => { const e = evoOf(lv); return e < EVO_AT.length-1 ? {lv:EVO_AT[e+1], n:EVO_N[e+1]} : null; };
 let gid = 0;
 H.petInner = (pet, o) => { o = o || {}; const lv = o.lv || 1, ev = evoOf(lv), c = tint(pet.c, o.variant|0), id = 'pg'+(++gid);
-  let s = '<defs>'+shade(id, c[0] == '#ffffff' ? '#ffffff' : dk(c[0], 1.25), dk(c[0], .78))+'</defs>';
-  if (ev >= 3) s += '<circle r="24" fill="'+(pet.r >= 6 ? '#ff5fd2' : '#F9BF01')+'" opacity=".22">'+an('r','22;26;22',2)+'</circle>';
+  let s = '<defs>'+shade(id, c[0] == '#ffffff' ? '#ffffff' : dk(c[0], 1.25), dk(c[0], .78))+(ev >= 8 ? '<radialGradient id="'+id+'rb"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".6" stop-color="#ff5fd2"/><stop offset=".8" stop-color="#64CDF5"/><stop offset="1" stop-color="#D5F367" stop-opacity="0"/></radialGradient>' : '')+'</defs>';
+  if (ev >= 8) s += '<circle r="29" fill="url(#'+id+'rb)" opacity=".55">'+an('opacity','.35;.65;.35',2.5)+'</circle>';
+  if (ev >= 6) { const wc = ev >= 9 ? '#D5F367' : '#ffffff'; s += '<g fill="'+wc+'" stroke="'+(ev >= 9 ? '#00B451' : '#b48cff')+'" stroke-width="1" opacity=".9"><path d="M-6 0q-17 -16 -24 -4q8 -2 11 6q-7 0 -9 7q10 -3 22 -6z"/><path d="M6 0q17 -16 24 -4q-8 -2 -11 6q7 0 9 7q-10 -3 -22 -6z"/></g>'; }
+  if (ev >= 4) s += '<circle r="26" fill="none" stroke="'+(ev >= 9 ? '#00B451' : ev >= 5 ? '#b48cff' : '#64CDF5')+'" stroke-width="1.6" stroke-dasharray="3 4" opacity=".8">'+an('stroke-dashoffset','0;14',2)+'</circle>';
+  if (ev >= 3) s += '<circle r="24" fill="'+(pet.r >= 6 ? '#ff5fd2' : ev >= 9 ? '#D5F367' : '#F9BF01')+'" opacity=".22">'+an('r','22;26;22',2)+'</circle>';
   if (ev >= 2) s += '<circle r="20" fill="#fff" opacity=".12"/>';
   const body = SP[pet.sp](c).replace(/url\(#pg\)/g, 'url(#'+id+')');
-  s += '<g transform="scale('+(1 + ev*.06)+')">'+body;
+  s += '<g transform="scale('+(1 + Math.min(ev, 5)*.05)+')">'+body;
   if (ev >= 1) s += '<path d="M-9 10l1 -2l1 2l2 1l-2 1l-1 2l-1 -2l-2 -1zM8 -2l.8 -1.6l.8 1.6l1.6 .8l-1.6 .8l-.8 1.6l-.8 -1.6l-1.6 -.8z" fill="#fff" opacity=".85">'+an('opacity','.85;.2;.85',1.4)+'</path>';
   if (ev >= 2) s += '<path d="M-4 -15l4 -6l4 6z" fill="'+(pet.r >= 6 ? '#ff5fd2' : c[1])+'" opacity=".9"/>';
-  if (ev >= 3) s += '<ellipse cx="0" cy="-21" rx="8" ry="2.4" fill="none" stroke="#F9BF01" stroke-width="1.6"/>';
+  if (ev >= 3 && ev < 9) s += '<ellipse cx="0" cy="-21" rx="8" ry="2.4" fill="none" stroke="'+(ev >= 7 ? '#ffffff' : '#F9BF01')+'" stroke-width="1.6"/>';
+  if (ev >= 9) s += '<path d="M-9 -19q-3 -6 2 -8q0 4 3 5q0 -6 4 -8q4 2 4 8q3 -1 3 -5q5 2 2 8z" fill="#00B451" stroke="#D5F367" stroke-width=".8"/><circle cx="0" cy="-24" r="1.6" fill="#F9BF01"/>';
+  if (ev >= 5) { const n = ev >= 7 ? 5 : 2; s += '<g>'+an('transform','0;360',ev >= 7 ? 6 : 9).replace('attributeName','type="rotate" attributeName').replace('<animate','<animateTransform')+Array.from({length:n}, (_, i) => { const a = i/n*Math.PI*2, x = Math.cos(a)*22, y = Math.sin(a)*22; return '<path d="M'+x+' '+(y-3)+'l1 2l2 1l-2 1l-1 2l-1 -2l-2 -1l2 -1z" fill="'+(ev >= 7 ? '#fff6b0' : '#F9BF01')+'"/>'; }).join('')+'</g>'; }
   if (o.collar) s += '<path d="M-9 11q9 5 18 0" stroke="'+COLLARS[o.collar]+'" stroke-width="2.6" fill="none"/><circle cx="0" cy="14" r="1.8" fill="#F9BF01"/>';
   if (o.hat) s += hatSVG(o.hat, -14 - (pet.sp == 'owl' || pet.sp == 'penguin' ? 2 : 0));
   s += '</g>';
@@ -159,14 +170,15 @@ const PERK = {
 };
 const RMUL = [1, 1.2, 1.5, 2, 2.5, 3, 4, 5];
 const GNAME = g => { const W = window.WLP; return (W && W.gname && W.gname(g)) || ({crossing:'Critter Crossing', rootout:'Root Out', snake:'Snake', breakout:'Breakout', td:'Trailhead Defense', flappy:'Flapper', space:'Star Ranger', reaction:'Reaction Test'})[g] || g; };
-H.perkPct = (pet, lv) => Math.round(PERK[pet.perk.k].per * RMUL[pet.r] * Math.min(60, lv) * 100) / 100;
+H.perkPct = (pet, lv) => Math.round(PERK[pet.perk.k].per * RMUL[pet.r] * (Math.min(60, lv) + Math.max(0, Math.min(lv, MAXLV) - 60)*.25) * 100) / 100;
 H.perkText = (pet, lv) => { const k = pet.perk.k, p = H.perkPct(pet, lv); return '+'+p+'% '+(k == 'game' ? GNAME(pet.perk.g)+' tickets' : k == 'gems' ? 'double-gem chance' : PERK[k].d.replace(/^more /,'')); };
 
 // ---------------- profile data ----------------
 H.norm = P => { const p = P.pets && typeof P.pets == 'object' ? P.pets : {};
   return {own:p.own || {pebble:{xp:0}}, active:p.active === undefined ? 'pebble' : p.active, treats:p.treats|0, eggs:p.eggs || {}, lastPlay:p.lastPlay || 0}; };
-H.lv = xp => Math.min(60, Math.floor(Math.sqrt((xp||0)/10)) + 1);
+H.lv = xp => Math.min(MAXLV, Math.floor(Math.sqrt((xp||0)/10)) + 1);
 H.xpFor = lv => 10*Math.pow(lv-1, 2);
+H.treatXp = lv => 60 * Math.max(1, Math.floor(lv/10));   // treats give more XP as your pet grows
 H.owns = (P, id) => !!H.norm(P).own[id];
 H.active = P => { const n = H.norm(P); const id = n.active && n.own[n.active] ? n.active : null; return id ? {pet:byId(id), d:n.own[id], lv:H.lv(n.own[id].xp)} : null; };
 H.perkVal = (P, k, g) => { const a = H.active(P); if (!a || !a.pet || a.pet.perk.k !== k) return 0; if (k == 'game' && a.pet.perk.g !== g) return 0; return H.perkPct(a.pet, a.lv) / 100; };
@@ -194,7 +206,7 @@ H.status = (P, pet) => { const s = pet.src, n = H.norm(P);
   return {how:'?'}; };
 H.shopPrice = (P, pet) => nice(Math.min(1500*Math.pow(7, pet.r) * (1 + PETS.indexOf(pet)%3*.15), need(P)*.3));
 H.titles = P => { const n = H.norm(P), c = Object.keys(n.own).length, h = H.home(P).tier, out = [];
-  if (c >= 5) out.push('Pet Pal'); if (c >= 15) out.push('Critter Collector'); if (c >= 30) out.push('Beast Master'); if (n.own.dragonling) out.push('Dragon Tamer'); if (PETS.some(p => n.own[p.id] && H.lv(n.own[p.id].xp) >= 50)) out.push('Legendary Keeper');
+  if (c >= 5) out.push('Pet Pal'); if (c >= 15) out.push('Critter Collector'); if (c >= 30) out.push('Beast Master'); if (n.own.dragonling) out.push('Dragon Tamer'); if (PETS.some(p => n.own[p.id] && H.lv(n.own[p.id].xp) >= 50)) out.push('Legendary Keeper'); if (PETS.some(p => n.own[p.id] && H.lv(n.own[p.id].xp) >= 200)) out.push('Ascended Keeper'); if (PETS.some(p => n.own[p.id] && H.lv(n.own[p.id].xp) >= 500)) out.push('Wilderland Spirit');
   if (h >= 2) out.push('Cozy Homebody'); if (h >= 4) out.push('Lord of the Keep'); if (h >= 5) out.push('Castle Lord'); if (h >= 6) out.push('Sky Sovereign'); return out; };
 
 // ---------------- XP ----------------
@@ -434,14 +446,14 @@ H.mount = (root, api) => { H.ensureCss(); const wrap = E('div', {cls:'wlh'}); ro
   const pets = () => { const p = P(), n = H.norm(p), box = E('div'), owned = PETS.filter(x => n.own[x.id]);
     if (!petSel || !n.own[petSel]) petSel = n.active && n.own[n.active] ? n.active : (owned[0]||{}).id;
     const pet = byId(petSel);
-    if (pet) { const d = n.own[pet.id], lv = H.lv(d.xp), nx = H.xpFor(lv+1), cur = H.xpFor(lv), pct = lv >= 60 ? 100 : Math.floor((d.xp-cur)/(nx-cur)*100), r = R[pet.r];
+    if (pet) { const d = n.own[pet.id], lv = H.lv(d.xp), nx = H.xpFor(lv+1), cur = H.xpFor(lv), pct = lv >= MAXLV ? 100 : Math.floor((d.xp-cur)/(nx-cur)*100), r = R[pet.r];
       const big = E('img', {src:H.petImg(pet, {lv, variant:d.v, hat:d.hat, collar:d.col}), alt:pet.n, style:{width:'150px', height:'150px', cursor:'pointer', animation:'wlhPop .4s ease-out'}});
       const play = () => { const pp = P(), nn = H.norm(pp); if (Date.now() - nn.lastPlay < 20000) { api.toast(pet.n.toUpperCase()+' IS RESTING · PLAY AGAIN IN '+Math.ceil((20000-(Date.now()-nn.lastPlay))/1000)+'s'); return; }
-        const r2 = H.addXp(pp, 15, pet.id); if (!r2) return; set({pets:{...r2.patch.pets, lastPlay:Date.now()}}); big.style.animation = 'none'; void big.offsetWidth; big.style.animation = 'wlhBounce .4s ease-in-out 3';
-        api.sfx('blip'); api.toast(['BOING!','WHEEE!','HIGH FIVE!','ZOOMIES!'][Math.floor(Math.random()*4)]+' · +15 XP'+(r2.up?' · LEVEL '+r2.up+'!':'')); if (r2.evo) api.toast(pet.n.toUpperCase()+' EVOLVED · '+r2.evo.toUpperCase()); render(); };
+        const px = Math.round(H.treatXp(lv)/4), r2 = H.addXp(pp, px, pet.id); if (!r2) return; set({pets:{...r2.patch.pets, lastPlay:Date.now()}}); big.style.animation = 'none'; void big.offsetWidth; big.style.animation = 'wlhBounce .4s ease-in-out 3';
+        api.sfx('blip'); api.toast(['BOING!','WHEEE!','HIGH FIVE!','ZOOMIES!'][Math.floor(Math.random()*4)]+' · +'+fmt(px)+' XP'+(r2.up?' · LEVEL '+r2.up+'!':'')); if (r2.evo) api.toast(pet.n.toUpperCase()+' EVOLVED · '+r2.evo.toUpperCase()); render(); };
       big.onclick = play;
       const feed = () => { const pp = P(), nn = H.norm(pp); if (nn.treats <= 0) { api.toast('NO TREATS · BUY SOME IN EGGS & TREATS'); api.sfx('bad'); return; }
-        const k = Math.max(1, Math.min(qN(nn.treats), nn.treats)), r2 = H.addXp(pp, 60*k, pet.id); set({pets:{...r2.patch.pets, treats:nn.treats-k}}); api.sfx('coin'); api.toast('YUM! +'+(60*k)+' XP'+(k > 1 ? ' ('+k+' treats)' : '')+(r2.up?' · LEVEL '+r2.up+'!':'')); if (r2.evo) api.toast(pet.n.toUpperCase()+' EVOLVED · '+r2.evo.toUpperCase()); render(); };
+        const k = Math.max(1, Math.min(qN(nn.treats), nn.treats)), per = H.treatXp(H.lv(nn.own[pet.id].xp)), r2 = H.addXp(pp, per*k, pet.id); set({pets:{...r2.patch.pets, treats:nn.treats-k}}); api.sfx('coin'); api.toast('YUM! +'+fmt(per*k)+' XP'+(k > 1 ? ' ('+k+' treats)' : '')+(r2.up?' · LEVEL '+r2.up+'!':'')); if (r2.evo) api.toast(pet.n.toUpperCase()+' EVOLVED · '+r2.evo.toUpperCase()); render(); };
       const custom = (k, v) => { const pp = P(), nn = H.norm(pp); set({pets:{...nn, own:{...nn.own, [pet.id]:{...nn.own[pet.id], [k]:v}}}}); api.sfx('blip'); render(); };
       const cust = E('div', {style:{display:'flex', flexDirection:'column', gap:'6px'}});
       const hatRow = E('div', {style:{display:'flex', gap:'4px', flexWrap:'wrap', alignItems:'center'}}, E('b', {style:{fontSize:'12px', color:'#015640', width:'54px'}}, 'Hat'));
@@ -452,11 +464,11 @@ H.mount = (root, api) => { H.ensureCss(); const wrap = E('div', {cls:'wlh'}); ro
       [['Classic',0],['Swapped',5],['Golden',20]].forEach(([nm, req], i) => { const ok = lv >= req; varRow.appendChild(E('button', {cls:'wlh-chip'+((d.v|0)==i?' on':''), style:{opacity:ok?1:.45}, onclick:()=>{ if (!ok) return api.toast('UNLOCKS AT PET LEVEL '+req); custom('v', i); }}, nm+(ok?'':' 🔒'+req))); });
       cust.append(hatRow, colRow, varRow);
       box.appendChild(E('div', {cls:'wlh-box', style:{display:'flex', gap:'14px', flexWrap:'wrap', alignItems:'center', border:'3px solid '+r.c}},
-        E('div', {style:{display:'flex', flexDirection:'column', alignItems:'center', gap:'4px'}}, big, E('div', {cls:'wlh-small'}, 'Tap to play (+15 XP)')),
+        E('div', {style:{display:'flex', flexDirection:'column', alignItems:'center', gap:'4px'}}, big, E('div', {cls:'wlh-small'}, 'Tap to play (+'+fmt(Math.round(H.treatXp(lv)/4))+' XP)')),
         E('div', {style:{flex:'1 1 260px', minWidth:0, display:'flex', flexDirection:'column', gap:'6px'}},
           E('div', {cls:'wlh-tier', style:{color:r.c}}, r.n.toUpperCase()+' · '+EVO_N[evoOf(lv)].toUpperCase()), E('div', {style:{fontWeight:800, fontSize:'20px', color:'#015640'}}, pet.n),
           E('div', {style:{fontWeight:700, color:'#AB2372', fontSize:'13px'}}, PERK[pet.perk.k].e+' Perk: '+H.perkText(pet, lv)+(lv < 60 ? '  →  next level: '+H.perkText(pet, lv+1) : ' · MAX')),
-          E('div', {cls:'wlh-small'}, 'Level '+lv+(lv<60?' · '+fmt(d.xp)+' / '+fmt(nx)+' XP':' · MAX')+' · evolves at Lv 10, 25 and 50'), E('div', {cls:'wlh-bar'}, E('div', {style:{width:pct+'%'}})),
+          E('div', {cls:'wlh-small'}, 'Level '+lv+' / '+MAXLV+(lv<MAXLV?' · '+fmt(d.xp)+' / '+fmt(nx)+' XP':' · MAX')+(H.nextEvo(lv) ? ' · next form: '+H.nextEvo(lv).n+' at Lv '+H.nextEvo(lv).lv : ' · final form!')), E('div', {cls:'wlh-bar'}, E('div', {style:{width:pct+'%'}})),
           E('div', {style:{display:'flex', gap:'6px', flexWrap:'wrap', marginTop:'4px'}},
             E('button', {cls:'wlh-btn'+(n.active==pet.id?' alt':''), onclick:()=>{ const nn = H.norm(P()); set({pets:{...nn, active: nn.active == pet.id ? null : pet.id}}); api.sfx('blip'); api.toast(nn.active == pet.id ? 'PET PUT AWAY' : pet.n.toUpperCase()+' IS NOW YOUR ACTIVE PET'); render(); }}, n.active==pet.id ? 'Put away' : 'Make active'),
             E('button', {cls:'wlh-btn gold', onclick:feed}, '🍓 Feed a treat ('+n.treats+')')),
@@ -496,7 +508,7 @@ H.mount = (root, api) => { H.ensureCss(); const wrap = E('div', {cls:'wlh'}); ro
     box.appendChild(g);
     const tp = nice(Math.max(150, need(p)*.0008)), packs = Math.max(1, Math.min(qN(1000), Math.floor((p.tickets||0)/(tp*5)))), tb = E('button', {cls:'wlh-btn gold', onclick:()=>{ if (api.admin()) return api.toast('ADMIN MODE · SHOPPING DISABLED'); const pp = P(), k = Math.max(1, Math.min(qN(1000), Math.floor((pp.tickets||0)/(tp*5)))); if ((pp.tickets||0) < tp*5*k) return api.sfx('bad'); const nn = H.norm(pp); set({tickets:pp.tickets - tp*5*k, pets:{...nn, treats:nn.treats + 5*k}}); api.sfx('coin'); api.toast('+'+(5*k)+' TREATS'); render(); }}, 'Buy '+(5*packs)+' treats · '+fmt(tp*5*packs)+' 🎟');
     if ((p.tickets||0) < tp*5) tb.disabled = true;
-    box.appendChild(E('div', {cls:'wlh-box', style:{marginTop:'10px', display:'flex', gap:'10px', alignItems:'center', flexWrap:'wrap'}}, E('div', {style:{fontSize:'34px'}}, '🍓'), E('div', {style:{flex:'1 1 200px'}}, E('b', {style:{color:'#015640'}}, 'Pet Treats · you have '+n.treats), E('div', {cls:'wlh-small'}, 'Feed one to any pet for +60 XP. Treats never run out on their own.')), tb));
+    box.appendChild(E('div', {cls:'wlh-box', style:{marginTop:'10px', display:'flex', gap:'10px', alignItems:'center', flexWrap:'wrap'}}, E('div', {style:{fontSize:'34px'}}, '🍓'), E('div', {style:{flex:'1 1 200px'}}, E('b', {style:{color:'#015640'}}, 'Pet Treats · you have '+n.treats), E('div', {cls:'wlh-small'}, 'Feed one to any pet for +60 XP (more as pets grow: +60 per 10 levels). Treats never run out on their own.')), tb));
     return box; };
   const hatch = e => { if (api.admin()) return api.toast('ADMIN MODE · SHOPPING DISABLED'); const p = P(), price = H.eggPrice(p, e); if ((p.tickets||0) < price) return api.sfx('bad');
     const n = Math.max(1, Math.min(qN(500), Math.floor((p.tickets||0)/price))), nn = H.norm(p), own = {...nn.own}; let fresh = [], best = null, dupXp = 0;

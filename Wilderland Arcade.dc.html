@@ -1372,7 +1372,7 @@ const ACH = [
   {id:'lifer',cat:'Secret',tier:4,secret:true,name:'Lifer',desc:'Finish 1,000 games',p:s=>[plays(s),1000]},
 ];
 const KEY = 'wl-arcade-v1', ACCT_KEY = 'wl-arcade-accounts', SESSION_KEY = 'wl-arcade-session';
-const DEF = () => ({difficulty:'normal',speed:'normal',tickets:0,best:{},played:{},ach:[],prizes:{},daily:{date:'',done:false},earned:0,saves:{},savesV:2,stats:{max:{},sum:{}},username:'',edu:{on:false,topic:'add'},sessLog:[],days:{},adjSeen:0,idle:null,upg:{},avatar:{},cursor:'',resetSeen:0,at:{},achV:0,title:'',achPins:[],avOwn:{},avPresets:[],mult:{},stars:0,starsSpent:0,exp:{},expUp:{},tree:{},ptree:{},diaSpent:0,ptFav:'',autoRb:true,mineBud:null,pets:null,home:null,mounts:null,clicks:0,critters:0,econV:0,rebirths:0,colDone:{},login:{},chal:{},combo:{},capsules:0,skin:'',learnTix:0});
+const DEF = () => ({difficulty:'normal',speed:'normal',tickets:0,savedAt:0,best:{},played:{},ach:[],prizes:{},daily:{date:'',done:false},earned:0,saves:{},savesV:2,stats:{max:{},sum:{}},username:'',edu:{on:false,topic:'add'},sessLog:[],days:{},adjSeen:0,idle:null,upg:{},avatar:{},cursor:'',resetSeen:0,at:{},achV:0,title:'',achPins:[],avOwn:{},avPresets:[],mult:{},stars:0,starsSpent:0,exp:{},expUp:{},tree:{},ptree:{},diaSpent:0,ptFav:'',autoRb:true,mineBud:null,pets:null,home:null,mounts:null,clicks:0,critters:0,econV:0,rebirths:0,colDone:{},login:{},chal:{},combo:{},capsules:0,skin:'',learnTix:0});
 const PFIELDS = Object.keys(DEF());
 const loadP = key => { let d = {}; try { d = JSON.parse(localStorage.getItem(key)) || {}; } catch(e){} return normP(d); };
 const fin = v => { v = Number(v); return v !== v ? 0 : v > 1e300 ? 1e300 : v < -1e300 ? -1e300 : v; };
@@ -1394,7 +1394,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-11-28c';
+const BUILD = '2026-11-28d';
 const SCRIPTS = ['arcade-core.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
@@ -1464,12 +1464,14 @@ class Component extends DCLogic {
     const first = !this.P.username; this.setP({username:v}); if (first) { Object.entries(this.P.best).forEach(([g,s])=>{ if (GAMES.some(x=>x.id==g)) this.addScore(g,s,false); }); this.addScore('_none',0); }
     this.setState({uOpen:false, uMsg:''}); this.toast(first ? 'YOU’RE ON THE BOARD, '+v.toUpperCase() : 'USERNAME CHANGED TO '+v.toUpperCase()); }
   profKey(){ return this.cloudUid ? KEY+':cloud:'+this.cloudUid : this.acct ? KEY+':acct:'+this.acct : KEY; }
-  persist(now){ const o = {}; PFIELDS.forEach(k=>o[k]=this.P[k]); try { localStorage.setItem(this.profKey(), JSON.stringify(o)); } catch(e){}
+  persist(now){ if (this._tabOff) return; this.P.savedAt = Date.now(); const o = {}; PFIELDS.forEach(k=>o[k]=this.P[k]); try { localStorage.setItem(this.profKey(), JSON.stringify(o)); } catch(e){}
     if (this.cloudUid && window.WLCloud) { clearTimeout(this._cs); const uid = this.cloudUid, meta = {...this.cloudMeta}; const go = () => { window.WLCloud.saveProfile(uid, o, meta).catch(()=>{}); }; if (now) go(); else this._cs = setTimeout(go, 2500); } }
   startCloud(){ const C = window.WLCloud; if (!C || this._cloudOn) return; this._cloudOn = true; this.setState({cloud:true, cloudStatus:'on'});
     C.onAuth(u => { if (this._cloudPending) return; if (u) { if (this.cloudUid !== u.uid) this.cloudLogin(u); } else if (this.cloudUid) this.cloudReset(); }); }
   async cloudLogin(u, carry, name){ if (this.state.game) this.closeAll(); let rec = null; try { rec = await window.WLCloud.loadProfile(u.uid); } catch(e){}
-    let P = rec && rec.P ? normP(rec.P) : (carry ? normP({...this.P, saves:{}}) : normP(getJSON(KEY+':cloud:'+u.uid, {})));
+    // use whichever copy is newer: the cloud one, or the one saved on this device (so a cloud save that didn't finish can't roll you back)
+    const local = getJSON(KEY+':cloud:'+u.uid, null), lt = local && local.savedAt || 0, ct = rec && rec.P && rec.P.savedAt || 0;
+    let P = rec && rec.P ? normP(local && lt > ct ? local : rec.P) : (carry ? normP({...this.P, saves:{}}) : normP(local || {}));
     this.cloudUid = u.uid; this.acct = null; this.cloudMeta = {name: (rec && rec.name) || name || (u.email||'player').split('@')[0].slice(0,16), created: (rec && rec.created) || today(), email: u.email};
     this.P = P; setTimeout(()=>this.postTix(), 2500); setTimeout(()=>this.logAct('join', 'came online · '+fmtN(P.tickets||0)+' 🎟 · '+(P.stars||0)+' ⭐'), 1500); this.setState({...P, account:u.email||u.displayName||'Player', authOpen:false, aBusy:false, aPass:'', aPass2:'', aMsg:'', aInfo:''}); this.persist(true);
     try { const C = window.WLCloud, ra = C.resetAt ? C.resetAt() : 0;
@@ -1550,6 +1552,10 @@ class Component extends DCLogic {
     this.actIv = setInterval(()=>{ if (this.mounted && Date.now()-(this._lastAct||0) < 25000 && !(typeof document!='undefined' && document.hidden)) this._act = (this._act||0) + 1; }, 1000);
     this.onHide = () => { if (this.mounted) { this.saveGame(); this.endSess(); this.startSess(this.mounted); } this.persist(true); };
     this.onVis = () => { if (document.visibilityState=='hidden') this.onHide(); };
+    // Only one tab saves at a time: when the arcade opens in a new tab, older tabs stop saving (so an old tab can't write over newer progress)
+    try { this._tabId = Math.random().toString(36).slice(2); this._bc = new BroadcastChannel('wl-arcade-tabs');
+      this._bc.onmessage = e => { const m = e.data || {}; if (m.k == 'hello' && m.id !== this._tabId && !this._tabOff) { if (this.mounted) this.saveGame(); this.persist(true); this._tabOff = true; this.tabOffScreen(); } };
+      this._bc.postMessage({k:'hello', id:this._tabId}); } catch(e){}
     window.addEventListener('pagehide', this.onHide); window.addEventListener('beforeunload', this.onHide); document.addEventListener('visibilitychange', this.onVis);
     let last = performance.now(), stepT = 0;
     const tick = now => {
@@ -1630,6 +1636,10 @@ class Component extends DCLogic {
     }
     if (game && !this.ready) setTimeout(()=>this.forceUpdate(), 150);
   }
+  tabOffScreen(){ if (document.getElementById('wl-taboff')) return; try { this.closeAll && this.closeAll(); } catch(e){}
+    const d = document.createElement('div'); d.id = 'wl-taboff'; Object.assign(d.style, {position:'fixed', inset:0, zIndex:3000, background:'rgba(1,40,30,.94)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:'14px', color:'#EDE9D8', font:'700 18px "Uncut Sans",system-ui,sans-serif', textAlign:'center', padding:'20px'});
+    d.innerHTML = '<div style="font-size:42px">🌲</div><div>The arcade is open in another tab.</div><div style="font-weight:500;font-size:14px;max-width:420px">This tab stopped saving so it can’t write over your newer progress.</div>';
+    const b = document.createElement('button'); b.textContent = 'Play in this tab instead'; Object.assign(b.style, {background:'#D5F367', color:'#015640', border:'none', borderRadius:'999px', padding:'12px 22px', font:'800 16px "Uncut Sans",system-ui,sans-serif', cursor:'pointer'}); b.onclick = () => location.reload(); d.append(b); document.body.append(d); }
   saveGame(){ const id = this.mounted && this.saveKey(this.mounted); if (!id || !this.snapFn) return false;
     if (this.state.admin) { if (this.P.saves[id]) { const sv = {...this.P.saves}; delete sv[id]; this.setP({saves:sv}); } return false; } let d = null; try { d = this.snapFn(); } catch(e){ d = null; }
     const saves = {...this.P.saves}, had = !!saves[id];
