@@ -169,7 +169,10 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
 
           <sc-for list="{{ trailDots }}" as="td" hint-placeholder-count="0"><span style="position:absolute; left:{{ td.x }}px; top:{{ td.y }}px; transform:translate(-50%,-50%) scale({{ td.sc }}); opacity:{{ td.op }}; font-size:15px; z-index:18; pointer-events:none;">{{ td.e }}</span></sc-for>
           <sc-if value="{{ hasPet }}" hint-placeholder-val="{{ false }}"><img src="{{ petImg }}" alt="" style="position:absolute; left:{{ pet.x }}px; top:{{ pet.y }}px; width:34px; height:34px; margin:-17px 0 0 -17px; z-index:19; pointer-events:none; filter:drop-shadow(0 4px 4px rgba(0,0,0,.3));"></sc-if>
-          <img src="{{ walkImg }}" alt="" style="position:absolute; left:{{ player.x }}px; top:{{ player.y }}px; width:46px; height:46px; margin:-23px 0 0 -23px; z-index:20; pointer-events:none; filter:drop-shadow(0 6px 6px rgba(0,0,0,.3));">
+          <sc-if value="{{ hasMount }}" hint-placeholder-val="{{ false }}"><img src="{{ mountImg }}" alt="" style="position:absolute; left:{{ player.x }}px; top:{{ player.y }}px; width:58px; height:58px; margin:-14px 0 0 -29px; z-index:19; pointer-events:none;"></sc-if>
+          <sc-if value="{{ hasNPet }}" hint-placeholder-val="{{ false }}"><img src="{{ npetImg }}" alt="" style="position:absolute; left:{{ npet.x }}px; top:{{ npet.y }}px; width:40px; height:40px; margin:-20px 0 0 -20px; z-index:19; pointer-events:none; filter:drop-shadow(0 4px 4px rgba(0,0,0,.3));"></sc-if>
+          <img src="{{ walkImg }}" alt="" style="position:absolute; left:{{ player.x }}px; top:{{ walkY }}px; width:46px; height:46px; margin:-23px 0 0 -23px; z-index:20; pointer-events:none; filter:drop-shadow(0 6px 6px rgba(0,0,0,.3)); animation:{{ emoteAnim }}; transform-origin:50% 90%;">
+          <sc-if value="{{ emoteOn }}" hint-placeholder-val="{{ false }}"><div style="position:absolute; left:{{ player.x }}px; top:{{ player.y }}px; transform:translate(-50%,-64px); font-size:26px; z-index:22; pointer-events:none; animation:wlhPop .3s ease-out;">{{ emoteE }}</div></sc-if>
 
           <sc-if value="{{ nearLabel }}" hint-placeholder-val="{{ false }}">
             <div style="position:absolute; left:{{ player.x }}px; top:{{ player.y }}px; transform:translate(-50%,-62px); background:#121313; color:#D5F367; font-size:13px; font-weight:700; padding:6px 12px; border-radius:999px; white-space:nowrap; z-index:21; pointer-events:none; letter-spacing:0.04em;">E · {{ nearLabel }}</div>
@@ -191,6 +194,18 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
           <div style="font-size:12px; font-weight:500; color:#b9cfc5; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ acctSub }}</div>
         </div>
         <button onClick="{{ openAccount }}" style="flex-shrink:0; background:#D5F367; color:#015640; border:none; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;">{{ acctBtn }}</button>
+      </section>
+      <section style="background:#121313; border-radius:16px; padding:12px 14px; display:flex; flex-direction:column; gap:8px; border:1.5px solid rgba(213,243,103,.35); margin-top:-6px;">
+        <div style="display:flex; align-items:center; gap:10px;">
+          <img onClick="{{ openPets }}" src="{{ cardPetImg }}" alt="Your pet" title="Your pet" style="width:52px; height:52px; cursor:pointer; background:rgba(213,243,103,.1); border-radius:12px;">
+          <img onClick="{{ openHome }}" src="{{ cardHomeImg }}" alt="Visit home" title="Visit your home" style="width:52px; height:52px; cursor:pointer; border-radius:12px;">
+          <div style="flex:1; min-width:0;"><div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:#D5F367;">PET &amp; HOME</div><div style="font-size:13px; font-weight:700; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ cardPetName }}</div><div style="font-size:12px; color:#b9cfc5; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ cardHomeName }}</div></div>
+        </div>
+        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+          <button onClick="{{ openPets }}" style="background:#D5F367; color:#015640; border:none; border-radius:999px; padding:7px 12px; font-weight:700; font-size:12px; cursor:pointer;">🐾 Pets</button>
+          <button onClick="{{ openHome }}" style="background:#F9BF01; color:#121313; border:none; border-radius:999px; padding:7px 12px; font-weight:700; font-size:12px; cursor:pointer;">🏠 Visit Home</button>
+          <sc-for list="{{ emoteBtns }}" as="em" hint-placeholder-count="0"><button onClick="{{ em.go }}" title="{{ em.t }}" style="background:transparent; border:1.5px solid rgba(237,233,216,.4); border-radius:999px; padding:4px 8px; font-size:15px; cursor:pointer; opacity:{{ em.op }};">{{ em.e }}</button></sc-for>
+        </div>
       </section>
 
       <section style="background:#014987; border-radius:16px; padding:16px 18px; display:flex; flex-direction:column; gap:10px; border:1.5px solid #64CDF5;">
@@ -617,6 +632,17 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
   </sc-if>
   <sc-if value="{{ adminDownBanner }}" hint-placeholder-val="{{ false }}"><div style="position:fixed; left:50%; bottom:12px; transform:translateX(-50%); z-index:480; background:#B3001B; color:#fff; font-weight:700; font-size:13px; padding:8px 10px 8px 16px; border-radius:999px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; max-width:94vw; box-shadow:0 8px 24px rgba(0,0,0,.35);">CLOSED FOR PLAYERS · {{ downLeft }} LEFT · you’re in as admin<button onClick="{{ doReopen }}" style="background:#D5F367; color:#015640; border:none; border-radius:999px; padding:6px 14px; font-weight:800; font-size:13px; cursor:pointer;">Reopen arcade</button></div></sc-if>
 
+  <sc-if value="{{ homeOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; inset:0; background:rgba(11,46,36,.9); display:flex; align-items:flex-start; justify-content:center; z-index:50; overflow-y:auto; padding:16px 10px; box-sizing:border-box;">
+      <div style="background:#EDE9D8; border-radius:20px; padding:18px; width:980px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:10px; color:#121313;">
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
+          <div><div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#AB2372;">PETS &amp; HOME</div><div style="font-size:26px; font-weight:700; color:#015640;">Your critters and your cabin</div></div>
+          <button onClick="{{ closeHome }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;">Done · Esc</button>
+        </div>
+        <div ref="{{ homeRef }}"></div>
+      </div>
+    </div>
+  </sc-if>
   <sc-if value="{{ avOpen }}" hint-placeholder-val="{{ false }}">
     <div style="position:fixed; inset:0; background:rgba(11,46,36,.9); display:flex; align-items:flex-start; justify-content:center; z-index:50; overflow-y:auto; padding:16px 10px; box-sizing:border-box;">
       <div style="background:#EDE9D8; border-radius:20px; padding:18px; width:900px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:10px; color:#121313;">
@@ -930,7 +956,7 @@ const UPG_RAW = {
   idle:[{k:'cheap',n:'Miners’ Union Deal',d:'Hiring miners costs 15% less per level (stacks)',base:300,cap:40},{k:'start',n:'Starter Crew',d:'New miners hired 1 level higher per level · past the top miner level, +15% Mines ore per level',base:1500}],
 };
 const UPG = {}; GAMES.forEach(g => { const list = (UPG_RAW[g.id]||[]).slice(); if (g.id!='2048') list.push({k:'boost',n:'Ticket Booster',d:'+10% tickets from this machine per level, forever',base:200,grow:1.45}); UPG[g.id] = list; });
-const upgCost = (u, L) => { const x = u.base * Math.pow(u.grow||1.55, L); if (x < 100) return Math.round(x); const p = Math.pow(10, Math.floor(Math.log10(x)) - 1); return Math.round(x/p)*p; };
+const upgCost = (u, L) => { const x = Math.min(1e300, u.base * Math.pow(u.grow||1.55, L)); if (x < 100) return Math.round(x); if (x >= 1e300) return 1e300; const p = Math.pow(10, Math.floor(Math.log10(x)) - 1); return Math.round(x/p)*p; };
 const upgMax = u => u.one ? 1 : Infinity;
 // Levels the games actually see (capped so nothing breaks)
 const upgFor = (P, gid) => { const own = (P.upg||{})[gid]||{}, out = {}; (UPG[gid]||[]).forEach(u => { const L = own[u.k]|0; out[u.k] = u.cap ? Math.min(L, u.cap) : L; }); return out; };
@@ -1029,6 +1055,10 @@ const AVK = ['skin','shirt','hat','face','gear','pet','hair','hairc','acc','bg',
 const AVTABS = ['body','main','accent','skin','eye','hat','hair','hairc','face','acc','shirt','gear','pet','emblem','frame','bg','trail'];
 const avNorm = a => { avEmblems(); const o = {}; AVK.forEach(k=>{ const v = a && a[k]|0; o[k] = v>=0 && v<AVP[k].o.length ? v : 0; }); if (!a || a.hat==null) o.hat = 1; return o; };
 const avEnc = a => AVK.map(k=>avNorm(a)[k]).join('.');
+// The active pet rides along on leaderboards and chat: an extra ".p<index>-<level>" part that older versions simply ignore.
+const petTag = P => { const W = window.WLH; if (!W || !P) return ''; const a = W.active(P); return a ? '.p'+W.PETS.indexOf(a.pet)+'-'+a.lv : ''; };
+const avFull = P => avEnc(P.avatar) + petTag(P);
+const petOf = s => { const m = /\.p(\d+)-(\d+)/.exec(s||''); return m ? {i:+m[1], lv:+m[2]} : null; };
 const avDec = s => { const p = String(s||'').split('.').map(Number); const o = {}; AVK.forEach((k,i)=>o[k]=p[i]||0); return avNorm(o); };
 const avFrame = n => n>=200 ? {c:'#EA55AB',n:'Legend'} : n>=100 ? {c:'#F9BF01',n:'Gold'} : n>=40 ? {c:'#B9C4BF',n:'Silver'} : n>=10 ? {c:'#DD8B03',n:'Bronze'} : null;
 const RBG = '<linearGradient id="rb" x1="0" x2="1"><stop offset="0" stop-color="#FF4539"/><stop offset=".33" stop-color="#F9BF01"/><stop offset=".66" stop-color="#00B451"/><stop offset="1" stop-color="#64CDF5"/></linearGradient>';
@@ -1209,6 +1239,7 @@ const avSVG = (a, lvl, opts) => { a = avNorm(a); opts = opts || {}; const B = a.
   if (H==23) o += '<path d="M19 24a13 12 0 0 1 26 0z" fill="#64CDF5"/><path d="M19 24a13 12 0 0 1 13-12v12z" fill="#FF4539"/><rect x="31" y="7" width="2" height="6" fill="#121313"/><g>'+at('rotate','0 32 7;360 32 7',.6)+'<ellipse cx="32" cy="7" rx="8" ry="1.8" fill="#F9BF01"/></g>';
   // pets
   if (!opts.noPet) o += avPet(a.pet, 50, 52);
+  if (opts.npet && window.WLH && window.WLH.PETS[opts.npet.i]) o += '<g transform="translate(52 51) scale(.34)">'+window.WLH.petInner(window.WLH.PETS[opts.npet.i], {lv:opts.npet.lv})+'</g>';
   return svgURI(o); };
 
 // ---------- Cursors: unlocked with achievements ----------
@@ -1324,10 +1355,11 @@ const ACH = [
   {id:'lifer',cat:'Secret',tier:4,secret:true,name:'Lifer',desc:'Finish 1,000 games',p:s=>[plays(s),1000]},
 ];
 const KEY = 'wl-arcade-v1', ACCT_KEY = 'wl-arcade-accounts', SESSION_KEY = 'wl-arcade-session';
-const DEF = () => ({difficulty:'normal',speed:'normal',tickets:0,best:{},played:{},ach:[],prizes:{},daily:{date:'',done:false},earned:0,saves:{},savesV:2,stats:{max:{},sum:{}},username:'',edu:{on:false,topic:'add'},sessLog:[],days:{},adjSeen:0,idle:null,upg:{},avatar:{},cursor:'',resetSeen:0,at:{},achV:0,title:'',achPins:[],avOwn:{},avPresets:[],mult:{},stars:0,starsSpent:0,exp:{},expUp:{},tree:{},ptree:{},diaSpent:0,ptFav:'',autoRb:true,clicks:0,critters:0,econV:0,rebirths:0,colDone:{},login:{},chal:{},combo:{},capsules:0,skin:'',learnTix:0});
+const DEF = () => ({difficulty:'normal',speed:'normal',tickets:0,best:{},played:{},ach:[],prizes:{},daily:{date:'',done:false},earned:0,saves:{},savesV:2,stats:{max:{},sum:{}},username:'',edu:{on:false,topic:'add'},sessLog:[],days:{},adjSeen:0,idle:null,upg:{},avatar:{},cursor:'',resetSeen:0,at:{},achV:0,title:'',achPins:[],avOwn:{},avPresets:[],mult:{},stars:0,starsSpent:0,exp:{},expUp:{},tree:{},ptree:{},diaSpent:0,ptFav:'',autoRb:true,mineBud:null,pets:null,home:null,mounts:null,clicks:0,critters:0,econV:0,rebirths:0,colDone:{},login:{},chal:{},combo:{},capsules:0,skin:'',learnTix:0});
 const PFIELDS = Object.keys(DEF());
 const loadP = key => { let d = {}; try { d = JSON.parse(localStorage.getItem(key)) || {}; } catch(e){} return normP(d); };
-const normP = d => { const P = Object.assign(DEF(), d||{}); P.stats = Object.assign({max:{},sum:{}}, P.stats||{}); P.stats.max = P.stats.max||{}; P.stats.sum = P.stats.sum||{}; P.saves = P.saves||{}; P.ach = Array.isArray(P.ach)?P.ach:[]; P.edu = Object.assign({on:false,topic:'add'}, P.edu||{}); P.sessLog = Array.isArray(P.sessLog)?P.sessLog:[]; P.days = P.days||{}; Object.keys(P.best||{}).forEach(k=>{ P.best[k] = safeScore(k, P.best[k]); }); ['tickets','earned'].forEach(k=>{ if (!isFinite(P[k]) || P[k] < 0) P[k] = 0; }); ['mult','colDone','login','chal','combo','upg','prizes','best','played','exp','expUp','tree','ptree','at','avOwn'].forEach(k=>{ if (!P[k] || typeof P[k]!='object') P[k] = {}; }); if (P.savesV !== 2) { P.saves = {}; P.savesV = 2; } return P; };
+const fin = v => { v = Number(v); return v !== v ? 0 : v > 1e300 ? 1e300 : v < -1e300 ? -1e300 : v; };
+const normP = d => { const P = Object.assign(DEF(), d||{}); P.tickets = Math.max(0, fin(P.tickets)); P.earned = Math.max(0, fin(P.earned)); P.stats = Object.assign({max:{},sum:{}}, P.stats||{}); P.stats.max = P.stats.max||{}; P.stats.sum = P.stats.sum||{}; P.saves = P.saves||{}; P.ach = Array.isArray(P.ach)?P.ach:[]; P.edu = Object.assign({on:false,topic:'add'}, P.edu||{}); P.sessLog = Array.isArray(P.sessLog)?P.sessLog:[]; P.days = P.days||{}; Object.keys(P.best||{}).forEach(k=>{ P.best[k] = safeScore(k, P.best[k]); }); ['tickets','earned'].forEach(k=>{ if (!isFinite(P[k]) || P[k] < 0) P[k] = 0; }); ['mult','colDone','login','chal','combo','upg','prizes','best','played','exp','expUp','tree','ptree','at','avOwn'].forEach(k=>{ if (!P[k] || typeof P[k]!='object') P[k] = {}; }); if (P.savesV !== 2) { P.saves = {}; P.savesV = 2; } return P; };
 const FB_ERR = {'auth/email-already-in-use':'That email already has an account. Switch to Log in.','auth/invalid-email':'That email doesn’t look right.','auth/weak-password':'That password is too weak — use at least 6 characters.','auth/invalid-credential':'Email or password is wrong.','auth/wrong-password':'Email or password is wrong.','auth/user-not-found':'Email or password is wrong.','auth/too-many-requests':'Too many tries. Wait a few minutes and try again.','auth/network-request-failed':'Can’t reach the server. Check your internet connection.','auth/operation-not-allowed':'That sign-in method is turned off in the Firebase console (Authentication → Sign-in method).','auth/user-disabled':'This account has been disabled.','auth/popup-closed-by-user':'The Google window was closed before sign-in finished.','auth/cancelled-popup-request':'The Google window was closed before sign-in finished.','auth/popup-blocked':'Your browser blocked the Google pop-up. Allow pop-ups for this site and try again.','auth/unauthorized-domain':'This website isn’t on Firebase’s list yet. Add it under Authentication → Settings → Authorized domains.','auth/account-exists-with-different-credential':'That email already has a password login. Log in with your email and password instead.','auth/operation-not-supported-in-this-environment':'Google sign-in doesn’t work here. Open the arcade’s own website instead.'};
 const fbErr = e => FB_ERR[e && e.code] || ('Something went wrong'+(e && e.code ? ' ('+e.code+')' : '')+'. Try again.');
 const getAccts = () => { try { return JSON.parse(localStorage.getItem(ACCT_KEY)) || {}; } catch(e) { return {}; } };
@@ -1345,8 +1377,8 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-11-25c';
-const SCRIPTS = ['arcade-core.js','prizes2.js','economy.js','achievements.js','avatar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js'];
+const BUILD = '2026-11-26a';
+const SCRIPTS = ['arcade-core.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
 class Component extends DCLogic {
@@ -1359,7 +1391,7 @@ class Component extends DCLogic {
       immortal:false,autoHint:true,codeOpen:false,codeVal:'',codeMsg:'',admin:false,px:760,py:905,vw:(typeof window!='undefined'?window.innerWidth:1200),gameH:480,padOn:(typeof window!='undefined'&&(('ontouchstart' in window)||(window.matchMedia&&window.matchMedia('(pointer: coarse)').matches))),learnOpen:false,pinIn:'',pinNew:'',pinNew2:'',pinMsg:'',pinAsk:'',pinFails:0,pinLock:0,pinMode:'',lbOpen:false,lbGame:'_tix',lbMode:'all',uOpen:false,uVal:'',uMsg:'',clearArm:false,dir:[0,1],game:null,liveScore:0,payout:'',prizesOpen:false,toasts:[],scale:1,muted:false,
       authOpen:false,authMode:'signup',aEmail:'',aPass:'',aPass2:'',aName:'',aShow:false,aRemember:true,aBring:true,aMsg:'',aBusy:false,aFails:0,aLock:0,aTouched:false,
       achOpen:false,achFilter:'All'});
-    this.keys = {}; this.gameRef = React.createRef(); this.pzRef = React.createRef(); this.achRef = React.createRef(); this.avRef = React.createRef();
+    this.keys = {}; this.gameRef = React.createRef(); this.pzRef = React.createRef(); this.achRef = React.createRef(); this.avRef = React.createRef(); this.homeRef = React.createRef();
     this.ro = typeof ResizeObserver != 'undefined' ? new ResizeObserver(()=>this.onResize && this.onResize()) : null;
     this.wrapRef = el => { if (el && el !== this._wrapEl) { this._wrapEl = el; this.ro && this.ro.observe(el); this.onResize && this.onResize(); } };
     this.padHeld = {};
@@ -1396,7 +1428,7 @@ class Component extends DCLogic {
   setEdu(patch){ const g = this.state.game, remount = g && EDU_SWITCH.includes(g); if (remount) this.unmountGame(true);
     this.setP({edu:{...this.P.edu, ...patch}}); window.Arcade && window.Arcade.sfx('blip'); if (remount) this.setState({liveScore:0, payout:''}); }
   addScore(g, s, edu){ if (!this.P.username || (g!='_none' && !(s>0))) return;
-    if (this.state.cloud) { const C = window.WLCloud; if (!this.cloudUid || !C) return; const row = {uid:this.cloudUid, u:this.P.username, s:Math.max(0,Math.round(s)), edu:!!edu, d:today(), av:avEnc(this.P.avatar), al:(this.P.ach||[]).length};
+    if (this.state.cloud) { const C = window.WLCloud; if (!this.cloudUid || !C) return; const row = {uid:this.cloudUid, u:this.P.username, s:Math.max(0,Math.round(s)), edu:!!edu, d:today(), av:avFull(this.P), al:(this.P.ach||[]).length};
       if (g!='_none') C.postScore(g, row).catch(()=>{}); C.setTix(this.cloudUid, {...row, s:Math.max(0,Math.round(this.P.earned)), rb:this.P.rebirths||0}).catch(()=>{});
       this._bAt = {}; return; } const B = getJSON(BOARD_KEY,{e:[]}), k = this.profKey(), u = this.P.username;
     const av = avEnc(this.P.avatar), al = (this.P.ach||[]).length; if (g!='_none') { B.e.push({u, k, g, s, edu:!!edu, d:today(), av, al}); const mine = B.e.filter(x=>x.g==g).sort((a,b)=>b.s-a.s).slice(0,60); B.e = B.e.filter(x=>x.g!=g).concat(mine); }
@@ -1443,7 +1475,7 @@ class Component extends DCLogic {
   async forgotPw(){ const email = (this.state.aEmail||'').trim().toLowerCase(); if (!EMAIL_RE.test(email)) return this.setState({aMsg:'Type your email address above first.', aInfo:''});
     try { await window.WLCloud.reset(email); this.setState({aInfo:'If that email has an account, a reset link is on its way. Check your inbox and spam folder.', aMsg:''}); } catch(e) { this.setState({aMsg:fbErr(e), aInfo:''}); } }
   postTix(){ const C = window.WLCloud; if (!this.state.cloud || !C || !this.cloudUid || !this.P.username || this.state.admin) return;
-    C.setTix(this.cloudUid, {uid:this.cloudUid, u:this.P.username, s:Math.max(0,Math.round(this.P.earned||0)), d:today(), av:avEnc(this.P.avatar), al:(this.P.ach||[]).length, rb:this.P.rebirths||0}).then(()=>{ this._bAt = {}; }).catch(()=>{}); }
+    C.setTix(this.cloudUid, {uid:this.cloudUid, u:this.P.username, s:Math.max(0,Math.round(this.P.earned||0)), d:today(), av:avFull(this.P), al:(this.P.ach||[]).length, rb:this.P.rebirths||0}).then(()=>{ this._bAt = {}; }).catch(()=>{}); }
   needBoard(g){ if (!this.state.cloud || !window.WLCloud) return; this.cloudBoard = this.cloudBoard || {}; this._bAt = this._bAt || {}; this._bBusy = this._bBusy || {};
     if (this._bBusy[g] || (this._bAt[g] && Date.now()-this._bAt[g] < 30000)) return; this._bBusy[g] = true;
     window.WLCloud.top(g, 100).then(rows=>{ this.cloudBoard[g] = rows.map(r=>({u:r.u, k:r.uid, id:r.id, g, s:r.s, edu:!!r.edu, d:r.d, av:r.av||'', al:r.al||0})); this._bAt[g] = Date.now(); this._bBusy[g] = false; this.setState({lbTick:Date.now()}); })
@@ -1455,8 +1487,8 @@ class Component extends DCLogic {
       const old = (s.ach||[]).length; if (window.WLAV) s.avOwn = window.WLAV.migrate(s, old); let moved = 0; for (let i = 0; i < 4; i++) { const r0 = WA.eval(s); if (!r0.newly.length) break; s.at = r0.at; moved += r0.newly.length; } s.achV = 2; s.ach = WA.achList(s.at); this._achMoved = moved; return {s, newly:[]}; }
     for (let i = 0; i < 6; i++) { const r = WA.eval(s); if (!r.newly.length) break; let tix = 0; r.newly.forEach(x => { tix += WA.tixReward(s, x.t); }); s = {...s, at:r.at, tickets:s.tickets+tix, earned:s.earned+tix}; all = all.concat(r.newly); }
     s.ach = WA.achList(s.at); return {s, newly:all}; }
-  setP(patch){ const r = this.evalAch({...this.P, ...patch}); this.P = r.s; this.persist(); this.setState({...this.P}); this.checkRebirth();
-    if (r.newly.length && window.WLA && !this.state.admin) window.WLA.queue(r.newly, this.P);
+  setP(patch){ ['tickets','earned'].forEach(k => { if (k in patch) patch[k] = fin(patch[k]); }); const r = this.evalAch({...this.P, ...patch}); this.P = r.s; this.persist(); this.setState({...this.P}); this.checkRebirth();
+    if (r.newly.length && window.WLA && !this.state.admin) { window.WLA.queue(r.newly, this.P); this.petMood('party', 5000); }
     if (this._achMoved) { const n = this._achMoved; this._achMoved = 0; setTimeout(()=>this.toast('ACHIEVEMENTS 2.0 · '+n+' TIERS CARRIED OVER FROM YOUR OLD TROPHIES'), 1200); } }
   stat(k, v, mode){ if (this.state.admin && k!='account' && k!='resumes') return; const st = this.P.stats;
     if (mode=='add') this.setP({stats:{...st, sum:{...st.sum, [k]:(st.sum[k]||0)+v}}});
@@ -1477,8 +1509,9 @@ class Component extends DCLogic {
       if (this.state.kickUntil > Date.now() && !this.state.admin) return;
       if (k=='t' && !this.state.chatOpen && !this.state.game && !this.state.codeOpen && !this.state.authOpen) { e.preventDefault(); this.openChat(); return; }
       if (this.state.chatOpen) return;
-      const S = this.state; if (S.game || S.sugOpen || S.shopOpen || S.avOpen || S.prizesOpen || S.codeOpen || S.authOpen || S.achOpen || S.learnOpen || S.lbOpen || S.uOpen) return;
+      const S = this.state; if (S.game || S.homeOpen || S.sugOpen || S.shopOpen || S.avOpen || S.prizesOpen || S.codeOpen || S.authOpen || S.achOpen || S.learnOpen || S.lbOpen || S.uOpen) return;
       if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k)) e.preventDefault();
+      if (/^[1-6]$/.test(k) && window.WLH) { this.emote(window.WLH.EMOTES[+k-1].k); return; }
       this.keys[k] = true;
       if ((k=='e'||k=='Enter') && this.near) this.near.act();
     };
@@ -1496,10 +1529,10 @@ class Component extends DCLogic {
     let last = performance.now(), stepT = 0;
     const tick = now => {
       const dt = Math.min(.05,(now-last)/1000); last = now; const s = this.state;
-      if (!s.game && !s.sugOpen && !s.shopOpen && !s.avOpen && !s.prizesOpen && !s.codeOpen && !s.authOpen && !s.achOpen && !s.learnOpen && !s.lbOpen && !s.uOpen) {
+      if (!s.game && !s.homeOpen && !s.sugOpen && !s.shopOpen && !s.avOpen && !s.prizesOpen && !s.codeOpen && !s.authOpen && !s.achOpen && !s.learnOpen && !s.lbOpen && !s.uOpen) {
         const K = this.keys, dx = (K.ArrowRight||K.d?1:0)-(K.ArrowLeft||K.a?1:0), dy = (K.ArrowDown||K.s?1:0)-(K.ArrowUp||K.w?1:0);
         if (dx||dy) {
-          const sp = (this.props.walkSpeed ?? 280) * dt / Math.hypot(dx,dy);
+          const sp = (this.props.walkSpeed ?? 280) * (window.WLH ? window.WLH.speed(this.P) : 1) * dt / Math.hypot(dx,dy);
           let {px,py} = s;
           if (!this.blocked(px+dx*sp,py)) px += dx*sp;
           if (!this.blocked(px,py+dy*sp)) py += dy*sp;
@@ -1512,6 +1545,9 @@ class Component extends DCLogic {
         if (this._trail && this._trail.length) { this._trail = this._trail.filter(d => now - d.t < 1100); redraw = true; }
         if (av.pet) { const pp = this._petPos || (this._petPos = {x:st.px - 34, y:st.py + 10}); const tx = st.px - 34 * ((st.dir||[1])[0] >= 0 ? 1 : -1), ty = st.py + 12, d = Math.hypot(tx-pp.x, ty-pp.y);
           if (d > 2) { const k = Math.min(1, dt * (d > 60 ? 6 : 3.5)); pp.x += (tx-pp.x)*k; pp.y += (ty-pp.y)*k; redraw = true; } }
+        if (window.WLH && window.WLH.active(this.P)) { const np = this._npPos || (this._npPos = {x:st.px + 34, y:st.py + 10}); const tx = st.px + 36 * ((st.dir||[1])[0] >= 0 ? -1 : 1) * -1, ty = st.py + 14, d = Math.hypot(tx-np.x, ty-np.y);
+          if (d > 2) { const k = Math.min(1, dt * (d > 60 ? 5 : 3)); np.x += (tx-np.x)*k; np.y += (ty-np.y)*k; redraw = true; } }
+        if (this._emote && now > this._emote.until) { this._emote = null; redraw = true; }
         if (redraw && !(dx||dy)) this.setState({ftick:now});
       }
       this.raf = requestAnimationFrame(tick);
@@ -1536,6 +1572,8 @@ class Component extends DCLogic {
     if (!this.state.achOpen && this._achOff) { try { this._achOff(); } catch(e){} this._achOff = null; }
     if (this.state.avOpen && this.avRef.current && !this._avOff && window.WLAV) this._avOff = window.WLAV.mount(this.avRef.current, this.avApi());
     if (!this.state.avOpen && this._avOff) { try { this._avOff(); } catch(e){} this._avOff = null; }
+    if (this.state.homeOpen && this.homeRef.current && !this._homeOff && window.WLH) this._homeOff = window.WLH.mount(this.homeRef.current, {P:()=>this.P, setP:pt=>this.setP(pt), toast:t=>this.toast(t), sfx:n=>window.Arcade && window.Arcade.sfx(n), admin:()=>!!this.state.admin, log:(k,t)=>this.logAct(k,t), tab:this._homeTab||'pets', emote:k=>this.emote(k), close:()=>this.closeAll()});
+    if (!this.state.homeOpen && this._homeOff) { try { this._homeOff(); } catch(e){} this._homeOff = null; }
     if (this.state.prizesOpen && this.pzRef.current && !this._pzOff && window.WLP) { const P0 = () => this.P;
       this._pzOff = window.WLP.mount(this.pzRef.current, { P:P0, setP:pt=>this.setP(pt), toast:t=>this.toast(t), sfx:n=>window.Arcade && window.Arcade.sfx(n), admin:()=>!!this.state.admin, log:(k,t)=>this.logAct(k,t), lowFx:()=>LOWFX, tab:(t=>{ this._pzTab = null; return t; })(this._pzTab),
         games:()=>GAMES, icon:id=>ICON(id), autoRb:()=>this.P.autoRb !== false, setAutoRb:on=>{ this.setP({autoRb:on}); if (on) setTimeout(()=>this.checkRebirth(), 50); }, rebirthNow:()=>this.checkRebirth(true), upgrades:()=>this.upgData(), buyUpg:(g,k,n)=>this.buyUpg(g,k,n), upgPlan:(g,k,n)=>this.upgPlan(g,k,n), cats:()=>this.multCats(), avatar:el=>window.WLAV ? window.WLAV.mount(el, this.avApi()) : null, openAv:()=>{ this.setState({prizesOpen:false}); setTimeout(()=>this.setState({avOpen:true}), 30); }, classicArt: Object.fromEntries(PRIZES.map(pz=>[pz.id, PZ(pz.art)])) }); }
@@ -1556,10 +1594,10 @@ class Component extends DCLogic {
       this.cleanup = A.games[game].mount(this.gameRef.current, { score: n => { const v = am(n); if (v === this.state.liveScore) return; const now = performance.now(); clearTimeout(this._sTo); if (now - (this._sT||0) < 300) { this._sTo = setTimeout(()=>{ this._sT = performance.now(); this.setState({liveScore:v}); }, 160); return; } this._sT = now; this.setState({liveScore:v}); }, over: n => this.finish(game, am(n)), hint: h => this.setState({hint:h}),
         resume, snap: f => { this.snapFn = f; }, stat: (k,v,m) => this.stat(k,v,m),
         stored: this.state.admin ? null : (this.P.idle || null), store: d => { if (this.state.admin) return; try { this.P = {...this.P, idle: JSON.parse(JSON.stringify(d))}; } catch(e) { return; } this.persist(); },
-        tix: (n, score, label) => this.grantTix(game, n, score, label), perfect: () => { this._perfect = true; },
+        tix: (n, score, label) => this.grantTix(game, n, score, label), tixCap: () => game == 'idle' ? Math.floor(this.mineBud().v / Math.max(1e-9, this.tixFactor('idle'))) : Infinity, tixWait: () => { const b = this.mineBud(); return Math.max(1, Math.ceil(Math.max(1, this.tixFactor('idle')) / b.rate)); }, perfect: () => { this._perfect = true; },
         edu: ok => { if (this.sess) { if (ok) this.sess.ok++; else this.sess.bad++; } this.stat(ok?'eduRight':'eduWrong',1,'add'); this._eduRun = ok ? (this._eduRun||0)+1 : 0; if (ok) this.stat('eduStreak', this._eduRun, 'max');
           const WP = window.WLP; if (ok && WP && !this.state.admin && this.isLearn(game)) { const b = WP.learnBonus(this.P), c = WP.onEdu(this.P) || {}; if (b || c.chal) this.setP({...c, ...(b ? {tickets:this.P.tickets+b, earned:this.P.earned+b, learnTix:(this.P.learnTix||0)+b} : {})}); } } });
-      if (this.gro && this.gameRef.current !== this._gEl) { if (this._gEl) this.gro.unobserve(this._gEl); this._gEl = this.gameRef.current; this.gro.observe(this._gEl); }
+      if (this.gro && this.gameRef.current !== this._gEl) { if (this._gEl) this.gro.unobserve(this._gEl); this._gEl = this.gameRef.current; this.gro.observe(this._gEl); } if (window.Arcade && window.WLH) window.Arcade.petGems = window.WLH.petGems(this.P);
       if (resume) { this.stat('resumes',1,'add'); this.toast('SAVED GAME LOADED'); }
     }
     if (game && !this.ready) setTimeout(()=>this.forceUpdate(), 150);
@@ -1633,7 +1671,7 @@ class Component extends DCLogic {
     if (chatPrivate(raw)) return this.setState({chatErr:'For safety, no links, emails, phone numbers or where you live. Keep it about the games!'});
     const now = Date.now(); if (now - (this._chatT||0) < 4000) return this.setState({chatErr:'Slow down a little — one message every few seconds.'});
     const t = chatClean(raw); if (!t) return; this._chatT = now;
-    try { await C.chatSend({uid:this.cloudUid, u:this.P.username, t, av:avEnc(this.P.avatar), al:(this.P.ach||[]).length}); this.setState({chatVal:'', chatErr:''}); }
+    try { await C.chatSend({uid:this.cloudUid, u:this.P.username, t, av:avFull(this.P), al:(this.P.ach||[]).length}); this.setState({chatVal:'', chatErr:''}); }
     catch(e) { this.setState({chatErr: String(e && e.code||'').includes('permission') ? 'Couldn’t send (you may be muted).' : 'Couldn’t send: '+(e && (e.code||e.message))}); } }
   async chatAdmin(m, kind){ const C = window.WLCloud; if (!this.state.admin || !C) return;
     try { if (kind=='del') await C.chatDelete(m.id); else { const mutes = new Set(C.mutes ? C.mutes() : []); if (mutes.has(m.uid)) mutes.delete(m.uid); else mutes.add(m.uid); await C.setMutes([...mutes]); this.toast((mutes.has(m.uid)?'MUTED ':'UNMUTED ')+m.u.toUpperCase()); } }
@@ -1657,6 +1695,11 @@ class Component extends DCLogic {
   async adminUnkick(uid, name){ const C = window.WLCloud; try { await C.kick(uid, 0); this.setState({admMsg:'Let '+name+' back in.'}); } catch(e) { this.setState({admMsg:'Couldn’t: '+(e && (e.code||e.message))}); } }
   // Forced Rebirth: as soon as tickets reach the milestone, the Rebirth happens automatically.
   // Forced Rebirth: the instant tickets reach the requirement, the Rebirth happens — no button, no setting, every time.
+  emote(k){ const W = window.WLH; if (!W) return; const em = W.EMOTES.find(x=>x.k==k); if (!em) return; if (!em.ok(this.P)) { this.toast('EMOTE LOCKED · '+em.how.toUpperCase()); return; }
+    this._emote = {k, e:em.e, anim:em.anim, until:performance.now() + 1900}; window.Arcade && window.Arcade.sfx('blip'); this.setState({ftick:performance.now()}); }
+  petMood(m, ms){ this._pmood = {m, until:Date.now() + (ms||4000)}; }
+  petXp(mins){ const W = window.WLH; if (!W || this.state.admin) return; const r = W.onPlay(this.P, mins); if (!r) return; this.setP(r.patch);
+    if (r.up) { const a = W.active(this.P); this.toast((a ? a.pet.n.toUpperCase() : 'YOUR PET')+' REACHED LEVEL '+r.up+'!'); this.petMood('party', 5000); } if (r.evo) this.toast('YOUR PET EVOLVED · '+r.evo.toUpperCase()+'!'); }
   // Auto Rebirth can be switched off in the header; then a REBIRTH NOW button appears once you qualify.
   checkRebirth(force){ const W2 = window.WLP; if (!W2 || this.state.admin || this._rebirthing || !(this.P.tickets >= W2.rebirthNeed(this.P))) return; if (this.P.autoRb === false && !force) return;
     this._rebirthing = true;
@@ -1755,6 +1798,10 @@ class Component extends DCLogic {
       {id:'td', e:'🏰', n:'Tower Defense', d:'Gold, towers and tickets in Trailhead Defense', rows:[...gameRows('td'), ...(UPG.td||[]).filter(u=>u.k!='boost').map(u=>[u.n+' (lv '+(((P.upg||{}).td||{})[u.k]||0)+')', '+'+(((P.upg||{}).td||{})[u.k]||0)+' levels', u.d]),
         ['Gold Pans', 'no level cap', 'Gold paid every wave (upgrade them during a run)']]},
       {id:'games', e:'🕹️', n:'Per-Game Boosts', d:'Each cabinet’s own multiplier', rows: GAMES.filter(g=>g.id!='idle' && g.id!='td').map(g=>[g.title, f(gameM(g.id)), 'Tickets from '+g.title+' only'])},
+      ...(()=>{ const W = window.WLH; if (!W) return []; const a = W.active(P), h = W.home(P), T = W.TIERS[h.tier], done = W.setsDone(P);
+        return [{id:'pets', e:'🐾', n:'Pets', d:'Your ACTIVE pet’s perk — pick the pet whose perk you want', rows: a ? [[a.pet.n+' (Lv '+a.lv+')', W.perkText(a.pet, a.lv), 'Only your active pet counts · '+Object.keys(W.norm(P).own).length+' pets owned']] : [['No active pet', '—', 'Pick a pet in Pets & Home']],
+            total: a ? (a.pet.perk.k == 'allTix' ? W.petAll(P) : a.pet.perk.k == 'game' ? 1 + W.perkPct(a.pet, a.lv)/100 : a.pet.perk.k == 'mineTix' ? W.petGame(P,'idle') : null) : null},
+          {id:'home', e:'🏠', n:'Home', d:'Permanent bonuses from your home (never reset by Rebirth)', total:W.homeMult(P), rows:[[T.n+' (tier '+(h.tier+1)+'/7)', f(1+T.mul), 'Every ticket you earn'], ['Themed sets complete ('+done.length+'/5)', f(Math.pow(1.03, done.length)), 'Every ticket you earn · +3% per finished set']]}]; })(),
       {id:'learn', e:'📚', n:'Learn Mode', d:'Bonuses for playing with Learn mode on', rows:[['Learn game payout', f(1.25*(E2 ? E2.learnGameMult(P) : 1)), 'Tickets from games played in Learn mode'],
         ['Learn Mode Bonus (lv '+lvM('learn')+')', '+'+WP.fmt(WP.learnBonus(P))+' per answer', 'Each correct answer'], ['Learn boost from Expansions & Prestige', f(E2 ? E2.learnMult(P) : 1), 'Each correct answer'], ['Wilderland prize power', f(pk.learn), 'Each correct answer']]},
       {id:'prestige', e:'💠', n:'Prestige', d:'From the Prestige Tree and Diamond Stars', total:(pt.all||1)*(pt.games||1), rows:[['All tickets', f(pt.all||1), 'Every ticket you earn'], ['Game payouts', f(pt.games||1), 'Tickets from every game'], ['Favourite machine'+(P.ptFav ? ' ('+((GAMES.find(g=>g.id==P.ptFav)||{}).title||'')+')' : ''), f(pt.fav||1), 'One cabinet you choose'],
@@ -1776,10 +1823,16 @@ class Component extends DCLogic {
   cashOutGame(){ const g = this.state.game; if (!g || g=='idle') return; const sc = this.state.liveScore || 0;
     if (!(sc > 0)) { this.toast('SCORE SOME POINTS FIRST'); window.Arcade && window.Arcade.sfx('bad'); return; }
     this.snapFn = null; this.finish(g, sc); this.unmountGame(false); this.setState({liveScore:0}); this.toast('CASHED OUT · NEW RUN READY'); }
+  // The Mines can make huge piles of ore, so its cash-outs draw from a ticket counter that holds 5% of your next Rebirth
+  // and refills 2% per minute (about 50 minutes of mining per Rebirth instead of 10 seconds of tapping).
+  mineBud(){ const W2 = window.WLP, need = W2 ? W2.rebirthNeed(this.P) : 1e7, cap = need*.05, rate = need*.02/60, b = this.P.mineBud || {}, now = Date.now();
+    const v = Math.min(cap, (b.need === need && isFinite(b.v) ? b.v : cap) + Math.max(0, now - (b.t||now))/1000*rate); return {v, cap, rate, need}; }
+  tixFactor(id){ const P = this.P; return (this.isLearn(id) ? 1.25 : 1) * (window.WLP ? window.WLP.globalMult(P) : 1) * upgTixMult(P, id); }
   grantTix(id, n, score, label){ if (this.state.admin) return 0; const P = this.P, best = {...P.best};
-    let tix = Math.max(0, Math.floor(n)); if (this.isLearn(id)) tix = Math.ceil(tix*1.25); if (window.WLP) tix = Math.round(tix * window.WLP.globalMult(P)); tix = Math.round(tix * upgTixMult(P, id)); if (!tix) return 0;
+    let tix = Math.max(0, Math.floor(fin(n))); if (this.isLearn(id)) tix = Math.ceil(tix*1.25); if (window.WLP) tix = Math.round(tix * window.WLP.globalMult(P)); tix = Math.round(fin(tix * upgTixMult(P, id))); if (!tix) return 0;
+    let bud = null; if (id == 'idle') { bud = this.mineBud(); tix = Math.floor(Math.min(tix, bud.v)); if (tix < 1) return 0; setTimeout(()=>this.petXp(.5), 0); }
     const better = score > (best[id]||0); if (better) best[id] = score;
-    this.setP({tickets:P.tickets+tix, earned:P.earned+tix, best, played:{...P.played, [id]:(P.played[id]||0)+1}});
+    this.setP({tickets:P.tickets+tix, earned:P.earned+tix, best, played:{...P.played, [id]:(P.played[id]||0)+1}, ...(bud ? {mineBud:{v:bud.v - tix, t:Date.now(), need:bud.need}} : {})});
     if (better && this.P.username) this.addScore(id, score, this.isLearn(id)); else this.addScore('_none', 0);
     this.toast((label||'')+' · +'+fmtN(tix)+' TICKETS'); window.Arcade && window.Arcade.sfx('coin'); return tix; }
   finish(id, score){ score = safeScore(id, score); if (!this.state.admin) { const P0 = this.P; this.stat('mode:'+P0.difficulty+'/'+P0.speed, 1, 'max'); if (this.isLearn(id)) this.stat('learnG:'+id, 1, 'max'); if (score === 0) this.stat('zero', 1, 'add'); }
@@ -1808,7 +1861,7 @@ class Component extends DCLogic {
     if (window.WLE && tix > 0) window.WLE.fly(tix);
     { const g = GAMES.find(x=>x.id==id); this.logAct('play', 'finished '+(g?g.title:id)+' · score '+fmtN(score)+(tix>0?' · +'+fmtN(tix)+' 🎟':'')+(learn?' · learn mode':'')); }
     if (this.P.username) this.addScore(id, score, learn); else if (!this._unameNag) { this._unameNag = true; setTimeout(()=>this.toast('CREATE A USERNAME TO JOIN THE LEADERBOARD'), 1200); }
-    this.setState({payout:'+'+fmtN(tix)+' tickets'+(lines.length?' · '+lines.join(' · '):'')});
+    this.setState({payout:'+'+fmtN(tix)+' tickets'+(lines.length?' · '+lines.join(' · '):'')}); this.petXp(mins); if (score >= ((g&&g.target)||1)) this.petMood('cheer', 5000);
     window.Arcade.sfx('coin'); lines.filter(l=>/HIGH|DAILY|PERFECT|JACKPOT|LUCKY/.test(l)).forEach(l=>this.toast(l));
   }
   async submitCode(){ const v = (this.state.codeVal||'').trim().toUpperCase(); let hx = '';
@@ -1818,7 +1871,7 @@ class Component extends DCLogic {
   open(id){ this.keys = {}; this.setState({game:id, liveScore:0, payout:''}); }
   closeAll(){ const saved = this.unmountGame(); this.keys = {}; Object.keys(this.padHeld).forEach(k=>{ if (this.padHeld[k]) fireKey(k,'keyup'); }); this.padHeld = {};
     setTimeout(()=>window.WLA && window.WLA.pump(), 400); if (this.state.fs) this.setFs(false);
-    this.setState({game:null, sugOpen:false, shopOpen:false, avOpen:false, prizesOpen:false, payout:'', authOpen:false, achOpen:false, learnOpen:false, lbOpen:false, uOpen:false, clearArm:false}); if (saved) this.toast('GAME SAVED · PICK IT UP ANY TIME'); }
+    this.setState({game:null, homeOpen:false, sugOpen:false, shopOpen:false, avOpen:false, prizesOpen:false, payout:'', authOpen:false, achOpen:false, learnOpen:false, lbOpen:false, uOpen:false, clearArm:false}); if (saved) this.toast('GAME SAVED · PICK IT UP ANY TIME'); }
   buy(p){
     const P = this.P; if (P.tickets < p.cost) { window.Arcade && window.Arcade.sfx('bad'); return; }
     const left = P.tickets - p.cost, patch = {tickets:left, prizes:{...P.prizes,[p.id]:(P.prizes[p.id]||0)+1}};
@@ -1903,7 +1956,7 @@ class Component extends DCLogic {
     // leaderboard
     const B = s.cloud ? {e:[]} : (s.lbOpen || !s.game) ? getJSON(BOARD_KEY,{e:[]}) : {e:[]}, myK = this.cloudUid || this.profKey();
     const lbRows = (g, mode, n) => { if (s.cloud && (s.lbOpen || !s.game)) this.needBoard(g); let e = s.cloud ? ((this.cloudBoard||{})[g]||[]).slice() : B.e.filter(x=>x.g==g); if (mode=='edu') e = e.filter(x=>x.edu); if (mode=='reg') e = e.filter(x=>!x.edu);
-      return e.filter(x=>x.g=='_tix' || x.s <= scoreCap(x.g||g)).sort((a,b)=>b.s-a.s).slice(0,n).map((x,i)=>({rank:i+1, avImg: avSVG(avDec(x.av), x.al||0), name:x.u, score:fmtN(x.s), badge: x.edu?'LEARN':'', hasBadge:!!x.edu, date:x.d||'', bg: x.k==myK ? '#D5F367' : (i%2?'#ffffff':'#f6f3e6'), weight: x.k==myK ? 700 : 500, medal: ['#F9BF01','#B9C4BF','#DD8B03'][i]||'transparent', rankFg: i<3 ? '#121313' : '#ffffff', rankFgDark: '#121313'})); };
+      return e.filter(x=>x.g=='_tix' || x.s <= scoreCap(x.g||g)).sort((a,b)=>b.s-a.s).slice(0,n).map((x,i)=>({rank:i+1, avImg: avSVG(avDec(x.av), x.al||0, {npet:petOf(x.av)}), name:x.u, score:fmtN(x.s), badge: x.edu?'LEARN':'', hasBadge:!!x.edu, date:x.d||'', bg: x.k==myK ? '#D5F367' : (i%2?'#ffffff':'#f6f3e6'), weight: x.k==myK ? 700 : 500, medal: ['#F9BF01','#B9C4BF','#DD8B03'][i]||'transparent', rankFg: i<3 ? '#121313' : '#ffffff', rankFgDark: '#121313'})); };
     const uv = (s.uVal||'').trim(), ureg = s.uOpen ? getJSON(UNAME_KEY,{}) : {}, uOwner = ureg[uv.toLowerCase()];
     const pad = s.game && PADS[s.game];
     const mkPad = key => ({down: e=>{ if (e && e.preventDefault) e.preventDefault(); this.padHeld[key] = 1; fireKey(key,'keydown'); }, up: ()=>{ if (this.padHeld[key]) { this.padHeld[key] = 0; fireKey(key,'keyup'); } }});
@@ -1978,9 +2031,17 @@ class Component extends DCLogic {
       daily: {name:dg.title, target:dg.target.toLocaleString(), status: dailyDone?'Completed today':'Not yet cleared'},
       openDaily: ()=>this.open(dg.id), openPrizes: ()=>this.openShopTab('shop'), openMultCats: ()=>this.openShopTab('mult'), closePrizes: ()=>this.closeAll(), closeGame: ()=>this.closeAll(),
       player: {x:s.px, y:s.py, ex:9+dx*6, ey:9+dy*6}, nearLabel,
+      ...(()=>{ const W = window.WLH; if (!W) return {hasNPet:false, hasMount:false, emoteOn:false, emoteAnim:'none', walkY:s.py, cardPetImg:'', cardHomeImg:'', cardPetName:'', cardHomeName:'', emoteBtns:[]};
+        const a = W.active(P), idle = Date.now() - (this._lastAct||0) > 20000, pm = this._pmood && Date.now() < this._pmood.until ? this._pmood.m : (idle ? 'nap' : ''), d = a && a.d, m = W.ride(P), em = this._emote, h = W.home(P);
+        return {hasNPet:!!a, npetImg: a ? W.petImg(a.pet, {lv:a.lv, variant:d.v, hat:d.hat, collar:d.col, mood:pm}) : '', npet: this._npPos || {x:s.px+34, y:s.py+10},
+          hasMount:!!m, mountImg: m ? W.mountSVG(m.k) : '', walkY: m ? s.py - 10 : s.py, emoteOn:!!em, emoteE: em ? em.e : '', emoteAnim: em && !LOWFX ? em.anim : 'none',
+          cardPetImg: a ? W.petImg(a.pet, {lv:a.lv, variant:d.v, hat:d.hat, collar:d.col, mood:pm}) : W.petSil(W.PETS[0]), cardHomeImg: W.houseSVG(h.tier, P),
+          cardPetName: a ? a.pet.n+' · Lv '+a.lv : 'No active pet · tap to pick one', cardHomeName: W.TIERS[h.tier].e+' '+W.TIERS[h.tier].n+(m ? ' · riding '+m.n : ''),
+          emoteBtns: W.EMOTES.map((e2,i)=>({key:e2.k, e:e2.e, t:e2.n+' (key '+(i+1)+')'+(e2.ok(P)?'':' · locked: '+e2.how), op:e2.ok(P)?1:.35, go:()=>this.emote(e2.k)})) }; })(),
+      homeOpen: !!s.homeOpen, openPets: ()=>{ this.keys = {}; this._homeTab = 'pets'; this.setState({homeOpen:true}); }, openHome: ()=>{ this.keys = {}; this._homeTab = 'home'; this.setState({homeOpen:true}); }, closeHome: ()=>this.closeAll(),
       walkImg: avSVG(P.avatar, (P.ach||[]).length, {noPet:true}), hasPet: avNorm(P.avatar).pet > 0, petImg: avSVG(P.avatar, 0, {petOnly:true}), pet: this._petPos || {x:s.px-34, y:s.py+10},
       trailDots: (this._trail||[]).map((d,i)=>{ const age = Math.min(1, (performance.now()-d.t)/1100); return {key:d.t+'-'+i, x:d.x, y:d.y, op:(1-age).toFixed(2), sc:(1.1-age*.6).toFixed(2), e:AVP.trail.o[avNorm(P.avatar).trail].e||''}; }),
-      achCount, achTotal: achTot, achPct: Math.round(achCount/achTot*100), achRef: this.achRef, avRef: this.avRef,
+      achCount, achTotal: achTot, achPct: Math.round(achCount/achTot*100), achRef: this.achRef, avRef: this.avRef, homeRef: this.homeRef,
       tierCounts: WA ? [0,1,2,3,4].map(t=>({c:WA.TIERS[t].c, label:WA.TIERS[t].n+' '+WA.list().filter(f=>(atM[f.id]|0)>t).length+'/'+WA.list().filter(f=>f.goals.length>t).length})) : [],
       nextAch: achNear.slice(0,3),
       openAch: ()=>{ this.keys = {}; this.setState({achOpen:true}); }, closeAch: ()=>this.setState({achOpen:false}), achOpen: s.achOpen,
@@ -2048,7 +2109,7 @@ class Component extends DCLogic {
       admActs: [['tix','Set tickets'],['zero','Reset tickets to 0'],['bests','Clear my high scores'],['saves','Clear my saved games'],['ach','Reset my achievements'],['all','Reset my whole profile']].map(([id,label])=>({label: s.admArm==id ? 'Tap again to confirm' : label, bg: s.admArm==id ? '#B3001B' : (id=='all'?'#ffe1dd':'#ffffff'), fg: s.admArm==id ? '#ffffff' : (id=='all'?'#8f0016':'#015640'), go: ()=>this.adminAct(id)})),
       admGames: [{id:'_tix',title:'Overall · tickets'}, ...GAMES].map(x=>({label:x.title, bg: (s.admGame||'_tix')==x.id ? '#015640' : '#ffffff', fg: (s.admGame||'_tix')==x.id ? '#ffffff' : '#015640', pick: ()=>this.setState({admGame:x.id, admArm:''})})),
       admRows: (()=>{ const g0 = s.admGame||'_tix'; let e; if (s.cloud) { if (s.adminOpen) this.needBoard(g0); e = ((this.cloudBoard||{})[g0]||[]).slice(); } else e = getJSON(BOARD_KEY,{e:[]}).e.filter(x=>x.g==g0);
-        return e.sort((a,b)=>b.s-a.s).slice(0,50).map((x,i)=>({rank:i+1, avImg: avSVG(avDec(x.av), x.al||0), name:x.u, score:fmtN(x.s), date:x.d||'', isTix: g0=='_tix', kick: ()=>this.adminKick(x, x.k, x.u), kickLabel: s.admArm=='kick:'+x.k ? 'Confirm kick' : 'Kick', unkick: ()=>this.adminUnkick(x.k, x.u), rm: ()=>this.adminPlayer(x,'tix'), rmLabel: s.admArm=='tix:'+x.k ? 'Confirm' : '− Tickets', upg: ()=>this.adminPlayer(x,'upg'), upgLabel: s.admArm=='upg:'+x.k ? 'Confirm' : 'Take upgrades', full: ()=>this.adminPlayer(x,'full'), fullLabel: s.admArm=='full:'+x.k ? 'Confirm' : 'Full reset', del: ()=>this.adminDelete(g0, x), delLabel: s.admArm=='del:'+(x.id||x.k+x.s) ? 'Confirm' : (g0=='_tix' ? 'Remove player' : 'Delete')})); })(),
+        return e.sort((a,b)=>b.s-a.s).slice(0,50).map((x,i)=>({rank:i+1, avImg: avSVG(avDec(x.av), x.al||0, {npet:petOf(x.av)}), name:x.u, score:fmtN(x.s), date:x.d||'', isTix: g0=='_tix', kick: ()=>this.adminKick(x, x.k, x.u), kickLabel: s.admArm=='kick:'+x.k ? 'Confirm kick' : 'Kick', unkick: ()=>this.adminUnkick(x.k, x.u), rm: ()=>this.adminPlayer(x,'tix'), rmLabel: s.admArm=='tix:'+x.k ? 'Confirm' : '− Tickets', upg: ()=>this.adminPlayer(x,'upg'), upgLabel: s.admArm=='upg:'+x.k ? 'Confirm' : 'Take upgrades', full: ()=>this.adminPlayer(x,'full'), fullLabel: s.admArm=='full:'+x.k ? 'Confirm' : 'Full reset', del: ()=>this.adminDelete(g0, x), delLabel: s.admArm=='del:'+(x.id||x.k+x.s) ? 'Confirm' : (g0=='_tix' ? 'Remove player' : 'Delete')})); })(),
       reloadAll: ()=>this.adminReloadAll(), downMin: s.downMin||'', inDownMin: e=>this.setState({downMin:e.target.value.slice(0,6)}), downText: s.downText||'', inDownText: e=>this.setState({downText:e.target.value.slice(0,140)}),
       chatOpen: !!s.chatOpen, openChat: ()=>this.openChat(), closeChat: ()=>this.closeChat(), chatVal: s.chatVal||'', inChat: e=>this.setState({chatVal:e.target.value.slice(0,140), chatErr:''}),
       chatKey: e=>{ e.stopPropagation(); if (e.key=='Enter') { e.preventDefault(); this.sendChat(); } if (e.key=='Escape') this.closeChat(); }, sendChat: ()=>this.sendChat(), chatErr: s.chatErr||'',
@@ -2092,7 +2153,7 @@ class Component extends DCLogic {
       shelfCount: PRIZES.filter(p=>P.prizes[p.id]).length+' / '+PRIZES.length+' prizes on display',
       mostPlayed: !s.prizesOpen ? [] : (()=>{ const rows = GAMES.map(gm=>({id:gm.id, name:gm.title, color:gm.color, icon:ICON(gm.id), n:P.played[gm.id]||0, best:(P.best[gm.id]||0).toLocaleString()})).sort((a,b)=>b.n-a.n); const mxp = Math.max(1, ...rows.map(r=>r.n)); return rows.map((r,i)=>({...r, rank:i+1, w:Math.round(r.n/mxp*100)+'%', nLabel:r.n+(r.n==1?' play':' plays')})); })(),
       playedTotal: plays(P).toLocaleString()+' games finished in total · kept with your profile across every update',
-      avImg: avSVG(P.avatar, (P.ach||[]).length), avLevel: (P.ach||[]).length, avFrameName: (avFrame((P.ach||[]).length)||{n:'No'}).n+' frame',
+      avImg: avSVG(P.avatar, (P.ach||[]).length, {npet:petOf(petTag(P))}), avLevel: (P.ach||[]).length, avFrameName: (avFrame((P.ach||[]).length)||{n:'No'}).n+' frame',
       acctTitle: window.WLA ? window.WLA.title(P) : '', hasTitle: !!(window.WLA && window.WLA.title(P)), acctPins: window.WLA ? window.WLA.pins(P).map(x=>({key:x.id, e:x.e, g:x.g, name:x.name})) : [],
       avOpen: !!s.avOpen, openAv: ()=>{ this.keys = {}; this.setState({avOpen:true, avTab:s.avTab||'hat'}); }, closeAv: ()=>this.closeAll(),
       hallPlayers: lbRows('_tix','all',6), hallEmpty: lbRows('_tix','all',1).length==0,

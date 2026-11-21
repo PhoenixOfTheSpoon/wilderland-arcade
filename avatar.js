@@ -7,7 +7,7 @@
 const V = {};
 let AVP = null, AVK = [], TABS = [], svg = null, CURSORS = [];
 const fmt = n => window.WLP ? window.WLP.fmt(n) : String(Math.round(n));
-const nice = x => { if (x < 100) return Math.round(x); const p = Math.pow(10, Math.floor(Math.log10(x)) - 1); return Math.round(x / p) * p; };
+const nice = x => { x = Number(x); if (x !== x) return 0; if (!(x < 1e300)) return 1e300; if (x < 100) return Math.round(x); const p = Math.pow(10, Math.floor(Math.log10(x)) - 1); return Math.min(1e300, Math.round(x / p) * p); };
 const RC = ['#9aa5a1','#00B451','#2fa8e0','#a64be0','#f2a900','#ff4539','#4a5cff','#ff5fd2']; // same rarity colors as the Prize Counter
 const RN = ['Common','Uncommon','Rare','Epic','Legendary','Mythic','Cosmic','Wilderland'];
 V.init = ctx => { AVP = ctx.AVP; AVK = ctx.AVK; TABS = ctx.TABS; svg = ctx.svg; CURSORS = ctx.CURSORS || []; };
@@ -86,8 +86,8 @@ V.mount = (root, api) => { ensureCss(); let tab = api.tab || TABS[0], tryOn = nu
       E('button', {cls:'wlv-btn alt', style:{marginTop:'6px', marginLeft:'4px'}, onclick:()=>{ tryOn = null; render(); }}, 'Stop trying on')].filter(Boolean)); }
     const presets = E('div', {style:{display:'flex', gap:'8px', flexWrap:'wrap'}});
     [0,1,2].forEach(n => { const ps = (p.avPresets||[])[n]; presets.appendChild(E('div', {cls:'wlv-preset'}, ps ? E('img', {src: svg(api.norm(ps), lvl), alt:''}) : E('div', {style:{width:'44px', height:'44px', borderRadius:'50%', background:'#ece8d6', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'18px', color:'#9a9a9b'}}, n+1),
-      E('div', {style:{display:'flex', gap:'4px'}}, E('button', {cls:'wlv-chip', title:'Save this outfit to slot '+(n+1), onclick:()=>{ const arr = [...(p.avPresets||[null,null,null])]; while (arr.length < 3) arr.push(null); arr[n] = cur(); api.setP({avPresets:arr}); api.toast('OUTFIT SAVED TO SLOT '+(n+1)); api.sfx('blip'); render(); }}, 'Save'),
-        ps ? E('button', {cls:'wlv-chip on', title:'Wear outfit '+(n+1), onclick:()=>{ const pa = api.norm(ps), fixed = {}; AVK.forEach(k => { fixed[k] = V.status(P(), k, pa[k], adm()).own ? pa[k] : cur()[k]; }); api.setP({avatar:fixed}); tryOn = null; api.sfx('blip'); render(); }}, 'Wear') : null))); });
+      E('div', {style:{display:'flex', gap:'4px'}}, E('button', {cls:'wlv-chip', title:'Save this outfit to slot '+(n+1), onclick:()=>{ const arr = [...(p.avPresets||[null,null,null])]; while (arr.length < 3) arr.push(null); const pp0 = P(); arr[n] = {...cur(), _pet:(pp0.pets||{}).active||null, _title:pp0.title||''}; api.setP({avPresets:arr}); api.toast('OUTFIT + PET + TITLE SAVED TO SLOT '+(n+1)); api.sfx('blip'); render(); }}, 'Save'),
+        ps ? E('button', {cls:'wlv-chip on', title:'Wear outfit '+(n+1), onclick:()=>{ const pa = api.norm(ps), fixed = {}; AVK.forEach(k => { fixed[k] = V.status(P(), k, pa[k], adm()).own ? pa[k] : cur()[k]; }); const pp1 = P(), pt = {}; if (ps._pet && window.WLH && window.WLH.owns(pp1, ps._pet)) pt.pets = {...window.WLH.norm(pp1), active:ps._pet}; if (ps._title != null) pt.title = ps._title; api.setP({avatar:fixed, ...pt}); tryOn = null; api.sfx('blip'); render(); }}, 'Wear') : null))); });
     const pins = api.pins();
     const info = E('div', {style:{display:'flex', flexDirection:'column', gap:'10px', minWidth:0}},
       E('div', {cls:'wlv-small'}, 'Level '+lvl+' · '+V.allOwned(p, adm())+' / '+V.totalCount()+' items owned · 🎟 '+fmt(p.tickets||0)+' to spend in the Avatar Shop'),

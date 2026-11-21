@@ -4,7 +4,7 @@
 'use strict';
 const E = {};
 const fmt = n => window.WLP ? window.WLP.fmt(n) : String(Math.round(n));
-const nice = x => { if (x < 100) return Math.round(x); const p = Math.pow(10, Math.floor(Math.log10(x)) - 1); return Math.round(x / p) * p; };
+const nice = x => { x = Number(x); if (x !== x) return 0; if (!(x < 1e300)) return 1e300; if (x < 100) return Math.round(x); const p = Math.pow(10, Math.floor(Math.log10(x)) - 1); return Math.min(1e300, Math.round(x / p) * p); };
 
 // ---------------- Arcade Expansions (bought with tickets in the Prize Counter; reset on every Rebirth) ----------------
 // kind: game = % game payouts · all = % to everything · buff = longer critter boosts
@@ -78,8 +78,8 @@ E.ptGame = (P, g) => (g && g === P.ptFav) ? E.pt(P).fav : 1;
 E.ptHead = P => { const o = E.pt(P); return {boost:o.boost, expLv:o.expLv}; };
 
 const SP = (P,k) => window.WLP && window.WLP.perks ? window.WLP.perks(P)[k] : 1; // Wilderland prize powers
-E.critterRate = P => E.pt(P).critter * SP(P,'critter');
-E.buffLen = P => (1 + .10*lvOf(P,'snack')*expMul(P,'snack')) * E.pt(P).buffLen * SP(P,'buff');
+E.critterRate = P => E.pt(P).critter * SP(P,'critter') * (window.WLH ? window.WLH.petCritter(P) : 1);
+E.buffLen = P => (1 + .10*lvOf(P,'snack')*expMul(P,'snack')) * E.pt(P).buffLen * SP(P,'buff') * (window.WLH ? window.WLH.petBuff(P) : 1);
 E.luckBonus = P => 0;
 E.jackMult = P => E.pt(P).jack;
 E.critterReward = P => Math.round(E.pt(P).buffPow * SP(P,'buff') * 10) / 10;

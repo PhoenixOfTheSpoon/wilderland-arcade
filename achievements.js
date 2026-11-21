@@ -6,7 +6,7 @@
 'use strict';
 const A = {};
 const fmt = n => window.WLP ? window.WLP.fmt(n) : String(Math.round(n));
-const nice = x => { if (x < 100) return Math.round(x); const p = Math.pow(10, Math.floor(Math.log10(x)) - 1); return Math.round(x / p) * p; };
+const nice = x => { x = Number(x); if (x !== x) return 0; if (!(x < 1e300)) return 1e300; if (x < 100) return Math.round(x); const p = Math.pow(10, Math.floor(Math.log10(x)) - 1); return Math.min(1e300, Math.round(x / p) * p); };
 const mx = (s,k) => ((s.stats||{}).max||{})[k]||0, sm = (s,k) => ((s.stats||{}).sum||{})[k]||0;
 const bs = (s,g) => (s.best||{})[g]||0, pl = (s,g) => (s.played||{})[g]||0;
 const plays = s => Object.values(s.played||{}).reduce((a,b)=>a+b,0);

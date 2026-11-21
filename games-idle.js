@@ -11,7 +11,7 @@ const stat = (api,k,v,m) => { try { api.stat && api.stat(k,v,m); } catch(e){} };
 const TAU = Math.PI*2;
 
 // Max miner level: 30, and +15% (rounded down) for every Rebirth: 30, 34, 39, 45, 51 …
-const maxLevel = rb => { let m = 30; for (let i=0;i<(rb||0);i++) m = Math.floor(m*1.15); return m; };
+const maxLevel = rb => { let m = 30; for (let i=0;i<(rb||0) && m < 1000;i++) m = Math.floor(m*1.15); return Math.min(1000, m); };
 const ensureLV = n => { while (LV.length <= n) { const i = LV.length; LV.push({n:'Titan Mk '+(i-29), c:'hsl('+((i*53)%360)+',90%,'+(60+(i%3)*8)+'%)'}); } };
 const LV = [null,
   {n:'Pebble Picker',c:'#b8b8b0'}, {n:'Shovel Scout',c:'#c48a4a'}, {n:'Drill Digger',c:'#00B451'}, {n:'Dynamite Dan',c:'#FF4539'},
@@ -19,7 +19,9 @@ const LV = [null,
   {n:'Magma Wrangler',c:'#ff8a3c'}, {n:'Quantum Quarrier',c:'#C7F1EE'}, {n:'Core Tapper',c:'#D5F367'}, {n:'Planet Cracker',c:'#ffffff'}];
 ['Moon Miner','Comet Catcher','Star Breaker','Nebula Drill','Solar Smelter','Void Digger','Galaxy Grinder','Black-Hole Borer','Time Tunneler','Dimension Delver','Reality Ripper','Cosmic Quarry','Infinity Pick','Big Bang Boss','Multiverse Miner','The Last Miner','Legend of the Deep','Wilderland Titan']
   .forEach((n,i)=>LV.push({n, c:'hsl('+((i*37)%360)+',85%,'+(62+(i%3)*8)+'%)'}));
-const lvRate = L => L ? 3 * Math.pow(2.7, L-1) : 0;
+// Ore per miner: ×2.7 per level up to Lv 241, then +50% per level — so numbers stay real (never Infinity) even at Lv 1000.
+const BIG = 1e300, fin = v => (v = Number(v), v !== v) ? 0 : v > BIG ? BIG : v < -BIG ? -BIG : v;
+const lvRate = L => L ? 3 * Math.pow(2.7, Math.min(L, 241)-1) * (L > 241 ? 1 + (L-241)*.5 : 1) : 0;
 
 // ---------------- 100 LAYERS in 12 biomes ----------------
 // fx: drip · dust · lava · snow · spores · sparks · bubbles · gears · embers · stars · void · core
@@ -106,7 +108,9 @@ A.register('idle', { mount(host, api){
   if (S.gemBank == null) S.gemBank = (S.gems||0) + (S.geodes||0);   // gems you already found count toward the Gem Tree
   const GL2 = k => S.gtree[k] || 0, SLOTS = () => 12 + 4*GL2('slots');
   while (S.grid.length < SLOTS()) S.grid.push(0);
-  const addGems = (n, x, y) => { if (Math.random() < .1*GL2('magnet')) n *= 2; S.gemBank = (S.gemBank||0) + n; if (x != null) float(x, y-40, '+'+n+' 💎', '#bff0ff'); };
+  const addGems = (n, x, y) => { if (Math.random() < .1*GL2('magnet') + (A.petGems||0)) n *= 2; S.gemBank = (S.gemBank||0) + n; if (x != null) float(x, y-40, '+'+n+' 💎', '#bff0ff'); };
+  // repair saves that overflowed to Infinity / NaN before this fix
+  { const F = v => (v = Number(v), v !== v) ? 0 : v > 1e300 ? 1e300 : v < 0 ? 0 : v; S.ore = F(S.ore); S.life = F(S.life); S.gemBank = S.gemBank == null ? S.gemBank : F(S.gemBank); }
   const U = k => S.up[k] || 0; let codeMsg = '';
 
   const W = 480; let H = 610;
@@ -125,11 +129,11 @@ A.register('idle', { mount(host, api){
   const rate = () => S.grid.reduce((a,L)=>a+lvRate(L),0) * mult() * (trouble > 0 ? .5 : 1);
   // A tap always digs at least 10% of what the next miner costs, so nobody gets stuck with no miners and a huge hire price.
   const tapAmt = () => Math.max(.1*hireCost(), (learn ? 1/3 : 1) * ((1 + 2*U('pick')) + rate()*.01*(1+.1*U('pick'))));
-  const hireCost = () => Math.ceil(8*Math.pow(1.09, S.hires) * Math.pow(2.5, Math.min(U('hire'), 60)) * Math.pow(.85, A.U('cheap')));
+  const hireCost = () => Math.min(BIG, Math.ceil(8*Math.pow(1.09, S.hires) * Math.pow(2.5, Math.min(U('hire'), 60)) * Math.pow(.85, A.U('cheap'))));
   const hireLv = () => Math.min(MAXL-1, 1 + U('hire') + A.U('start') + GL2('vet'));
   let rushT = 0, golem = null, golemT = 110 + Math.random()*60, core = null;
-  const give = n => { if (rushT > 0) n *= 3; S.ore += n; S.life += n; };
-  const tixFor = ore => Math.floor(Math.sqrt(ore)/3);
+  const give = n => { n = fin(n); if (rushT > 0) n *= 3; S.ore = fin(S.ore + n); S.life = fin(S.life + n); };
+  const tixFor = ore => Math.floor(Math.sqrt(fin(ore))/3);
   const score = () => Math.min(99999999, Math.floor(Math.sqrt(S.life)));
 
   // ---------- effects ----------
@@ -205,7 +209,7 @@ A.register('idle', { mount(host, api){
     S.ore -= cost; S.hires++; S.grid[i] = hireLv(); const p = cell(i); burst(p.x+CW/2, p.y+CH/2, LV[S.grid[i]].c, 14); A.sfx('coin'); paintBar(); };
   const sellMiner = i => { const L = S.grid[i]; if (!L || busy) return;
     if (minerCount() == 1 && !(sellArm > 0)) { sellArm = 3; say('THAT’S YOUR LAST MINER!', 'Without miners you can’t cash out · tap Sell again to sell anyway', '#ffb3ab'); A.sfx('bad'); paintBar(); return; }
-    sellArm = 0; const v = sellVal(L); S.grid[i] = 0; give(v); S.life -= v; const p = cell(i);
+    sellArm = 0; const v = fin(sellVal(L)); S.grid[i] = 0; S.ore = fin(S.ore + v); const p = cell(i);
     float(p.x+CW/2, p.y+20, '+'+fmt(v)+' ORE', C.gold); burst(p.x+CW/2, p.y+CH/2, '#FF8A3C', 12); sel = -1; A.sfx('coin'); paintBar(); };
   let quietMerges = 0;
   const merge = (a, b, quiet) => { const L = S.grid[a]; if (!L || S.grid[b]!==L || L>=MAXL || a===b) return false;
@@ -235,7 +239,10 @@ A.register('idle', { mount(host, api){
   const cashOut = () => { if (busy) return; if (!minerCount()) { say('YOU NEED AT LEAST ONE MINER TO CASH OUT', 'Hire a miner first (or try the code MINERRESCUE in Upgrades)', '#ffb3ab'); A.sfx('bad'); return; }
     const can = tixFor(S.ore);
     if (can < 1) { say('NOT ENOUGH ORE','9 ore = 1 ticket · it grows from there', '#ffb3ab'); A.sfx('bad'); return; }
-    const n = can, used = S.ore;
+    // The Mines ticket counter refills over time, so ore can't jump you straight to a Rebirth; leftover ore stays in the mine.
+    const cap = api.tixCap ? Math.floor(api.tixCap() / (1+.1*GL2('market'))) : can;
+    if (cap < 1) { const w = api.tixWait ? api.tixWait() : 60; say('TICKET COUNTER IS FULL', 'It refills in about '+w+' s · your ore is safe and keeps piling up', '#ffb3ab'); A.sfx('bad'); return; }
+    const n = Math.min(can, cap), used = n >= can ? S.ore : Math.min(S.ore, Math.pow(3*(n+1), 2));
     let got = n; try { got = api.tix ? api.tix(Math.floor(n*(1+.1*GL2('market'))), score(), 'THE MINES') : 0; } catch(e) { got = 0; }
     S.ore -= used; const td = new Date().toISOString().slice(0,10); if (S.tix.d != td) S.tix = {d:td, n:0}; S.tix.n += n;
     say(got ? '+'+got+' TICKETS' : 'NO TICKETS IN ADMIN MODE', 'Sold '+fmt(used)+' ore', C.gold); A.sfx(got?'win':'blip'); persist(); paintBar(); };
@@ -279,7 +286,7 @@ A.register('idle', { mount(host, api){
     const oreLine = el('div',{fontSize:'14px',color:'#EDE9D8'}); shop.append(oreLine);
     const list = el('div',{display:'flex',flexDirection:'column',gap:'8px'}); shop.append(list);
     const render = () => { oreLine.textContent = '⛏ '+fmt(S.ore)+' ore · Upgrades cost ore, not tickets'; list.innerHTML = '';
-      UPS.forEach(u => { const l = U(u.id), maxed = l >= u.max, cost = Math.ceil(u.cost(l)), can = !maxed && S.ore >= cost;
+      UPS.forEach(u => { const l = U(u.id), maxed = l >= u.max, cost = Math.min(BIG, Math.ceil(u.cost(l))), can = !maxed && S.ore >= cost;
         const row = el('div',{display:'flex',alignItems:'center',gap:'10px',background:'rgba(255,255,255,.07)',borderRadius:'12px',padding:'10px 12px'});
         const txt = el('div',{flex:'1',minWidth:0}); txt.append(el('div',{fontWeight:700,fontSize:'15px'},u.n+'  '), el('div',{fontSize:'12px',color:'#cfc6a8',lineHeight:1.35},upDesc(u,l)+' · level '+l+(u.max<999?'/'+u.max:'')));
         const pips = el('div',{display:'flex',gap:'2px',marginTop:'4px',flexWrap:'wrap'}); if (u.max<=25) for (let k=0;k<u.max;k++) pips.append(el('div',{width:'9px',height:'5px',borderRadius:'3px',background:k<l?C.gold:'rgba(255,255,255,.18)'}));
