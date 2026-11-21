@@ -333,11 +333,19 @@ const FURN = [
       ['heaven',[['worldtree','World Tree',3,3,'🌳'],['spring','Spirit Spring',2,2,'💧'],['shrine','Wilderland Shrine',2,2,'⛩️'],['wisps','Wisp Lanterns',1,1,'🏮']]]]
     .flatMap(([rm, list]) => list.map(([id, n, w, h, e]) => F_(id, n, w, h, '', {built:rm}, {emo:e, light:1}))),
 ];
+// size & shape versions: bigger rugs, square / round / diamond rugs, big tables, plants, ponds …
+const VARS = {rug:['big','huge','square','round','diamond'], crug:['big','huge','square','round','diamond'], srug:['big','huge','square','round','diamond'],
+  table:['big','round','square'], geode:['big'], plant:['big'], fish:['big'], bed:['big'], tree:['big'], flowers:['big'], pond:['big','round']};
+const VNAME = {big:'Big', huge:'Huge', square:'Square', round:'Round', diamond:'Diamond'};
+Object.entries(VARS).forEach(([id, list]) => { const b = FURN.find(f => f.id == id); if (!b) return;
+  list.forEach(v => { const sq = Math.max(b.w, b.h) + 1, [w, h] = v == 'big' ? [b.w+1, b.h+1] : v == 'huge' ? [b.w*2, b.h*2] : [sq, sq];
+    FURN.push(F_(id+'_'+v, VNAME[v]+' '+b.n, w, h, '', b.src, {base:id, shape:v, yard:b.yard, light:b.light, area:(w*h)/(b.w*b.h)})); }); });
+H.VARS = VARS;
 H.FURN = FURN;
 const SETS = {cozy:{n:'Cozy Cabin', e:'🛋️'}, crystal:{n:'Crystal Cave', e:'💎'}, space:{n:'Space Station', e:'🚀'}, ruins:{n:'Ancient Ruins', e:'🏛️'}, royal:{n:'Royal Castle', e:'👑'}};
 H.SETS = SETS;
 const fById = id => FURN.find(f => f.id == id);
-H.furnPrice = (P, f) => nice(Math.max(150, need(P) * .0015) * Math.pow(1.9, f.src.t || 0) * (f.w*f.h > 3 ? 1.6 : 1));
+H.furnPrice = (P, f) => nice(Math.max(150, need(P) * .0015) * Math.pow(1.9, f.src.t || 0) * (f.w*f.h > 3 ? 1.6 : 1) * (f.area || 1));
 H.furnStatus = (P, f) => { const s = f.src, ti = s.t != null ? s.t : null;
   if (s.built) { const bt = TIERS.findIndex(T => T.room == s.built); return {free:H.home(P).tier >= bt, how:'Built into the '+TIERS[bt].n+' ('+ROOMS[s.built]+')'}; }
   if (ti != null) { const t = H.home(P).tier; return t >= ti ? {buy:true, price:H.furnPrice(P, f), how:'Shop · '+fmt(H.furnPrice(P, f))+' 🎟'} : {how:'Shop · unlocks with the '+TIERS[ti].n}; }
@@ -354,6 +362,19 @@ H.homeMult = P => (1 + TIERS[Math.min(TIERS.length-1, H.home(P).tier)].mul) * Ma
 // ---------------- furniture art (drawn in a w*40 × h*40 box) ----------------
 const night = () => { const hr = new Date().getHours(); return hr < 7 || hr >= 19; };
 H.furnSVG = (f, P) => { const W = f.w*40, Hh = f.h*40, low = lowFx(); let s = '';
+  const RUGC = {rug:['#c2427f','#F9BF01'], crug:['#64CDF5','#e9b9f7'], srug:['#14204a','#F9BF01']};
+  if (f.base && RUGC[f.base] && ['square','round','diamond'].includes(f.shape)) { const [c0, c1] = RUGC[f.base], m = 4, i = 12;
+    const shape = (k, fill, stroke, sw) => f.shape == 'round' ? '<ellipse cx="'+W/2+'" cy="'+Hh/2+'" rx="'+(W/2-k)+'" ry="'+(Hh/2-k)+'" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+sw+'"/>'
+      : f.shape == 'diamond' ? '<path d="M'+W/2+' '+k+'L'+(W-k)+' '+Hh/2+'L'+W/2+' '+(Hh-k)+'L'+k+' '+Hh/2+'Z" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+sw+'" stroke-linejoin="round"/>'
+      : '<rect x="'+k+'" y="'+k+'" width="'+(W-2*k)+'" height="'+(Hh-2*k)+'" rx="'+(k+4)+'" fill="'+fill+'" stroke="'+stroke+'" stroke-width="'+sw+'"/>';
+    s = shape(m, c0, 'rgba(0,0,0,.2)', 3) + shape(i, 'none', c1, 3) + shape(i+10, 'none', c1, 1.5);
+    if (f.base == 'srug') s += [[.3,.3],[.7,.28],[.5,.5],[.28,.7],[.72,.7],[.5,.18],[.5,.82]].map(([x,y],k)=>'<circle cx="'+x*W+'" cy="'+y*Hh+'" r="2.4" fill="#fff">'+(low?'':'<animate attributeName="opacity" values="1;.3;1" dur="'+(1.4+k*.3)+'s" repeatCount="indefinite"/>')+'</circle>').join('');
+    else s += '<circle cx="'+W/2+'" cy="'+Hh/2+'" r="'+Math.min(W,Hh)*.12+'" fill="'+c1+'"/>';
+    return s; }
+  if (f.base) { const b = fById(f.base), bw = b.w*40, bh = b.h*40, inner = '<g transform="scale('+(W/bw)+' '+(Hh/bh)+')">'+H.furnSVG(b, P)+'</g>', cid = 'fc'+f.id;
+    if (f.shape == 'round') return '<defs><clipPath id="'+cid+'"><ellipse cx="'+W/2+'" cy="'+Hh/2+'" rx="'+(W/2-2)+'" ry="'+(Hh/2-2)+'"/></clipPath></defs><g clip-path="url(#'+cid+')">'+inner+'</g><ellipse cx="'+W/2+'" cy="'+Hh/2+'" rx="'+(W/2-2)+'" ry="'+(Hh/2-2)+'" fill="none" stroke="rgba(0,0,0,.25)" stroke-width="3"/>';
+    if (f.shape == 'diamond') { const d = 'M'+W/2+' 2L'+(W-2)+' '+Hh/2+'L'+W/2+' '+(Hh-2)+'L2 '+Hh/2+'Z'; return '<defs><clipPath id="'+cid+'"><path d="'+d+'"/></clipPath></defs><g clip-path="url(#'+cid+')">'+inner+'</g><path d="'+d+'" fill="none" stroke="rgba(0,0,0,.25)" stroke-width="3"/>'; }
+    return inner; }
   const box = (x,y,w,h,c,r) => '<rect x="'+x+'" y="'+y+'" width="'+w+'" height="'+h+'" rx="'+(r||3)+'" fill="'+c+'"/>';
   const glow = (x, y, r, c) => night() ? '<circle cx="'+x+'" cy="'+y+'" r="'+r+'" fill="'+c+'" opacity=".35">'+(low?'':'<animate attributeName="opacity" values=".3;.45;.3" dur="2s" repeatCount="indefinite"/>')+'</circle>' : '';
   switch (f.id) {
@@ -698,6 +719,7 @@ H.mount = (root, api) => { H.ensureCss(); const wrap = E('div', {cls:'wlh'}); ro
       const card = E('div', {cls:'wlh-card'+(placing==f.id?' on':''), style:{'--rc': f.set ? '#a64be0' : '#c9c4b0'}}, f.set ? E('div', {cls:'wlh-tier', style:{color:'#a64be0'}}, SETS[f.set].e+' '+SETS[f.set].n.toUpperCase()) : null,
         E('img', {src:H.furnImg(f, p), alt:'', style:{width:Math.min(80, f.w*30)+'px', height:Math.min(80, f.h*30)+'px', objectFit:'contain'}}), E('div', {cls:'wlh-nm'}, f.n), E('div', {cls:'wlh-small', style:{fontSize:'10px'}}, have+' in storage · '+placed+' placed'));
       if (have > 0) card.appendChild(E('button', {cls:'wlh-btn', onclick:()=>{ placing = f.id; sel = null; render(); }}, 'Place'));
+      if (have >= 4 && (VARS[f.id]||[]).includes('huge')) card.appendChild(E('button', {cls:'wlh-btn gold', title:'Trade 4 from storage for one twice-as-big version', onclick:()=>{ const hh2 = H.home(P()), n0 = hh2.inv[f.id]|0; if (n0 < 4) return; const hk = f.id+'_huge'; set({home:{...hh2, inv:{...hh2.inv, [f.id]:n0-4, [hk]:(hh2.inv[hk]|0)+1}}}); api.sfx('win'); api.toast('COMBINED 4 → 1 HUGE '+f.n.toUpperCase()); render(); }}, 'Combine 4 → Huge'));
       if (s.buy) { const fn = Math.max(1, Math.min(qN(100), Math.floor((p.tickets||0)/s.price))), b = E('button', {cls:'wlh-btn alt', onclick:()=>{ if (api.admin()) return api.toast('ADMIN MODE · SHOPPING DISABLED'); const pp = P(), hh2 = H.home(pp), k = Math.max(1, Math.min(qN(100), Math.floor((pp.tickets||0)/s.price))); if ((pp.tickets||0) < s.price*k) return api.sfx('bad'); set({tickets:pp.tickets - s.price*k, home:{...hh2, inv:{...hh2.inv, [f.id]:(hh2.inv[f.id]|0)+k}}}); api.sfx('coin'); if (k > 1) api.toast('+'+k+' '+f.n.toUpperCase()); render(); }}, (fn > 1 ? 'Buy ×'+fn+' · '+fmt(s.price*fn) : 'Buy · '+fmt(s.price))+' 🎟'); if ((p.tickets||0) < s.price) b.disabled = true; card.appendChild(b); }
       else if (s.free && !got) card.appendChild(E('button', {cls:'wlh-btn gold', onclick:()=>{ const hh2 = H.home(P()); set({home:{...hh2, ['got_'+f.id]:1, inv:{...hh2.inv, [f.id]:(hh2.inv[f.id]|0)+1}}}); api.sfx('win'); api.toast('CLAIMED · '+f.n.toUpperCase()); render(); }}, 'Claim reward'));
       else if (!s.free && !got) card.appendChild(E('div', {style:{fontSize:'10px', color:'#AB2372', fontWeight:700}}, '🔒 '+s.how));
