@@ -60,7 +60,7 @@ A.init = ctx => { if (FAM.length) return; const G = ctx.games || [], NG = G.leng
   sp('rootBoss','👑','King Uprooter', n => 'Defeat the Kudzu King '+n+' time'+(n==1?'':'s'), s => sm(s,'rootBoss'), [1,3,10,25,50]);
   sp('mineGolem','🪨','Golem Crusher', n => 'Defeat '+n+' Cave Golem'+(n==1?'':'s')+' in The Mines', s => sm(s,'mineGolem'), [1,5,20,50,100]);
   sp('tdBoss','👻','Boss Hunter', n => 'Defeat '+n+' Trailhead Defense boss'+(n==1?'':'es'), s => sm(s,'tdBoss'), [1,5,15,40,100], {titles:{2:'Ghostbuster'}});
-  sp('mineDepth','🕳️','Deep Delver', n => 'Reach layer '+n+' of The Mines', s => mx(s,'mineDepth'), [10,25,50,75,100], {titles:{2:'Deep Delver',4:'Core Seeker'}});
+  sp('mineDepth','🕳️','Deep Delver', n => 'Reach layer '+n+' of The Mines', s => mx(s,'mineDepth'), [10,50,100,200,300], {titles:{2:'Deep Delver',4:'Core Seeker'}});
   sp('mineCore','☄️','Armageddon Survivor', n => 'Calm The Armageddon Core on Layer 100'+(n>1?' '+n+' times':''), s => sm(s,'mineCore'), [1], {titles:{0:'Core Breaker'}});
   sp('mineChests','🧰','Treasure Hunter', n => 'Open '+n+' hidden treasure rooms in The Mines', s => sm(s,'mineChests'), [3,10,25,50,100]);
   sp('mineGemTree','💎','Gem Gardener', n => 'Buy '+n+' Gem Tree upgrades in The Mines', s => mx(s,'mineGemTree'), [1,5,15,30,60]);

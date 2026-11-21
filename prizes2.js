@@ -381,6 +381,10 @@ W.mount = (root, api) => {
   const reveal = (it, label) => { if (W.popsOn()) return W.reveal(it, label, api.lowFx(), api.sfx, {buy:true, onOff:()=>{ api.toast('BUY POP-UPS OFF · TURN THEM BACK ON AT THE TOP'); render(); }});
     api.sfx(it.r >= 4 ? 'win' : 'coin'); api.toast((label ? label+' · ' : 'GOT ')+it.n.toUpperCase()); };
   let qty = 1; try { qty = JSON.parse(localStorage.getItem('wl-prize-qty')) || 1; } catch(e) {}
+  // the ×1 / ×10 / ×100 / Max chips — shown at the top and again right above every list of things you can buy
+  const qtyRow = note => { const r = E('div', {style:{display:'flex', gap:'6px', flexWrap:'wrap', alignItems:'center', margin:'2px 0 8px'}}, E('span', {style:{fontSize:'12px', fontWeight:700, color:'#015640'}}, 'BUY'));
+    [1, 10, 100, 'max'].forEach(q => r.appendChild(E('button', {cls:'wlp-chip'+(qty===q?' on':''), onclick:()=>{ qty = q; try { localStorage.setItem('wl-prize-qty', JSON.stringify(q)); } catch(e) {} render(); }}, q === 'max' ? 'Max' : '×'+q)));
+    if (note) r.appendChild(E('span', {cls:'wlp-small'}, note)); return r; };
   // How many copies the bulk-buy setting buys right now, and what they cost in total.
   const bulk = (it, price) => { const p = P(), want = qty === 'max' ? 1e4 : qty;
     if (isStar(it)) { if (!it.repeat) return {n:1, cost:starPrice(it, p)}; let n = 0, cost = 0, own = (p.prizes||{})[it.id]||0;
@@ -411,6 +415,7 @@ W.mount = (root, api) => {
     const opt = E('div', {style:{display:'flex', gap:'6px', flexWrap:'wrap', alignItems:'center', marginBottom:'8px'}}, E('span', {style:{fontSize:'12px', fontWeight:700, color:'#015640'}}, 'BUY'));
     [1, 10, 100, 'max'].forEach(q => opt.appendChild(E('button', {cls:'wlp-chip'+(qty===q?' on':''), onclick:()=>{ qty = q; try { localStorage.setItem('wl-prize-qty', JSON.stringify(q)); } catch(e) {} render(); }}, q === 'max' ? 'Max' : '×'+q)));
     opt.appendChild(E('button', {cls:'wlp-chip'+(W.popsOn()?' on':''), style:{marginLeft:'6px'}, title:'The big pop-up when you buy a prize or open a capsule', onclick:()=>{ W.setPops(!W.popsOn()); api.toast(W.popsOn() ? 'BUY POP-UPS ON' : 'BUY POP-UPS OFF'); render(); }}, W.popsOn() ? '🔔 Pop-ups on' : '🔕 Pop-ups off'));
+    if (window.WLE && window.WLE.rainVis) opt.appendChild(E('button', {cls:'wlp-chip'+(window.WLE.rainVis()?' on':''), title:'Show or hide the falling tickets during Ticket Rain (you still get every ticket)', onclick:()=>{ window.WLE.setRainVis(!window.WLE.rainVis()); api.toast(window.WLE.rainVis() ? 'TICKET RAIN: FALLING TICKETS SHOWN' : 'TICKET RAIN: HIDDEN · YOU STILL GET EVERY TICKET'); render(); }}, window.WLE.rainVis() ? '🎟 Rain visuals on' : '🙈 Rain visuals off'));
     const tb = E('div', {cls:'wlp-tabs'}); tabs.forEach(([id,t]) => tb.appendChild(E('button', {cls:'wlp-tab'+(tab==id?' on':''), onclick:()=>{ tab = id; render(); }}, t)));
     const sr = E('input', {type:'search', placeholder:'🔍 Search upgrades and prizes…', 'aria-label':'Search the shop', value:q, style:{flex:'1 1 220px', minWidth:0, font:'600 14px inherit', fontFamily:'inherit', border:'1.5px solid #015640', borderRadius:'999px', padding:'7px 14px', background:'#fff'}});
     sr.addEventListener('keydown', e => e.stopPropagation()); sr.addEventListener('input', () => { q = sr.value; if (!['upg','shop','wild'].includes(tab)) tab = 'shop'; renderBody(); setTimeout(()=>{ try { const x = head.querySelector('input[type=search]'); x.focus(); x.setSelectionRange(q.length, q.length); } catch(e){} }, 0); });
@@ -489,6 +494,7 @@ W.mount = (root, api) => {
         box.appendChild(card); }); }
     box.appendChild(perkCard());
     box.appendChild(E('div', {cls:'wlp-h'}, 'UPGRADES · PAID IN TICKETS · RESET ON REBIRTH'));
+    box.appendChild(qtyRow('levels at once'));
     // Bulk buy (×1 / ×10 / ×100 / Max at the top): how many levels you can afford now, and what they cost together
     const lvPlan = (costFn, L, max, tix) => { const want = qty === 'max' ? 1e4 : qty, need = W.rebirthNeed(P()); let n = 0, cost = 0;
       while (n < want && L+n < max) { const c = nice(costFn(L+n)); if (cost + c > tix || c >= need) break; cost += c; n++; } return {n, cost}; };
@@ -499,6 +505,7 @@ W.mount = (root, api) => {
       const pp = P(), L = lv(pp,m.k), pl = lvPlan(m.cost, L, m.max, pp.tickets||0); if (api.admin()) return api.toast('ADMIN MODE · SHOPPING DISABLED'); if (!pl.n) return api.sfx('bad');
       set({tickets:pp.tickets-pl.cost, mult:{...(pp.mult||{}), [m.k]:L+pl.n}}); api.sfx('coin'); if (pl.n > 1) api.toast(m.n.toUpperCase()+' +'+pl.n+' LEVELS'); render(); }, m.cost)); });
     box.appendChild(E('div', {cls:'wlp-h'}, 'MACHINE MULTIPLIERS · ×0.2 MORE PER LEVEL'));
+    box.appendChild(qtyRow('levels at once'));
     games.filter(g=>g.id!='2048').forEach(g => { const l = glv(p,g.id); box.appendChild(up(g.title, 'Only for '+g.title, l, GAME_UP.max, GAME_UP.cost(l), '×'+GAME_UP.eff(l).toFixed(1), '×'+GAME_UP.eff(l+1).toFixed(1), () => {
       const pp = P(), L = glv(pp,g.id), pl = lvPlan(GAME_UP.cost, L, GAME_UP.max, pp.tickets||0); if (api.admin()) return api.toast('ADMIN MODE · SHOPPING DISABLED'); if (!pl.n) return api.sfx('bad');
       const m = {...(pp.mult||{})}; m.game = {...(m.game||{}), [g.id]:L+pl.n}; set({tickets:pp.tickets-pl.cost, mult:m}); api.sfx('coin'); if (pl.n > 1) api.toast(g.title.toUpperCase()+' MULTIPLIER +'+pl.n+' LEVELS'); render(); }, GAME_UP.cost)); });
@@ -581,7 +588,8 @@ W.mount = (root, api) => {
   const qN = () => qty === 'max' ? Infinity : qty;
   const upg = () => { const box = E('div'), data = api.upgrades ? api.upgrades() : [], p = P();
     box.appendChild(E('div', {cls:'wlp-box'}, E('div', {style:{fontWeight:800, fontSize:'18px', color:'#015640'}}, '🔧 Upgrades · '+data.reduce((a,g)=>a+g.ups.reduce((x,u)=>x+u.lv,0),0)+' levels owned'),
-      E('div', {cls:'wlp-small'}, 'Machine upgrades from the old Workshop — paid in tickets, they reset on Rebirth. Use ×1 / ×10 / ×100 / Max at the top to buy many levels at once.')));
+      E('div', {cls:'wlp-small'}, 'Machine upgrades from the old Workshop — paid in tickets, they reset on Rebirth. Pick ×1 / ×10 / ×100 / Max to buy many levels at once.')));
+    box.appendChild(qtyRow('levels at once'));
     const ch = E('div', {style:{display:'flex', gap:'5px', flexWrap:'wrap', margin:'8px 0'}});
     [['all','All machines'], ...data.map(g=>[g.id, g.name])].forEach(([id,t]) => ch.appendChild(E('button', {cls:'wlp-chip'+(upgF==id?' on':''), onclick:()=>{ upgF = id; renderBody(); }}, t)));
     ch.appendChild(E('button', {cls:'wlp-chip'+(affordOnly?' on':''), onclick:()=>{ affordOnly = !affordOnly; renderBody(); }}, 'Can afford'));
