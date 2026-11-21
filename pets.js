@@ -41,9 +41,7 @@ const SP = {
       +'<radialGradient id="oneEye"><stop offset="0" stop-color="#fff6b0"/><stop offset=".5" stop-color="#F9BF01"/><stop offset="1" stop-color="#ff7a1a"/></radialGradient></defs>';
     // void aura + flame tendrils
     s += '<circle r="30" fill="url(#oneAura)">'+A('r','28;31;28',1.8)+'</circle>';
-    s += '<g opacity=".8">'+R('0;360',14)+[0,1,2,3,4,5].map(i => '<path transform="rotate('+(i*60)+')" d="M0 -18q6 -6 2 -13q5 3 4 9q3 -2 2 -6q4 5 -1 11z" fill="'+(i%2?'#3a0a6a':'#1a2a5a')+'"/>').join('')+'</g>';
-    // event-horizon ring (tilted, spinning)
-    s += '<g transform="rotate(-18)"><ellipse rx="27" ry="7" fill="none" stroke="url(#oneRing)" stroke-width="1.6" stroke-dasharray="10 4 2 4" opacity=".95">'+A('stroke-dashoffset','0;40',2)+'</ellipse></g>';
+    // (no ring or tendrils: a clean silhouette reads better)
     // wings with glowing veins
     const wing = side => '<g>'+R('0 '+(9*side)+' -2;'+(-18*side)+' '+(9*side)+' -2;0 '+(9*side)+' -2',.9)+'<g transform="scale('+side+' 1)"><path d="M9 -2q6 -20 26 -16q-5 4 -3 8q7 0 9 5q-7 0 -7 6q5 1 5 6q-11 -5 -17 0q-4 -7 -13 -5z" fill="url(#oneWing)" stroke="#64CDF5" stroke-width=".8"/>'
       +'<path d="M10 -2l22 -13M11 0l25 -4M11 2l20 6" stroke="#64CDF5" stroke-width=".7" opacity=".7">'+A('opacity','.25;.9;.25',1.6)+'</path><path d="M24 -8l3 4l-3 4l-3 -4z" fill="#64CDF5">'+A('opacity','.5;1;.5',1.2)+'</path></g></g>';
@@ -54,10 +52,13 @@ const SP = {
     s += '<path d="M-9 -9q-7 -6 -5 -15q4 7 9 10zM9 -9q7 -6 5 -15q-4 7 -9 10z" fill="#64CDF5" stroke="#bff0ff" stroke-width=".5"/>';
     // body + scales
     s += '<ellipse cx="0" cy="4" rx="14" ry="13" fill="url(#oneBody)" stroke="#3a3a55" stroke-width=".6"/><path d="M-6 10q6 4 12 0M-5 13q5 3 10 0" stroke="#2a2a40" stroke-width=".8" fill="none"/>';
-    // burning eyes
-    s += '<g><circle cx="-5" cy="0" r="5" fill="#F9BF01" opacity=".25">'+A('r','4;6;4',1.4)+'</circle><circle cx="5" cy="0" r="5" fill="#F9BF01" opacity=".25">'+A('r','4;6;4',1.4)+'</circle></g>'
-      +'<circle cx="-5" cy="0" r="3.4" fill="url(#oneEye)"/><circle cx="5" cy="0" r="3.4" fill="url(#oneEye)"/><ellipse cx="-5" cy="0" rx=".9" ry="2.7" fill="#000"/><ellipse cx="5" cy="0" rx=".9" ry="2.7" fill="#000"/><circle cx="-4" cy="-1.3" r=".7" fill="#fff"/><circle cx="6" cy="-1.3" r=".7" fill="#fff"/>';
-    s += '<path d="M-3 6.5q3 2 6 0" stroke="#4a4a5c" stroke-width="1" fill="none"/><path d="M-1.5 7l.8 2l.8 -2zM1 7l.8 2l.8 -2z" fill="#fff"/>';
+    // face: a sleek snout, sharp slanted glowing eyes with brows, nostrils and a little fanged smirk
+    s += '<path d="M-13 4l-5 2l5 2zM13 4l5 2l-5 2z" fill="#16161f" stroke="#3a3a55" stroke-width=".6"/><ellipse cx="0" cy="9" rx="7" ry="4.5" fill="#16161f"/><circle cx="-2.4" cy="8" r=".9" fill="#64CDF5" opacity=".8"/><circle cx="2.4" cy="8" r=".9" fill="#64CDF5" opacity=".8"/>'
+      +'<g transform="translate(0 2.5) scale(1.25)"><path d="M-10 -1q4 -5 8 -1q-4 3 -8 1z" fill="#F9BF01" opacity=".35">'+A('opacity','.2;.5;.2',1.6)+'</path><path d="M10 -1q-4 -5 -8 -1q4 3 8 1z" fill="#F9BF01" opacity=".35">'+A('opacity','.2;.5;.2',1.6)+'</path></g>'
+      +'<g transform="translate(0 2.5) scale(1.25)"><path d="M-9.5 -.5q4 -4.5 7.5 -1q-3.5 2.6 -7.5 1z" fill="url(#oneEye)"/><path d="M9.5 -.5q-4 -4.5 -7.5 -1q3.5 2.6 7.5 1z" fill="url(#oneEye)"/>'
+      +'<path d="M-5.6 -3.2v4" stroke="#000" stroke-width="1.3" stroke-linecap="round"/><path d="M5.6 -3.2v4" stroke="#000" stroke-width="1.3" stroke-linecap="round"/>'
+      +'<path d="M-10.5 -4.5l7 1.5M10.5 -4.5l-7 1.5" stroke="#64CDF5" stroke-width="1.4" stroke-linecap="round"/></g>'
+      +'<path d="M-3.5 11.6q3.5 1.6 7 -.6" stroke="#64CDF5" stroke-width=".9" fill="none" stroke-linecap="round"/><path d="M-2.2 11.8l.7 1.8l.7 -1.6zM1.6 11.6l.7 1.8l.7 -1.8z" fill="#fff"/>';
     // pink scarf blowing
     s += '<path d="M-10 12q10 6 20 0l1 3q-11 6 -22 0z" fill="#EA55AB"/><g>'+R('0 6 14;12 6 14;0 6 14',1.1)+'<path d="M5 14l5 7l3 -1l-4 -6z" fill="#EA55AB"/></g>';
     // crown with a pulsing gem
@@ -119,20 +120,20 @@ let gid = 0;
 H.petInner = (pet, o) => { o = o || {}; const lv = o.lv || 1, ev = evoOf(lv), c = tint(pet.c, o.variant|0), id = 'pg'+(++gid);
   let s = '<defs>'+shade(id, c[0] == '#ffffff' ? '#ffffff' : dk(c[0], 1.25), dk(c[0], .78))+(ev >= 8 ? '<radialGradient id="'+id+'rb"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".6" stop-color="#ff5fd2"/><stop offset=".8" stop-color="#64CDF5"/><stop offset="1" stop-color="#D5F367" stop-opacity="0"/></radialGradient>' : '')+'</defs>';
   // forms past Wilderland Spirit: a coloured backdrop and a second ring that spins the other way, more stars each form
-  if (ev >= 10) { const col = ['#ff7a1a','#64CDF5','#b48cff','#00B451','#F9BF01','#ffffff'][Math.min(5, ev-10)];
+  if (ev >= 10) { const col = pet.r >= 8 ? ['#64CDF5','#b48cff','#ff5fd2','#64CDF5','#F9BF01','#ffffff'][Math.min(5, ev-10)] : ['#ff7a1a','#64CDF5','#b48cff','#00B451','#F9BF01','#ffffff'][Math.min(5, ev-10)];
     s += '<circle r="31" fill="'+col+'" opacity=".18">'+an('opacity','.12;.28;.12',2)+'</circle><circle r="30" fill="none" stroke="'+col+'" stroke-width="1.2" stroke-dasharray="2 3" opacity=".9">'+an('stroke-dashoffset','0;-20',2.5)+'</circle>'
       +Array.from({length:ev-7}, (_, i) => { const a = i/(ev-7)*Math.PI*2; return '<circle cx="'+(Math.cos(a)*29).toFixed(1)+'" cy="'+(Math.sin(a)*29).toFixed(1)+'" r="1.4" fill="'+col+'">'+an('r','1;2;1',1+i*.15)+'</circle>'; }).join(''); }
   if (ev >= 8) s += '<circle r="29" fill="url(#'+id+'rb)" opacity=".55">'+an('opacity','.35;.65;.35',2.5)+'</circle>';
-  if (ev >= 6) { const wc = ev >= 9 ? '#D5F367' : '#ffffff'; s += '<g fill="'+wc+'" stroke="'+(ev >= 9 ? '#00B451' : '#b48cff')+'" stroke-width="1" opacity=".9"><path d="M-6 0q-17 -16 -24 -4q8 -2 11 6q-7 0 -9 7q10 -3 22 -6z"/><path d="M6 0q17 -16 24 -4q-8 -2 -11 6q7 0 9 7q-10 -3 -22 -6z"/></g>'; }
-  if (ev >= 4) s += '<circle r="26" fill="none" stroke="'+(ev >= 9 ? '#00B451' : ev >= 5 ? '#b48cff' : '#64CDF5')+'" stroke-width="1.6" stroke-dasharray="3 4" opacity=".8">'+an('stroke-dashoffset','0;14',2)+'</circle>';
-  if (ev >= 3) s += '<circle r="24" fill="'+(pet.r >= 6 ? '#ff5fd2' : ev >= 9 ? '#D5F367' : '#F9BF01')+'" opacity=".22">'+an('r','22;26;22',2)+'</circle>';
+  if (pet.r < 8 && ev >= 6) { const wc = ev >= 9 ? '#D5F367' : '#ffffff'; s += '<g fill="'+wc+'" stroke="'+(ev >= 9 ? '#00B451' : '#b48cff')+'" stroke-width="1" opacity=".9"><path d="M-6 0q-17 -16 -24 -4q8 -2 11 6q-7 0 -9 7q10 -3 22 -6z"/><path d="M6 0q17 -16 24 -4q-8 -2 -11 6q7 0 9 7q-10 -3 -22 -6z"/></g>'; }
+  if (ev >= 4) s += '<circle r="26" fill="none" stroke="'+(ev >= 9 ? (pet.r >= 8 ? '#64CDF5' : '#00B451') : ev >= 5 ? '#b48cff' : '#64CDF5')+'" stroke-width="1.6" stroke-dasharray="3 4" opacity=".8">'+an('stroke-dashoffset','0;14',2)+'</circle>';
+  if (ev >= 3) s += '<circle r="24" fill="'+(pet.r >= 8 ? '#3a0a6a' : pet.r >= 6 ? '#ff5fd2' : ev >= 9 ? '#D5F367' : '#F9BF01')+'" opacity=".22">'+an('r','22;26;22',2)+'</circle>';
   if (ev >= 2) s += '<circle r="20" fill="#fff" opacity=".12"/>';
   const body = SP[pet.sp](c).replace(/url\(#pg\)/g, 'url(#'+id+')');
   s += '<g transform="scale('+(1 + Math.min(ev, 5)*.05)+')">'+body;
   if (ev >= 1) s += '<path d="M-9 10l1 -2l1 2l2 1l-2 1l-1 2l-1 -2l-2 -1zM8 -2l.8 -1.6l.8 1.6l1.6 .8l-1.6 .8l-.8 1.6l-.8 -1.6l-1.6 -.8z" fill="#fff" opacity=".85">'+an('opacity','.85;.2;.85',1.4)+'</path>';
-  if (ev >= 2) s += '<path d="M-4 -15l4 -6l4 6z" fill="'+(pet.r >= 6 ? '#ff5fd2' : c[1])+'" opacity=".9"/>';
-  if (ev >= 3 && ev < 9) s += '<ellipse cx="0" cy="-21" rx="8" ry="2.4" fill="none" stroke="'+(ev >= 7 ? '#ffffff' : '#F9BF01')+'" stroke-width="1.6"/>';
-  if (ev >= 9) s += '<path d="M-9 -19q-3 -6 2 -8q0 4 3 5q0 -6 4 -8q4 2 4 8q3 -1 3 -5q5 2 2 8z" fill="#00B451" stroke="#D5F367" stroke-width=".8"/><circle cx="0" cy="-24" r="1.6" fill="#F9BF01"/>';
+  if (pet.r < 8 && ev >= 2) s += '<path d="M-4 -15l4 -6l4 6z" fill="'+(pet.r >= 6 ? '#ff5fd2' : c[1])+'" opacity=".9"/>';
+  if (pet.r < 8 && ev >= 3 && ev < 9) s += '<ellipse cx="0" cy="-21" rx="8" ry="2.4" fill="none" stroke="'+(ev >= 7 ? '#ffffff' : '#F9BF01')+'" stroke-width="1.6"/>';
+  if (pet.r < 8 && ev >= 9) s += '<path d="M-9 -19q-3 -6 2 -8q0 4 3 5q0 -6 4 -8q4 2 4 8q3 -1 3 -5q5 2 2 8z" fill="#00B451" stroke="#D5F367" stroke-width=".8"/><circle cx="0" cy="-24" r="1.6" fill="#F9BF01"/>';
   if (ev >= 5) { const n = ev >= 7 ? 5 : 2; s += '<g>'+an('transform','0;360',ev >= 7 ? 6 : 9).replace('attributeName','type="rotate" attributeName').replace('<animate','<animateTransform')+Array.from({length:n}, (_, i) => { const a = i/n*Math.PI*2, x = Math.cos(a)*22, y = Math.sin(a)*22; return '<path d="M'+x+' '+(y-3)+'l1 2l2 1l-2 1l-1 2l-1 -2l-2 -1l2 -1z" fill="'+(ev >= 7 ? '#fff6b0' : '#F9BF01')+'"/>'; }).join('')+'</g>'; }
   if (o.collar) s += '<path d="M-9 11q9 5 18 0" stroke="'+COLLARS[o.collar]+'" stroke-width="2.6" fill="none"/><circle cx="0" cy="14" r="1.8" fill="#F9BF01"/>';
   if (o.hat) s += hatSVG(o.hat, -14 - (pet.sp == 'owl' || pet.sp == 'penguin' ? 2 : 0));

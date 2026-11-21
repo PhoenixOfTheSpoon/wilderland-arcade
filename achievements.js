@@ -56,6 +56,8 @@ A.init = ctx => { if (FAM.length) return; const G = ctx.games || [], NG = G.leng
   sp('rootHeight','🌳','Canopy Builder', n => 'Stack a '+n+'-layer tower in Root Out', s => mx(s,'rootHeight'), [5,10,25,40,60]);
   sp('rootPulled','🧤','Root Remover', n => 'Root out '+n+' invasive species', s => sm(s,'rootPulled'), [10,50,200,500,1000]);
   sp('spaceWave','✦','Star Ranger', n => 'Reach wave '+n+' in Star Ranger', s => mx(s,'spaceWave'), [5,10,20,30,50], {titles:{3:'Star Ranger'}});
+  sp('secretsFound','✨','Secret Seeker', n => 'Find '+n+' hidden secret'+(n==1?'':'s')+' in Secrets', s => mx(s,'secretsFound'), [1,4,8,12,15], {titles:{4:'Secret Keeper'}});
+  sp('secretsChapters','🔍','Mystery Solver', n => 'Solve '+n+' puzzle'+(n==1?'':'s')+' in Secrets', s => mx(s,'secretsChapters'), [1,2,3,5,6]);
   sp('spaceBoss','🛸','Boss Blaster', n => 'Defeat '+n+' Star Ranger boss'+(n==1?'':'es'), s => sm(s,'spaceBoss'), [1,3,10,25,50]);
   sp('rootBoss','👑','King Uprooter', n => 'Defeat the Kudzu King '+n+' time'+(n==1?'':'s'), s => sm(s,'rootBoss'), [1,3,10,25,50]);
   sp('mineGolem','🪨','Golem Crusher', n => 'Defeat '+n+' Cave Golem'+(n==1?'':'s')+' in The Mines', s => sm(s,'mineGolem'), [1,5,20,50,100]);
