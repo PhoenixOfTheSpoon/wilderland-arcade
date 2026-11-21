@@ -62,7 +62,7 @@ const css = `
 .wlv-nm{font-size:12px;font-weight:700;color:#015640;text-align:center;line-height:1.15}
 .wlv-lk{font-size:10px;font-weight:700;color:#AB2372;text-align:center;line-height:1.2}
 .wlv-small{font-size:12px;color:#4a4a4a}
-.wlv-preset{display:flex;flex-direction:column;align-items:center;gap:4px;background:#fff;border-radius:12px;padding:6px 8px;min-width:84px}
+.wlv-preset{display:flex;flex-direction:column;align-items:center;gap:4px;background:#fff;border-radius:12px;padding:6px 6px;min-width:78px;flex:0 0 auto}
 .wlv-preset img{width:44px;height:44px}
 `;
 const ensureCss = () => { if (document.getElementById('wlv-css')) return; const s = document.createElement('style'); s.id = 'wlv-css'; s.textContent = css; document.head.appendChild(s); };
@@ -70,7 +70,7 @@ const E = (tag, props, ...kids) => { const e = document.createElement(tag); if (
   kids.flat().forEach(k => { if (k==null || k===false) return; e.appendChild(typeof k=='object' ? k : document.createTextNode(String(k))); }); return e; };
 
 // ---------- the builder ----------
-V.mount = (root, api) => { ensureCss(); let tab = api.tab || TABS[0], tryOn = null, msg = '';
+V.mount = (root, api) => { ensureCss(); let tab = api.tab || TABS[0], tryOn = null, msg = '', pPage = 0;
   const wrap = E('div', {cls:'wlv'}); root.appendChild(wrap);
   const P = () => api.P(), adm = () => !!(api.admin && api.admin());
   const cur = () => api.norm(P().avatar);
@@ -88,19 +88,24 @@ V.mount = (root, api) => { ensureCss(); let tab = api.tab || TABS[0], tryOn = nu
     if (tryOn) { const o = AVP[tryOn[0]].o[tryOn[1]]; prev.append(...[E('div', {cls:'wlv-lk', style:{marginTop:'6px'}}, o.n+' · '+tst.label),
       tst.how === 'shop' ? E('button', {cls:'wlv-btn gold', style:{marginTop:'6px'}, onclick:()=>buy(tryOn[0], tryOn[1])}, 'Buy for '+fmt(tst.price)+' 🎟') : null,
       E('button', {cls:'wlv-btn alt', style:{marginTop:'6px', marginLeft:'4px'}, onclick:()=>{ tryOn = null; render(); }}, 'Stop trying on')].filter(Boolean)); }
-    const presets = E('div', {style:{display:'flex', gap:'8px', flexWrap:'wrap'}});
-    const NS = Math.min(MAX_SLOTS, 3 + (p.avSlots|0)); Array.from({length:NS}, (_, n) => n).forEach(n => { const ps = (p.avPresets||[])[n]; presets.appendChild(E('div', {cls:'wlv-preset'}, ps ? E('img', {src: svg(api.norm(ps), lvl), alt:''}) : E('div', {style:{width:'44px', height:'44px', borderRadius:'50%', background:'#ece8d6', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'18px', color:'#9a9a9b'}}, n+1),
+    const presets = E('div', {style:{display:'flex', gap:'6px', flexWrap:'nowrap', overflowX:'auto'}});
+    const NS = Math.min(MAX_SLOTS, 3 + (p.avSlots|0)), PER = 5, NP = Math.ceil(NS/PER); pPage = Math.max(0, Math.min(NP-1, pPage));
+    Array.from({length:NS}, (_, n) => n).filter(n => Math.floor(n/PER) == pPage).forEach(n => { const ps = (p.avPresets||[])[n]; presets.appendChild(E('div', {cls:'wlv-preset'}, ps ? E('img', {src: svg(api.norm(ps), lvl), alt:''}) : E('div', {style:{width:'44px', height:'44px', borderRadius:'50%', background:'#ece8d6', display:'flex', alignItems:'center', justifyContent:'center', fontSize:'18px', color:'#9a9a9b'}}, n+1),
       E('div', {style:{display:'flex', gap:'4px'}}, E('button', {cls:'wlv-chip', title:'Save this outfit to slot '+(n+1), onclick:()=>{ const arr = [...(p.avPresets||[])]; while (arr.length <= n) arr.push(null); const pp0 = P(); arr[n] = {...cur(), _pet:(pp0.pets||{}).active||null, _title:pp0.title||''}; api.setP({avPresets:arr}); api.toast('OUTFIT + PET + TITLE SAVED TO SLOT '+(n+1)); api.sfx('blip'); render(); }}, 'Save'),
         ps ? E('button', {cls:'wlv-chip on', title:'Wear outfit '+(n+1), onclick:()=>{ const pa = api.norm(ps), fixed = {}; AVK.forEach(k => { fixed[k] = AVP[k].multi ? AVP[k].o.reduce((m, o, i) => (pa[k] & (1<<i)) && V.status(P(), k, i, adm()).own ? m | (1<<i) : m, 0) : V.status(P(), k, pa[k], adm()).own ? pa[k] : cur()[k]; }); const pp1 = P(), pt = {}; if (ps._pet && window.WLH && window.WLH.owns(pp1, ps._pet)) pt.pets = {...window.WLH.norm(pp1), active:ps._pet}; if (ps._title != null) pt.title = ps._title; api.setP({avatar:fixed, ...pt}); tryOn = null; api.sfx('blip'); render(); }}, 'Wear') : null))); });
     // buy more outfit slots with tickets (up to 30)
+    let presetBuy = null;
     if (NS < MAX_SLOTS) { const pr = slotPrice(p); const bb = E('button', {cls:'wlv-btn gold', title:'One more outfit preset slot', onclick:()=>{ const pp = P(), c = slotPrice(pp); if (adm()) return api.toast('ADMIN MODE · SHOPPING DISABLED'); if ((pp.tickets||0) < c) { api.sfx('bad'); msg = 'You need '+fmt(c - (pp.tickets||0))+' more tickets for another slot.'; render(); return; }
         api.setP({tickets:pp.tickets - c, avSlots:(pp.avSlots|0) + 1}); api.sfx('win'); api.toast('NEW OUTFIT SLOT · '+(Math.min(MAX_SLOTS, 4 + (pp.avSlots|0)))+' SLOTS'); render(); }}, '+ Slot · '+fmt(pr)+' 🎟'); if ((p.tickets||0) < pr) bb.disabled = true;
-      presets.appendChild(E('div', {cls:'wlv-preset', style:{justifyContent:'center'}}, E('div', {style:{fontSize:'22px'}}, '➕'), bb)); }
+      presetBuy = bb; }
+    const pager = E('div', {style:{display:'flex', gap:'6px', alignItems:'center', marginTop:'6px', flexWrap:'wrap'}},
+      E('button', {cls:'wlv-chip', onclick:()=>{ pPage = Math.max(0, pPage-1); render(); }, ...(pPage == 0 ? {disabled:'disabled'} : {})}, '◀'), E('span', {cls:'wlv-small', style:{fontWeight:700}}, 'Page '+(pPage+1)+' / '+NP),
+      E('button', {cls:'wlv-chip', onclick:()=>{ pPage = Math.min(NP-1, pPage+1); render(); }, ...(pPage >= NP-1 ? {disabled:'disabled'} : {})}, '▶'), presetBuy);
     const pins = api.pins();
     const info = E('div', {style:{display:'flex', flexDirection:'column', gap:'10px', minWidth:0}},
       E('div', {cls:'wlv-small'}, 'Level '+lvl+' · '+V.allOwned(p, adm())+' / '+V.totalCount()+' items owned · 🎟 '+fmt(p.tickets||0)+' to spend in the Avatar Shop'),
       E('div', {style:{display:'flex', gap:'6px', flexWrap:'wrap'}}, E('button', {cls:'wlv-btn alt', onclick:randomize}, '🎲 Randomize'), E('button', {cls:'wlv-btn alt', title:'How you look walking around the arcade floor', onclick:()=>{ const pp = P(); api.setP({avPortrait:!pp.avPortrait}); api.toast(!pp.avPortrait ? 'FLOOR LOOK · PORTRAIT ONLY' : 'FLOOR LOOK · FULL BODY'); api.sfx('blip'); render(); }}, p.avPortrait ? '🙂 Floor: portrait only' : '🧍 Floor: full body'), E('button', {cls:'wlv-btn alt', onclick:()=>api.openAch()}, '🏅 Titles & showcase')),
-      E('div', null, E('div', {style:{fontSize:'11px', fontWeight:800, letterSpacing:'.12em', color:'#AB2372', marginBottom:'4px'}}, 'OUTFIT PRESETS · '+NS+' / '+MAX_SLOTS+' SLOTS'), presets),
+      E('div', null, E('div', {style:{fontSize:'11px', fontWeight:800, letterSpacing:'.12em', color:'#AB2372', marginBottom:'4px'}}, 'OUTFIT PRESETS · '+NS+' / '+MAX_SLOTS+' SLOTS'), presets, pager),
       pins.length ? E('div', {style:{display:'flex', gap:'6px', alignItems:'center'}}, E('span', {cls:'wlv-small'}, 'Showcase:'), ...pins.map(x => { const b = E('span', {title:x.name, style:{width:'30px', height:'30px', borderRadius:'50%', display:'inline-flex', alignItems:'center', justifyContent:'center', fontSize:'16px', background:x.g}}, x.e); return b; })) : null,
       msg ? E('div', {style:{fontWeight:700, color:'#B3001B', fontSize:'13px'}}, msg) : null);
     wrap.appendChild(E('div', {cls:'wlv-top'}, prev, info));
@@ -114,6 +119,14 @@ V.mount = (root, api) => { ensureCss(); let tab = api.tab || TABS[0], tryOn = nu
           E('img', {src: api.cursorImg(c), alt:''}), E('span', {cls:'wlv-nm'}, c.n), E('span', {cls:'wlv-lk'}, ok ? (on ? 'Selected' : '') : '🔒 Achievement level '+c.r))); });
       wrap.appendChild(g); return; }
     if (AVP[tab].note) wrap.appendChild(E('div', {cls:'wlv-small', style:{marginBottom:'6px'}}, AVP[tab].note));
+    // mass buy: every Avatar Shop item on this tab you can afford, cheapest first
+    { const shop = AVP[tab].o.map((o, i) => ({i, st:V.status(p, tab, i, adm())})).filter(x => !x.st.own && x.st.how === 'shop').sort((a, b) => a.st.price - b.st.price);
+      let left = p.tickets||0, n = 0, cost = 0; for (const x of shop) { if (x.st.price > left) break; left -= x.st.price; cost += x.st.price; n++; }
+      if (shop.length) { const mb = E('button', {cls:'wlv-btn gold', style:{marginBottom:'8px'}, onclick:()=>{ if (adm()) return api.toast('ADMIN MODE · SHOPPING DISABLED'); const pp = P(); let t = pp.tickets||0, own = {...(pp.avOwn||{})}, k = 0;
+          AVP[tab].o.map((o, i) => ({i, st:V.status(pp, tab, i, false)})).filter(x => !x.st.own && x.st.how === 'shop').sort((a, b) => a.st.price - b.st.price).forEach(x => { if (x.st.price <= t) { t -= x.st.price; own[V.key(tab, x.i)] = true; k++; } });
+          if (!k) { api.sfx('bad'); msg = 'Not enough tickets for anything on this tab yet.'; render(); return; }
+          api.setP({tickets:t, avOwn:own}); api.sfx('win'); api.toast('BOUGHT '+k+' '+AVP[tab].t.toUpperCase()+' ITEM'+(k>1?'S':'')); msg = ''; render(); }}, n ? '🛒 Buy all I can afford here · '+n+' item'+(n>1?'s':'')+' · '+fmt(cost)+' 🎟' : '🛒 Buy all (need '+fmt(shop[0].st.price)+' 🎟 for the cheapest)');
+        if (!n) mb.disabled = true; wrap.appendChild(E('div', null, mb, E('span', {cls:'wlv-small', style:{marginLeft:'8px'}}, shop.length+' still in the shop on this tab'))); } }
     const g = E('div', {cls:'wlv-grid'});
     AVP[tab].o.forEach((o, i) => { const st = V.status(p, tab, i, adm()), multi = AVP[tab].multi, on = multi ? !!(a[tab] & (1<<i)) : a[tab] === i, t = tryOn && tryOn[0]==tab && tryOn[1]==i;
       const lookI = {...a, [tab]: multi ? (1<<i) : i}; if (tab=='hair' || tab=='hairc') { lookI.hat = 0; if (tab=='hairc' && !lookI.hair) lookI.hair = 1; }
