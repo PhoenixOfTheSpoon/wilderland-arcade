@@ -1519,7 +1519,7 @@ const ACH = [
   {id:'lifer',cat:'Secret',tier:4,secret:true,name:'Lifer',desc:'Finish 1,000 games',p:s=>[plays(s),1000]},
 ];
 const KEY = 'wl-arcade-v1', ACCT_KEY = 'wl-arcade-accounts', SESSION_KEY = 'wl-arcade-session';
-const DEF = () => ({difficulty:'normal',speed:'normal',tickets:0,savedAt:0,lifeTix:0,wipeAt:0,best:{},played:{},ach:[],prizes:{},daily:{date:'',done:false},earned:0,saves:{},savesV:2,stats:{max:{},sum:{}},username:'',edu:{on:false,topic:'add'},sessLog:[],days:{},adjSeen:0,idle:null,secrets:null,upg:{},avatar:{},cursor:'',resetSeen:0,at:{},achV:0,title:'',achPins:[],avOwn:{},avPresets:[],mult:{},stars:0,starsSpent:0,exp:{},expUp:{},tree:{},ptree:{},diaSpent:0,ptFav:'',autoRb:true,mineBud:null,pets:null,home:null,mounts:null,clicks:0,critters:0,econV:0,rebirths:0,colDone:{},login:{},chal:{},combo:{},capsules:0,skin:'',learnTix:0});
+const DEF = () => ({difficulty:'normal',speed:'normal',tickets:0,savedAt:0,lifeTix:0,wipeAt:0,avSlots:0,best:{},played:{},ach:[],prizes:{},daily:{date:'',done:false},earned:0,saves:{},savesV:2,stats:{max:{},sum:{}},username:'',edu:{on:false,topic:'add'},sessLog:[],days:{},adjSeen:0,idle:null,secrets:null,upg:{},avatar:{},cursor:'',resetSeen:0,at:{},achV:0,title:'',achPins:[],avOwn:{},avPresets:[],mult:{},stars:0,starsSpent:0,exp:{},expUp:{},tree:{},ptree:{},diaSpent:0,ptFav:'',autoRb:true,mineBud:null,pets:null,home:null,mounts:null,clicks:0,critters:0,econV:0,rebirths:0,colDone:{},login:{},chal:{},combo:{},capsules:0,skin:'',learnTix:0});
 const PFIELDS = Object.keys(DEF());
 const loadP = key => { let d = {}; try { d = JSON.parse(localStorage.getItem(key)) || {}; } catch(e){} return normP(d); };
 const fin = v => { v = Number(v); return v !== v ? 0 : v > 1e300 ? 1e300 : v < -1e300 ? -1e300 : v; };
@@ -1552,7 +1552,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-11-29d';
+const BUILD = '2026-11-29e';
 const SCRIPTS = ['arcade-core.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js','games-secrets.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
