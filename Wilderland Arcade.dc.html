@@ -1148,7 +1148,7 @@ const PANTS = [null, {c:'#2f5d99'}, {c:'#2f5d99', short:1}, {c:'#7a7a4a', pk:1},
   {c:'#2a1250', stars:1}, {c:'#8a1500', lava:1}, {c:'url(#rb)'}, {c:'#c9ccd1', robot:1}, {c:'#9aa0a8', armor:1}, {c:'#F9BF01', shine:1}, {c:'#9fe8ff', shine:1}];
 const avLegs = (a, B, M, sc) => { const P = PANTS[a.pants] || {c: B ? M : (sc == 'rainbow' ? '#6a6a6a' : sc), auto:1}, pc = P.c, S = a.shoes; let o = '';
   const dk = '#00000033';
-  o += '<rect x="20" y="58" width="24" height="14" rx="4" fill="'+(P.auto ? pc : pc)+'"/>';   // hips
+  o += '<rect x="20.5" y="62" width="23" height="10" rx="4" fill="'+pc+'"/>';   // hips
   if (P.skirt) { o += '<path d="M18 62h28l5 16h-38z" fill="'+pc+'"/>'; if (P.plaid) o += '<path d="M20 66h24M18 72h28M26 62v16M38 62v16" stroke="#F9BF01" stroke-width="1.2" opacity=".7"/>'; }
   const legC = P.skirt || P.short ? (B ? M : '#f2c9a0') : pc, legY0 = P.short ? 72 : 66;
   if (P.short) o += '<rect x="20" y="66" width="10" height="8" rx="2" fill="'+pc+'"/><rect x="34" y="66" width="10" height="8" rx="2" fill="'+pc+'"/>';
@@ -1298,7 +1298,12 @@ const avSVG = (a, lvl, opts) => { a = avNorm(a); opts = opts || {}; const B = a.
   if (HR==11) o += '<path d="M42 20q12 4 8 22q-4-8-8-12z" fill="'+hc+'"/>';
   if (opts.full) o += avLegs(a, B, M, sc);
   // body + shirt patterns
-  o += '<path d="M16 64q0-22 16-22t16 22z" fill="'+(sc=='rainbow'?'url(#rb)':sc)+'"/>';
+  if (opts.full) { const fc = sc=='rainbow'?'url(#rb)':sc, hand = B ? M : sk;
+    // full body: arms with sleeves + hands (gently swinging), then a proper torso
+    const arm = (x, side) => '<g>'+at('rotate',(side*4)+' '+x+' 45;'+(-side*4)+' '+x+' 45;'+(side*4)+' '+x+' 45',1.4,SPLINE)+'<path d="M'+x+' 45q'+(side*-5)+' 7 '+(side*-6)+' 15" stroke="'+fc+'" stroke-width="7" fill="none" stroke-linecap="round"/><path d="M'+(x+side*-5)+' 56q'+(side*-1)+' 3 '+(side*-1)+' 4" stroke="'+hand+'" stroke-width="6" fill="none" stroke-linecap="round"/><circle cx="'+(x+side*-6.2)+'" cy="62" r="3.4" fill="'+hand+'" stroke="rgba(0,0,0,.15)" stroke-width=".8"/></g>';
+    o += arm(20, 1) + arm(44, -1);
+    o += '<path d="M19 50q0-9 13-9t13 9v14q0 3-3 3h-20q-3 0-3-3z" fill="'+fc+'"/><path d="M27 42q5 4 10 0" stroke="rgba(0,0,0,.15)" stroke-width="1.4" fill="none"/>'; }
+  else o += '<path d="M16 64q0-22 16-22t16 22z" fill="'+(sc=='rainbow'?'url(#rb)':sc)+'"/>';
   const PAT = SH.pat;
   if (PAT=='stripes') o += '<path d="M18 52h28M17 57h30M16 62h32" stroke="#FF4539" stroke-width="2.5"/>';
   if (PAT=='stars') o += '<path d="M25 52l1 2.2l2.4.3l-1.8 1.6l.5 2.4l-2.1-1.2l-2.1 1.2l.5-2.4l-1.8-1.6l2.4-.3zM38 56l1 2.2l2.4.3l-1.8 1.6l.5 2.4l-2.1-1.2l-2.1 1.2l.5-2.4l-1.8-1.6l2.4-.3z" fill="#F9BF01"/><circle cx="31" cy="60" r="1" fill="#fff"/><circle cx="43" cy="51" r="1" fill="#fff"/>';
@@ -1552,7 +1557,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-11-29e';
+const BUILD = '2026-11-29f';
 const SCRIPTS = ['arcade-core.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js','games-secrets.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
