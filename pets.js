@@ -7,7 +7,9 @@ const H = {};
 const TAU = Math.PI*2;
 const fmt = n => window.WLP ? window.WLP.fmt(n) : String(Math.round(n));
 const nice = x => { x = Number(x); if (x !== x) return 0; if (!(x < 1e300)) return 1e300; if (x < 100) return Math.round(x); const p = Math.pow(10, Math.floor(Math.log10(x)) - 1); return Math.min(1e300, Math.round(x / p) * p); };
-const RAR = () => (window.WLP && window.WLP.R) || [{n:'Common',c:'#9aa5a1'},{n:'Uncommon',c:'#00B451'},{n:'Rare',c:'#2fa8e0'},{n:'Epic',c:'#a64be0'},{n:'Legendary',c:'#f2a900'},{n:'Mythic',c:'#ff4539'},{n:'Cosmic',c:'#4a5cff'},{n:'Wilderland',c:'#ff5fd2'}];
+const ONE_R = {n:'THE ONE', c:'#111111'};   // the final pet rarity (pets only)
+const RAR = () => [...((window.WLP && window.WLP.R) || RAR0).slice(0, 8), ONE_R];
+const RAR0 = [{n:'Common',c:'#9aa5a1'},{n:'Uncommon',c:'#00B451'},{n:'Rare',c:'#2fa8e0'},{n:'Epic',c:'#a64be0'},{n:'Legendary',c:'#f2a900'},{n:'Mythic',c:'#ff4539'},{n:'Cosmic',c:'#4a5cff'},{n:'Wilderland',c:'#ff5fd2'}];
 const need = P => window.WLP ? window.WLP.rebirthNeed(P) : 1e7;
 const freeStars = P => Math.max(0, (P.stars||0) - (P.starsSpent||0));
 const prestige = P => window.WLE ? window.WLE.prestige(P) : 0;
@@ -28,6 +30,16 @@ const shade = (id, a, b) => '<radialGradient id="'+id+'" cx="35%" cy="30%" r="75
 const dk = (hex, f) => { const m = /^#([0-9a-f]{6})$/i.exec(hex||''); if (!m) return hex; const n = parseInt(m[1],16), c = k => Math.max(0, Math.min(255, Math.round(((n>>k)&255)*f))); return '#'+[c(16),c(8),c(0)].map(v=>v.toString(16).padStart(2,'0')).join(''); };
 const wag = (o, d) => '<g>'+at('rotate', '-12 '+o+';14 '+o+';-12 '+o, d||1.1)+'';
 const SP = {
+  // THE ONE: a pitch-black crowned dragon with bat wings, ice-blue horns, golden eyes and a pink scarf
+  theone: c => '<g>'+at('rotate','0 -9 -2;-16 -9 -2;0 -9 -2',.8)+'<path d="M-9 -2q-8 -16 -24 -12q4 4 2 7q-6 0 -8 4q6 0 6 5q-5 1 -5 5q10 -4 16 0q4 -6 13 -4z" fill="#1d1d26" stroke="#4a4a5c" stroke-width="1"/><path d="M-20 -6l3 4l-3 4l-3 -4z" fill="#64CDF5"/></g>'
+    +'<g>'+at('rotate','0 9 -2;16 9 -2;0 9 -2',.8)+'<path d="M9 -2q8 -16 24 -12q-4 4 -2 7q6 0 8 4q-6 0 -6 5q5 1 5 5q-10 -4 -16 0q-4 -6 -13 -4z" fill="#1d1d26" stroke="#4a4a5c" stroke-width="1"/><path d="M20 -6l3 4l-3 4l-3 -4z" fill="#64CDF5"/></g>'
+    +wag('12 12',1.3)+'<path d="M11 12q13 3 13 -8l4 -2l-2 5l-3 -1q0 11 -12 10z" fill="#0b0b10"/></g>'
+    +'<path d="M-9 -9q-6 -6 -4 -14q3 6 8 9zM9 -9q6 -6 4 -14q-3 6 -8 9z" fill="#64CDF5"/>'
+    +'<ellipse cx="0" cy="4" rx="14" ry="13" fill="#0b0b10"/><ellipse cx="-4" cy="-2" rx="6" ry="4" fill="#ffffff" opacity=".08"/><ellipse cx="0" cy="9" rx="8" ry="6" fill="#1c1c26"/>'
+    +'<circle cx="-5" cy="0" r="3.4" fill="#F9BF01"/><circle cx="5" cy="0" r="3.4" fill="#F9BF01"/><ellipse cx="-5" cy="0" rx="1" ry="2.6" fill="#000"/><ellipse cx="5" cy="0" rx="1" ry="2.6" fill="#000"/><circle cx="-4" cy="-1.2" r=".7" fill="#fff"/><circle cx="6" cy="-1.2" r=".7" fill="#fff"/>'
+    +'<path d="M-3 6.5q3 2 6 0" stroke="#4a4a5c" stroke-width="1" fill="none"/><path d="M1 7l1 2l1 -2z" fill="#fff"/>'
+    +'<path d="M-10 12q10 6 20 0l1 3q-11 6 -22 0z" fill="#EA55AB"/><path d="M5 14l4 7l3 -1l-3 -6z" fill="#EA55AB"/>'
+    +'<path d="M-9 -11l-1 -9l5 4l5 -7l5 7l5 -4l-1 9z" fill="#F9BF01" stroke="#c48a00" stroke-width="1"/><circle cx="0" cy="-15" r="1.8" fill="#EA55AB"/>',
   gopher: c => '<ellipse cx="0" cy="4" rx="15" ry="14" fill="url(#pg)"/><circle cx="-11" cy="-8" r="4" fill="'+c[1]+'"/><circle cx="11" cy="-8" r="4" fill="'+c[1]+'"/><ellipse cx="0" cy="8" rx="9" ry="8" fill="'+c[2]+'"/>'+eyes(-2,5.5)+'<ellipse cx="0" cy="3" rx="2.4" ry="1.7" fill="#5a3a2a"/><rect x="-2" y="5" width="4" height="4" rx="1" fill="#fff"/>'+cheeks(3,9),
   owl: c => '<path d="M-14 -10l4 6M14 -10l-4 6" stroke="'+c[1]+'" stroke-width="4" stroke-linecap="round"/><ellipse cx="0" cy="3" rx="14" ry="17" fill="url(#pg)"/><ellipse cx="0" cy="8" rx="9" ry="10" fill="'+c[2]+'"/><path d="M-14 0q-6 10 0 16M14 0q6 10 0 16" fill="'+c[1]+'"/><circle cx="-5.5" cy="-3" r="5.5" fill="#fff"/><circle cx="5.5" cy="-3" r="5.5" fill="#fff"/>'+eyes(-3,5.5,2.8)+'<path d="M-2 1l2 4l2-4z" fill="#F9BF01"/>',
   frog: c => '<ellipse cx="0" cy="6" rx="17" ry="12" fill="url(#pg)"/><circle cx="-8" cy="-5" r="6" fill="'+c[0]+'"/><circle cx="8" cy="-5" r="6" fill="'+c[0]+'"/>'+eyes(-5,8,3)+'<ellipse cx="0" cy="10" rx="10" ry="6" fill="'+c[2]+'"/><path d="M-6 4q6 4 12 0" stroke="#121313" stroke-width="1.3" fill="none"/>'+cheeks(5,11)+'<ellipse cx="-14" cy="16" rx="5" ry="2.5" fill="'+c[1]+'"/><ellipse cx="14" cy="16" rx="5" ry="2.5" fill="'+c[1]+'"/>',
@@ -79,6 +91,7 @@ H.nextEvo = lv => { const e = evoOf(lv); return e < EVO_AT.length-1 ? {lv:EVO_AT
 let gid = 0;
 H.petInner = (pet, o) => { o = o || {}; const lv = o.lv || 1, ev = evoOf(lv), c = tint(pet.c, o.variant|0), id = 'pg'+(++gid);
   let s = '<defs>'+shade(id, c[0] == '#ffffff' ? '#ffffff' : dk(c[0], 1.25), dk(c[0], .78))+(ev >= 8 ? '<radialGradient id="'+id+'rb"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".6" stop-color="#ff5fd2"/><stop offset=".8" stop-color="#64CDF5"/><stop offset="1" stop-color="#D5F367" stop-opacity="0"/></radialGradient>' : '')+'</defs>';
+  if (pet.r >= 8) s += '<circle r="27" fill="#2a0a4a" opacity=".35">'+an('r','25;29;25',2.4)+'</circle><circle r="23" fill="none" stroke="#64CDF5" stroke-width="1" stroke-dasharray="1 5" opacity=".9">'+an('stroke-dashoffset','0;12',1.5)+'</circle>';
   if (ev >= 8) s += '<circle r="29" fill="url(#'+id+'rb)" opacity=".55">'+an('opacity','.35;.65;.35',2.5)+'</circle>';
   if (ev >= 6) { const wc = ev >= 9 ? '#D5F367' : '#ffffff'; s += '<g fill="'+wc+'" stroke="'+(ev >= 9 ? '#00B451' : '#b48cff')+'" stroke-width="1" opacity=".9"><path d="M-6 0q-17 -16 -24 -4q8 -2 11 6q-7 0 -9 7q10 -3 22 -6z"/><path d="M6 0q17 -16 24 -4q-8 -2 -11 6q7 0 9 7q-10 -3 -22 -6z"/></g>'; }
   if (ev >= 4) s += '<circle r="26" fill="none" stroke="'+(ev >= 9 ? '#00B451' : ev >= 5 ? '#b48cff' : '#64CDF5')+'" stroke-width="1.6" stroke-dasharray="3 4" opacity=".8">'+an('stroke-dashoffset','0;14',2)+'</circle>';
@@ -103,7 +116,7 @@ H.petImg = (pet, o) => svgURI('<g transform="translate(32 36)">'+H.petInner(pet,
 H.petSil = pet => svgURI('<g transform="translate(32 36)" opacity=".85" filter="url(#s)"><defs><filter id="s"><feColorMatrix type="matrix" values="0 0 0 0 .2  0 0 0 0 .2  0 0 0 0 .22  0 0 0 1 0"/></filter></defs>'+SP[pet.sp](pet.c).replace(/url\(#pg\)/g,'#333')+'</g><text x="32" y="40" text-anchor="middle" font-size="16" font-weight="700" fill="#fff" font-family="sans-serif">?</text>');
 
 // =====================================================================================================================
-// THE 44 PETS · rarity 0 Common … 5 Mythic · 6 Cosmic · 7 Wilderland
+// THE 46 PETS · rarity 0 Common … 5 Mythic · 6 Cosmic · 7 Wilderland · 8 THE ONE
 // src: free · shop · ach 'family:tier' · mine {depth|chests} · boss {stat:n} · pr (Prestige level) · star (Golden Stars, Wilderland only)
 // perk: one small bonus that grows with the pet's level (only your ACTIVE pet's perk counts)
 // =====================================================================================================================
@@ -154,6 +167,8 @@ const PETS = [
   P_('dragonling','Wilderland Dragonling','dragon',['#00B451','#F9BF01','#D5F367'],7,{star:8},{k:'allTix'}),
   P_('rainbowfox','Prism the Rainbow Fox','fox',['#ff5fd2','#64CDF5','#fff3b0'],7,{star:12},{k:'critter'}),
   P_('celestia','Celestia the Sky Wisp','wisp',['#ffffff','#ff5fd2','#bff0ff'],7,{star:16},{k:'learn'}),
+  // THE ONE — the final rarity: collect every other pet, or hatch it from a Wilderland Egg (1%)
+  P_('theone','THE ONE','theone',['#0b0b10','#1d1d26','#64CDF5'],8,{one:1},{k:'allTix'}),
 ];
 H.PETS = PETS;
 const byId = id => PETS.find(p => p.id === id);
@@ -168,7 +183,7 @@ const PERK = {
   combo:   {n:'Combo', e:'🔥', per:.5, d:'more tickets while your combo is going'},
   game:    {n:'Favourite Game', e:'🕹️', per:1.5, d:'more tickets from one cabinet'},
 };
-const RMUL = [1, 1.2, 1.5, 2, 2.5, 3, 4, 5];
+const RMUL = [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 7];
 const GNAME = g => { const W = window.WLP; return (W && W.gname && W.gname(g)) || ({crossing:'Critter Crossing', rootout:'Root Out', snake:'Snake', breakout:'Breakout', td:'Trailhead Defense', flappy:'Flapper', space:'Star Ranger', reaction:'Reaction Test'})[g] || g; };
 H.perkPct = (pet, lv) => Math.round(PERK[pet.perk.k].per * RMUL[pet.r] * (Math.min(60, lv) + Math.max(0, Math.min(lv, MAXLV) - 60)*.25) * 100) / 100;
 H.perkText = (pet, lv) => { const k = pet.perk.k, p = H.perkPct(pet, lv); return '+'+p+'% '+(k == 'game' ? GNAME(pet.perk.g)+' tickets' : k == 'gems' ? 'double-gem chance' : PERK[k].d.replace(/^more /,'')); };
@@ -202,11 +217,12 @@ H.status = (P, pet) => { const s = pet.src, n = H.norm(P);
     const c = st(P,'mineChests'); return {can:c >= s.mine.chests, how:'Mine treasure: open '+s.mine.chests+' treasure rooms ('+c+'/'+s.mine.chests+')'}; }
   if (s.boss) { const [k, v] = Object.entries(s.boss)[0], c = st(P,k), nm = {spaceBoss:'Star Ranger bosses', tdBoss:'Trailhead Defense bosses', mineGolem:'Cave Golems', rootBoss:'Kudzu Kings', mineCore:'the Armageddon Core'}[k] || k;
     return {can:c >= v, how:'Boss drop: defeat '+nm+' ('+Math.min(c,v)+'/'+v+')'}; }
+  if (s.one) { const c = PETS.filter(x => x.id != pet.id && n.own[x.id]).length, all = PETS.length - 1; return {can:c >= all, how:'THE ONE appears when you own every other pet ('+c+'/'+all+') — or hatch it from a Wilderland Egg (1%)'}; }
   if (s.pr) return {can:prestige(P) >= s.pr, how:'Prestige reward: reach Prestige '+s.pr+' ('+prestige(P)+'/'+s.pr+')'};
   return {how:'?'}; };
 H.shopPrice = (P, pet) => nice(Math.min(1500*Math.pow(7, pet.r) * (1 + PETS.indexOf(pet)%3*.15), need(P)*.3));
 H.titles = P => { const n = H.norm(P), c = Object.keys(n.own).length, h = H.home(P).tier, out = [];
-  if (c >= 5) out.push('Pet Pal'); if (c >= 15) out.push('Critter Collector'); if (c >= 30) out.push('Beast Master'); if (n.own.dragonling) out.push('Dragon Tamer'); if (PETS.some(p => n.own[p.id] && H.lv(n.own[p.id].xp) >= 50)) out.push('Legendary Keeper'); if (PETS.some(p => n.own[p.id] && H.lv(n.own[p.id].xp) >= 200)) out.push('Ascended Keeper'); if (PETS.some(p => n.own[p.id] && H.lv(n.own[p.id].xp) >= 500)) out.push('Wilderland Spirit');
+  if (c >= 5) out.push('Pet Pal'); if (c >= 15) out.push('Critter Collector'); if (c >= 30) out.push('Beast Master'); if (n.own.dragonling) out.push('Dragon Tamer'); if (n.own.theone) out.push('Bearer of THE ONE'); if (PETS.some(p => n.own[p.id] && H.lv(n.own[p.id].xp) >= 50)) out.push('Legendary Keeper'); if (PETS.some(p => n.own[p.id] && H.lv(n.own[p.id].xp) >= 200)) out.push('Ascended Keeper'); if (PETS.some(p => n.own[p.id] && H.lv(n.own[p.id].xp) >= 500)) out.push('Wilderland Spirit');
   if (h >= 2) out.push('Cozy Homebody'); if (h >= 4) out.push('Lord of the Keep'); if (h >= 5) out.push('Castle Lord'); if (h >= 6) out.push('Sky Sovereign'); return out; };
 
 // ---------------- XP ----------------
@@ -223,11 +239,11 @@ const EGGS = [
   {id:'crystal',n:'Crystal Egg', e:'💠', mul:.02,  min:5e3,  odds:[0,45,35,15,5,0], c:'#2fa8e0'},
   {id:'royal',  n:'Royal Egg', e:'👑', mul:.12,  min:5e4,  odds:[0,0,40,35,20,5], c:'#a64be0'},
   {id:'cosmic', n:'Cosmic Egg', e:'🌌', mul:.25,  min:5e5,  odds:[0,0,0,0,35,40,25,0], c:'#4a5cff'},
-  {id:'wild',   n:'Wilderland Egg', e:'🌲', mul:.4, min:5e6, odds:[0,0,0,0,0,45,35,20], c:'#015640'},
+  {id:'wild',   n:'Wilderland Egg', e:'🌲', mul:.4, min:5e6, odds:[0,0,0,0,0,45,35,19,1], c:'#015640'},
 ];
 H.EGGS = EGGS;
 H.eggPrice = (P, e) => nice(Math.max(e.min, need(P)*e.mul));
-H.hatch = (P, eggId, rnd) => { const e = EGGS.find(x => x.id == eggId); rnd = rnd || Math.random; let x = rnd()*100, r = 0; for (; r < e.odds.length; r++) { x -= e.odds[r]; if (x < 0) break; } r = Math.min(r, 7);
+H.hatch = (P, eggId, rnd) => { const e = EGGS.find(x => x.id == eggId); rnd = rnd || Math.random; let x = rnd()*100, r = 0; for (; r < e.odds.length; r++) { x -= e.odds[r]; if (x < 0) break; } r = Math.min(r, 8);
   const pool = PETS.filter(p => p.r === r); return pool[Math.floor(rnd()*pool.length)]; };
 
 // =====================================================================================================================
