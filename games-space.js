@@ -27,7 +27,8 @@ A.register('space', { mount(host, api){
   const keys = {}; let touchX = null, touching = false;
   for (let i=0;i<70;i++) stars.push({x:Math.random()*W, y:Math.random()*H, z:.3+Math.random()*1.4});
   const say = (t, s) => banner = {t, s, life:2.4};
-  const lives0 = () => A.D(5,3,2) + A.U('life');
+  const lives0 = () => A.D(7,5,3) + A.U('life');
+  const bulCap = () => Math.min(10, 3 + Math.floor(wave/3)) + (boss ? 6 : 0);   // max enemy shots on screen at once
   // ---------------- waves ----------------
   const makeBunkers = () => { bunkers = []; const n = A.D(4,4,3); for (let b=0;b<n;b++) { const bx = W*(b+1)/(n+1) - 24, by = H-140; const cells = [];
       for (let r=0;r<5;r++) for (let q=0;q<8;q++) { if (r==4 && q>=2 && q<=5) continue; if (r==0 && (q==0||q==7)) continue; cells.push({x:bx+q*6, y:by+r*6, hp:2}); } bunkers.push(cells); } };
@@ -36,7 +37,7 @@ A.register('space', { mount(host, api){
       boss.max = boss.hp = Math.round((240 + wave*24) * A.D(.7,1,1.4)); say('WAVE '+wave+' · BOSS', 'The Grand Hive Mother arrives! Hit her glowing core.'); }
     else if (wave % 5 == 0) { boss = {kind:'mini', n:'Saucer Chief', x:W/2, y:90, hp:0, max:0, t:0, vx:90, shootT:1};
       boss.max = boss.hp = Math.round((70 + wave*10) * A.D(.7,1,1.4)); say('WAVE '+wave+' · MINI-BOSS', 'The Saucer Chief is zooming in!'); }
-    const rowsN = Math.min(6, 3 + Math.floor(wave/3)), colsN = Math.min(10, 7 + Math.floor(wave/4));
+    const rowsN = Math.min(5, 2 + Math.floor(wave/4)), colsN = Math.min(9, 6 + Math.floor(wave/5));
     if (!boss || boss.kind=='mini') { const order = ['shell','zapper','zapper','swooper','bloop','bloop'];
       for (let r=0;r<rowsN;r++) for (let q=0;q<colsN;q++) { const k = order[Math.max(0, order.length - rowsN + r)] || 'bloop', K = KIND[k];
         aliens.push({k, K, hx:q*38 - (colsN-1)*19, hy:60 + r*34 + (boss ? 50 : 0), x:0, y:0, hp:K.hp + (wave>=8 && k!='bloop' ? 1 : 0), dive:null, flap:Math.random()*6}); } }
@@ -61,9 +62,9 @@ A.register('space', { mount(host, api){
     A.tone(880, .03, 'square', .02); };
   const killShip = () => { if (ship.inv > 0 || A.immortal) return; if (shield > 0) { shield--; ship.inv = 1.2; burst(ship.x, ship.y, '#D5F367', 14); A.sfx('hit'); return; }
     if (wing) { wing = false; ship.inv = 1.5; burst(ship.x+14, ship.y, '#fff', 18); say('WING MATE DOWN', 'Pick up another ✈ to rescue one'); A.sfx('bad'); return; }
-    lives--; burst(ship.x, ship.y, '#FF8A3C', 30); shake = .4; A.sfx('bad'); pw = {double:0, spread:0, rapid:0}; combo = 0;
+    lives--; ship.inv = 2.5; ebul = []; burst(ship.x, ship.y, '#FF8A3C', 30); shake = .4; A.sfx('bad'); pw = {double:0, spread:0, rapid:0}; combo = 0;
     if (lives <= 0) { state = 'over'; A.sfx('over'); const acc = shots ? hits/shots : 0; const fin = Math.round(score * (1 + Math.min(.5, acc*.5))); stat(api,'spaceWave',wave,'max'); api.over(fin); return; }
-    ship.inv = 2; };
+    ship.inv = 2.5; };
   const dropPow = (x, y) => { if (Math.random() < A.D(.11,.08,.06) + (combo>=10 ? .05 : 0)) { const k = Math.random() < .12 ? 'rescue' : PKEYS[Math.random()*4|0]; drops.push({x, y, k, vy:90}); } };
   const killAlien = a => { a.dead = 1; hits++; combo++; comboT = 2.2; const bonus = a.dive ? 2 : 1; addScore((a.K.pts * bonus + Math.min(50, combo)) * wave); burst(a.x, a.y, a.K.col, 12); dropPow(a.x, a.y); A.tone(520+Math.random()*200, .05, 'triangle', .03); };
   // ---------------- update ----------------
@@ -81,18 +82,20 @@ A.register('space', { mount(host, api){
     formX += formDir * speed * dt; if (alive && (W/2 + formX + maxX > W-20 || W/2 + formX + minX < 20)) { formDir *= -1; formY += A.D(8,12,16); formX += formDir*speed*dt*2; }
     for (const a of aliens) { a.flap += dt*8; alienPos(a);
       if (a.dive) { const D = a.dive; D.t += dt; const u = D.t / D.dur; // swoop curve, then loop back to the formation
-        if (u < 1) { a.x = D.x0 + Math.sin(u*Math.PI*2)*D.amp + (D.tx - D.x0)*u; a.y = D.y0 + (H + 40 - D.y0)*u; if (Math.random() < dt*1.5*a.K.shoot) ebul.push({x:a.x, y:a.y+10, vx:(ship.x-a.x)*.4, vy:220+wave*6}); }
+        if (u < 1) { a.x = D.x0 + Math.sin(u*Math.PI*2)*D.amp + (D.tx - D.x0)*u; a.y = D.y0 + (H + 40 - D.y0)*u; if (Math.random() < dt*.6*a.K.shoot && ebul.length < bulCap()) ebul.push({x:a.x, y:a.y+10, vx:(ship.x-a.x)*.25, vy:170+wave*3}); }
         else { a.dive = null; a.hy = Math.max(40, a.hy); } }
-      else if (Math.random() < dt * .025 * a.K.shoot * A.D(.6,1,1.4) * (1 + wave*.08)) ebul.push({x:a.x, y:a.y+10, vx:0, vy:200+wave*5});
-      if (!a.dive && a.y > H-120) { killShip(); a.dead = 1; } }
-    diveT -= dt; if (diveT <= 0 && aliens.length) { diveT = Math.max(.9, A.D(4,3,2.2) - wave*.08); const n = 1 + Math.floor(Math.random()*Math.min(3, 1 + wave/4));
+      else if (ebul.length < bulCap() && Math.random() < dt * .011 * a.K.shoot * A.D(.5,1,1.4) * (1 + wave*.04)) ebul.push({x:a.x, y:a.y+10, vx:0, vy:160+wave*3});
+    }
+    // the formation never comes lower than this (reaching the bottom doesn't cost a life any more)
+    { let low = 0; for (const a of aliens) if (!a.dive) low = Math.max(low, a.hy + formY); if (low > H-170) formY -= low - (H-170); }
+    diveT -= dt; if (diveT <= 0 && aliens.length) { diveT = Math.max(1.8, A.D(5.5,4.2,3) - wave*.05); const n = 1 + Math.floor(Math.random()*Math.min(2, 1 + wave/6));
       for (let i=0;i<n;i++) { const cand = aliens.filter(a => !a.dive); if (!cand.length) break; const a = cand.find(x => x.k=='swooper' && Math.random()<.7) || cand[Math.random()*cand.length|0];
         a.dive = {t:0, dur:A.D(3.4,2.8,2.2), x0:a.x, y0:a.y, tx:ship.x, amp:(60+Math.random()*80)*(Math.random()<.5?-1:1)}; } }
     // boss
     if (boss) { boss.t += dt;
-      if (boss.kind=='mini') { boss.x += boss.vx*dt; if (boss.x < 60 || boss.x > W-60) boss.vx *= -1; boss.shootT -= dt; if (boss.shootT <= 0) { boss.shootT = A.D(1.3,1,.75); for (const a of [-.4,-.2,0,.2,.4]) ebul.push({x:boss.x, y:boss.y+18, vx:Math.sin(a)*200, vy:Math.cos(a)*220}); } }
+      if (boss.kind=='mini') { boss.x += boss.vx*dt; if (boss.x < 60 || boss.x > W-60) boss.vx *= -1; boss.shootT -= dt; if (boss.shootT <= 0) { boss.shootT = A.D(2,1.6,1.1); for (const a of [-.3,0,.3]) ebul.push({x:boss.x, y:boss.y+18, vx:Math.sin(a)*180, vy:Math.cos(a)*190}); } }
       else { boss.x = W/2 + Math.sin(boss.t*.6)*140; boss.phase = boss.hp < boss.max*.35 ? 3 : boss.hp < boss.max*.7 ? 2 : 1;
-        boss.shootT -= dt; if (boss.shootT <= 0) { boss.shootT = [0, 1.1, .8, .55][boss.phase] * A.D(1.3,1,.8); const n = 4 + boss.phase*2; for (let i=0;i<n;i++) { const a = -Math.PI/2 + (i-(n-1)/2)*.22 + Math.PI; ebul.push({x:boss.x, y:boss.y+30, vx:Math.cos(a+Math.PI/2)*-0 + Math.sin((i-(n-1)/2)*.22)*220, vy:230}); } }
+        boss.shootT -= dt; if (boss.shootT <= 0) { boss.shootT = [0, 1.8, 1.4, 1.1][boss.phase] * A.D(1.3,1,.8); const n = 3 + boss.phase; for (let i=0;i<n;i++) { const a = -Math.PI/2 + (i-(n-1)/2)*.22 + Math.PI; ebul.push({x:boss.x, y:boss.y+30, vx:Math.sin((i-(n-1)/2)*.22)*200, vy:190}); } }
         boss.armT -= dt; if (boss.armT <= 0) { boss.armT = 4 - boss.phase; ebul.push({x:boss.x-60, y:boss.y+10, vx:(ship.x-boss.x+60)*.5, vy:180, big:1}); ebul.push({x:boss.x+60, y:boss.y+10, vx:(ship.x-boss.x-60)*.5, vy:180, big:1}); }
         boss.spawnT -= dt; if (boss.spawnT <= 0 && aliens.length < 8) { boss.spawnT = 6 - boss.phase; for (let i=0;i<2+boss.phase;i++) { const K = KIND.swooper; aliens.push({k:'swooper', K, hx:0, hy:boss.y, x:boss.x, y:boss.y, hp:2, flap:0, dive:{t:0, dur:2.6, x0:boss.x+(i-1)*30, y0:boss.y+30, tx:ship.x, amp:70*(i%2?1:-1)}}); } } } }
     // player bullets
@@ -146,7 +149,7 @@ A.register('space', { mount(host, api){
     for (const a of aliens) drawAlien(a);
     if (boss) drawBoss();
     for (const b of bullets) { g.fillStyle = pw.rapid > 0 ? '#F9BF01' : '#D5F367'; g.fillRect(b.x-1.5, b.y-7, 3, 10); }
-    for (const b of ebul) { g.fillStyle = b.big ? '#EA55AB' : '#FF8A3C'; if (b.big) { g.beginPath(); g.arc(b.x,b.y,7,0,TAU); g.fill(); } else g.fillRect(b.x-2, b.y-4, 4, 8); }
+    for (const b of ebul) { g.fillStyle = b.big ? '#EA55AB' : '#FF8A3C'; g.strokeStyle = '#fff'; g.lineWidth = 1.5; if (b.big) { g.beginPath(); g.arc(b.x,b.y,7,0,TAU); g.fill(); g.stroke(); } else { g.beginPath(); g.arc(b.x, b.y, 4.5, 0, TAU); g.fill(); g.stroke(); } }
     for (const d of drops) { const P = POW[d.k]; g.fillStyle = P.c; g.beginPath(); g.arc(d.x,d.y,11,0,TAU); g.fill(); g.fillStyle = '#121313'; g.font = '700 12px '+A.font; g.textAlign = 'center'; g.fillText(P.e, d.x, d.y+4); }
     if (state=='play' || state=='clear' || state=='quiz') { if (!(ship.inv > 0 && Math.floor(ship.inv*10)%2)) { drawShip(ship.x, ship.y, 1); if (wing) drawShip(ship.x+30, ship.y+4, .75); }
       if (shield > 0) { g.strokeStyle = 'rgba(213,243,103,'+(.5+.2*Math.sin(performance.now()/120))+')'; g.lineWidth = 2; g.beginPath(); g.arc(ship.x, ship.y, 26, 0, TAU); g.stroke(); } }
