@@ -1339,12 +1339,13 @@ const avSVG = (a, lvl, opts) => { a = avNorm(a); opts = opts || {}; const B = a.
   else { const fc = sc=='rainbow'?'url(#rb)':sc, hand = B ? M : sk;
     o += '<path d="M16 64q0-22 16-22t16 22z" fill="'+fc+'"/><path d="M16 64q0-22 16-22t16 22z" fill="url(#tsh)"/>';
     // arms on the portrait: they come off the shoulders and swing OUT past the bottom of the outfit (drawn after the pattern, so they sit on top)
-    const sl = (d) => '<path d="'+d+'" stroke="rgba(0,0,0,.22)" stroke-width="7.4" fill="none" stroke-linecap="round"/><path d="'+d+'" stroke="'+fc+'" stroke-width="6" fill="none" stroke-linecap="round"/><path d="'+d+'" stroke="#fff" stroke-width="1.2" fill="none" stroke-linecap="round" opacity=".18" transform="translate(-.8 -.6)"/>';
+    const rim = lum(sc) < .3 ? 'rgba(255,255,255,.45)' : 'rgba(0,0,0,.22)', hrim = lum(hand) < .3 ? 'rgba(255,255,255,.55)' : 'rgba(0,0,0,.18)';
+    const sl = (d) => '<path d="'+d+'" stroke="'+rim+'" stroke-width="7.4" fill="none" stroke-linecap="round"/><path d="'+d+'" stroke="'+fc+'" stroke-width="6" fill="none" stroke-linecap="round"/><path d="'+d+'" stroke="#fff" stroke-width="1.2" fill="none" stroke-linecap="round" opacity=".18" transform="translate(-.8 -.6)"/>';
     // two short segments per arm (shoulder → elbow → hand)
     const arm2 = (sx, ex, hx, side) => { const ey = 53.5, hy = 59.5; return sl('M'+sx+' 47L'+ex+' '+ey) + sl('M'+ex+' '+ey+'L'+hx+' '+hy)
-        + '<circle cx="'+ex+'" cy="'+ey+'" r="3.1" fill="'+fc+'"/><circle cx="'+ex+'" cy="'+ey+'" r="3.1" fill="rgba(0,0,0,.12)"/>'
-        + '<circle cx="'+hx+'" cy="'+(hy+1.6)+'" r="3.2" fill="'+hand+'" stroke="rgba(0,0,0,.18)" stroke-width=".8"/><circle cx="'+(hx-1*side)+'" cy="'+(hy+.6)+'" r=".9" fill="#fff" opacity=".35"/>'; };
-    portraitArms = arm2(22, 15.5, 14, 1) + arm2(42, 48.5, 50, -1); }
+        + '<circle cx="'+ex+'" cy="'+ey+'" r="3.1" fill="'+fc+'" stroke="'+rim+'" stroke-width=".8"/><circle cx="'+ex+'" cy="'+ey+'" r="3.1" fill="rgba(0,0,0,.12)"/>'
+        + '<circle cx="'+hx+'" cy="'+(hy+1.6)+'" r="3.2" fill="'+hand+'" stroke="'+hrim+'" stroke-width="1"/><circle cx="'+(hx-1*side)+'" cy="'+(hy+.6)+'" r=".9" fill="#fff" opacity=".35"/>'; };
+    portraitArms = arm2(22, 15, 17.5, 1) + arm2(42, 49, 46.5, -1); }
   const PAT = SH.pat;
   if (PAT=='stripes') o += '<path d="M18 52h28M17 57h30M16 62h32" stroke="#FF4539" stroke-width="2.5"/>';
   if (PAT=='stars') o += '<path d="M25 52l1 2.2l2.4.3l-1.8 1.6l.5 2.4l-2.1-1.2l-2.1 1.2l.5-2.4l-1.8-1.6l2.4-.3zM38 56l1 2.2l2.4.3l-1.8 1.6l.5 2.4l-2.1-1.2l-2.1 1.2l.5-2.4l-1.8-1.6l2.4-.3z" fill="#F9BF01"/><circle cx="31" cy="60" r="1" fill="#fff"/><circle cx="43" cy="51" r="1" fill="#fff"/>';
@@ -1602,7 +1603,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-11-30b';
+const BUILD = '2026-11-30c';
 const SCRIPTS = ['arcade-core.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js','games-secrets.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
