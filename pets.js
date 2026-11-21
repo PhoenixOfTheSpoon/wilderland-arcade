@@ -204,17 +204,19 @@ H.addXp = (P, xp, id) => { const n = H.norm(P); id = id || n.active; if (!id || 
 H.onPlay = (P, mins) => H.addXp(P, Math.round(8 + Math.min(20, mins||0)*12));
 
 // =====================================================================================================================
-// EGGS — tickets only, exact odds shown, never Cosmic or Wilderland pets
+// EGGS — tickets only, exact odds shown. The Cosmic and Wilderland eggs can hatch the top two rarities.
 // =====================================================================================================================
 const EGGS = [
   {id:'forest', n:'Forest Egg', e:'🥚', mul:.002, min:400,  odds:[60,30,10,0,0,0], c:'#00B451'},
   {id:'crystal',n:'Crystal Egg', e:'💠', mul:.02,  min:5e3,  odds:[0,45,35,15,5,0], c:'#2fa8e0'},
   {id:'royal',  n:'Royal Egg', e:'👑', mul:.12,  min:5e4,  odds:[0,0,40,35,20,5], c:'#a64be0'},
+  {id:'cosmic', n:'Cosmic Egg', e:'🌌', mul:.25,  min:5e5,  odds:[0,0,0,0,35,40,25,0], c:'#4a5cff'},
+  {id:'wild',   n:'Wilderland Egg', e:'🌲', mul:.4, min:5e6, odds:[0,0,0,0,0,45,35,20], c:'#015640'},
 ];
 H.EGGS = EGGS;
 H.eggPrice = (P, e) => nice(Math.max(e.min, need(P)*e.mul));
-H.hatch = (P, eggId, rnd) => { const e = EGGS.find(x => x.id == eggId); rnd = rnd || Math.random; let x = rnd()*100, r = 0; for (; r < e.odds.length; r++) { x -= e.odds[r]; if (x < 0) break; } r = Math.min(r, 5);
-  const pool = PETS.filter(p => p.r === r && p.r <= 5); return pool[Math.floor(rnd()*pool.length)]; };
+H.hatch = (P, eggId, rnd) => { const e = EGGS.find(x => x.id == eggId); rnd = rnd || Math.random; let x = rnd()*100, r = 0; for (; r < e.odds.length; r++) { x -= e.odds[r]; if (x < 0) break; } r = Math.min(r, 7);
+  const pool = PETS.filter(p => p.r === r); return pool[Math.floor(rnd()*pool.length)]; };
 
 // =====================================================================================================================
 // HOME — tiers, rooms, furniture, sets
@@ -485,11 +487,10 @@ H.mount = (root, api) => { H.ensureCss(); const wrap = E('div', {cls:'wlh'}); ro
   const hatchShow = (pet, label) => { reveal = {pet, label}; };
   const eggs = () => { const p = P(), n = H.norm(p), box = E('div');
     if (reveal) { const r = R[reveal.pet.r]; box.appendChild(E('div', {cls:'wlh-box', style:{textAlign:'center', border:'3px solid '+r.c, boxShadow:'0 0 30px '+r.c}}, E('div', {cls:'wlh-tier', style:{color:r.c, fontSize:'12px'}}, reveal.label+' · '+r.n.toUpperCase()), E('img', {src:H.petImg(reveal.pet, {lv:1}), alt:'', style:{width:'140px', height:'140px', animation:'wlhPop .5s cubic-bezier(.2,1.5,.4,1)'}}), E('div', {style:{fontWeight:800, fontSize:'20px', color:'#015640'}}, reveal.pet.n), E('button', {cls:'wlh-btn', style:{marginTop:'8px'}, onclick:()=>{ reveal = null; render(); }}, 'Nice!'))); }
-    box.appendChild(E('div', {cls:'wlh-box'}, E('div', {style:{fontWeight:800, fontSize:'18px', color:'#015640'}}, '🥚 Mystery Pet Eggs'), E('div', {cls:'wlh-small'}, 'Paid with tickets only — never real money. The exact odds are printed on every egg. Eggs never contain Cosmic or Wilderland pets. A pet you already have gives it bonus XP instead.')));
+    box.appendChild(E('div', {cls:'wlh-box'}, E('div', {style:{fontWeight:800, fontSize:'18px', color:'#015640'}}, '🥚 Mystery Pet Eggs'), E('div', {cls:'wlh-small'}, 'Paid with tickets only — never real money. The exact odds are printed on every egg. Only the Cosmic Egg and the Wilderland Egg can hatch Cosmic and Wilderland pets. A pet you already have gives it bonus XP instead.')));
     const g = E('div', {cls:'wlh-grid', style:{gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))'}});
     EGGS.forEach(e => { const price = H.eggPrice(p, e), can = (p.tickets||0) >= price;
       const odds = E('div', {style:{display:'grid', gridTemplateColumns:'1fr auto', gap:'1px 8px', fontSize:'11px', width:'100%', textAlign:'left'}}); e.odds.forEach((o, i) => { if (o) odds.append(E('span', {style:{color:R[i].c, fontWeight:700}}, R[i].n), E('b', null, o+'%')); });
-      odds.append(E('span', {style:{color:R[6].c, fontWeight:700}}, 'Cosmic'), E('b', null, '0%'), E('span', {style:{color:R[7].c, fontWeight:700}}, 'Wilderland'), E('b', null, '0%'));
       const en = Math.max(1, Math.min(qN(500), Math.floor((p.tickets||0)/price))), b = E('button', {cls:'wlh-btn', onclick:()=>hatch(e)}, (en > 1 ? 'Hatch ×'+en+' · '+fmt(price*en) : 'Hatch · '+fmt(price))+' 🎟'); if (!can) b.disabled = true;
       g.appendChild(E('div', {cls:'wlh-card', style:{'--rc':e.c, cursor:'default'}}, E('div', {style:{fontSize:'48px', lineHeight:1.1}}, e.e), E('div', {cls:'wlh-nm', style:{fontSize:'15px'}}, e.n), odds, b)); });
     box.appendChild(g);
