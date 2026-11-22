@@ -53,7 +53,7 @@ service cloud.firestore {
       function validScore() {
         return request.auth != null
           && request.resource.data.uid == request.auth.uid
-          && request.resource.data.s is number && request.resource.data.s >= 0 && request.resource.data.s < 1e300
+          && request.resource.data.s is number && request.resource.data.s >= 0 && request.resource.data.s < math.pow(10, 300)
           && request.resource.data.u is string && request.resource.data.u.size() <= 16;
       }
       allow read: if true;
@@ -88,7 +88,7 @@ service cloud.firestore {
           && request.resource.data.created == resource.data.created
           && request.resource.data.shieldUntil <= resource.data.shieldUntil
           && request.resource.data.credit >= 300 && request.resource.data.credit <= 850
-          && request.resource.data.value is number && request.resource.data.value < 1e300)
+          && request.resource.data.value is number && request.resource.data.value < math.pow(10, 300))
         || isAdmin();
       allow delete: if isAdmin() || (signedIn() && request.auth.uid == uid);
     }
