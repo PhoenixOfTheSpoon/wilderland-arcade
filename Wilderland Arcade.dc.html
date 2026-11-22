@@ -65,7 +65,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
       <button onClick="{{ openAccount }}" style="background:{{ acctHeadBg }}; color:{{ acctHeadFg }}; border:1.5px solid #D5F367; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ acctHeadLabel }}</button>
       <button onClick="{{ openCode }}" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">{{ adminLabel }}</button>
       <button onClick="{{ toggleSound }}" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">{{ soundLabel }}</button>
-      <button onClick="{{ toggleMusic }}" title="Background music on or off" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">{{ musicLabel }}</button>
+      <button onClick="{{ toggleMusic }}" title="Background music: tap to switch Chiptune → songs → off" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">{{ musicLabel }}</button>
       <button onClick="{{ openAv }}" style="background:#D5F367; color:#015640; border:none; border-radius:999px; padding:8px 14px; font-weight:800; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:6px;"><img src="{{ avImg }}" alt="" style="width:22px; height:22px; margin:-3px 0;">AVATAR</button>
       <button onClick="{{ openSug }}" title="Submit a suggestion" style="background:transparent; color:#D5F367; border:1.5px solid #D5F367; border-radius:999px; padding:7px 12px; font-weight:700; font-size:13px; cursor:pointer;">💡 SUGGEST</button>
       <button onClick="{{ openChat }}" title="Chat (T)" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">CHAT · T</button>
@@ -184,7 +184,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
           </sc-if>
         </div>
       </div>
-      <div style="margin-top:10px; font-size:13px; font-weight:500; color:#9fb8ad;">Arrows / WASD to walk · E or Enter to play · Esc saves and leaves a machine · or just click any cabinet</div>
+      <div style="margin-top:10px; font-size:13px; font-weight:500; color:#9fb8ad;">Arrows / WASD to walk · E or Enter to play · Esc saves and leaves a machine · or just click any cabinet<sc-if value="{{ musicCredit }}" hint-placeholder-val="{{ false }}"><div style="font-size:11px; opacity:.75; margin-top:4px;">🎵 {{ musicCredit }}</div></sc-if></div>
       </sc-if>
     </div>
 
@@ -1621,7 +1621,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-12-01d';
+const BUILD = '2026-12-01e';
 const SCRIPTS = ['arcade-core.js','music.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js','games-secrets.js','games-more.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
@@ -2302,7 +2302,7 @@ class Component extends DCLogic {
       uRules: unameRules(uv, !!uOwner && uOwner!==myK).map(([label,ok])=>({label, color: ok?'#015640':'#4a4a4a', dot: ok?'#00B451':'#b0ab95', mark: ok?'✓':'·'})),
       boardShadow: ni===NG+2?glow:base, learnShadow: ni===NG+3?glow:base, boardIcon: KIOSK_ICONS.board, learnIcon: KIOSK_ICONS.learn,
       lbLeader: (lbRows('_tix','all',1)[0]||{}).name || 'Nobody yet',
-      tickets: fmtN(P.tickets), multLabelHead: '×'+(window.WLP ? window.WLP.fmt(window.WLP.totalMult(P)) : '1')+' total'+((P.stars||0) ? ' · ⭐'+P.stars : '')+(window.WLE && window.WLE.diamonds(P) ? ' · 💎'+window.WLE.diaFree(P) : ''), soundLabel: s.muted ? 'SOUND OFF' : 'SOUND ON', musicLabel: (window.WLMusic && window.WLMusic.on()) ? '🎵 MUSIC ON' : '🎵 MUSIC OFF', toggleMusic: ()=>{ if (window.WLMusic) { window.WLMusic.setOn(!window.WLMusic.on()); this.setState({musicTick:Date.now()}); } },
+      tickets: fmtN(P.tickets), multLabelHead: '×'+(window.WLP ? window.WLP.fmt(window.WLP.totalMult(P)) : '1')+' total'+((P.stars||0) ? ' · ⭐'+P.stars : '')+(window.WLE && window.WLE.diamonds(P) ? ' · 💎'+window.WLE.diaFree(P) : ''), soundLabel: s.muted ? 'SOUND OFF' : 'SOUND ON', musicLabel: '🎵 '+(window.WLMusic ? window.WLMusic.label() : 'MUSIC'), musicCredit: window.WLMusic ? window.WLMusic.credit() : '', toggleMusic: ()=>{ if (window.WLMusic) { window.WLMusic.cycle(); this.setState({musicTick:Date.now()}); } },
       showCash: !!s.game && s.game!='idle' && s.game!='secrets', cashOutGame: ()=>this.cashOutGame(), cashLabel: s.admin ? 'Cash out · (admin)' : 'Cash out · '+fmtN(s.liveScore||0),
       expFloor: window.WLE ? window.WLE.EXP.filter(x=>(P.exp||{})[x.k]).map(x=>({key:x.k+'-'+P.exp[x.k], e:x.e, n:x.n, lv:P.exp[x.k]})) : [], expEmpty: !window.WLE || !window.WLE.EXP.some(x=>(P.exp||{})[x.k]),
       openExp: ()=>{ this.keys = {}; this._pzTab = 'exp'; this.setState({prizesOpen:true}); },

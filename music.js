@@ -49,16 +49,30 @@ const schedule = () => { if (!cur || !ctx) return; const {M, deg, mel} = cur, e 
 
 const audible = () => on && !muted && !document.hidden && started;
 const fade = (to, secs) => { if (!ctx) return; const t = ctx.currentTime; master.gain.cancelScheduledValues(t); master.gain.setValueAtTime(master.gain.value, t); master.gain.linearRampToValueAtTime(to, t + secs); };
-const run = () => { if (!audible() || !cur) { stop(); return; } if (!ensure()) return; if (ctx.state == 'suspended') ctx.resume();
+// Song files (loaded only when picked). Credits are shown under the arcade floor.
+const FILES = {monkeys: {src:'assets/music/monkeys-spinning-monkeys.mp3', n:'Monkeys Spinning Monkeys', s:'MONKEYS', credit:'“Monkeys Spinning Monkeys” Kevin MacLeod (incompetech.com) · Licensed under Creative Commons: By Attribution 4.0 · creativecommons.org/licenses/by/4.0/'}};
+let track = 'chip'; try { const t = localStorage.getItem(KEY+'-track'); if (t && (t == 'chip' || FILES[t])) track = t; } catch(e){}
+let audio = null, audioKey = '';
+const playFile = () => { const F = FILES[track]; if (!audio || audioKey !== track) { if (audio) audio.pause(); audio = new Audio(F.src); audio.loop = true; audio.volume = .35; audioKey = track; }
+  const pr = audio.play(); if (pr && pr.catch) pr.catch(() => {}); };
+const pauseFile = () => { if (audio) audio.pause(); };
+const run = () => { if (!audible()) { stop(); return; }
+  if (FILES[track]) { stopChip(); playFile(); return; } pauseFile(); if (!cur) return; if (!ensure()) return; if (ctx.state == 'suspended') ctx.resume();
   if (!timer) { nextT = ctx.currentTime + .1; timer = setInterval(schedule, 90); schedule(); } fade(.5, .8); };
-const stop = () => { if (!ctx) return; fade(0, .4); if (timer) { const tm = timer; timer = null; setTimeout(() => { if (!timer) clearInterval(tm); else clearInterval(tm); }, 450); } };
+const stopChip = () => { if (!ctx) return; fade(0, .4); if (timer) { const tm = timer; timer = null; setTimeout(() => clearInterval(tm), 450); } };
+const stop = () => { stopChip(); pauseFile(); };
 
 let moodName = 'floor';
 const WLMusic = {
   mood(name){ if (!MOODS[name]) name = 'floor'; if (name === moodName && cur) return; moodName = name;
-    if (timer) { fade(0, .3); setTimeout(() => { cur = build(moodName); step = 0; if (ctx) nextT = ctx.currentTime + .05; if (audible()) fade(.5, .8); }, 320); } else { cur = build(name); step = 0; run(); } },
+    if (timer && !FILES[track]) { fade(0, .3); setTimeout(() => { cur = build(moodName); step = 0; if (ctx) nextT = ctx.currentTime + .05; if (audible()) fade(.5, .8); }, 320); } else { cur = build(name); step = 0; run(); } },
   setOn(v){ on = !!v; try { localStorage.setItem(KEY, on ? 'on' : 'off'); } catch(e){} if (on) { started = true; if (!cur) cur = build(moodName); run(); } else stop(); },
   _state: () => ({ctx: ctx && ctx.state, playing: !!timer, mood: moodName}),
+  // MUSIC button: Chiptune → each song file → Off → Chiptune …
+  cycle(){ const order = ['chip', ...Object.keys(FILES), 'off'], curK = on ? track : 'off', nx = order[(order.indexOf(curK)+1) % order.length];
+    if (nx == 'off') { this.setOn(false); return; } track = nx; try { localStorage.setItem(KEY+'-track', track); } catch(e){} if (!on) this.setOn(true); else { stop(); started = true; if (!cur) cur = build(moodName); run(); } },
+  label: () => !on ? 'MUSIC OFF' : FILES[track] ? FILES[track].s : 'CHIPTUNE',
+  credit: () => on && FILES[track] ? FILES[track].credit : '',
   on: () => on, setMuted(v){ muted = !!v; if (muted) stop(); else run(); }, moods: Object.keys(MOODS),
 };
 // Browsers only allow sound after the player clicks or presses a key.
