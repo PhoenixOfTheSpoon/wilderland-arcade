@@ -148,61 +148,261 @@ A.register('pinball', { mount(host, api){
   return () => { offK(); offL(); K.off(); };
 }});
 
-// =====================================================================================================
-// FISHING HOLE — cast, wait for a bite, then keep the fish in the reel zone. Fill your Fish Book.
-// =====================================================================================================
+// FISHING HOLE — endless dive fishing. Drop your hook, steer AROUND fish on the way down (touching one starts the reel-up early),
+// then steer INTO fish on the way up. Sell the catch for coins, buy upgrades, dive deeper. No end: past 2,000 m the
+// Unknown keeps going layer after layer, each worth double. Five fishing spots, 162 fish for the Fish Book, Pearl Dives.
 A.register('fishing', { mount(host, api){
   let __skip = false;   // set when a saved game was restored: the next start continues it instead of resetting
-  const {c,g,w,h} = A.canvas(host, 480, 520); c.style.touchAction = 'none';
-  const FISH = [{k:'minnow',n:'Minnow',r:0,pts:20,c:'#c9ccd1'},{k:'perch',n:'Yellow Perch',r:0,pts:35,c:'#F9BF01'},{k:'sunfish',n:'Sunfish',r:0,pts:40,c:'#FF8A3C'},{k:'trout',n:'Rainbow Trout',r:1,pts:80,c:'#ff8fd0'},{k:'bass',n:'Bass',r:1,pts:90,c:'#5a8a3a'},{k:'catfish',n:'Catfish',r:1,pts:110,c:'#8a7a6a'},{k:'pike',n:'Northern Pike',r:2,pts:200,c:'#3a7a5a'},{k:'salmon',n:'Salmon',r:2,pts:220,c:'#ff7a5a'},{k:'sturgeon',n:'Sturgeon',r:3,pts:500,c:'#6a6a7a'},{k:'koi',n:'Golden Koi',r:3,pts:600,c:'#ffb000'},{k:'boot',n:'Old Boot',r:0,pts:5,c:'#5a3a1a'},{k:'chest',n:'Treasure Chest',r:4,pts:1500,c:'#c8964a'},{k:'legend',n:'The Lake Legend',r:5,pts:5000,c:'#4a5cff'}];
-  const RN = ['Common','Uncommon','Rare','Epic','Legendary','Mythic'];
-  let st = 'ready', phase = 'idle', score = 0, casts, power = 0, pdir = 1, bobX = 0, biteT = 0, fish = null, zone = 0, zoneV = 0, fy = 0, fv = 0, prog = 0, t = 0, caught = [], hold = false, msg = '', msgT = 0, quiz = false;
-  // Fish Book: saved with your profile (and the cloud); older copies kept on this device are merged in
+  const W = 480, H = 600, PXM = 4, SURF = 150, el = A.el;
+  const fmt = n => { n = Math.max(0, Number(n)||0); if (!isFinite(n)) return '∞'; if (n < 10 && n % 1) return n.toFixed(1); if (n < 1000) return String(Math.floor(n));
+    const u = ['K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc']; if (n >= 1e36) return n.toExponential(2).replace('e+','e');
+    let i = -1; while (n >= 1000 && i < u.length-1) { n /= 1000; i++; } return (n < 10 ? n.toFixed(2) : n < 100 ? n.toFixed(1) : Math.floor(n)) + u[i]; };
+  const fin = v => (v = Number(v), isFinite(v) ? v : 0);
+  const wrap = el('div', {position:'relative', width:W+'px', fontFamily:A.font, userSelect:'none'}); host.appendChild(wrap);
+  const {c, g} = A.canvas(wrap, W, H); c.style.touchAction = 'none';
+
+  // ---------- the water ----------
+  const ZONES = [{d:0,n:'Sunny Shallows'},{d:25,n:'Reed Beds'},{d:60,n:'Deep Water'},{d:120,n:'Twilight Zone'},{d:250,n:'Midnight Zone'},{d:500,n:'The Abyss'},{d:1000,n:'The Trench'},{d:2000,n:'The Unknown'}];
+  const zoneOf = d => { let z = 0; for (let i = 0; i < ZONES.length; i++) if (d >= ZONES[i].d) z = i; return z; };
+  const layerOf = d => d >= 2000 ? Math.floor((d - 2000) / 1000) : 0;   // every 1,000 m past 2,000 m doubles fish value
+  const zoneName = d => ZONES[zoneOf(d)].n + (d >= 2000 ? ' · Layer ' + (layerOf(d) + 1) : '');
+  const LOCS = [
+    {k:'lake', n:'Wilder Lake', cost:0, mult:1, sky:['#ffd9a0','#ffb380'], sea:'#3aa0c8', land:'#5a8a3a', fish:[
+      'minnow:Minnow|perch:Yellow Perch|sunfish:Sunfish|trout:Rainbow Trout', 'bluegill:Bluegill|bass:Bass|catfish:Catfish|pike:Northern Pike',
+      'walleye:Walleye|salmon:Salmon|muskie:Muskie|sturgeon:Sturgeon', 'lmin:Lantern Minnow|gcarp:Ghost Carp|gleel:Glow Eel|koi:Golden Koi',
+      'gulper:Gulper Eel|moonp:Moon Perch|shpike:Shadow Pike|serpent:Lake Serpent', 'bonef:Bone Fish|ccarp:Crystal Carp|acat:Abyss Catfish|gar:Ancient Gar',
+      'fossil:Fossil Fish|drift:Deep Drifter|ssturg:Stone Sturgeon|legend:The Lake Legend', 'echo:Echo Fish|dtrout:Dream Trout|skoi:Starry Koi|lspirit:Lake Spirit']},
+    {k:'isle', n:'Frosty Isle', cost:2e4, mult:6, sky:['#e9f6ff','#a9d8f5'], sea:'#5fb8d8', land:'#f4fbff', snow:true, fish:[
+      'Ice Minnow|Snow Smelt|Frost Perch|Arctic Char', 'Polar Cod|Icicle Eel|Snowflake Ray|Glacier Trout', 'Blue Halibut|Frozen Pike|Aurora Salmon|Mammoth Sturgeon',
+      'Shiver Squid|Ice Lanternfish|Frostfang Barracuda|Snow Queen Koi', 'Yeti Grouper|Blizzard Eel|Ice Dragonet|Narwhal', 'Frozen Coelacanth|Permafrost Pike|Hailstone Puffer|Ice Wyrm',
+      'Glacier Ghost|Crystal Kraken|Northern Lights Ray|Frost Titan', 'Snowdream Fish|Comet Char|Aurora Whale|Spirit of Winter']},
+    {k:'coast', n:'Coral Coast', cost:2e6, mult:40, sky:['#bff0ff','#7fd6f0'], sea:'#1fb5c8', land:'#f2d9a0', fish:[
+      'Clownfish|Sergeant Major|Blue Tang|Parrotfish', 'Butterflyfish|Angelfish|Seahorse|Lionfish', 'Grouper|Moray Eel|Sea Turtle|Swordfish',
+      'Hatchetfish|Lanternfish|Vampire Squid|Oarfish', 'Anglerfish|Viperfish|Gulper Shark|Giant Squid', 'Abyss Octopus|Glass Squid|Goblin Shark|Coral Dragon',
+      'Trench Snailfish|Barreleye|Megamouth|Sea King', 'Pearl Ray|Rainbow Leviathan|Star Turtle|Heart of the Reef']},
+    {k:'vent', n:'Lava Vents', cost:4e8, mult:300, sky:['#ffb38a','#d0603a'], sea:'#c8643a', land:'#3a2a2a', ember:true, fish:[
+      'Ember Minnow|Ash Guppy|Cinder Perch|Magma Trout', 'Smoke Eel|Pumice Puffer|Flame Ray|Lava Bass', 'Sulfur Shrimp|Obsidian Pike|Scorch Salmon|Basalt Sturgeon',
+      'Vent Crab|Glowcoal Fish|Furnace Eel|Phoenix Koi', 'Smoker Squid|Iron Gulper|Molten Grouper|Fire Serpent', 'Volcano Shark|Lava Glass Eel|Thunder Ray|Magma Dragon',
+      'Core Crawler|Plasma Snapper|Blaze Ray|Lava Leviathan', 'Sunstone Fish|Inferno Koi|Star Forge Whale|Heart of the Volcano']},
+    {k:'star', n:'Starlight Sea', cost:1.5e11, mult:2500, sky:['#2a2060','#120a30'], sea:'#4a3ab8', land:'#2a2a50', stars:true, fish:[
+      'Star Minnow|Moon Guppy|Comet Perch|Nebula Trout', 'Meteor Eel|Galaxy Ray|Orbit Fish|Saturn Bass', 'Quasar Pike|Cosmic Salmon|Rocket Swordfish|Planet Sturgeon',
+      'Void Lantern|Wormhole Eel|Pulsar Squid|Supernova Koi', 'Black Hole Gulper|Eclipse Shark|Starlight Serpent|Celestial Narwhal', 'Dark Matter Fish|Time Trout|Gravity Ray|Cosmic Dragon',
+      'Quantum Kraken|Infinity Eel|Big Bang Bass|Galaxy Whale', 'Dream Fish|The Starfish King|Universe Koi|The First Fish']}];
+  const RN = ['Common','Uncommon','Rare','Epic','Legendary','Mythic'], RC = ['#c9ccd1','#7fe08a','#64CDF5','#E9B9F7','#F9BF01','#ff6ad5'];
+  const hue = s => { let h = 7; for (const ch of s) h = (h*31 + ch.charCodeAt(0)) % 360; return h; };
+  const FISH = {}; LOCS.forEach(L => { FISH[L.k] = L.fish.map((row, z) => row.split('|').map((it, i) => { const p = it.split(':'), n = p[1] || p[0], k = p[1] ? p[0] : L.k+'-'+z+'-'+i;
+    return {k, n, z, i, loc:L.k, r:Math.min(5, i + (z >= 4 ? 1 : 0) + (z >= 7 ? 1 : 0)), col:'hsl('+hue(n)+','+(z >= 3 ? 85 : 65)+'%,'+(z >= 5 ? 66 : 58)+'%)', s:9 + i*2.5 + z*1.2}; })); });
+  const BOOT = {k:'boot', n:'Old Boot', z:0, i:-1, r:0, col:'#5a3a1a', s:11, junk:true}, CHEST = {k:'chest', n:'Treasure Chest', z:2, i:-2, r:4, col:'#c8964a', s:13, chest:true};
+  const ALL = [].concat(...LOCS.map(L => [].concat(...FISH[L.k]))).concat([BOOT, CHEST]);
+
+  // ---------- upgrades (bought with coins; levels never reset except by a Pearl Dive) ----------
+  const UP = [
+    {k:'line', n:'Longer Line', d:L => 'Line reaches '+fmt(lineM(L))+' m → '+fmt(lineM(L+1))+' m', b:15, gr:1.36},
+    {k:'hook', n:'Bigger Hook', d:L => 'Hold '+(3+L)+' → '+(4+L)+' fish per dive', b:40, gr:1.5},
+    {k:'value', n:'Fish Market', d:L => 'Fish sell for ×'+fmt(Math.pow(1.12, L))+' → ×'+fmt(Math.pow(1.12, L+1)), b:60, gr:1.48},
+    {k:'sink', n:'Heavy Sinker', d:L => 'Sink '+fmt(sinkV(L))+' → '+fmt(sinkV(L+1))+' m/s', b:30, gr:1.34},
+    {k:'reel', n:'Fast Reel', d:L => 'Reel '+fmt(reelV(L))+' → '+fmt(reelV(L+1))+' m/s', b:30, gr:1.34},
+    {k:'steer', n:'Quick Steer', d:L => 'Hook moves '+(100+10*L)+'% → '+(110+10*L)+'% as fast', b:25, gr:1.32, max:20},
+    {k:'luck', n:'Lucky Lure', d:L => 'Rare & Epic fish +'+(12*L)+'% → +'+(12*L+12)+'%', b:50, gr:1.42},
+    {k:'magnet', n:'Magnet Hook', d:L => 'Grab fish from '+(3*L)+' → '+(3*L+3)+' px farther away', b:80, gr:1.5, max:15},
+    {k:'ghost', n:'Ghost Lure', d:L => 'Slip past '+L+' → '+(L+1)+' fish on the way down', b:100, gr:1.6},
+    {k:'shield', n:'Jelly Guard', d:L => 'Block '+L+' → '+(L+1)+' jellyfish stings per dive', b:120, gr:1.55},
+    {k:'gold', n:'Golden Bait', d:L => 'Golden fish (×5): '+goldP(L).toFixed(1)+'% → '+goldP(L+1).toFixed(1)+'%', b:150, gr:1.45, max:40},
+    {k:'combo', n:'Combo Charm', d:L => 'Each fish in a row adds +'+(10+4*L)+'% → +'+(14+4*L)+'%', b:90, gr:1.45},
+    {k:'drop', n:'Express Drop', d:L => 'Skip the first '+Math.min(80, 8*L)+'% → '+Math.min(80, 8*L+8)+'% of the line', b:300, gr:1.9, max:10},
+    {k:'chest', n:'Treasure Map', d:L => 'Chests '+(25*L)+'% → '+(25*L+25)+'% more common & richer', b:300, gr:1.5},
+    {k:'buddy', n:'Fishing Buddy', d:L => 'Earns '+fmt(buddyRate(L))+' → '+fmt(buddyRate(L+1))+' coins/s for you', b:250, gr:1.42},
+    {k:'sonar', n:'Sonar', d:L => ['Rare fish get a colored ring','Shows each fish’s price','Rares +15% more often','Maxed!'][Math.min(3, L)], b:400, gr:6, max:3}];
+  const lineM = L => Math.round(30 + 12*L + .6*L*L);
+  const sinkV = L => 20 * (1 + .15*L), reelV = L => 24 * (1 + .15*L) * (1 + .1*A.U('reel'));
+  const goldP = L => 1 + .6*L;
+  const cost = (u, L) => Math.ceil(u.b * Math.pow(u.gr, L));
+
+  // ---------- saved progress (with your profile + the cloud) ----------
   let bookC = null; const book = () => { if (bookC) return bookC; let loc = {}; try { loc = JSON.parse(localStorage.getItem('wl-fishbook') || '{}'); } catch(e){} const sv = (api.gdata && api.gdata().book) || {}; bookC = {...loc}; for (const k in sv) bookC[k] = Math.max(bookC[k]||0, sv[k]); return bookC; };
-  const saveBook = b => { bookC = b; try { api.setGdata && api.setGdata({book:b}); } catch(e){} try { localStorage.setItem('wl-fishbook', JSON.stringify(b)); } catch(e){} };
-  const roll = () => { const luck = 1 + .15*A.U('lure') + power*.5; const w8 = FISH.map(f => f.k == 'boot' ? 6 : Math.pow(0.42, f.r) * 10 * (f.r >= 2 ? luck : 1)); let s = w8.reduce((a,b)=>a+b,0), x = Math.random()*s; for (let i = 0; i < FISH.length; i++) { x -= w8[i]; if (x <= 0) return FISH[i]; } return FISH[0]; };
-  const reset = () => { if (__skip) { __skip = false; return; } score = 0; casts = A.D(12,10,8) + A.U('bait'); caught = []; phase = 'aim'; api.score(0); };
-  const press = () => { if (st != 'play') { reset(); st = 'play'; return; } if (quiz) return;
-    if (phase == 'aim') { phase = 'wait'; bobX = 80 + power*340; biteT = 1.5 + Math.random()*3; A.tone(300,.15,'sine',.05); }
-    else if (phase == 'bite') { fish = roll(); phase = 'reel'; zone = 200; zoneV = 0; fy = 200; fv = 0; prog = .3; A.sfx('blip'); }
-    else if (phase == 'wait') { msg = 'Too early!'; msgT = 1; endCast(false); } };
-  const endCast = ok => { if (ok && fish) { score += fish.pts; api.score(score); caught.push(fish); const b = book(); b[fish.k] = (b[fish.k]||0) + 1; saveBook(b); stat(api,'fishCaught',1,'add'); if (fish.r >= 3) stat(api,'fishRare',1,'add'); msg = 'Caught: '+fish.n+'! +'+fish.pts; msgT = 2; A.sfx(fish.r >= 2 ? 'win' : 'coin'); }
-    fish = null; casts--; phase = 'aim'; power = 0;
-    if (casts <= 0) { st = 'over'; A.sfx('over'); api.over(score); } };
-  const offK = A.keys(e => { if (e.key == ' ' || e.key == 'Enter') { if (e.type == 'keydown') { hold = true; press(); } } });
-  const ku = e => { if (e.key == ' ' || e.key == 'Enter') hold = false; }; window.addEventListener('keyup', ku);
-  c.addEventListener('pointerdown', () => { hold = true; press(); }); const pu = () => { hold = false; }; c.addEventListener('pointerup', pu); c.addEventListener('pointercancel', pu);
-  const offL = A.loop(dt => { t += dt; msgT = Math.max(0, msgT - dt);
+  const G = Object.assign({coins:0, upg:{}, loc:'lake', locs:{lake:1}, best:0, deepest:0, pearls:0, run:0, tot:0, dives:0, caught:0}, (api.gdata && api.gdata().fg) || {});
+  const UL = k => G.upg[k] || 0;
+  const save = () => { try { api.setGdata && api.setGdata({book:book(), fg:G}); } catch(e){} try { localStorage.setItem('wl-fishbook', JSON.stringify(book())); } catch(e){} };
+  const LOC = () => LOCS.find(L => L.k == G.loc) || LOCS[0];
+  const bookBonus = () => { const b = book(); let m = 1; LOCS.forEach(L => { let all = true; FISH[L.k].forEach(z => { const done = z.every(f => b[f.k]); if (done) m += .03; else all = false; }); if (all) m += .25; }); return m; };
+  const coinMult = () => Math.pow(1.12, UL('value')) * (1 + .1*G.pearls) * bookBonus();
+  const capN = () => 3 + UL('hook') + A.U('bait');
+  const luck = () => 1 + .12*UL('luck') + .15*A.U('lure') + (UL('sonar') >= 3 ? .15 : 0);
+  function buddyRate(L) { const z = zoneOf(G.best||0); return L ? L * .35 * 4 * Math.pow(2.3, z) * LOC().mult * coinMult() : 0; }
+  const fishVal = (f, d) => f.chest ? 60 * Math.pow(2.3, zoneOf(d)) * LOC().mult * Math.pow(2, layerOf(d)) * (1 + .2*UL('chest')) : f.junk ? 1 : 4 * Math.pow(2.3, f.z) * [1, 2, 4, 9][f.i] * LOC().mult * Math.pow(2, layerOf(d));
+  const fishPts = (f, d) => f.junk ? 2 : f.chest ? 150 + 20*zoneOf(d) : Math.round((10 + 14*f.z) * [1, 1.6, 2.6, 4.5][f.i] + 25*layerOf(d));
+
+  // ---------- one dive ----------
+  let st = 'ready', phase = 'surface', score = 0, t = 0, hx = W/2, tx = null, hd = 0, camD = 0, maxD = 0, skipD = 0, caught = [], fish = [], genTo = 0, ghostN = 0, shieldN = 0,
+    combo = 0, lastCatch = -9, msg = '', msgT = 0, quiz = false, tally = null, zoneShow = '', zoneT = 0, lastZone = -1, ptrDown = false, panel = null, panelTab = 'up', armPearl = false, flash = 0, buddyAcc = 0;
+  const K = {}; const kd = e => { K[e.key] = true; }, ku = e => { K[e.key] = false; }; window.addEventListener('keydown', kd); window.addEventListener('keyup', ku);
+  const say = (s, d) => { msg = s; msgT = d || 1.6; };
+  const pick = d => { const z = zoneOf(d), L = LOC(), u = Math.random();
+    if (z <= 2 && u < .07) return BOOT;
+    if (z >= 2 && u < .012 * (1 + .25*UL('chest'))) return CHEST;
+    const zz = Math.random() < .8 || z == 0 ? z : z - 1, row = FISH[L.k][zz], lk = luck(), w8 = [10, 5, 2.2*lk, .7*lk];
+    let s = w8.reduce((a, b) => a + b, 0), x = Math.random()*s; for (let i = 0; i < 4; i++) { x -= w8[i]; if (x <= 0) return row[i]; } return row[0]; };
+  const gen = upTo => { const df = A.D(.8, 1, 1.25); while (genTo < upTo) { const b0 = genTo, z = zoneOf(b0); genTo += 12;
+      const n = (Math.random() < .9 ? 1 : 0) + (Math.random() < .35 ? 1 : 0) + (z >= 4 && Math.random() < .25 ? 1 : 0);
+      for (let i = 0; i < n; i++) { const f = pick(b0), dir = Math.random() < .5 ? 1 : -1;
+        fish.push({f, x:20 + Math.random()*(W-40), d:b0 + Math.random()*12, vx:f.chest ? 0 : dir * (25 + Math.random()*45 + z*6) * df, ph:Math.random()*TAU, gold:!f.junk && !f.chest && Math.random()*100 < goldP(UL('gold'))}); }
+      if (z >= 1 && Math.random() < Math.min(.5, (.12 + .04*z) * df)) fish.push({jelly:true, x:20 + Math.random()*(W-40), d:b0 + Math.random()*12, vx:(Math.random()-.5)*30, ph:Math.random()*TAU}); } };
+  const startDive = () => { if (panel) closePanel(); maxD = lineM(UL('line')); skipD = Math.floor(maxD * Math.min(.8, .08*UL('drop'))); fish = []; genTo = Math.max(1, skipD); caught = []; ghostN = UL('ghost'); shieldN = UL('shield');
+    combo = 0; hd = skipD; hx = tx != null ? tx : W/2; phase = 'drop'; lastZone = -1; A.tone(300, .15, 'sine', .05); if (skipD) say('Express drop to '+fmt(skipD)+' m', 1.2); refreshBar(); };
+  const startReel = why => { if (phase != 'drop') return; phase = 'reel'; combo = 0; lastCatch = -9; if (why) say(why, 1.6); A.sfx('blip'); refreshBar(); };
+  const catchIt = o => { const v = fishVal(o.f, o.d) * (o.gold ? 5 : 1), p = fishPts(o.f, o.d) * (o.gold ? 2 : 1);
+    if (t - lastCatch < 1.6) combo++; else combo = 0; lastCatch = t; caught.push({f:o.f, v:v * (1 + combo*(.1 + .04*UL('combo'))), p, gold:o.gold}); o.dead = true;
+    A.tone(500 + Math.min(10, combo)*60, .05, 'square', .04); if (o.f.r >= 3 || o.gold) A.sfx('coin'); };
+  const finishDive = () => { phase = 'tally'; let coins = 0, pts = 0; const b = book(), news = [];
+    caught.forEach(x => { coins += x.v; pts += x.p; if (!b[x.f.k]) news.push(x.f.n); b[x.f.k] = (b[x.f.k]||0) + 1; stat(api,'fishCaught',1,'add'); if (x.f.r >= 3) stat(api,'fishRare',1,'add'); });
+    coins = fin(coins * coinMult()); G.coins = fin(G.coins + coins); G.run = fin(G.run + coins); G.tot = fin(G.tot + coins); G.dives++; G.caught += caught.length;
+    score += pts; api.score(score); tally = {coins, pts, n:caught.length, news, list:caught.slice(0, 40)}; save(); refreshBar();
+    A.sfx(caught.length ? 'win' : 'blip'); if (news.length) setTimeout(() => A.sfx('coin'), 300); };
+  const toSurface = () => { phase = 'surface'; tally = null; refreshBar(); };
+  const press = () => { if (quiz) return; if (st != 'play') { reset(); st = 'play'; refreshBar(); return; }
+    if (phase == 'surface') startDive(); else if (phase == 'drop') startReel('Reeling in early'); else if (phase == 'tally') toSurface(); };
+  const reset = () => { if (__skip) { __skip = false; return; } score = 0; api.score(0); phase = 'surface'; tally = null; caught = []; };
+  const offK = A.keys(e => { if (panel && e.key == 'Escape') { closePanel(); return; } if (e.key == ' ' || e.key == 'Enter') { if (!panel) press(); }
+    if ((e.key == 'u' || e.key == 'U') && phase == 'surface' && st == 'play') openPanel('up'); if ((e.key == 'b' || e.key == 'B') && st == 'play') openPanel('book'); });
+  const toX = e => { const r = c.getBoundingClientRect(); return (e.clientX - r.left) * W / r.width; };
+  c.addEventListener('pointerdown', e => { ptrDown = true; tx = toX(e); try { c.setPointerCapture(e.pointerId); } catch(_){} if (st != 'play' || phase == 'surface' || phase == 'tally') press(); });
+  c.addEventListener('pointermove', e => { if (e.pointerType == 'mouse' || ptrDown) tx = toX(e); });
+  ['pointerup','pointercancel'].forEach(k => c.addEventListener(k, () => { ptrDown = false; }));
+
+  // ---------- buttons + panels (shop, spots, book, pearls) ----------
+  const bar = el('div', {display:'flex', gap:'6px', padding:'6px 0 0', flexWrap:'wrap', justifyContent:'center'}); wrap.appendChild(bar);
+  const mk = (txt, fn, bg, fg) => { const b = el('button', {background:bg||'#015640', color:fg||'#fff', border:'none', borderRadius:'999px', padding:'8px 12px', font:'700 13px '+A.font, cursor:'pointer'}, txt); b.tabIndex = -1; b.onclick = e => { e.stopPropagation(); b.blur(); fn(); }; return b; };
+  const bUp = mk('🛒 Upgrades', () => openPanel('up')), bSpot = mk('🗺 Spots', () => openPanel('spot')), bBook = mk('📖 Fish Book', () => openPanel('book')), bPearl = mk('🦪 Pearls', () => openPanel('pearl')), bReel = mk('⏫ Reel in now', () => startReel('Reeling in early'), '#FF4539');
+  [bUp, bSpot, bBook, bPearl, bReel].forEach(b => bar.appendChild(b));
+  function refreshBar(){ const dive = st == 'play' && (phase == 'drop' || phase == 'reel'); [bUp, bSpot, bPearl].forEach(b => b.style.display = dive ? 'none' : ''); bReel.style.display = st == 'play' && phase == 'drop' ? '' : 'none'; }
+  function closePanel(){ if (panel) { panel.remove(); panel = null; } armPearl = false; }
+  function openPanel(tab){ if (st == 'play' && (phase == 'drop' || phase == 'reel')) return; panelTab = tab; closePanel();
+    panel = el('div', {position:'absolute', left:0, top:0, width:W+'px', height:H+'px', background:'rgba(6,30,44,.97)', borderRadius:'12px', zIndex:5, color:'#fff', display:'flex', flexDirection:'column', boxSizing:'border-box', padding:'12px'});
+    panel.addEventListener('pointerdown', e => e.stopPropagation()); wrap.appendChild(panel); drawPanel(); }
+  function drawPanel(){ if (!panel) return; const keep = panel.querySelector('.fl-body'), sc = keep ? keep.scrollTop : 0; panel.innerHTML = '';
+    const top = el('div', {display:'flex', gap:'6px', alignItems:'center', marginBottom:'8px', flexWrap:'wrap'}); panel.appendChild(top);
+    [['up','🛒 Upgrades'],['spot','🗺 Spots'],['book','📖 Book'],['pearl','🦪 Pearls']].forEach(([k, n]) => { const b = mk(n, () => { panelTab = k; armPearl = false; drawPanel(); }, panelTab == k ? '#D5F367' : 'rgba(255,255,255,.12)', panelTab == k ? '#015640' : '#fff'); b.style.padding = '6px 10px'; top.appendChild(b); });
+    const x = mk('✕', closePanel, 'rgba(255,255,255,.15)'); x.style.marginLeft = 'auto'; top.appendChild(x);
+    panel.appendChild(el('div', {font:'800 18px '+A.font, color:'#F9BF01', margin:'2px 0 8px'}, '🪙 ' + fmt(G.coins) + ' coins'));
+    const body = el('div', {overflowY:'auto', flex:'1', display:'flex', flexDirection:'column', gap:'6px'}); body.className = 'fl-body'; panel.appendChild(body);
+    const row = () => { const r = el('div', {display:'flex', alignItems:'center', gap:'8px', background:'rgba(255,255,255,.07)', borderRadius:'10px', padding:'8px 10px'}); body.appendChild(r); return r; };
+    if (panelTab == 'up') UP.forEach(u => { const L = UL(u.k), maxed = u.max != null && L >= u.max, cst = cost(u, L), r = row();
+      const info = el('div', {flex:'1', minWidth:0}); info.appendChild(el('div', {font:'700 14px '+A.font}, u.n + ' · Lv ' + L)); info.appendChild(el('div', {font:'500 12px '+A.font, color:'#b9d9e6'}, u.d(L))); r.appendChild(info);
+      if (maxed) { r.appendChild(el('div', {font:'700 12px '+A.font, color:'#D5F367'}, 'MAX')); return; }
+      const can = G.coins >= cst, b1 = mk('🪙 ' + fmt(cst), () => buy(u, 1), can ? '#00B451' : 'rgba(255,255,255,.12)'); b1.style.opacity = can ? 1 : .55; r.appendChild(b1);
+      const bm = mk('Max', () => buy(u, 999), can ? '#007a37' : 'rgba(255,255,255,.08)'); bm.style.opacity = can ? 1 : .45; bm.style.padding = '8px 9px'; r.appendChild(bm); });
+    if (panelTab == 'spot') LOCS.forEach(L => { const r = row(), have = G.locs[L.k], here = G.loc == L.k; const info = el('div', {flex:'1'});
+      info.appendChild(el('div', {font:'700 14px '+A.font}, L.n + (here ? ' · you are here' : ''))); info.appendChild(el('div', {font:'500 12px '+A.font, color:'#b9d9e6'}, 'Fish worth ×' + fmt(L.mult) + ' · 32 new fish for your book')); r.appendChild(info);
+      if (here) return; if (have) { r.appendChild(mk('Go fish here', () => { G.loc = L.k; save(); closePanel(); say('Welcome to ' + L.n + '!', 2); })); return; }
+      const can = G.coins >= L.cost, b = mk('🪙 ' + fmt(L.cost), () => { if (G.coins < L.cost) return; G.coins -= L.cost; G.locs[L.k] = 1; G.loc = L.k; save(); A.sfx('win'); closePanel(); say('New spot: ' + L.n + '!', 2.5); }, can ? '#00B451' : 'rgba(255,255,255,.12)'); b.style.opacity = can ? 1 : .55; r.appendChild(b); });
+    if (panelTab == 'book') { const b = book(), found = ALL.filter(f => b[f.k]).length;
+      body.appendChild(el('div', {font:'600 13px '+A.font, color:'#D5F367'}, found + ' of ' + ALL.length + ' found · Book bonus ×' + bookBonus().toFixed(2) + ' coins (+3% per full zone, +25% per full spot)'));
+      LOCS.forEach(L => { body.appendChild(el('div', {font:'800 15px '+A.font, marginTop:'6px'}, L.n + (G.locs[L.k] ? '' : ' 🔒')));
+        FISH[L.k].forEach((zr, z) => { const r = row(); r.style.flexWrap = 'wrap'; r.style.gap = '4px'; r.appendChild(el('div', {width:'100%', font:'600 11px '+A.font, color:'#8fb9c9'}, ZONES[z].n + ' · ' + ZONES[z].d + ' m+'));
+          zr.forEach(f => { const n = b[f.k] || 0; r.appendChild(el('div', {flex:'1 1 45%', font:'600 12px '+A.font, color:n ? RC[f.r] : '#5d7d8a'}, n ? f.n + ' ×' + n : '??? (' + RN[f.r] + ')')); }); }); });
+      const r = row(); [BOOT, CHEST].forEach(f => r.appendChild(el('div', {flex:'1', font:'600 12px '+A.font, color:b[f.k] ? RC[f.r] : '#5d7d8a'}, b[f.k] ? f.n + ' ×' + b[f.k] : '??? (' + RN[f.r] + ')'))); }
+    if (panelTab == 'pearl') { const n = pearlsFor(), ok = n >= 1 && (G.best||0) >= 250;
+      body.appendChild(el('div', {font:'600 14px '+A.font, lineHeight:1.4}, '🦪 You have ' + G.pearls + ' pearl' + (G.pearls == 1 ? '' : 's') + '. Each pearl makes every fish worth +10% forever (now ×' + (1 + .1*G.pearls).toFixed(1) + ').'));
+      body.appendChild(el('div', {font:'500 13px '+A.font, color:'#b9d9e6', lineHeight:1.4}, 'A Pearl Dive starts your fishing over: coins, upgrades and spots go back to the start. You keep your pearls, your Fish Book, your tickets and Workshop upgrades. Pearls come from coins earned since your last Pearl Dive, and you must have reached 250 m.'));
+      body.appendChild(el('div', {font:'700 14px '+A.font, color:'#D5F367'}, 'Coins this run: ' + fmt(G.run) + ' · deepest this run: ' + fmt(G.best||0) + ' m → ' + n + ' pearl' + (n == 1 ? '' : 's')));
+      if (ok) body.appendChild(mk(armPearl ? 'YES · Pearl Dive for ' + n + ' 🦪' : 'Pearl Dive for ' + n + ' 🦪', () => { if (!armPearl) { armPearl = true; drawPanel(); return; } pearlDive(); }, armPearl ? '#FF4539' : '#E9B9F7', '#121313'));
+      else body.appendChild(el('div', {font:'600 13px '+A.font, color:'#ffb3ab'}, (G.best||0) < 250 ? 'Reach 250 m first.' : 'Earn more coins first (100K coins = 1 pearl).'));
+      body.appendChild(el('div', {font:'500 12px '+A.font, color:'#8fb9c9', marginTop:'8px'}, 'All-time: ' + fmt(G.tot) + ' coins · ' + fmt(G.caught) + ' fish · ' + fmt(G.dives) + ' dives · deepest ever ' + fmt(G.deepest||0) + ' m')); }
+    const nb = panel.querySelector('.fl-body'); if (nb) nb.scrollTop = sc; }
+  const buy = (u, n) => { let k = 0; while (k < n && (u.max == null || UL(u.k) < u.max) && G.coins >= cost(u, UL(u.k))) { G.coins -= cost(u, UL(u.k)); G.upg[u.k] = UL(u.k) + 1; k++; }
+    if (k) { A.sfx('coin'); save(); } else A.sfx('bad'); drawPanel(); };
+  const pearlsFor = () => Math.floor(Math.sqrt(G.run / 1e5));
+  const pearlDive = () => { const n = pearlsFor(); if (n < 1) return; G.pearls += n; G.coins = 0; G.upg = {}; G.locs = {lake:1}; G.loc = 'lake'; G.run = 0; G.best = 0; save(); A.sfx('win'); closePanel(); say('+' + n + ' pearl' + (n == 1 ? '' : 's') + '! Fish are worth ×' + (1 + .1*G.pearls).toFixed(1) + ' now', 3); stat(api,'fishPearls',G.pearls,'max'); };
+
+  // ---------- drawing ----------
+  const mixHex = (a, b, k) => { const p = s => [1,3,5].map(i => parseInt(s.slice(i, i+2), 16)); const A1 = p(a), B1 = p(b); return 'rgb(' + A1.map((v, i) => Math.round(v + (B1[i]-v)*k)).join(',') + ')'; };
+  const dark = d => Math.min(.94, Math.log(1 + d/25) / Math.log(1 + 2500/25));
+  const sy = d => SURF + (d - camD) * PXM;
+  const drawFish = (o, x, y) => { const f = o.f, s = f.s, dir = o.vx < 0 ? -1 : 1; g.save(); g.translate(x, y); g.scale(dir, 1);
+    if (f.junk) { g.fillStyle = f.col; rr(g, -9, -10, 10, 16, 3); g.fill(); rr(g, -9, 2, 20, 8, 3); g.fill(); g.restore(); return; }
+    if (f.chest) { g.fillStyle = '#8D5B1D'; rr(g, -14, -9, 28, 18, 3); g.fill(); g.fillStyle = '#F9BF01'; g.fillRect(-14, -2, 28, 3); g.fillRect(-2, -4, 4, 7); if (!low()) { g.fillStyle = 'rgba(255,233,120,' + (.4 + .3*Math.sin(t*4 + o.ph)) + ')'; g.beginPath(); g.arc(0, 0, 20, 0, TAU); g.fill(); } g.restore(); return; }
+    const col = o.gold ? '#FFD700' : f.col; if ((f.z >= 3 || o.gold) && !low()) { g.shadowColor = col; g.shadowBlur = 12; }
+    g.fillStyle = col; g.beginPath(); g.ellipse(0, 0, s, s*.55, 0, 0, TAU); g.fill(); g.beginPath(); g.moveTo(-s*.7, 0); g.lineTo(-s*1.45, -s*.55 + Math.sin(t*8 + o.ph)*2); g.lineTo(-s*1.45, s*.55 + Math.sin(t*8 + o.ph)*2); g.closePath(); g.fill();
+    g.shadowBlur = 0; g.fillStyle = 'rgba(255,255,255,.25)'; g.beginPath(); g.ellipse(s*.1, -s*.18, s*.5, s*.16, 0, 0, TAU); g.fill();
+    g.fillStyle = '#fff'; g.beginPath(); g.arc(s*.5, -s*.12, Math.max(2, s*.16), 0, TAU); g.fill(); g.fillStyle = '#121313'; g.beginPath(); g.arc(s*.55, -s*.12, Math.max(1, s*.08), 0, TAU); g.fill();
+    if (f.z >= 3) { g.fillStyle = '#fff6a0'; g.beginPath(); g.arc(s*.9, -s*.6, 2.2, 0, TAU); g.fill(); g.strokeStyle = 'rgba(255,246,160,.5)'; g.lineWidth = 1; g.beginPath(); g.moveTo(s*.6, -s*.4); g.quadraticCurveTo(s*.8, -s*.9, s*.9, -s*.6); g.stroke(); }
+    g.restore();
+    if (UL('sonar') >= 1 && f.i >= 2) { g.strokeStyle = RC[f.r]; g.lineWidth = 2; g.globalAlpha = .7; g.beginPath(); g.arc(x, y, s + 7, 0, TAU); g.stroke(); g.globalAlpha = 1; } };
+  const drawJelly = (o, x, y) => { const p = Math.sin(t*3 + o.ph); g.fillStyle = 'rgba(255,120,200,.55)'; g.beginPath(); g.ellipse(x, y, 13 + p*2, 10 - p*1.5, 0, Math.PI, TAU); g.fill();
+    g.strokeStyle = 'rgba(255,150,210,.6)'; g.lineWidth = 2; for (let i = -2; i <= 2; i++) { g.beginPath(); g.moveTo(x + i*5, y); g.quadraticCurveTo(x + i*5 + Math.sin(t*4 + i)*4, y + 10, x + i*5, y + 20 + p*3); g.stroke(); } };
+  const draw = () => { const L = LOC(), dTop = camD - SURF/PXM, dBot = camD + (H - SURF)/PXM;
+    if (dTop < 0) { const yS = sy(0); const gr = g.createLinearGradient(0, yS - 200, 0, yS); gr.addColorStop(0, L.sky[0]); gr.addColorStop(1, L.sky[1]); g.fillStyle = gr; g.fillRect(0, 0, W, Math.max(0, yS));
+      if (L.stars) { g.fillStyle = '#fff'; for (let i = 0; i < 30; i++) g.fillRect((i*97) % W, ((i*53) % 140) + yS - 160, 2, 2); }
+      else { g.fillStyle = L.k == 'vent' ? '#ffcf70' : '#ffe9b0'; g.beginPath(); g.arc(390, yS - 90, 30, 0, TAU); g.fill(); }
+      g.fillStyle = L.land; g.beginPath(); g.moveTo(0, yS - 8); for (let x = 0; x <= 160; x += 20) g.lineTo(x, yS - 22 - Math.sin(x*.05)*10); g.lineTo(180, yS); g.lineTo(0, yS); g.fill();
+      g.beginPath(); g.moveTo(W, yS - 6); for (let x = W; x >= W - 120; x -= 20) g.lineTo(x, yS - 18 - Math.sin(x*.07)*8); g.lineTo(W - 140, yS); g.lineTo(W, yS); g.fill();
+      if (L.snow) { g.fillStyle = 'rgba(255,255,255,.85)'; for (let i = 0; i < 40; i++) { const xx = (i*61 + t*20*(1 + i%3)) % W, yy = ((i*37 + t*30*(1 + i%2)) % 200) + yS - 200; g.fillRect(xx, yy, 2, 2); } }
+      if (L.ember) { g.fillStyle = 'rgba(255,140,60,.8)'; for (let i = 0; i < 20; i++) { const xx = (i*61 + Math.sin(t + i)*20 + W) % W, yy = yS - ((i*37 + t*40) % 200); g.fillRect(xx, yy, 2, 3); } }
+      const bx = W/2; g.fillStyle = '#8D5B1D'; g.beginPath(); g.moveTo(bx - 50, yS - 14); g.lineTo(bx + 50, yS - 14); g.lineTo(bx + 38, yS + 4); g.lineTo(bx - 38, yS + 4); g.fill();
+      g.fillStyle = '#c8742c'; rr(g, bx - 30, yS - 44, 18, 30, 7); g.fill(); g.fillStyle = '#f2c9a0'; g.beginPath(); g.arc(bx - 21, yS - 52, 9, 0, TAU); g.fill();
+      g.strokeStyle = '#6b4a2b'; g.lineWidth = 3; g.beginPath(); g.moveTo(bx - 14, yS - 30); g.lineTo(bx + 30, yS - 64); g.stroke(); }
+    const y0 = Math.max(0, sy(0)), gr = g.createLinearGradient(0, y0, 0, H); gr.addColorStop(0, mixHex(L.sea, '#02040a', dark(Math.max(0, dTop)))); gr.addColorStop(1, mixHex(L.sea, '#02040a', dark(dBot))); g.fillStyle = gr; g.fillRect(0, y0, W, H - y0);
+    if (dTop < 60 && !low()) { g.fillStyle = 'rgba(255,255,255,.06)'; for (let i = 0; i < 5; i++) { const x = 60 + i*95 + Math.sin(t*.5 + i)*20; g.beginPath(); g.moveTo(x, y0); g.lineTo(x + 40, y0); g.lineTo(x - 30, Math.min(H, sy(60))); g.lineTo(x - 70, Math.min(H, sy(60))); g.fill(); } }
+    if (!low()) { g.fillStyle = 'rgba(255,255,255,.18)'; for (let i = 0; i < 14; i++) { const by = ((i*71 - t*40*(1 + i%3)) % H + H) % H; if (by > y0) g.fillRect((i*83 + Math.sin(t + i)*6) % W, by, 2, 2); } }
+    for (const o of fish) { if (o.dead) continue; const y = sy(o.d); if (y < -30 || y > H + 30) continue; if (o.jelly) drawJelly(o, o.x, y); else drawFish(o, o.x, y);
+      if (UL('sonar') >= 2 && !o.jelly && Math.abs(y - sy(hd)) < 120) { g.fillStyle = 'rgba(255,255,255,.85)'; g.font = '700 10px '+A.font; g.textAlign = 'center'; g.fillText('🪙' + fmt(fishVal(o.f, o.d) * (o.gold ? 5 : 1) * coinMult()), o.x, y - o.f.s - 6); } }
+    if (dBot > maxD && phase != 'surface') { const yb = sy(maxD + 3); g.strokeStyle = 'rgba(255,69,57,.6)'; g.setLineDash([6, 6]); g.beginPath(); g.moveTo(0, yb); g.lineTo(W, yb); g.stroke(); g.setLineDash([]); }
+    const hy = sy(hd); g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(W/2 + 30, Math.max(0, sy(0) - 64)); g.lineTo(hx, hy - 10); g.stroke();
+    caught.slice(-8).forEach((x, i) => { g.save(); g.translate(hx + Math.sin(t*3 + i)*6, hy + 14 + i*7); g.rotate(Math.PI/2); g.fillStyle = x.gold ? '#FFD700' : x.f.col; g.beginPath(); g.ellipse(0, 0, 9, 5, 0, 0, TAU); g.fill(); g.restore(); });
+    g.strokeStyle = '#d8dde3'; g.lineWidth = 3; g.beginPath(); g.moveTo(hx, hy - 10); g.lineTo(hx, hy + 4); g.arc(hx - 6, hy + 4, 6, 0, Math.PI); g.stroke();
+    if (UL('magnet') && phase == 'reel') { g.strokeStyle = 'rgba(213,243,103,.35)'; g.lineWidth = 1; g.beginPath(); g.arc(hx, hy, 14 + 3*UL('magnet'), 0, TAU); g.stroke(); }
+    if (flash > 0) { g.fillStyle = 'rgba(233,185,247,' + flash + ')'; g.fillRect(0, 0, W, H); }
+    // HUD
+    g.fillStyle = 'rgba(0,0,0,.45)'; rr(g, 6, 6, W - 12, 30, 10); g.fill(); g.font = '700 14px '+A.font; g.textBaseline = 'middle'; g.fillStyle = '#F9BF01'; g.textAlign = 'left'; g.fillText('🪙 ' + fmt(G.coins), 14, 21);
+    g.fillStyle = '#fff'; g.textAlign = 'center'; g.fillText((phase == 'surface' || phase == 'tally' ? 'Line ' + fmt(lineM(UL('line'))) : fmt(hd) + ' / ' + fmt(maxD)) + ' m', W/2 - 30, 21);
+    g.textAlign = 'right'; g.fillText('🐟 ' + caught.length + '/' + capN() + ' · ' + fmt(score) + ' pts', W - 14, 21); g.textBaseline = 'alphabetic';
+    if (phase == 'drop' || phase == 'reel') { g.font = '600 11px '+A.font; g.textAlign = 'left'; g.fillStyle = 'rgba(255,255,255,.75)'; g.fillText((ghostN ? '👻 ' + ghostN + '  ' : '') + (shieldN ? '🛡 ' + shieldN + '  ' : '') + (combo ? 'COMBO ×' + (combo + 1) : ''), 12, 52);
+      const bw = 8, bh = H - 120; g.fillStyle = 'rgba(0,0,0,.35)'; rr(g, W - 16, 60, bw, bh, 4); g.fill(); g.fillStyle = '#D5F367'; g.beginPath(); g.arc(W - 12, 60 + bh * Math.min(1, hd / Math.max(1, maxD)), 6, 0, TAU); g.fill(); }
+    if (zoneT > 0) { g.globalAlpha = Math.min(1, zoneT); g.fillStyle = 'rgba(0,0,0,.5)'; rr(g, W/2 - 140, 70, 280, 38, 12); g.fill(); g.fillStyle = '#D5F367'; g.font = '800 17px '+A.font; g.textAlign = 'center'; g.fillText(zoneShow, W/2, 95); g.globalAlpha = 1; }
+    if (msgT > 0) { g.fillStyle = 'rgba(0,0,0,.6)'; rr(g, W/2 - 170, H - 90, 340, 36, 12); g.fill(); g.fillStyle = '#fff'; g.font = '700 15px '+A.font; g.textAlign = 'center'; g.fillText(msg, W/2, H - 66); }
+    if (st == 'play' && phase == 'surface') { g.fillStyle = 'rgba(0,0,0,.5)'; rr(g, W/2 - 175, SURF + 60, 350, 62, 14); g.fill(); g.fillStyle = '#fff'; g.font = '800 18px '+A.font; g.textAlign = 'center'; g.fillText('Tap to drop your hook ⬇', W/2, SURF + 86);
+      g.font = '500 12px '+A.font; g.fillStyle = '#cfe3d9'; g.fillText('Dodge fish going down · grab them coming up · ' + LOC().n, W/2, SURF + 108); }
+    if (phase == 'tally' && tally) { g.fillStyle = 'rgba(1,40,30,.9)'; rr(g, 40, 120, W - 80, 330, 16); g.fill(); g.textAlign = 'center'; g.fillStyle = '#D5F367'; g.font = '800 22px '+A.font; g.fillText(tally.n ? 'Catch of the dive!' : 'Nothing this time', W/2, 156);
+      g.fillStyle = '#F9BF01'; g.font = '800 26px '+A.font; g.fillText('+🪙 ' + fmt(tally.coins), W/2, 194); g.fillStyle = '#fff'; g.font = '700 14px '+A.font; g.fillText('+' + fmt(tally.pts) + ' points · ' + tally.n + ' fish', W/2, 218);
+      const cnt = {}; tally.list.forEach(x => { const k = x.f.n + (x.gold ? ' ✨' : ''); cnt[k] = (cnt[k]||0) + 1; }); g.font = '600 13px '+A.font; Object.entries(cnt).slice(0, 7).forEach(([n, k], i) => { g.fillStyle = '#e8f4ff'; g.fillText(n + (k > 1 ? ' ×' + k : ''), W/2, 246 + i*20); });
+      if (tally.news.length) { g.fillStyle = '#E9B9F7'; g.font = '700 13px '+A.font; g.fillText('📖 New in your Fish Book: ' + tally.news.slice(0, 2).join(', ') + (tally.news.length > 2 ? ' +' + (tally.news.length - 2) : ''), W/2, 400); }
+      g.fillStyle = '#cfe3d9'; g.font = '600 12px '+A.font; g.fillText('Tap to keep fishing', W/2, 432); }
+    if (st == 'ready') A.overlayText(g, W, H, 'FISHING HOLE', __skip ? 'Saved trip · tap or press Space to continue' : 'Endless dive fishing · tap to start');
+    if (st == 'over') A.overlayText(g, W, H, 'TICKETS CASHED IN!', fmt(score) + ' points · your coins & upgrades are saved · tap to fish on'); };
+
+  // ---------- the loop ----------
+  const offL = A.loop(dt => { t += dt; msgT = Math.max(0, msgT - dt); zoneT = Math.max(0, zoneT - dt); flash = Math.max(0, flash - dt*2); dt = Math.min(dt, .05);
     if (st == 'play' && !quiz) {
-      if (phase == 'aim') { power += pdir*dt*.9; if (power > 1) { power = 1; pdir = -1; } if (power < 0) { power = 0; pdir = 1; } }
-      if (phase == 'wait') { biteT -= dt; if (biteT <= 0) { phase = 'bite'; biteT = A.D(1.2,.9,.65); A.tone(880,.08,'square',.05); } }
-      else if (phase == 'bite') { biteT -= dt; if (biteT <= 0) { msg = 'It got away!'; msgT = 1; endCast(false); } }
-      else if (phase == 'reel') { const zh = 70 + 10*A.U('reel') - fish.r*6, diff = (1 + fish.r*.35) * A.D(.8,1,1.25);
-        fv += (Math.random()-.5) * 1600 * diff * dt; fv *= Math.pow(.3, dt); fy = clamp(fy + fv*dt, 40, 380);
-        zoneV += (hold ? -900 : 700) * dt; zoneV *= Math.pow(.15, dt); zone = clamp(zone + zoneV*dt, 40, 380);
-        const inZ = Math.abs(fy - zone) < zh/2; prog += (inZ ? .35 : -.25 * diff) * dt;
-        if (prog >= 1) endCast(true); else if (prog <= 0) { quiz = learn2(host, api, 'THE LINE IS SLIPPING! ANSWER TO HOLD ON', () => { quiz = false; prog = .5; }, () => { quiz = false; msg = 'The '+fish.n+' got away!'; msgT = 1.5; endCast(false); }); } } }
-    sky(g, w, h, '#ffd9a0', '#ffb380'); g.fillStyle = '#ffe9b0'; g.beginPath(); g.arc(380, 90, 34, 0, TAU); g.fill();
-    g.fillStyle = '#5a8a3a'; g.beginPath(); g.moveTo(0,190); for (let x = 0; x <= w; x += 40) g.lineTo(x, 170 + Math.sin(x*.05)*12); g.lineTo(w,200); g.lineTo(0,200); g.fill();
-    const wg = g.createLinearGradient(0,200,0,h); wg.addColorStop(0,'#3aa0c8'); wg.addColorStop(1,'#0b3a5a'); g.fillStyle = wg; g.fillRect(0,200,w,h-200);
-    for (let i = 0; i < 6; i++) { g.strokeStyle = 'rgba(255,255,255,.18)'; g.beginPath(); const yy = 230 + i*40; g.moveTo(0, yy); for (let x = 0; x <= w; x += 20) g.lineTo(x, yy + Math.sin(x*.04 + t*2 + i)*3); g.stroke(); }
-    g.fillStyle = '#8D5B1D'; g.fillRect(0, 190, 70, 20); g.fillStyle = '#c8742c'; rr(g, 26, 150, 20, 40, 8); g.fill(); g.fillStyle = '#f2c9a0'; g.beginPath(); g.arc(36, 142, 10, 0, TAU); g.fill();
-    if (phase == 'wait' || phase == 'bite' || phase == 'reel') { const bob = phase == 'bite' ? Math.sin(t*30)*4 + 4 : Math.sin(t*3)*2; g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 1; g.beginPath(); g.moveTo(48, 130); g.quadraticCurveTo((48+bobX)/2, 120, bobX, 205 + bob); g.stroke();
-      g.fillStyle = '#FF4539'; g.beginPath(); g.arc(bobX, 205 + bob, 6, 0, TAU); g.fill(); g.fillStyle = '#fff'; g.fillRect(bobX - 6, 205 + bob, 12, 3); if (phase == 'bite') { g.fillStyle = '#fff'; g.font = '800 22px '+A.font; g.textAlign = 'center'; g.fillText('BITE! TAP!', bobX, 180); } }
-    else { g.strokeStyle = '#6b4a2b'; g.lineWidth = 3; g.beginPath(); g.moveTo(44, 150); g.lineTo(90, 100); g.stroke(); }
-    if (phase == 'aim' && st == 'play') { g.fillStyle = 'rgba(0,0,0,.35)'; rr(g, 100, 470, 280, 18, 9); g.fill(); g.fillStyle = power > .8 ? '#FF4539' : '#D5F367'; rr(g, 100, 470, 280*power, 18, 9); g.fill(); g.fillStyle = '#fff'; g.font = '700 13px '+A.font; g.textAlign = 'center'; g.fillText('TAP TO CAST · farther casts find rarer fish', w/2, 460); }
-    if (phase == 'reel' && fish) { const zh = 70 + 10*A.U('reel') - fish.r*6; g.fillStyle = 'rgba(0,0,0,.45)'; rr(g, 410, 30, 46, 380, 12); g.fill(); g.fillStyle = 'rgba(213,243,103,.55)'; rr(g, 414, zone - zh/2, 38, zh, 8); g.fill();
-      g.fillStyle = fish.c; g.beginPath(); g.ellipse(433, fy, 14, 8, 0, 0, TAU); g.fill(); g.fillStyle = 'rgba(0,0,0,.45)'; rr(g, 380, 30, 14, 380, 6); g.fill(); g.fillStyle = '#F9BF01'; rr(g, 380, 30 + 380*(1-prog), 14, 380*prog, 6); g.fill();
-      g.fillStyle = '#fff'; g.font = '700 14px '+A.font; g.textAlign = 'center'; g.fillText('HOLD to raise the green zone · keep the fish inside', 200, 250); }
-    g.fillStyle = '#121313'; g.font = '700 16px '+A.font; g.textAlign = 'left'; g.fillText(score.toLocaleString()+' pts · casts left '+(casts||0), 12, 24);
-    const bk = book(), seen = FISH.filter(f => bk[f.k]).length; g.textAlign = 'right'; g.fillText('📖 Fish Book '+seen+'/'+FISH.length, w-12, 24);
-    if (msgT > 0) { g.fillStyle = 'rgba(0,0,0,.6)'; rr(g, w/2-150, 300, 300, 40, 12); g.fill(); g.fillStyle = '#fff'; g.font = '700 16px '+A.font; g.textAlign = 'center'; g.fillText(msg, w/2, 326); }
-    if (st == 'ready') A.overlayText(g, w, h, 'FISHING HOLE', __skip ? 'Saved game · tap or press Space to continue' : 'Tap to cast, tap on a bite, hold to reel · '+seen+' of '+FISH.length+' fish found');
-    if (st == 'over') A.overlayText(g, w, h, 'OUT OF BAIT', score.toLocaleString()+' points · '+caught.length+' fish · tap to fish again'); });
-  // ---- save & resume (Save & leave, reloads, closing the browser) ----
-  api.snap && api.snap(() => (st == 'play') ? {v:1, score, casts, caught} : null);
-  { const R0 = api.resume; if (R0 && R0.v == 1) { try { ({score, casts, caught} = R0); phase = 'aim'; api.score(score); __skip = true; st = 'ready'; } catch(e) { console.error('[save] fishing resume failed', e); } } }
-  return () => { offK(); offL(); window.removeEventListener('keyup', ku); };
+      if (UL('buddy') && !document.hidden) { const add = buddyRate(UL('buddy')) * dt; G.coins = fin(G.coins + add); G.run = fin(G.run + add); G.tot = fin(G.tot + add); buddyAcc += dt; if (buddyAcc > 20) { buddyAcc = 0; save(); } if (panel && panelTab != 'book' && Math.floor(t*2) != Math.floor((t - dt)*2)) { const p = panel.querySelector('div:nth-child(2)'); if (p) p.textContent = '🪙 ' + fmt(G.coins) + ' coins'; } }
+      const kx = (K.ArrowRight || K.d ? 1 : 0) - (K.ArrowLeft || K.a ? 1 : 0), sp = 420 * (1 + .1*UL('steer'));
+      if (kx) { tx = null; hx += kx * sp * dt; } else if (tx != null) { const dx = tx - hx; hx += Math.sign(dx) * Math.min(Math.abs(dx), sp*dt); } hx = clamp(hx, 14, W - 14);
+      for (const o of fish) { if (o.dead) continue; const y = sy(o.d); if (y < -200 || y > H + 200) continue; o.x += o.vx * dt; if (o.x < -30) o.x = W + 30; if (o.x > W + 30) o.x = -30; }
+      const prevD = hd;
+      if (phase == 'drop') { hd += sinkV(UL('sink')) * dt; gen(hd + 160);
+        const z = zoneOf(hd); if (z != lastZone) { if (lastZone >= 0 || z > 0) { zoneShow = zoneName(hd) + ' · ' + fmt(ZONES[z].d) + ' m'; zoneT = 2; } lastZone = z; }
+        if (hd >= 2000 && layerOf(hd) != layerOf(prevD)) { zoneShow = zoneName(hd); zoneT = 2; A.sfx('blip'); }
+        for (const o of fish) { if (o.dead || o.jelly || o.passed) continue; if (o.d < prevD - 3 || o.d > hd + 3) continue; if (Math.abs(o.x - hx) < o.f.s + 7) {
+            if (ghostN > 0) { ghostN--; o.passed = true; flash = .25; A.tone(700, .06, 'sine', .04); continue; }
+            catchIt(o); startReel('Snagged a ' + o.f.n + '! Reeling up'); break; } }
+        if (phase == 'drop' && hd >= maxD) { hd = maxD; startReel('End of the line! Reel up and grab fish'); } }
+      else if (phase == 'reel') { const full = caught.length >= capN(), turbo = full || hd < skipD ? 4 : 1; hd -= reelV(UL('reel')) * turbo * dt;
+        if (!full) for (const o of fish) { if (o.dead) continue; if (o.d > prevD + 4 || o.d < hd - 4) continue; const rad = (o.jelly ? 12 : o.f.s) + 8 + 3*UL('magnet');
+          if (Math.abs(o.x - hx) < rad && Math.abs(o.d*PXM - hd*PXM) < rad + Math.abs(prevD - hd)*PXM) {
+            if (o.jelly) { o.dead = true; if (shieldN > 0) { shieldN--; A.tone(900, .06, 'sine', .04); say('Jelly Guard blocked a sting!', 1.2); continue; } if (!caught.length) { A.sfx('bad'); continue; }
+              const lost = caught[caught.length - 1]; A.sfx('bad'); quiz = learn2(host, api, 'A JELLYFISH STUNG YOUR LINE! ANSWER TO KEEP YOUR ' + lost.f.n.toUpperCase(), () => { quiz = false; say('You held on to the ' + lost.f.n + '!', 1.6); }, () => { quiz = false; caught.pop(); say('Ouch! A jellyfish knocked off your ' + lost.f.n, 1.8); }); if (quiz) break; continue; }
+            catchIt(o); if (caught.length >= capN()) { say('Hook full! Zooming up', 1.2); break; } } }
+        if (hd <= 0) { hd = 0; finishDive(); } }
+      if (phase == 'drop' || phase == 'reel') { if (hd > G.best) G.best = hd; if (hd > (G.deepest||0)) { G.deepest = hd; stat(api,'fishDepth',Math.floor(hd),'max'); } }
+      if (combo && t - lastCatch > 1.6) combo = 0; }
+    const want = phase == 'drop' ? hd - (230 - SURF)/PXM : phase == 'reel' ? hd - (440 - SURF)/PXM : 0;
+    camD += (Math.max(0, want) - camD) * Math.min(1, dt * (phase == 'surface' || phase == 'tally' ? 3 : 8)); if (phase == 'drop' && hd - camD > (H - SURF - 60)/PXM) camD = hd - (H - SURF - 60)/PXM;
+    draw(); });
+  refreshBar();
+  A._dbg = A._dbg || {}; A._dbg.fish = { G, s: () => ({st, phase, hd, maxD, caught:caught.length, score, fish:fish.length, camD}), press, setX: x => { tx = x; }, fishes: () => fish.filter(o => !o.dead).map(o => ({x:o.x, d:o.d, j:!!o.jelly})), hx: () => hx };
+  // ---- save & resume (Save & leave, reloads, closing the browser): coins & upgrades live in the game data; the trip's points here ----
+  api.snap && api.snap(() => (st == 'play' && score > 0) ? {v:2, score} : null);
+  { const R0 = api.resume; if (R0 && (R0.v == 1 || R0.v == 2)) { try { score = Math.max(0, fin(R0.score)); api.score(score); __skip = true; st = 'ready'; } catch(e) { console.error('[save] fishing resume failed', e); } } }
+  return () => { offK(); offL(); window.removeEventListener('keydown', kd); window.removeEventListener('keyup', ku); save(); };
 }});
 
 // =====================================================================================================
