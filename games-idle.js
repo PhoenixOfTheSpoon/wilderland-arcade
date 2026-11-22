@@ -130,9 +130,17 @@ const UPS = [
   {id:'drill', n:'Deep Charges',  d:'+10% of ALL ore, stacks forever',  max:999, cost:l=>5000*Math.pow(1.45,l)},
   {id:'luck',  n:'Lucky Strike',  d:'+2% chance a tap digs ×10',        max:25,  cost:l=>1000*Math.pow(2,l)},
   {id:'hire',  n:'Better Hires',  d:'New miners start 1 level up (past the top miner level: +15% ore per level)', max:999, cost:l=>4000*Math.pow(11,Math.min(l,20))*Math.pow(3,Math.max(0,l-20))},
-  {id:'night', n:'Night Shift',   d:'+2 h of digging while away',       max:46,  cost:l=>600*Math.pow(2.1,l)},
+  {id:'night', n:'Night Shift',   d:'+2 h of digging while away',       max:999999,  cost:l=>600*Math.pow(2.1,l)},
   {id:'gem',   n:'Gem Sense',     d:'', max:GEM_MAX, cost:l=>2500*Math.pow(3.2,l)},
   {id:'auto',  n:'Foreman',       d:'', max:FORE_MAX, cost:l=>15000*Math.pow(1.72,l)},
+  // Foreman perks — need at least Foreman Lv 1. One-time perks can be switched on/off after you buy them.
+  {id:'fsell', n:'🧹 Foreman: Clean Sweep', d:'Auto-sells any miner BELOW the level you hire at (keeps your grid free for good miners)', max:1, cost:()=>200000, fo:1, tog:1},
+  {id:'fhire', n:'📋 Foreman: Recruiter',   d:'Auto-hires miners into empty slots whenever you can afford them', max:1, cost:()=>500000, fo:1, tog:1},
+  {id:'ftidy', n:'🗂 Foreman: Tidy Up',     d:'Keeps your miners sorted — best ones first, empty slots at the end', max:1, cost:()=>300000, fo:1, tog:1},
+  {id:'fgem',  n:'💎 Foreman: Gem Scout',   d:'Grabs gems for you if you don’t tap them within 2 seconds', max:1, cost:()=>2e6, fo:1, tog:1},
+  {id:'fcrew', n:'👷 Foreman: Merge Crew',  d:'+1 extra merge every time the Foreman merges', max:Infinity, cost:l=>1e6*Math.pow(1.8,l), fo:1},
+  {id:'fdig',  n:'⛏ Foreman: Rock Breaker', d:'Digs the rock for you: +1 auto-tap per second per level (half a normal tap)', max:Infinity, cost:l=>50000*Math.pow(1.6,l), fo:1},
+  {id:'fsell2',n:'💰 Foreman: Better Deals', d:'Clean Sweep and selling pay +50% more per level', max:Infinity, cost:l=>400000*Math.pow(2.2,l), fo:1},
 ];
 // ---------------- GEM TREE: permanent Mines upgrades bought with gems — never reset by Rebirth ----------------
 // Gems: 1 per gem you grab (rare ones give more), 3 per treasure room, 1 per math geode, 5 for a Cave Golem, 100 for the Armageddon Core.
@@ -174,6 +182,7 @@ A.register('idle', { mount(host, api){
   // one-time fix: the Infinity repair set lifetime ore to the maximum, which jumped players to the last layer
   if (!S.fixLife) { if (S.life >= 1e299) S.life = 0; S.fixLife = 1; }
   const U = k => S.up[k] || 0; let codeMsg = '';
+  const foOn = k => U(k) > 0 && U('auto') > 0 && !(S.fo && S.fo[k] === false);
 
   const W = 480; let H = 610;
   const wrap = el('div',{width:W+'px',fontFamily:A.font,userSelect:'none',background:'#1b130c',borderRadius:'12px',overflow:'hidden',position:'relative'}); host.appendChild(wrap);
@@ -201,7 +210,7 @@ A.register('idle', { mount(host, api){
   const score = () => Math.min(99999999, Math.floor(Math.sqrt(S.life)));
 
   // ---------- effects ----------
-  let parts = [], floats = [], shake = 0, sel = -1, drag = null, msg = null, gems = [], gemT = 6 + Math.random()*8, autoAcc = 0, saveT = 0, t = 0, busy = false, lastDepth = depthIdx(), sellArm = 0;
+  let parts = [], floats = [], shake = 0, sel = -1, drag = null, msg = null, gems = [], gemT = 6 + Math.random()*8, autoAcc = 0, foT = 0, digAcc = 0, saveT = 0, t = 0, busy = false, lastDepth = depthIdx(), sellArm = 0;
   let hazard = null, hazardT = 70 + Math.random()*50, stormT = 180;
   const say = (txt, sub, col) => { msg = {txt, sub:sub||'', t:2.4, col:col||C.lime}; };
   const float = (x,y,txt,col) => { if (floats.length < 30) floats.push({x,y,txt,col:col||'#fff',t:1}); };
@@ -399,11 +408,14 @@ A.register('idle', { mount(host, api){
     const render = () => { oreLine.textContent = '⛏ '+fmt(S.ore)+' ore · Upgrades cost ore, not tickets'; list.innerHTML = '';
       UPS.forEach(u => { const l = U(u.id), maxed = l >= u.max, pl = plan(u.cost, l, u.max, S.ore), cost = pl.n ? pl.tot : Math.min(BIG, Math.ceil(u.cost(l))), can = !maxed && pl.n > 0;
         const row = el('div',{display:'flex',alignItems:'center',gap:'10px',background:'rgba(255,255,255,.07)',borderRadius:'12px',padding:'10px 12px'});
-        const txt = el('div',{flex:'1',minWidth:0}); txt.append(el('div',{fontWeight:700,fontSize:'15px'},u.n+'  '), el('div',{fontSize:'12px',color:'#cfc6a8',lineHeight:1.35},upDesc(u,l)+' · level '+l+(u.max<999?'/'+u.max:'')));
-        const pips = el('div',{display:'flex',gap:'2px',marginTop:'4px',flexWrap:'wrap'}); if (u.max<=25) for (let k=0;k<u.max;k++) pips.append(el('div',{width:'9px',height:'5px',borderRadius:'3px',background:k<l?C.gold:'rgba(255,255,255,.18)'}));
+        const txt = el('div',{flex:'1',minWidth:0}); txt.append(el('div',{fontWeight:700,fontSize:'15px'},u.n+'  '), el('div',{fontSize:'12px',color:'#cfc6a8',lineHeight:1.35},upDesc(u,l)+(u.max==1 ? (l ? ' · owned' : '') : ' · level '+l+(u.max<999?'/'+u.max:''))));
+        const pips = el('div',{display:'flex',gap:'2px',marginTop:'4px',flexWrap:'wrap'}); if (u.max<=25 && u.max>1) for (let k=0;k<u.max;k++) pips.append(el('div',{width:'9px',height:'5px',borderRadius:'3px',background:k<l?C.gold:'rgba(255,255,255,.18)'}));
         else if (u.max==FORE_MAX) pips.append(el('div',{width:'100%',height:'6px',borderRadius:'3px',background:'linear-gradient(90deg,'+C.gold+' '+l+'%,rgba(255,255,255,.18) '+l+'%)'})); txt.append(pips);
         const b = el('button',{fontFamily:A.font,fontWeight:700,fontSize:'14px',border:'none',borderRadius:'999px',padding:'9px 12px',minWidth:'96px',cursor:can?'pointer':'default',background:maxed?'rgba(255,255,255,.12)':can?C.gold:'rgba(255,255,255,.18)',color:maxed?'#cfc6a8':can?'#2a1d12':'#cfc6a8'}, maxed?'MAXED':(pl.n > 1 ? '×'+pl.n+' · ' : '')+fmt(cost)+' ore');
-        b.onclick = () => { const q = plan(u.cost, U(u.id), u.max, S.ore); if (!q.n) { A.sfx('bad'); return; } S.ore -= q.tot; S.up[u.id] = U(u.id)+q.n; A.sfx('coin'); persist(); render(); paintBar(); };
+        b.onclick = () => { if (u.fo && !U('auto')) { A.sfx('bad'); say('HIRE THE FOREMAN FIRST', 'Foreman perks need Foreman level 1', '#ffb3ab'); return; } const q = plan(u.cost, U(u.id), u.max, S.ore); if (!q.n) { A.sfx('bad'); return; } S.ore -= q.tot; S.up[u.id] = U(u.id)+q.n; A.sfx('coin'); persist(); render(); paintBar(); };
+        if (u.fo && !U('auto') && !maxed) { b.textContent = '🔒 Foreman first'; b.style.background = 'rgba(255,255,255,.12)'; b.style.color = '#cfc6a8'; }
+        if (u.tog && maxed) { const on = foOn(u.id); b.textContent = on ? 'ON' : 'OFF'; b.style.cursor = 'pointer'; b.style.background = on ? C.lime : 'rgba(255,255,255,.18)'; b.style.color = on ? C.forest : '#fff';
+          b.onclick = () => { S.fo = S.fo || {}; S.fo[u.id] = !foOn(u.id); A.sfx('blip'); persist(); render(); }; }
         row.append(txt, b); list.append(row); });
       const info = el('div',{fontSize:'12px',color:'#cfc6a8',lineHeight:'1.5',marginTop:'4px'});
       info.innerHTML = 'Layer <b style="color:#fff">'+(depthIdx()+1)+'/100 · '+DEPTHS[depthIdx()].n+'</b> (+'+(depthIdx()*20)+'% ore). Dig more lifetime ore to reach deeper layers.<br>Miners dig while you’re playing, and keep digging at '+(GL2('owl')?'75%':'half')+' speed while you’re away for up to '+(2+2*U('night'))+' hours (Night Shift adds more).'+(extraStart()?'<br>Extra hire levels past the top miner: <b style="color:#fff">+'+(extraStart()*15)+'% ore</b>.':'')+'<br>Selling ore: 9 ore = 1 ticket, 900 = 10, 1M = 333 · no daily limit.';
@@ -480,7 +492,7 @@ A.register('idle', { mount(host, api){
         if (i >= 0 && i <= LAST) { const D = DEPTHS[i], tr = traitOf(i); shut(); if (i <= d0) say('LAYER '+(i+1)+': '+D.n.toUpperCase(), D.b.e+' '+D.b.n+(tr ? ' · Twist: '+tr.n : ''), D.b.ore); else say('LAYER '+(i+1)+' IS STILL LOCKED', 'Dig '+fmt(D.at)+' ore in total to reach it', '#cfc6a8'); A.sfx('blip'); } } dragY = null; }); };
   // ---------- bottom bar ----------
   const setH = (e,h) => { if (e._h !== h) { e._h = h; e.innerHTML = h; } };
-  const sellVal = L => Math.ceil(lvRate(L)*mult()*45);
+  const sellVal = L => Math.ceil(lvRate(L)*mult()*45*(1 + .5*U('fsell2')));
   const paintBar = () => { const cost = hireCost(), full = S.grid.indexOf(0) < 0, none = !minerCount();
     if (sel >= 0 && S.grid[sel]) { const last = minerCount()==1; setH(bHire, '<div>'+(last && sellArm>0 ? 'Sell LAST miner?' : 'Sell Lv '+S.grid[sel]+' miner')+'</div><div style="font-size:12px;font-weight:600;opacity:.85">+'+fmt(sellVal(S.grid[sel]))+' ore'+(last?' · last one!':'')+'</div>'); bHire.style.background = last ? '#FF4539' : '#FF8A3C'; bHire.style.opacity = '1'; }
     else { setH(bHire, '<div>Hire miner'+(getQ()!==1 && !full ? ' ×'+(getQ()==='max'?'Max':getQ()) : '')+'</div><div style="font-size:12px;font-weight:600;opacity:.85">'+(full?'grid full · merge!':fmt(cost)+' ore · Lv '+hireLv())+'</div>'); bHire.style.background = C.lime; bHire.style.opacity = !full && S.ore >= cost ? '1' : '.6'; }
@@ -752,7 +764,17 @@ A.register('idle', { mount(host, api){
     for (const gm of gems) if (gm.life !== undefined) gm.life -= dt; if (gems.some(gm => gm.life !== undefined && gm.life <= 0)) { gems = gems.filter(gm => !(gm.life !== undefined && gm.life <= 0)); if (!gems.length) gemT = gemGap(); }
     if (GL() >= 20 && !learn) { stormT -= dt; if (stormT <= 0) { stormT = 180; for (let q=0;q<6;q++) spawnGem(); say('GEM STORM!', 'Six gems just appeared — grab them!', '#9fd8ff'); } }
     // Foreman: merges in batches so even one merge every 0.1 s stays smooth
-    const FL = U('auto'); if (FL && !busy) { const iv = foreInt(FL); autoAcc += dt; let m = 0; const quiet = iv < .5; while (autoAcc >= iv && m < 20) { autoAcc -= iv; if (!autoMerge(quiet)) { autoAcc = Math.min(autoAcc, iv); break; } m++; } if (m) paintBar(); if (autoAcc > iv*20) autoAcc = 0; }
+    const FL = U('auto'); if (FL && !busy) { const iv = foreInt(FL); autoAcc += dt; let m = 0; const quiet = iv < .5; while (autoAcc >= iv && m < 20) { autoAcc -= iv; if (!autoMerge(quiet)) { autoAcc = Math.min(autoAcc, iv); break; } for (let x=0;x<U('fcrew');x++) if (!autoMerge(true)) break; m++; } if (m) paintBar(); if (autoAcc > iv*20) autoAcc = 0; }
+    // Foreman perks
+    if (U('auto') && !busy && !trans) { foT -= dt; const FL2 = U('auto');
+      if (U('fcrew') && FL2) { /* extra merges ride along with the foreman timer */ }
+      if (U('fdig')) { digAcc += dt*U('fdig'); if (digAcc >= 1) { const k = Math.floor(digAcc); digAcc -= k; if (!core && !golem) give(tapAmt()*.5*k); } }
+      if (foOn('fgem')) for (const gm of gems.slice()) { gm.fg = (gm.fg||0) + dt; if (gm.fg > 2) takeGem(gm); }
+      if (foT <= 0) { foT = .5; let ch = false;
+        if (foOn('fsell')) { const hl = hireLv(); for (let i=0;i<S.grid.length;i++) { const L = S.grid[i]; if (L && L < hl && minerCount() > 1 && !(drag && drag.i === i)) { const v = fin(sellVal(L)); S.grid[i] = 0; S.ore = fin(S.ore + v); ch = true; } } if (ch && sel >= 0 && !S.grid[sel]) sel = -1; }
+        if (foOn('fhire')) { let k = 0; while (k < 50 && S.grid.indexOf(0) >= 0 && S.ore >= hireCost()) { const i = S.grid.indexOf(0); S.ore -= hireCost(); S.hires++; S.grid[i] = hireLv(); k++; ch = true; } }
+        if (foOn('ftidy') && !drag && sel < 0) { const sorted = S.grid.slice().sort((a,b) => b-a); if (sorted.some((v,i) => v !== S.grid[i])) { sorted.forEach((v,i) => { S.grid[i] = v; }); ch = true; } }
+        if (ch) paintBar(); } }
     barT -= dt; if (barT <= 0) { barT = .4; paintBar(); } scT -= dt; if (scT <= 0) { scT = 1; api.score(Math.floor(S.ore)); }
     saveT -= dt; if (saveT <= 0) { saveT = 10; persist(); }
     try { draw(); } catch(e) { if (!drawErr) { drawErr = 1; console.error('Mines draw error', e); } } });

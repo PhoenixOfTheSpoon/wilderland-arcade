@@ -46,7 +46,7 @@ A.register('snake', { mount(host, api){
     if (ii>=0) { const it=items.splice(ii,1)[0], D=ITEMS[it.type]; score+=D.pts; api.score(score); burst(hx*S+S/2, OY+hy*S+S/2, D.c);
       if (it.type=='apple') { eaten++; A.sfx('point'); if (eaten>=need()) return levelUp(); spawn('apple'); const r=Math.random();
         if (r<.16 && !items.some(i=>i.type=='gold')) spawn('gold'); else if (r<.24 && level>=2 && !items.some(i=>i.type=='shroom')) spawn('shroom'); else if (r<.32 && snake.length>8 && !items.some(i=>i.type=='berry')) spawn('berry'); }
-      else if (it.type=='gold') { A.sfx('coin'); banner={t:1,txt:'+3 GOLDEN APPLE'}; }
+      else if (it.type=='gold') { A.sfx('coin'); eaten+=3; banner={t:1,txt:'+3 GOLDEN APPLE',sub:'+3 toward the next level'}; if (eaten>=need()) return levelUp(); }
       else if (it.type=='shroom') { slowT=6; A.sfx('coin'); banner={t:1.2,txt:'SLOW-MO',sub:'6 seconds'}; snake.pop(); }
       else if (it.type=='berry') { const cut=Math.min(4,snake.length-4); snake.splice(-cut); prev.splice(-cut); A.sfx('flip'); banner={t:1,txt:'SHRINK -'+cut}; } }
     else { snake.pop(); }
