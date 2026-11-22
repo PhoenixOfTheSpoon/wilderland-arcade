@@ -87,23 +87,52 @@ A.register('airhockey', { mount(host, api){
     check(); serve(!mine); };
   const check = () => { const to = 7; if (sMe >= to || sAi >= to) { st = 'over'; if (sMe > sAi) { score += 1000; stat(api,'hockeyWins',1,'add'); } api.score(score); A.sfx(sMe > sAi ? 'win' : 'over'); api.over(score); } };
   const offK = A.keys(e => { if ((e.key == ' ' || e.key == 'Enter') && st != 'play') { reset(); st = 'play'; } });
-  c.addEventListener('pointerdown', e => { if (st != 'play') { reset(); st = 'play'; return; } ptr = pt(c, e, w, h); }); c.addEventListener('pointermove', e => { ptr = pt(c, e, w, h); });
+  // The mallet follows the mouse while it's over the table, or a finger while it's touching. When you let go it stays put
+  // (it used to slide back to the last spot the pointer had been).
+  let ptrDown = false, stuckT = 0, pinT = 0, idleT = 0;
+  c.addEventListener('pointerdown', e => { if (st != 'play') { reset(); st = 'play'; return; } ptrDown = true; ptr = pt(c, e, w, h); try { c.setPointerCapture(e.pointerId); } catch(_){} });
+  c.addEventListener('pointermove', e => { if (e.pointerType == 'mouse' || ptrDown) ptr = pt(c, e, w, h); });
+  const ptrEnd = e => { ptrDown = false; if (e.pointerType != 'mouse' || e.type == 'pointerleave') ptr = null; };
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(k => c.addEventListener(k, ptrEnd));
+  const walls = () => { let hit = false; const inGoal = Math.abs(puck.x - w/2) < GOAL/2;
+    if (puck.x < puck.r) { puck.x = puck.r; puck.vx = Math.abs(puck.vx); hit = true; } if (puck.x > w - puck.r) { puck.x = w - puck.r; puck.vx = -Math.abs(puck.vx); hit = true; }
+    if (!inGoal) { if (puck.y < puck.r) { puck.y = puck.r; puck.vy = Math.abs(puck.vy); hit = true; } if (puck.y > h - puck.r) { puck.y = h - puck.r; puck.vy = -Math.abs(puck.vy); hit = true; } }
+    return hit; };
   const offL = A.loop(dt => { t += dt; dt = Math.min(dt, .033);
-    if (st == 'play' && !quiz) { me.px = me.x; me.py = me.y; const kx = (K.k.ArrowRight||K.k.d ? 1 : 0) - (K.k.ArrowLeft||K.k.a ? 1 : 0), ky = (K.k.ArrowDown||K.k.s ? 1 : 0) - (K.k.ArrowUp||K.k.w ? 1 : 0);
-      if (kx || ky) { me.x += kx*420*dt; me.y += ky*420*dt; } else if (ptr) { me.x += (ptr.x - me.x) * Math.min(1, dt*18); me.y += (ptr.y - me.y) * Math.min(1, dt*18); }
-      me.r = 28 + 3*A.U('mallet'); me.x = clamp(me.x, me.r, w - me.r); me.y = clamp(me.y, h/2 + me.r, h - me.r);
-      const mvx = (me.x - me.px)/dt, mvy = (me.y - me.py)/dt;
-      // AI
-      const aiSp = A.D(240, 330, 430) * (1 - .06*A.U('slowai')), tx = puck.y < h/2 + 60 ? puck.x : w/2, ty = puck.y < h/2 ? Math.min(puck.y - 20, h/2 - ai.r) : 80; const dx = tx - ai.x, dy = ty - ai.y, d = Math.hypot(dx, dy) || 1, mv = Math.min(d, aiSp*dt);
-      const apx = ai.x, apy = ai.y; ai.x = clamp(ai.x + dx/d*mv, ai.r, w - ai.r); ai.y = clamp(ai.y + dy/d*mv, ai.r, h/2 - ai.r); const avx = (ai.x - apx)/dt, avy = (ai.y - apy)/dt;
-      if (serveT > 0) serveT -= dt; else { puck.x += puck.vx*dt; puck.y += puck.vy*dt; }
+    if (st == 'play' && !quiz) { const sx = me.x, sy = me.y; const kx = (K.k.ArrowRight||K.k.d ? 1 : 0) - (K.k.ArrowLeft||K.k.a ? 1 : 0), ky = (K.k.ArrowDown||K.k.s ? 1 : 0) - (K.k.ArrowUp||K.k.w ? 1 : 0);
+      me.r = 28 + 3*A.U('mallet'); let tx0 = me.x, ty0 = me.y;
+      if (kx || ky) { ptr = null; tx0 += kx*420*dt; ty0 += ky*420*dt; } else if (ptr) { tx0 += (ptr.x - me.x) * Math.min(1, dt*18); ty0 += (ptr.y - me.y) * Math.min(1, dt*18); }
+      { const mdx = tx0 - me.x, mdy = ty0 - me.y, md = Math.hypot(mdx, mdy), cap = 1500*dt; if (md > cap) { tx0 = me.x + mdx/md*cap; ty0 = me.y + mdy/md*cap; } }
+      tx0 = clamp(tx0, me.r, w - me.r); ty0 = clamp(ty0, h/2 + me.r, h - me.r);
+      // AI: hits the puck from the goal side; backs off instead of pinning it against the wall
+      const aiSp = A.D(240, 330, 430) * (1 - .06*A.U('slowai')); let tx = puck.y < h/2 + 60 ? puck.x : w/2, ty = puck.y < h/2 ? Math.min(puck.y - 20, h/2 - ai.r) : 80;
+      if (puck.y < ai.r*2 + puck.r + 6) { tx = puck.x + (puck.x < w/2 ? 1 : -1) * (ai.r + puck.r + 14); ty = Math.min(h/2 - ai.r, puck.y + ai.r + puck.r + 30); }
+      const adx = tx - ai.x, ady = ty - ai.y, ad = Math.hypot(adx, ady) || 1, amv = Math.min(ad, aiSp*dt);
+      const ax1 = clamp(ai.x + adx/ad*amv, ai.r, w - ai.r), ay1 = clamp(ai.y + ady/ad*amv, ai.r, h/2 - ai.r);
+      const mvx = (tx0 - sx)/dt, mvy = (ty0 - sy)/dt, avx = (ax1 - ai.x)/dt, avy = (ay1 - ai.y)/dt, ax0 = ai.x, ay0 = ai.y;
+      if (serveT > 0) serveT -= dt;
+      // small steps so a fast puck or a fast swipe can't pass through a mallet
+      const pv = Math.hypot(puck.vx, puck.vy)*dt, mm = Math.max(Math.hypot(tx0 - sx, ty0 - sy), Math.hypot(ax1 - ax0, ay1 - ay0));
+      const N = Math.min(12, Math.max(1, Math.ceil(Math.max(pv, mm) / 8))), sdt = dt / N; let tick = false;
+      for (let i = 1; i <= N; i++) { const f = i / N; me.x = sx + (tx0 - sx)*f; me.y = sy + (ty0 - sy)*f; ai.x = ax0 + (ax1 - ax0)*f; ai.y = ay0 + (ay1 - ay0)*f;
+        if (serveT <= 0) { puck.x += puck.vx*sdt; puck.y += puck.vy*sdt; }
+        if (walls()) tick = true;
+        for (const [m, vx, vy] of [[me, mvx, mvy], [ai, avx, avy]]) { const ddx = puck.x - m.x, ddy = puck.y - m.y, dd = Math.hypot(ddx, ddy); if (dd < m.r + puck.r) { const nx = dd > 0 ? ddx/dd : 0, ny = dd > 0 ? ddy/dd : (m === me ? -1 : 1);
+            puck.x = m.x + nx*(m.r + puck.r); puck.y = m.y + ny*(m.r + puck.r);
+            const rv = (puck.vx - vx)*nx + (puck.vy - vy)*ny; if (rv < 0) { puck.vx -= 1.9*rv*nx; puck.vy -= 1.9*rv*ny; } const sp = Math.hypot(puck.vx, puck.vy), mx = 1100; if (sp > mx) { puck.vx *= mx/sp; puck.vy *= mx/sp; }
+            // squeezed against a wall: the puck stays on the table and squirts out sideways instead of jittering
+            if (walls()) { pinT += sdt; const ox = puck.x - m.x, oy = puck.y - m.y, od = Math.hypot(ox, oy) || 1; if (od < m.r + puck.r - .5) { const side = puck.x < w/2 ? 1 : -1; puck.vx += side*260; puck.vy += (puck.y < h/2 ? 1 : -1)*120; m.x -= ox/od*((m.r + puck.r) - od); m.y -= oy/od*((m.r + puck.r) - od); } }
+            if (m.hitT == null || t - m.hitT > .08) { rally++; A.tone(500,.03,'square',.04); } m.hitT = t; } } }
+      if (tick) A.tone(300,.03,'square',.03);
+      me.x = clamp(me.x, me.r, w - me.r); me.y = clamp(me.y, h/2 + me.r, h - me.r); ai.x = clamp(ai.x, ai.r, w - ai.r); ai.y = clamp(ai.y, ai.r, h/2 - ai.r);
       puck.vx *= Math.pow(.6, dt); puck.vy *= Math.pow(.6, dt);
-      if (puck.x < puck.r) { puck.x = puck.r; puck.vx = Math.abs(puck.vx); A.tone(300,.03,'square',.03); } if (puck.x > w - puck.r) { puck.x = w - puck.r; puck.vx = -Math.abs(puck.vx); A.tone(300,.03,'square',.03); }
-      const inGoal = Math.abs(puck.x - w/2) < GOAL/2;
-      if (puck.y < puck.r && !inGoal) { puck.y = puck.r; puck.vy = Math.abs(puck.vy); } if (puck.y > h - puck.r && !inGoal) { puck.y = h - puck.r; puck.vy = -Math.abs(puck.vy); }
-      if (puck.y < -puck.r) goal(true); else if (puck.y > h + puck.r) goal(false);
-      for (const [m, vx, vy] of [[me, mvx, mvy], [ai, avx, avy]]) { const ddx = puck.x - m.x, ddy = puck.y - m.y, dd = Math.hypot(ddx, ddy); if (dd < m.r + puck.r && dd > 0) { const nx = ddx/dd, ny = ddy/dd; puck.x = m.x + nx*(m.r + puck.r); puck.y = m.y + ny*(m.r + puck.r);
-          const rv = (puck.vx - vx)*nx + (puck.vy - vy)*ny; if (rv < 0) { puck.vx -= 1.9*rv*nx; puck.vy -= 1.9*rv*ny; } const sp = Math.hypot(puck.vx, puck.vy), mx = 1100; if (sp > mx) { puck.vx *= mx/sp; puck.vy *= mx/sp; } rally++; A.tone(500,.03,'square',.04); } } }
+      // never let the puck sit still in a corner or against an end wall
+      const nearX = puck.x < puck.r + 40 || puck.x > w - puck.r - 40, nearY = puck.y < puck.r + 40 || puck.y > h - puck.r - 40, slow = Math.hypot(puck.vx, puck.vy) < 60;
+      if (serveT <= 0 && (nearY || pinT > .25) && slow) stuckT += dt; else stuckT = 0;
+      if (serveT <= 0 && Math.hypot(puck.vx, puck.vy) < 25) idleT += dt; else idleT = 0;
+      if (stuckT > (nearX ? .8 : 1.2) || pinT > .6 || idleT > 3) { idleT = 0; const dx2 = w/2 - puck.x, dy2 = h/2 - puck.y, d2 = Math.hypot(dx2, dy2) || 1; puck.vx = dx2/d2*260; puck.vy = dy2/d2*260; stuckT = 0; pinT = 0; }
+      if (pinT > 0) pinT = Math.max(0, pinT - dt*.5);
+      if (puck.y < -puck.r) goal(true); else if (puck.y > h + puck.r) goal(false); }
     g.fillStyle = '#e8f4ff'; g.fillRect(0,0,w,h); g.strokeStyle = '#ff6a6a'; g.lineWidth = 3; g.beginPath(); g.moveTo(0, h/2); g.lineTo(w, h/2); g.stroke(); g.beginPath(); g.arc(w/2, h/2, 50, 0, TAU); g.stroke();
     g.strokeStyle = '#64CDF5'; g.beginPath(); g.arc(w/2, 0, 80, 0, Math.PI); g.stroke(); g.beginPath(); g.arc(w/2, h, 80, Math.PI, TAU); g.stroke();
     g.fillStyle = '#121313'; g.fillRect(w/2 - GOAL/2, 0, GOAL, 6); g.fillRect(w/2 - GOAL/2, h-6, GOAL, 6);
@@ -113,7 +142,7 @@ A.register('airhockey', { mount(host, api){
     g.font = '700 14px '+A.font; g.textAlign = 'left'; g.fillText((score||0).toLocaleString()+' pts · first to 7', 10, h/2 - 8);
     if (st == 'ready') A.overlayText(g, w, h, 'AIR HOCKEY', __skip ? 'Saved game · tap or press Space to continue' : 'Move your green mallet with the mouse, a finger or WASD · first to 7');
     if (st == 'over') A.overlayText(g, w, h, sMe > sAi ? 'YOU WIN!' : 'CPU WINS', sMe+' – '+sAi+' · '+score.toLocaleString()+' points · tap for a rematch'); });
-  reset(); st = 'ready';
+  reset(); st = 'ready'; A._dbg = A._dbg || {}; A._dbg.hockey = { s: () => ({st, me, ai, puck, sMe, sAi}), start: () => { reset(); st = 'play'; } };
   // ---- save & resume (Save & leave, reloads, closing the browser) ----
   api.snap && api.snap(() => (st == 'play' || st == 'quiz') ? {v:1, sMe, sAi, score} : null);
   { const R0 = api.resume; if (R0 && R0.v == 1) { try { ({sMe, sAi, score} = R0); me = {x:w/2, y:h-80, r:28, px:w/2, py:h-80}; ai = {x:w/2, y:80, r:28}; serve(true); api.score(score); __skip = true; st = 'ready'; } catch(e) { console.error('[save] airhockey resume failed', e); } } }

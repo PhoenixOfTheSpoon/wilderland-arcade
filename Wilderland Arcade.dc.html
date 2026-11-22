@@ -630,7 +630,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
     </div>
   </sc-if>
   <sc-if value="{{ downOn }}" hint-placeholder-val="{{ false }}">
-    <div role="alert" style="font-family:'Uncut Sans','Inter',system-ui,sans-serif; position:fixed; inset:0; z-index:500; background:radial-gradient(circle at 50% 35%, #027a5a, #0b2e24 70%); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:24px; box-sizing:border-box; text-align:center; color:#ffffff;">
+    <div role="alert" style="font-family:'Uncut Sans','Inter',system-ui,sans-serif; position:fixed; inset:0; z-index:950; background:radial-gradient(circle at 50% 35%, #027a5a, #0b2e24 70%); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; padding:24px; box-sizing:border-box; text-align:center; color:#ffffff;">
       <div style="font-size:56px;">🔧</div>
       <div style="font-size:13px; font-weight:700; letter-spacing:0.2em; color:#D5F367;">WILDERLAND ARCADE</div>
       <div style="font-size:34px; font-weight:700;">Closed for maintenance</div>
@@ -1671,7 +1671,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-12-03d';
+const BUILD = '2026-12-03e';
 const SCRIPTS = ['arcade-core.js','music.js','prizes-more.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js','games-secrets.js','games-more.js','games-more2.js','games-more3.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
@@ -1745,7 +1745,11 @@ class Component extends DCLogic {
     const bkKey = BK+this.profKey(); this._bkLife = this._bkLife || {}; if (this._bkLife[bkKey] == null) this._bkLife[bkKey] = (getJSON(bkKey, {}).lifeTix) || 0;
     let bk = null; if ((o.lifeTix||0) >= this._bkLife[bkKey] || this._bkForce) { this._bkLife[bkKey] = o.lifeTix||0; bk = o;
       if (now || this._bkForce || Date.now() - (this._bkT||0) > 15000) { this._bkT = Date.now(); this._bkForce = false; try { localStorage.setItem(bkKey, JSON.stringify(o)); } catch(e){} idb.put(bkKey, o); } }
-    if (this.cloudUid && window.WLCloud) { clearTimeout(this._cs); const uid = this.cloudUid, meta = {...this.cloudMeta}; const go = () => { window.WLCloud.saveProfile(uid, o, meta, bk ? JSON.stringify(bk) : null).catch(()=>{}); }; if (now) go(); else this._cs = setTimeout(go, 2500); } }
+    if (this.cloudUid && window.WLCloud) { clearTimeout(this._cs); const uid = this.cloudUid, meta = {...this.cloudMeta}; const go = () => { this._csAt = Date.now(); this._csGo = null; window.WLCloud.saveProfile(uid, o, meta, bk ? JSON.stringify(bk) : null).catch(()=>{}); };
+      // The free database allows ~20k writes a day for everyone together, so a profile goes up at most every 45 s while playing
+      // (right away for important changes, and always when the tab is hidden or closed).
+      const gap = Date.now() - (this._csAt||0), wait = now ? Math.max(0, 4000 - gap) : Math.max(2500, 45000 - gap); this._csGo = go; if (wait <= 0) go(); else this._cs = setTimeout(go, wait); } }
+  flushCloud(){ if (this._csGo) { clearTimeout(this._cs); this._csGo(); } }
   startCloud(){ const C = window.WLCloud; if (!C || this._cloudOn) return; this._cloudOn = true; this.setState({cloud:true, cloudStatus:'on'});
     C.onAuth(u => { if (this._cloudPending) return; if (u) { if (this.cloudUid !== u.uid) this.cloudLogin(u); } else if (this.cloudUid) this.cloudReset(); }); }
   async cloudLogin(u, carry, name){ if (this.state.game) this.closeAll(); let rec = null; try { rec = await window.WLCloud.loadProfile(u.uid); } catch(e){}
@@ -1777,7 +1781,7 @@ class Component extends DCLogic {
   postTix(){ const C = window.WLCloud; if (!this.state.cloud || !C || !this.cloudUid || !this.P.username || this.state.admin) return;
     C.setTix(this.cloudUid, {uid:this.cloudUid, u:this.P.username, s:Math.max(0,Math.round(this.P.earned||0)), d:today(), av:avFull(this.P), al:(this.P.ach||[]).length, rb:this.P.rebirths||0}).then(()=>{ this._bAt = {}; }).catch(()=>{}); }
   needBoard(g){ if (!this.state.cloud || !window.WLCloud) return; this.cloudBoard = this.cloudBoard || {}; this._bAt = this._bAt || {}; this._bBusy = this._bBusy || {};
-    if (this._bBusy[g] || (this._bAt[g] && Date.now()-this._bAt[g] < 30000)) return; this._bBusy[g] = true;
+    if (this._bBusy[g] || (this._bAt[g] && Date.now()-this._bAt[g] < 90000)) return; this._bBusy[g] = true;
     window.WLCloud.top(g, 100).then(rows=>{ this.cloudBoard[g] = rows.map(r=>({u:r.u, k:r.uid, id:r.id, g, s:r.s, edu:!!r.edu, d:r.d, av:r.av||'', al:r.al||0})); this._bAt[g] = Date.now(); this._bBusy[g] = false; this.setState({lbTick:Date.now()}); })
       .catch(()=>{ this._bBusy[g] = false; this._bAt[g] = Date.now(); }); }
   // Achievements 2.0: tiers come from saved stats. Each new tier pays tickets (shown before you unlock it);
@@ -1797,9 +1801,9 @@ class Component extends DCLogic {
   checkBackup(){ const key = BK+this.profKey(); idb.get(key).then(b => { if (!b || this.profKey() !== key.slice(BK.length)) return; const best = pickBest([this.P, b]);
     if (best === b && (b.lifeTix||0) > (this.P.lifeTix||0)) { this.P = normP(b); this.setState({...this.P}); this.persist(true); this.toast('RESTORED YOUR BEST SAVE · '+fmtN(b.tickets||0)+' TICKETS', true); } }); }
   componentDidMount(){ setTimeout(() => this.checkBackup(), 800);
-    this.onDown = e => { const d = (e && e.detail) || {}; this.setState({downUntil:d.until||0, downMsg:d.msg||''}); if (d.until > Date.now() && !this.state.admin && this.state.game) this.closeAll(); };
+    this.onDown = e => { const d = (e && e.detail) || {}; this.setState({downUntil:d.until||0, downMsg:d.msg||''}); setTimeout(()=>{ if (!this.downPassOK() && this.state.game) { this.closeAll(); if (this.state.fs) this.setFs(false); } }, 0); };
     window.addEventListener('wl-down', this.onDown); this.onCtrl = () => { this.applyAdj(); this.checkKick(); }; window.addEventListener('wl-ctrl', this.onCtrl); if (window.WLCloud && window.WLCloud.down) this.onDown({detail:window.WLCloud.down()});
-    this.downIv = setInterval(()=>{ if (this.state.kickUntil) { if (Date.now() > this.state.kickUntil) this.setState({kickUntil:0}); else this.setState({downTick:Date.now()}); } const u = this.state.downUntil||0; if (u && Date.now() < u + 1500) this.setState({downTick:Date.now()}); else if (u && Date.now() >= u + 1500) this.setState({downUntil:0}); }, 1000);
+    this.downIv = setInterval(()=>{ if (this.state.kickUntil) { if (Date.now() > this.state.kickUntil) this.setState({kickUntil:0}); else this.setState({downTick:Date.now()}); } const u = this.state.downUntil||0; if (u && Date.now() < u + 1500) this.setState({downTick:Date.now()}); else if (u && Date.now() >= u + 1500) this.setState({downUntil:0}); if (u > Date.now() && this.state.game && !this.downPassOK()) { this.closeAll(); if (this.state.fs) this.setFs(false); } }, 1000);
     this.onCloud = () => { this.startCloud(); if (window.WLCloud && window.WLCloud.down) this.onDown({detail:window.WLCloud.down()}); }; window.addEventListener('wlcloud-ready', this.onCloud); if (window.WLCloud) this.startCloud();
     try { if (!document.querySelector('script[data-wlcloud]')) { const fm = document.createElement('script'); fm.type = 'module'; fm.src = 'firebase-sync.js?v='+BUILD; fm.dataset.wlcloud = '1'; fm.onerror = () => { if (!this.state.cloud) this.setState({cloudStatus:'off'}); }; document.head.appendChild(fm); } } catch(e){ this.setState({cloudStatus:'off'}); }
     setTimeout(()=>{ if (!this.state.cloud) this.setState({cloudStatus:'off'}); }, 12000);
@@ -1828,6 +1832,7 @@ class Component extends DCLogic {
     window.addEventListener('keydown', this.kd); window.addEventListener('keyup', this.ku);
     this.autoIv = setInterval(()=>{ const s = this.state; if (s.admin && s.autoHint && s.game && s.game!='simon' && s.hint && !s.payout) { try { s.hint.run(true); } catch(e){} } }, 1100);
     this.saveIv = setInterval(()=>{ if (this.mounted) this.saveGame(); }, 5000);
+    this._flushH = () => { if (document.hidden) { try { if (this.mounted) this.saveGame(); } catch(e){} this.flushCloud(); } }; document.addEventListener('visibilitychange', this._flushH); window.addEventListener('pagehide', ()=>{ try { if (this.mounted) this.saveGame(); } catch(e){} this.flushCloud(); });
     // Active play time: only seconds where you pressed/tapped something in the last 25 s (and the tab is visible) count toward tickets.
     // autosave the running game every 20 s, so a crash or a closed phone tab never loses a run
     this._autoSave = setInterval(() => { if (this.mounted && this.snapFn && Date.now() - (this._lastAct||0) < 60000) this.saveGame(); }, 20000);
@@ -1928,8 +1933,8 @@ class Component extends DCLogic {
   saveGame(){ const id = this.mounted && this.saveKey(this.mounted); if (!id || !this.snapFn) return false;
     let d = null; try { d = this.snapFn(); } catch(e){ d = null; console.error('[save-check] '+id+' snapshot failed', e); }
     const saves = {...this.P.saves}, had = !!saves[id];
-    if (d) { try { saves[id] = JSON.parse(JSON.stringify(d)); } catch(e) { console.error('[save-check] '+id+' snapshot is not saveable', e); return false; } } else delete saves[id];
-    if (d || had) this.setP({saves});
+    let same = false; if (d) { try { const js = JSON.stringify(d); same = had && JSON.stringify(saves[id]) === js; saves[id] = JSON.parse(js); } catch(e) { console.error('[save-check] '+id+' snapshot is not saveable', e); return false; } } else delete saves[id];
+    if ((d || had) && !same) this.setP({saves});
     // save check: what we stored must read back exactly
     if (d) { let ok = false; try { ok = JSON.stringify(this.P.saves[id]) === JSON.stringify(saves[id]); } catch(e){} if (!ok) { console.error('[save-check] '+id+' save did not read back'); if (this.state.admin) this.toast('⚠ SAVE CHECK FAILED · '+id); } }
     return !!d; }
@@ -1983,7 +1988,7 @@ class Component extends DCLogic {
     const mins = open ? 0 : Math.max(1, Math.min(1440, parseFloat(String(s.downMin||'').replace(/[^0-9.]/g,''))||0));
     if (!open && !(parseFloat(s.downMin) > 0)) return this.setState({admMsg:'Type how many minutes to close for (1–1440).'});
     if (!open && s.admArm !== 'down') return this.setState({admArm:'down', admMsg:'Press it again to close the arcade for everyone for '+mins+' minute'+(mins==1?'':'s')+'.'});
-    try { await window.WLCloud.shutdown(mins, (s.downText||'').slice(0,140)); this.setState({admArm:'', admMsg: open ? 'The arcade is open again for everyone.' : 'Done! The arcade is closed for '+mins+' minute'+(mins==1?'':'s')+'. Every other player sees the countdown now. You won’t see it because admins can still play — press “Preview” to see what they see, or open the site in a private window.'}); }
+    try { const until = await window.WLCloud.shutdown(mins, (s.downText||'').slice(0,140)); try { if (open) localStorage.removeItem('wl-down-owner'); else localStorage.setItem('wl-down-owner', String(until)); } catch(e){} this.setState({downPass: open ? 0 : until}); this.setState({admArm:'', admMsg: open ? 'The arcade is open again for everyone.' : 'Done! The arcade is closed for '+mins+' minute'+(mins==1?'':'s')+'. Every other player sees the countdown now. This device can still play because it closed the arcade. Every other device sees the closed screen (even ones logged in as you) until it reopens or someone types the admin code there. Press “Preview” to see what they see.'}); }
     catch(e) { const code = String(e && (e.code||e.message) || 'unknown');
       this.setState({admArm:'', admMsg: code.includes('permission') ? 'Firebase refused. Log out and log back in as jonah@wilderland.academy (that sets up the admin control record), then try again. If it still fails, another account owns the control record — tell Claude.' : 'Couldn’t shut down: '+code}); } }
   openChat(){ if (this.state.chatOpen) return; this.keys = {}; this.setState({chatOpen:true, chatErr:''}); const C = window.WLCloud;
@@ -2081,6 +2086,7 @@ class Component extends DCLogic {
   // Golden critter rewards land here
   addTix(n, from){ if (this.state.admin) return; n = Math.max(0, Math.round(n)); if (!n) return; const P = this.P;
     this.setP({tickets:P.tickets+n, earned:P.earned+n}); if (from && window.WLE) window.WLE.fly(n, from); }
+  downPassOK(){ const s = this.state, u = s.downUntil||0; if (!(u > Date.now())) return true; if (!s.admin) return false; let own = 0; try { own = +localStorage.getItem('wl-down-owner')||0; } catch(e){} return own === u || s.downPass === u; }
   previewDown(){ this.setState({downPreview:Date.now()+8000}); setTimeout(()=>this.setState({downPreview:0}), 8100); }
   async adminReloadAll(){ const s = this.state; if (!s.admin || !s.cloud || !this.cloudUid) return this.setState({admMsg:'Log in with an admin account (online) first.'});
     try { await window.WLCloud.reloadEveryone(); this.setState({admMsg:'Reloading every open arcade tab…'}); } catch(e) { this.setState({admMsg:'Couldn’t: '+(e && (e.code||e.message))+' · publish the new firestore.rules first.'}); } }
@@ -2205,9 +2211,9 @@ class Component extends DCLogic {
   }
   async submitCode(){ const v = (this.state.codeVal||'').trim().toUpperCase(); let hx = '';
     try { const b = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(v)); hx = [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join(''); } catch(e) {}
-    if (hx == '711125e6da98be03f5351f602a547a86121f7e33f8f5f21ff6868b83900be16e') { try { localStorage.removeItem('wl-admin-off'); } catch(e){} if (window.Arcade) window.Arcade.infiniteHints = true; this.setState(s=>({admin:true, codeOpen:false, hint: s.hint ? {...s.hint, left:Infinity} : s.hint})); window.Arcade && window.Arcade.sfx('win'); this.toast('ADMIN MODE · INFINITE HINTS UNTIL RELOAD'); }
+    if (hx == '711125e6da98be03f5351f602a547a86121f7e33f8f5f21ff6868b83900be16e') { try { localStorage.removeItem('wl-admin-off'); } catch(e){} if (window.Arcade) window.Arcade.infiniteHints = true; const then = this.state.codeThen; this.setState(s=>({admin:true, codeOpen:false, codeThen:'', downPass:s.downUntil||0, hint: s.hint ? {...s.hint, left:Infinity} : s.hint})); window.Arcade && window.Arcade.sfx('win'); this.toast('ADMIN MODE · INFINITE HINTS UNTIL RELOAD'); if (then=='reopen') setTimeout(()=>{ this.setState({adminOpen:true, admMsg:'Admin mode on.'}); this.adminShutdown(true, true); }, 50); }
     else { window.Arcade && window.Arcade.sfx('bad'); this.setState({codeMsg:'Code not recognised', codeVal:''}); } }
-  open(id){ this.keys = {}; this.setState({game:id, liveScore:0, payout:''});
+  open(id){ this.keys = {}; if (!this.downPassOK()) { this.toast('THE ARCADE IS CLOSED FOR MAINTENANCE'); return; } this.setState({game:id, liveScore:0, payout:''});
     const touch = typeof window != 'undefined' && (window.innerWidth < 820 || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches));
     let autoFs = true; try { autoFs = localStorage.getItem('wl-autofs') !== '0'; } catch(e){} if (touch && autoFs && !this.state.fs) this.setFs(true); }
   closeAll(){ const saved = this.unmountGame(); this.keys = {}; Object.keys(this.padHeld).forEach(k=>{ if (this.padHeld[k]) fireKey(k,'keyup'); }); this.padHeld = {};
@@ -2470,10 +2476,10 @@ class Component extends DCLogic {
       adminOff: ()=>{ try { localStorage.setItem('wl-admin-off','1'); } catch(e){} if (window.Arcade) { window.Arcade.infiniteHints = false; window.Arcade.immortal = false; } this.closeAll(); this.setState({admin:false, immortal:false, adminMult:1, adminOpen:false, codeOpen:false}); this.toast('ADMIN MODE OFF · TICKETS, SCORES AND SAVES COUNT AGAIN'); },
       doShutdown: ()=>this.adminShutdown(false), doReopen: ()=>this.adminShutdown(true), doPreview: ()=>this.previewDown(), shutLabel: s.admArm=='down' ? 'YES · CLOSE IT' : 'Close for maintenance',
       downStatus: (s.downUntil||0) > Date.now() ? 'CLOSED · reopens in '+fmtDur2((s.downUntil-Date.now())/1000) : 'Open',
-      downOn: (((s.downUntil||0) > Date.now() && !s.admin) || (s.downPreview||0) > Date.now()) && !s.authOpen && !s.codeOpen,
+      downOn: (!this.downPassOK() || (s.downPreview||0) > Date.now()) && !s.authOpen && !s.codeOpen && !s.calOpen,
       downAcct: s.account ? 'Logged in as '+(this.cloudMeta&&this.cloudMeta.email || s.account) : 'Not logged in', downIn: !s.account, downOut: !!s.account, downIsAdminAcct: !!(this.cloudMeta && ADMIN_EMAILS.includes(String(this.cloudMeta.email||'').toLowerCase())),
-      downLogin: ()=>this.openAuth('login'), downAdminOn: ()=>{ try { localStorage.removeItem('wl-admin-off'); } catch(e){} if (window.Arcade) window.Arcade.infiniteHints = true; this.setState({admin:true, adminOpen:true, admMsg:'Admin mode on.'}); this.adminShutdown(true, true); }, downCode: ()=>this.setState({codeOpen:true, codeVal:'', codeMsg:''}), downLeft: fmtDur2(Math.max(0,(((s.downUntil||0) > Date.now() ? s.downUntil : (s.downPreview ? Date.now() + (parseFloat(s.downMin)||15)*60000 : 0))-Date.now())/1000)), downNote: s.downMsg || 'The arcade is closed for a little maintenance. Grab a snack — it reopens by itself when the timer hits zero.',
-      adminDownBanner: (s.downUntil||0) > Date.now() && s.admin, resetAll: ()=>this.adminResetAll(), resetAllLabel: s.admArm=='resetall' ? 'YES · WIPE EVERYONE' : 'FULL RESET · everyone',
+      downLogin: ()=>this.openAuth('login'), downAdminOn: ()=>this.setState({codeOpen:true, codeVal:'', codeMsg:'Type the admin code to reopen the arcade for everyone.', codeThen:'reopen'}), downCode: ()=>this.setState({codeOpen:true, codeVal:'', codeMsg:'', codeThen:''}), downLeft: fmtDur2(Math.max(0,(((s.downUntil||0) > Date.now() ? s.downUntil : (s.downPreview ? Date.now() + (parseFloat(s.downMin)||15)*60000 : 0))-Date.now())/1000)), downNote: s.downMsg || 'The arcade is closed for a little maintenance. Grab a snack — it reopens by itself when the timer hits zero.',
+      adminDownBanner: (s.downUntil||0) > Date.now() && this.downPassOK(), resetAll: ()=>this.adminResetAll(), resetAllLabel: s.admArm=='resetall' ? 'YES · WIPE EVERYONE' : 'FULL RESET · everyone',
       kickMin: s.kickMin||'', inKickMin: e=>this.setState({kickMin:e.target.value.slice(0,5)}),
       kickOn: (s.kickUntil||0) > Date.now() && !s.admin && !s.authOpen, kickLeft: fmtDur2(Math.max(0,((s.kickUntil||0)-Date.now())/1000)),
       admIsTix: (s.admGame||'_tix')=='_tix', admRm: s.admRm||'', inAdmRm: e=>this.setState({admRm:e.target.value.slice(0,12)}),

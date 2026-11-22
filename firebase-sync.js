@@ -46,17 +46,19 @@ const WLCloud = {
   // (the existing rules let each player update the name they own). This replaced a row-per-game board that filled up
   // with one player's old rows and stopped showing everyone else.
   setTix(uid, row) { if (!row || !row.u) return Promise.resolve(); const key = String(row.u).toLowerCase();
-    return setDoc(doc(db, 'usernames', key), { uid, name: row.u, s: row.s, av: row.av || '', al: row.al || 0, d: row.d || '', rb: row.rb || 0, ss: SEASON }, { merge: true }); },
+    return setDoc(doc(db, 'usernames', key), { uid, name: row.u, s: row.s, av: row.av || '', al: row.al || 0, d: row.d || '', rb: row.rb || 0, ss: SEASON, at: Date.now() }, { merge: true }); },
   async top(game, n = 100) { const hs = new Set(C.hiddenScores || []);
-    if (game == '_tix') { const r = await getDocs(query(collection(db, 'usernames'), orderBy('s', 'desc'), limit(400)));
-      const fresh = r.docs.map(d => ({ ...d.data(), id: d.id, u: d.data().name })).filter(x => x.uid && x.ss === SEASON && !hs.has(x.id) && x.id !== '~admin');
+    if (game == '_tix') { const r = await getDocs(query(collection(db, 'usernames'), orderBy('s', 'desc'), limit(150))); const ht = C.hiddenTix || {};
+      // old-style hides (no time) only count until the player posts again with the newer page
+      const hid = x => (hs.has(x.id) && !x.at) || (ht[x.id] && (x.at || 0) < ht[x.id]);
+      const fresh = r.docs.map(d => ({ ...d.data(), id: d.id, u: d.data().name })).filter(x => x.uid && x.ss === SEASON && !hid(x) && x.id !== '~admin');
       if (fresh.length >= 25) return fresh.slice(0, n);
       // While players are still moving over, also show each player's best row from the old board.
       const have = new Set(fresh.map(x => x.uid)); let old = [];
-      try { const o = await getDocs(query(board('_tix'), orderBy('s', 'desc'), limit(1000))); const seen = new Set();
+      try { const o = await getDocs(query(board('_tix'), orderBy('s', 'desc'), limit(250))); const seen = new Set();
         old = o.docs.map(d => ({ ...d.data(), id: d.id })).filter(x => !hs.has(x.id) && !have.has(x.uid) && !seen.has(x.uid) && seen.add(x.uid)); } catch (e) {}
       return fresh.concat(old).sort((a, b) => b.s - a.s).slice(0, n); }
-    const r = await getDocs(query(board(game), orderBy('s', 'desc'), limit(400)));
+    const r = await getDocs(query(board(game), orderBy('s', 'desc'), limit(200)));
     // each player's best score only, so one player can't fill the whole board
     const seen = new Set(); return r.docs.map(d => ({ ...d.data(), id: d.id })).filter(x => !hs.has(x.id) && !seen.has(x.uid) && seen.add(x.uid)).slice(0, n); },
 };
@@ -69,7 +71,10 @@ WLCloud.ensureAdmin = async () => { if (!ME) return false; const cur = await get
 const hide = async (field, vals) => { const cur = await getDoc(CTRL); const list = new Set((cur.exists() && cur.data()[field]) || []); [].concat(vals).forEach(v => list.add(v)); return ctrlSet({ [field]: [...list].slice(-5000) }); };
 // Real deletes still work if the newer rules are ever published; otherwise the score is hidden for everyone.
 WLCloud.deleteScore = async (game, id) => { try { await deleteDoc(doc(db, 'boards', game + '@' + SEASON, 'scores', id)); } catch (e) { await hide('hiddenScores', id); } };
-WLCloud.deleteUserScores = async (game, uid) => { if (game == '_tix') { const r = await getDocs(query(collection(db, 'usernames'), where('uid', '==', uid))); const ids = r.docs.map(d => d.id).filter(id => id !== '~admin'); try { const o = await getDocs(query(board('_tix'), where('uid', '==', uid))); o.docs.forEach(d => ids.push(d.id)); } catch (e) {} if (ids.length) await hide('hiddenScores', ids); return ids.length; }
+WLCloud.deleteUserScores = async (game, uid) => { if (game == '_tix') { const r = await getDocs(query(collection(db, 'usernames'), where('uid', '==', uid))); const names = r.docs.map(d => d.id).filter(id => id !== '~admin'), ids = []; try { const o = await getDocs(query(board('_tix'), where('uid', '==', uid))); o.docs.forEach(d => ids.push(d.id)); } catch (e) {}
+  // A player's ticket row is hidden only until their game posts a fresh total (so nobody vanishes from the board for good).
+  if (names.length) { const cur = await getDoc(CTRL); const ht = { ...((cur.exists() && cur.data().hiddenTix) || {}) }; names.forEach(n => ht[n] = Date.now()); await ctrlSet({ hiddenTix: ht }); }
+  if (ids.length) await hide('hiddenScores', ids); return names.length + ids.length; }
   const r = await getDocs(query(board(game), where('uid', '==', uid))); const failed = [];
   for (const d of r.docs) { try { await deleteDoc(d.ref); } catch (e) { failed.push(d.id); } } if (failed.length) await hide('hiddenScores', failed); return r.size; };
 // Per-player adjustments: a list of {id, rm|all|upg|full}. The player's game applies any it hasn't seen yet.
@@ -83,12 +88,21 @@ WLCloud.resetEveryone = async () => { const now = Date.now(), season = 's' + now
 WLCloud.reloadEveryone = () => ctrlSet({ reloadAt: Date.now() });
 // Live: shutdown, reloads, resets and adjustments reach every open tab within a second or two.
 let RELOAD_AT = null;
-try { onSnapshot(CTRL, snap => { const d = snap.exists() ? snap.data() : {}; C = d; setDown(d);
+let CTRL_OK = false, CTRL_AT = 0, ctrlRetry = 0;
+const onCtrl = d => { C = d; CTRL_AT = Date.now(); setDown(d);
   window.dispatchEvent(new CustomEvent('wl-ctrl', { detail: d }));
   if (RELOAD_AT === null) { RELOAD_AT = d.reloadAt || 0; return; }
-  if ((d.resetAt || 0) > RESET_AT || (d.reloadAt || 0) > RELOAD_AT) { if ((d.resetAt || 0) > RESET_AT) FROZEN = true; RELOAD_AT = d.reloadAt || 0; RESET_AT = d.resetAt || 0; setTimeout(() => location.reload(), 600 + Math.random() * 1500); } }, () => {}); } catch (e) {}
+  if ((d.resetAt || 0) > RESET_AT || (d.reloadAt || 0) > RELOAD_AT) { if ((d.resetAt || 0) > RESET_AT) FROZEN = true; RELOAD_AT = d.reloadAt || 0; RESET_AT = d.resetAt || 0; setTimeout(() => location.reload(), 600 + Math.random() * 1500); } };
+const listenCtrl = () => { try { onSnapshot(CTRL, snap => { CTRL_OK = true; ctrlRetry = 0; onCtrl(snap.exists() ? snap.data() : {}); },
+  e => { CTRL_OK = false; console.warn('[cloud] control listener stopped:', e && (e.code || e.message)); ctrlRetry = Math.min(ctrlRetry + 1, 6); setTimeout(listenCtrl, 15000 * ctrlRetry); }); } catch (e) {} };
+listenCtrl();
+// Backup check so a shutdown still arrives if the live listener died (bad wifi, iPad asleep, database busy).
+const pollCtrl = async force => { if (document.hidden) return; if (!force && CTRL_OK && Date.now() - CTRL_AT < 600000) return;
+  try { const c = await getDoc(CTRL); onCtrl(c.exists() ? c.data() : {}); } catch (e) {} };
+setInterval(() => pollCtrl(false), 60000);
+document.addEventListener('visibilitychange', () => { if (!document.hidden && Date.now() - CTRL_AT > 30000) pollCtrl(true); });
 WLCloud.down = () => DOWN;
-WLCloud.shutdown = (minutes, msg) => ctrlSet({ downUntil: minutes > 0 ? Date.now() + minutes * 60000 : 0, downMsg: msg || '' });
+WLCloud.shutdown = async (minutes, msg) => { const until = minutes > 0 ? Date.now() + minutes * 60000 : 0; await ctrlSet({ downUntil: until, downMsg: msg || '' }); setDown({ ...C, downUntil: until, downMsg: msg || '' }); return until; };
 // Arcade chat: stored with the leaderboards (allowed by the existing rules). The page filters words, links and personal info.
 const CHAT = collection(db, 'boards', '_chat', 'scores');
 WLCloud.chatListen = cb => onSnapshot(query(CHAT, orderBy('at', 'desc'), limit(60)), snap => { const hid = new Set(C.hiddenChat || []);
