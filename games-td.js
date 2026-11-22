@@ -61,7 +61,7 @@ A.register('td', { w:720, mount(host, api){
     geyser:{n:'Geyser',cost:150,col:'#2f7de0',top:'#14457a',range:1.8,dmg:10,rate:2.4,knock:1.4,d:'Blasts critters back along the trail'},
   };
   const TIDS = Object.keys(TW);
-  const MAXLV = t => t.type=='pan' ? Infinity : 5;   // Gold Pans have no level cap
+  const MAXLV = t => Infinity;   // no level cap: past level 5 towers keep their look and gain +20% damage per level
   // ---------------- enemies ----------------
   const EN = {
     beetle:{hp:26,sp:1.1,b:4,col:'#3d6b4f',r:.22}, hare:{hp:16,sp:2.2,b:5,col:'#e3d2b4',r:.2},
@@ -122,10 +122,10 @@ A.register('td', { w:720, mount(host, api){
   const tmp = {x:0,y:0};
   const hpMul = () => (1 + (wave-1)*.17 + Math.pow(Math.max(1,wave),1.7)*.012) * Math.pow(M().grow, Math.max(0,wave-1)) * M().hp * A.D(.8,1,1.25) * (MAPS[map].big ? 1.15 : 1);
   const lvl5 = t => Math.min(t.lvl, 5);
-  const tstat = t => { const D = TW[t.type], L = lvl5(t)-1, buff = t.buff||0;
-    return {range:(D.range*T)*(1+.1*L), dmg:D.dmg*(1+.5*L)*(1+.05*A.U('power'))*(1+buff), rate:D.rate*(1-.08*L)/(1+buff*.6), slow:D.slow?Math.min(.8,D.slow+.07*L):0, chain:D.chain?D.chain+L:0,
-      splash:D.splash?D.splash*T*(1+.1*L):0, inc:D.inc?Math.round(D.inc*(1+.6*(t.lvl-1))*Math.pow(1.08, Math.max(0,t.lvl-5))):0, poison:D.poison?D.poison*(1+.6*L)*(1+buff):0, bees:D.bees?D.bees+Math.floor(L/2):0, knock:D.knock?D.knock*T*(1+.15*L):0, tbuff:D.buff?D.buff+.08*L:0}; };
-  const upCost = t => Math.round(TW[t.type].cost*.8*t.lvl*Math.pow(t.type=='pan' ? 1.18 : 1.1, Math.max(0, t.lvl-1)));
+  const tstat = t => { const D = TW[t.type], L = lvl5(t)-1, buff = t.buff||0, om = t.type=='pan' ? 1 : Math.pow(1.2, Math.max(0, t.lvl-5));
+    return {range:(D.range*T)*(1+.1*L), dmg:D.dmg*(1+.5*L)*(1+.05*A.U('power'))*(1+buff)*om, rate:D.rate*(1-.08*L)/(1+buff*.6), slow:D.slow?Math.min(.8,D.slow+.07*L):0, chain:D.chain?D.chain+L:0,
+      splash:D.splash?D.splash*T*(1+.1*L):0, inc:D.inc?Math.round(D.inc*(1+.6*(t.lvl-1))*Math.pow(1.08, Math.max(0,t.lvl-5))):0, poison:D.poison?D.poison*(1+.6*L)*(1+buff)*om:0, bees:D.bees?D.bees+Math.floor(L/2):0, knock:D.knock?D.knock*T*(1+.15*L):0, tbuff:D.buff?D.buff+.08*L:0}; };
+  const upCost = t => Math.min(1e300, Math.round(TW[t.type].cost*.8*t.lvl*Math.pow(t.type=='pan' ? 1.18 : 1.1, Math.max(0, t.lvl-1)) * (t.type=='pan' ? 1 : Math.pow(1.35, Math.max(0, t.lvl-5)))));
   const sellVal = t => Math.round(t.spent*.7);
   const waveList = n => { const L = [], add = (t,k,gap)=>{ for (let i=0;i<k;i++) L.push([t,gap]); }, big = MAPS[map].big ? 1.4 : 1;
     add('beetle',Math.round((5+Math.ceil(n*1.2))*big),.75); if (n>=2) add('hare',Math.floor(n*.8*big),.45); if (n>=3 && n%2) add('gnat',Math.round((6+n)*big),.16);

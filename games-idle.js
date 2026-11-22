@@ -117,7 +117,7 @@ const STORY = {
 };
 
 // Upgrades go (nearly) forever: costs keep climbing, so there's always something to save for.
-const FORE_MAX = 100, GEM_MAX = 20;
+const FORE_MAX = 100, GEM_MAX = 20;   // speed bottoms out at Lv100 and Gem Sense perks at Lv20 — later levels add +2% / +5% ore each
 const foreInt = L => L <= 0 ? Infinity : 6 * Math.pow(0.1/6, (Math.min(L,FORE_MAX)-1)/(FORE_MAX-1));  // 6 s at Lv1 → 0.1 s at Lv100
 const GEM = [ // what each Gem Sense level adds (shown in the upgrade card)
   '', 'Gems show up 3.5% sooner and glow wider', 'Gems last 0.4 s longer', 'Rare gems can appear (Ruby ×3)', 'Gems show up sooner · wider glow', 'Hidden treasure rooms sparkle on the map and mini-map',
@@ -125,14 +125,14 @@ const GEM = [ // what each Gem Sense level adds (shown in the upgrade card)
   'Rare gems more often', 'Sometimes two gems at once', 'Treasure rooms worth +25%', 'Gems last longer · wider glow', 'Treasure rooms worth +50%',
   'Rare gems even more often', 'Hazards are disarmed for double ore', 'Starlight gems can appear (×25)', 'Treasure rooms worth +100%', 'GEM STORM: a burst of 6 gems every 3 minutes'];
 const UPS = [
-  {id:'pick',  n:'Sharper Pick',  d:'Taps dig more',                    max:999, cost:l=>25*Math.pow(1.55,l)},
-  {id:'cart',  n:'Mine Carts',    d:'+25% ore from every miner',        max:999, cost:l=>150*Math.pow(1.7,l)},
-  {id:'drill', n:'Deep Charges',  d:'+10% of ALL ore, stacks forever',  max:999, cost:l=>5000*Math.pow(1.45,l)},
-  {id:'luck',  n:'Lucky Strike',  d:'+2% chance a tap digs ×10',        max:25,  cost:l=>1000*Math.pow(2,l)},
-  {id:'hire',  n:'Better Hires',  d:'New miners start 1 level up (past the top miner level: +15% ore per level)', max:999, cost:l=>4000*Math.pow(11,Math.min(l,20))*Math.pow(3,Math.max(0,l-20))},
+  {id:'pick',  n:'Sharper Pick',  d:'Taps dig more',                    max:Infinity, cost:l=>25*Math.pow(1.55,l)},
+  {id:'cart',  n:'Mine Carts',    d:'+25% ore from every miner',        max:Infinity, cost:l=>150*Math.pow(1.7,l)},
+  {id:'drill', n:'Deep Charges',  d:'+10% of ALL ore, stacks forever',  max:Infinity, cost:l=>5000*Math.pow(1.45,l)},
+  {id:'luck',  n:'Lucky Strike',  d:'+2% chance a tap digs big (up to 50%); past level 25 lucky digs get +1× bigger per level', max:Infinity, cost:l=>1000*Math.pow(2,l)},
+  {id:'hire',  n:'Better Hires',  d:'New miners start 1 level up (past the top miner level: +15% ore per level)', max:Infinity, cost:l=>4000*Math.pow(11,Math.min(l,20))*Math.pow(3,Math.max(0,l-20))},
   {id:'night', n:'Night Shift',   d:'+2 h of digging while away',       max:999999,  cost:l=>600*Math.pow(2.1,l)},
-  {id:'gem',   n:'Gem Sense',     d:'', max:GEM_MAX, cost:l=>2500*Math.pow(3.2,l)},
-  {id:'auto',  n:'Foreman',       d:'', max:FORE_MAX, cost:l=>15000*Math.pow(1.72,l)},
+  {id:'gem',   n:'Gem Sense',     d:'', max:Infinity, cost:l=>2500*Math.pow(3.2,l)},
+  {id:'auto',  n:'Foreman',       d:'', max:Infinity, cost:l=>15000*Math.pow(1.72,l)},
   // Foreman perks — need at least Foreman Lv 1. One-time perks can be switched on/off after you buy them.
   {id:'fsell', n:'🧹 Foreman: Clean Sweep', d:'Auto-sells any miner BELOW the level you hire at (keeps your grid free for good miners)', max:1, cost:()=>200000, fo:1, tog:1},
   {id:'fhire', n:'📋 Foreman: Recruiter',   d:'Auto-hires miners into empty slots whenever you can afford them', max:1, cost:()=>500000, fo:1, tog:1},
@@ -146,12 +146,12 @@ const UPS = [
 // Gems: 1 per gem you grab (rare ones give more), 3 per treasure room, 1 per math geode, 5 for a Cave Golem, 100 for the Armageddon Core.
 const GT = [
   {k:'slots',  e:'🧱', n:'Bigger Mine',        d:'+4 miner slots',                          max:6,  cost:l=>20*Math.pow(2,l),     fx:l=>(12+4*l)+' slots'},
-  {k:'ore',    e:'⚙️', n:'Gem-Powered Drills', d:'+25% ore from everything',                max:20, cost:l=>10*Math.pow(1.45,l),  fx:l=>'×'+(1+.25*l).toFixed(2)+' ore'},
-  {k:'vet',    e:'🎖️', n:'Veteran Crew',       d:'New miners are hired 1 level higher',     max:10, cost:l=>30*Math.pow(1.7,l),   fx:l=>'+'+l+' hire levels'},
-  {k:'market', e:'🎟', n:'Gem Market',          d:'+10% tickets when you cash out',          max:20, cost:l=>15*Math.pow(1.55,l),  fx:l=>'×'+(1+.1*l).toFixed(1)+' Mines tickets'},
+  {k:'ore',    e:'⚙️', n:'Gem-Powered Drills', d:'+25% ore from everything',                max:Infinity, cost:l=>10*Math.pow(1.45,l),  fx:l=>'×'+(1+.25*l).toFixed(2)+' ore'},
+  {k:'vet',    e:'🎖️', n:'Veteran Crew',       d:'New miners are hired 1 level higher',     max:Infinity, cost:l=>30*Math.pow(1.7,l),   fx:l=>'+'+l+' hire levels'},
+  {k:'market', e:'🎟', n:'Gem Market',          d:'+10% tickets when you cash out',          max:Infinity, cost:l=>15*Math.pow(1.55,l),  fx:l=>'×'+(1+.1*l).toFixed(1)+' Mines tickets'},
   {k:'magnet', e:'🧲', n:'Gem Magnet',          d:'+10% chance to get double gems',          max:10, cost:l=>12*Math.pow(1.6,l),   fx:l=>(10*l)+'% double gems'},
   {k:'owl',    e:'🦉', n:'Night Owls',          d:'Away digging at 75% speed instead of 50%', max:1,  cost:()=>60,                 fx:l=>l?'75% while away':'50% while away'},
-  {k:'boss',   e:'🪨', n:'Golem Tamer',         d:'Bosses drop +50% ore',                    max:5,  cost:l=>25*Math.pow(1.8,l),   fx:l=>'×'+(1+.5*l).toFixed(1)+' boss ore'},
+  {k:'boss',   e:'🪨', n:'Golem Tamer',         d:'Bosses drop +50% ore',                    max:Infinity,  cost:l=>25*Math.pow(1.8,l),   fx:l=>'×'+(1+.5*l).toFixed(1)+' boss ore'},
 ];
 // Bulk buy: shares the ×1 / ×10 / ×100 / Max setting with the rest of the arcade
 const getQ = () => { try { const v = JSON.parse(localStorage.getItem('wl-prize-qty')); return v === 'max' ? 'max' : (+v || 1); } catch(e) { return 1; } };
@@ -196,7 +196,7 @@ A.register('idle', { mount(host, api){
   // ---------- economy ----------
   const depthIdx = () => { let d = 0; for (let i=0;i<DEPTHS.length;i++) if (S.life >= DEPTHS[i].at) d = i; return d; };
   const extraStart = () => Math.max(0, 1 + U('hire') + A.U('start') + GL2('vet') - (MAXL-1));
-  const mult = () => (1 + .25*GL2('ore')) * (1 + .25*U('cart')) * (1 + .2*depthIdx()) * (1 + .1*U('drill')) * (1 + .15*extraStart()) * (traitOf(depthIdx()) && traitOf(depthIdx()).k == 'crew' ? 1.25 : 1);
+  const mult = () => (1 + .05*Math.max(0, U('gem')-GEM_MAX)) * (1 + .02*Math.max(0, U('auto')-FORE_MAX)) * (1 + .25*GL2('ore')) * (1 + .25*U('cart')) * (1 + .2*depthIdx()) * (1 + .1*U('drill')) * (1 + .15*extraStart()) * (traitOf(depthIdx()) && traitOf(depthIdx()).k == 'crew' ? 1.25 : 1);
   const minerCount = () => S.grid.reduce((a,L)=>a+(L?1:0),0);
   let trouble = 0;   // a hazard went off: miners dig at half speed for a few seconds
   const rate = () => S.grid.reduce((a,L)=>a+lvRate(L),0) * mult() * (trouble > 0 ? .5 : 1);
@@ -341,8 +341,8 @@ A.register('idle', { mount(host, api){
       if (boss.hp <= 0) bossDown(); return; }
     const cx = ROCK.x + Math.cos(crack.a)*40*crack.r, cy = ROCK.y + Math.sin(crack.a)*34*crack.r, onCrack = Math.hypot(sx-cx, sy-cy) < 20, cr = hasT('echo') ? 5 : 3;
     if (onCrack) { crack = {a:Math.random()*7, r:.3+Math.random()*.6}; float(sx, sy-46, 'CRACK ×'+cr, '#fff'); A.tone(1100,.06,'square',.04); }
-    const lucky = Math.random() < .02*U('luck'); let mul = (lucky?10:1)*cm*(onCrack?cr:1)*(hasT('vein')?1.5:1)*(pulseOn()?3:1); if (sporeN > 0) { mul *= 2; sporeN--; }
-    const n = tapAmt()*mul; give(n); if (lucky) { float(sx, sy-30, 'LUCKY ×10!', C.gold); A.tone(1400,.08,'triangle',.05); }
+    const lucky = Math.random() < Math.min(.5, .02*U('luck')); let mul = (lucky ? 10 + Math.max(0, U('luck')-25) : 1)*cm*(onCrack?cr:1)*(hasT('vein')?1.5:1)*(pulseOn()?3:1); if (sporeN > 0) { mul *= 2; sporeN--; }
+    const n = tapAmt()*mul; give(n); if (lucky) { float(sx, sy-30, 'LUCKY ×'+(10 + Math.max(0, U('luck')-25))+'!', C.gold); A.tone(1400,.08,'triangle',.05); }
     shake = .12; float(sx, sy-10, '+'+fmt(n), DEPTHS[depthIdx()].b.ore); burst(sx, sy, DEPTHS[depthIdx()].b.ore, 6); A.tone(180+Math.random()*60,.05,'square',.04); };
   const bossDown = () => {
     if (core) { const n = Math.max(1e6, rate()*3000 + tapAmt()*5000) * (1+.5*GL2('boss')); give(n); addGems(100); S.coreCleared = Date.now(); S.core300 = Date.now(); stat(api,'mineCore',1,'add'); A.sfx('win'); [0,300,600].forEach(d => setTimeout(()=>A.sfx('win'), d));
@@ -362,7 +362,7 @@ A.register('idle', { mount(host, api){
     const used = S.ore; S.ore = 0; const td = new Date().toISOString().slice(0,10); if (S.tix.d != td) S.tix = {d:td, n:0}; S.tix.n += q.n;
     say(got ? '+'+fmt(got)+' TICKETS' : 'NO TICKETS IN ADMIN MODE', 'Sold '+fmt(used)+' ore'+(q.capped ? ' · the Mines ticket counter pays up to 5% of a Rebirth at a time' : ''), C.gold); A.sfx(got?'win':'blip'); persist(); paintBar(); };
   // gems: Gem Sense makes them come sooner, last longer, glow wider and sometimes be rare
-  const GL = () => U('gem');
+  const GL = () => Math.min(U('gem'), GEM_MAX);   // perks stop at Lv20; extra levels add ore in mult()
   const gemGap = () => (learn ? 9 : 22 + Math.random()*16) * Math.max(.3, 1 - .035*GL());
   const gemLife = () => 6 + .4*GL() + (GL()>=9 ? 2 : 0) + (GL()>=14 ? 2 : 0);
   const rollRare = () => { const L = GL(), boost = (L>=11 ? 1.5 : 1) * (L>=16 ? 1.5 : 1); const r = Math.random();
@@ -389,7 +389,9 @@ A.register('idle', { mount(host, api){
   // ---------- shop overlay ----------
   let shop = null, shopQ = null, shopRender = null, gemRender = null, gemQ = null;
   const rerenderAll = () => { if (shopQ) shopQ(); if (shopRender) shopRender(); if (gemQ) gemQ(); if (gemRender) gemRender(); paintBar(); };
-  const upDesc = (u, l) => { if (u.id=='auto') return l ? 'Auto-merges a matching pair every '+sec(foreInt(l))+(l<FORE_MAX ? ' · next level: every '+sec(foreInt(l+1)) : ' · max speed!') : 'Auto-merges matching miners · Lv1 merges every 6 s · Lv100 every 0.1 s';
+  const upDesc = (u, l) => { if (u.id=='auto' && l >= FORE_MAX) return 'Merges every 0.1 s (fastest) · past level 100 each level adds +2% ore · now +'+(2*(l-FORE_MAX))+'%';
+    if (u.id=='gem' && l >= GEM_MAX) return 'All 20 Gem Sense perks unlocked · each extra level adds +5% ore · now +'+(5*(l-GEM_MAX))+'%';
+    if (u.id=='auto') return l ? 'Auto-merges a matching pair every '+sec(foreInt(l))+(l<FORE_MAX ? ' · next level: every '+sec(foreInt(l+1)) : ' · max speed!') : 'Auto-merges matching miners · Lv1 merges every 6 s · Lv100 every 0.1 s';
     if (u.id=='gem') return (l ? 'Now: '+GEM.slice(1, l+1).filter((x,i)=>i>=Math.max(0,l-2)).join(' · ') : 'Better gems, treasure and hazard warnings')+(l<GEM_MAX ? ' · Next (Lv '+(l+1)+'): '+GEM[l+1] : ' · All 20 levels unlocked!');
     return u.d; };
   const openShop = () => { if (busy) return; busy = true; A.sfx('blip');
@@ -408,7 +410,7 @@ A.register('idle', { mount(host, api){
     const render = () => { oreLine.textContent = '⛏ '+fmt(S.ore)+' ore · Upgrades cost ore, not tickets'; list.innerHTML = '';
       UPS.forEach(u => { const l = U(u.id), maxed = l >= u.max, pl = plan(u.cost, l, u.max, S.ore), cost = pl.n ? pl.tot : Math.min(BIG, Math.ceil(u.cost(l))), can = !maxed && pl.n > 0;
         const row = el('div',{display:'flex',alignItems:'center',gap:'10px',background:'rgba(255,255,255,.07)',borderRadius:'12px',padding:'10px 12px'});
-        const txt = el('div',{flex:'1',minWidth:0}); txt.append(el('div',{fontWeight:700,fontSize:'15px'},u.n+'  '), el('div',{fontSize:'12px',color:'#cfc6a8',lineHeight:1.35},upDesc(u,l)+(u.max==1 ? (l ? ' · owned' : '') : ' · level '+l+(u.max<999?'/'+u.max:''))));
+        const txt = el('div',{flex:'1',minWidth:0}); txt.append(el('div',{fontWeight:700,fontSize:'15px'},u.n+'  '), el('div',{fontSize:'12px',color:'#cfc6a8',lineHeight:1.35},upDesc(u,l)+(u.max==1 ? (l ? ' · owned' : '') : ' · level '+l+(u.max<999 && isFinite(u.max)?'/'+u.max:''))));
         const pips = el('div',{display:'flex',gap:'2px',marginTop:'4px',flexWrap:'wrap'}); if (u.max<=25 && u.max>1) for (let k=0;k<u.max;k++) pips.append(el('div',{width:'9px',height:'5px',borderRadius:'3px',background:k<l?C.gold:'rgba(255,255,255,.18)'}));
         else if (u.max==FORE_MAX) pips.append(el('div',{width:'100%',height:'6px',borderRadius:'3px',background:'linear-gradient(90deg,'+C.gold+' '+l+'%,rgba(255,255,255,.18) '+l+'%)'})); txt.append(pips);
         const b = el('button',{fontFamily:A.font,fontWeight:700,fontSize:'14px',border:'none',borderRadius:'999px',padding:'9px 12px',minWidth:'96px',cursor:can?'pointer':'default',background:maxed?'rgba(255,255,255,.12)':can?C.gold:'rgba(255,255,255,.18)',color:maxed?'#cfc6a8':can?'#2a1d12':'#cfc6a8'}, maxed?'MAXED':(pl.n > 1 ? '×'+pl.n+' · ' : '')+fmt(cost)+' ore');

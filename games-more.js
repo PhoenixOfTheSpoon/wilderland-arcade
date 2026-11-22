@@ -6,6 +6,8 @@ const rr = (g,x,y,w,h,r) => { g.beginPath(); if (g.roundRect) g.roundRect(x,y,w,
 const stat = (api,k,v,m) => { try { api.stat && api.stat(k,v,m); } catch(e){} };
 const pt = (c, e, w, h) => { const r = c.getBoundingClientRect(); return {x:(e.clientX-r.left)*w/r.width, y:(e.clientY-r.top)*h/r.height}; };
 const low = () => !!A.lowFx;
+// Learn mode: answer a question for a second chance (otherwise run `no`).
+const learn2 = (host, api, title, yes, no) => { if (!A.learnOn || !A.learnOn()) { no(); return; } A.quiz(host, title, ok => { try { api.edu && api.edu(ok); } catch(e){} ok ? yes() : no(); }); };
 
 // =====================================================================================================
 // BOUNCE UP — hop from cloud to cloud, as high as you can. ← → / A D / tilt by dragging.
@@ -17,9 +19,9 @@ A.register('bounce', { mount(host, api){
     for (let i = 0; i < 12; i++) addPlat(h - 40 - i*50); plats[0].x = w/2 - 40; plats[0].kind = 'n'; api.score(0); };
   const addPlat = y => { const lvl = Math.max(0, -y)/1500, r = Math.random(); const kind = r < Math.min(.25, .05+lvl*.04) ? 'm' : r < Math.min(.4, .1+lvl*.05) ? 'b' : r < .5 ? 's' : 'n';
     plats.push({x: 20 + Math.random()*(w-120), y, w: Math.max(52, 84 - lvl*6), kind, vx: kind=='m' ? (60+lvl*20)*(Math.random()<.5?-1:1) : 0, broke:false, coin: Math.random() < .18}); };
-  const offK = A.keys(e => { if (e.type == 'keydown') { keys[e.key] = true; if (st != 'play' && (e.key==' '||e.key=='Enter')) { reset(); st = 'play'; } } });
+  const offK = A.keys(e => { if (e.type == 'keydown') { keys[e.key] = true; if (st != 'play' && st != 'quiz' && (e.key==' '||e.key=='Enter')) { reset(); st = 'play'; } } });
   const ku = e => { keys[e.key] = false; }; window.addEventListener('keyup', ku);
-  c.addEventListener('pointerdown', e => { if (st != 'play') { reset(); st = 'play'; return; } dragX = pt(c, e, w, h).x; });
+  c.addEventListener('pointerdown', e => { if (st == 'quiz') return; if (st != 'play') { reset(); st = 'play'; return; } dragX = pt(c, e, w, h).x; });
   c.addEventListener('pointermove', e => { if (dragX != null) dragX = pt(c, e, w, h).x; });
   const upP = () => { dragX = null; }; c.addEventListener('pointerup', upP); c.addEventListener('pointercancel', upP);
   const offL = A.loop(dt => { t += dt;
@@ -37,7 +39,7 @@ A.register('bounce', { mount(host, api){
       score = Math.max(score, Math.floor((h-80 - p.y)/10) + coins*25); api.score(score);
       plats = plats.filter(q => q.y < camY + h + 40); while (plats.length < 14) addPlat(Math.min(...plats.map(q=>q.y)) - (46 + Math.random()*22 + Math.min(30, -camY/500)));
       if (p.y > camY + h + 40 && chutes > 0) { chutes--; p.y = camY + h - 20; p.vy = jumpS*1.2; A.sfx('win'); }
-      if (p.y > camY + h + 40) { st = 'over'; best = Math.max(best, score); A.sfx('over'); stat(api,'bounceBest',score,'max'); api.over(score); } }
+      if (p.y > camY + h + 40) { st = 'quiz'; learn2(host, api, 'YOU FELL! ANSWER TO BOUNCE BACK UP', () => { p.y = camY + h - 20; p.vy = jumpS*1.2; st = 'play'; }, () => { st = 'over'; best = Math.max(best, score); A.sfx('over'); stat(api,'bounceBest',score,'max'); api.over(score); }); } }
     for (const q of parts) { q.t -= dt; q.x += q.vx*dt; q.y += q.vy*dt; q.vy += 300*dt; } parts = parts.filter(q => q.t > 0);
     // draw
     const sky = g.createLinearGradient(0,0,0,h), hue = Math.min(1, -camY/20000); sky.addColorStop(0, hue > .5 ? '#14204a' : '#64CDF5'); sky.addColorStop(1, hue > .5 ? '#3a2a6a' : '#bfe6ff'); g.fillStyle = sky; g.fillRect(0,0,w,h);
@@ -88,14 +90,14 @@ A.register('gems', { mount(host, api){
     if (A1.sp == 3 || B1.sp == 3) { const k = A1.sp==3 ? B1.k : A1.k; let n = 0; for (let y=0;y<N;y++) for (let x=0;x<N;x++) if (B[y][x].k == k || B[y][x].sp==3) { pops.push({x:OX+x*S+S/2, y:OY+y*S+S/2, col:COL[B[y][x].k], t:.4}); B[y][x] = {k:-1}; n++; }
       for (let y=0;y<N;y++) for (let x=0;x<N;x++) if (B[y][x].k == -1) B[y][x] = null; score += n*40; for (let x=0;x<N;x++) { let wy = N-1; for (let y=N-1;y>=0;y--) if (B[y][x]) { const cell = B[y][x]; B[y][x] = null; B[wy][x] = cell; cell.dy = (wy-y)*S; wy--; } for (let y=wy;y>=0;y--) B[y][x] = {k:rnd(), sp:0, dy:(wy+1)*S}; } anim = .22; A.sfx('win'); }
     combo = 0; moves--; anim = Math.max(anim, .01); };
-  c.addEventListener('pointerdown', e => { const q = pt(c, e, w, h); if (st != 'play') { if (st != 'anim') start(); return; } if (anim > 0) return;
+  c.addEventListener('pointerdown', e => { const q = pt(c, e, w, h); if (st != 'play') { if (st != 'anim' && st != 'quiz') start(); return; } if (anim > 0) return;
     const x = Math.floor((q.x-OX)/S), y = Math.floor((q.y-OY)/S); if (!at(x,y)) { sel = null; return; }
     if (sel && Math.abs(sel[0]-x) + Math.abs(sel[1]-y) == 1) { swap(sel, [x,y]); sel = null; } else { sel = [x,y]; A.sfx('blip'); } });
   const start = () => { score = 0; moves = 30 + 3*A.U('moves'); level = 1; target = 2500; combo = 0; fill(); for (let k=0;k<A.U('special');k++) { const x = Math.floor(Math.random()*N), y = Math.floor(Math.random()*N); B[y][x].sp = 1 + (k%2); } st = 'play'; api.score(0); };
   const offL = A.loop(dt => { t += dt;
     if (st == 'play') { if (anim > 0) { anim -= dt; for (let y=0;y<N;y++) for (let x=0;x<N;x++) if (B[y][x]) B[y][x].dy = Math.max(0, B[y][x].dy - 900*dt); if (anim <= 0) { if (!clear()) { combo = 0;
           if (score >= target) { level++; target = Math.round(target*2.2); moves += 20; A.sfx('win'); }
-          else if (moves <= 0) { st = 'over'; A.sfx('over'); stat(api,'gemsBest',score,'max'); api.over(score); }
+          else if (moves <= 0) { st = 'quiz'; learn2(host, api, 'OUT OF MOVES! ANSWER FOR 5 MORE', () => { moves += 5; st = 'play'; }, () => { st = 'over'; A.sfx('over'); stat(api,'gemsBest',score,'max'); api.over(score); }); }
           else if (!anyMove()) fill(); } } } }
     for (const q of pops) q.t -= dt; pops = pops.filter(q => q.t > 0);
     g.fillStyle = '#1a1030'; g.fillRect(0,0,w,h); g.fillStyle = '#2a1a4a'; rr(g, OX-6, OY-6, N*S+12, N*S+12, 12); g.fill();
@@ -125,8 +127,8 @@ A.register('maze', { mount(host, api){
     for (let y=0;y<R;y++) for (let x=0;x<Cn;x++) { const ch = grid[y][x]; if (ch == '.' || ch == 'o') dots++; if (ch == 'P') { pac = {x, y, px:x, py:y, dx:0, dy:0, prog:0}; grid[y][x] = ' '; } if (ch == 'G') { grid[y][x] = ' '; [0,1,2,3].forEach(i => ghosts.push({x:x-1+i%3, y, sx:x-1+i%3, sy:y, dx:0, dy:0, prog:0, col:['#FF4539','#ff8fd0','#64CDF5','#F9BF01'][i], wait:i*2.5, dead:0})); } }
     if (!keepScore) { score = 0; lives = 3 + A.U('life'); level = 1; } power = 0; api.score(score); };
   const resetPos = () => { pac.x = pac.px; pac.y = pac.py; pac.dx = pac.dy = 0; pac.prog = 0; ghosts.forEach((q,i) => { q.x = q.sx; q.y = q.sy; q.prog = 0; q.dx = q.dy = 0; q.wait = i*2; q.dead = 0; }); };
-  const offK = A.keys(e => { const m = {ArrowLeft:[-1,0], a:[-1,0], ArrowRight:[1,0], d:[1,0], ArrowUp:[0,-1], w:[0,-1], ArrowDown:[0,1], s:[0,1]}[e.key]; if (m) want = m; if (st != 'play' && (e.key==' '||e.key=='Enter')) { setup(false); st = 'play'; } });
-  c.addEventListener('pointerdown', e => { if (st != 'play') { setup(false); st = 'play'; return; } swipe = pt(c, e, w, h); });
+  const offK = A.keys(e => { const m = {ArrowLeft:[-1,0], a:[-1,0], ArrowRight:[1,0], d:[1,0], ArrowUp:[0,-1], w:[0,-1], ArrowDown:[0,1], s:[0,1]}[e.key]; if (m) want = m; if (st != 'play' && st != 'quiz' && (e.key==' '||e.key=='Enter')) { setup(false); st = 'play'; } });
+  c.addEventListener('pointerdown', e => { if (st == 'quiz') return; if (st != 'play') { setup(false); st = 'play'; return; } swipe = pt(c, e, w, h); });
   c.addEventListener('pointerup', e => { if (!swipe) return; const q = pt(c, e, w, h), dx = q.x - swipe.x, dy = q.y - swipe.y; swipe = null;
     if (Math.hypot(dx, dy) < 12) { const px = pac.x*CW+CW/2, py = pac.y*CW+CW/2, ax = q.x - px, ay = q.y - py; want = Math.abs(ax) > Math.abs(ay) ? [Math.sign(ax),0] : [0,Math.sign(ay)]; }
     else want = Math.abs(dx) > Math.abs(dy) ? [Math.sign(dx),0] : [0,Math.sign(dy)]; });
@@ -142,7 +144,7 @@ A.register('maze', { mount(host, api){
           if (!opts.length) { o.dx = -o.dx; o.dy = -o.dy; return; }
           opts.sort((a, b) => Math.hypot(o.x+a[0]-tx, o.y+a[1]-ty) - Math.hypot(o.x+b[0]-tx, o.y+b[1]-ty)); const pick = (power > 0 && !o.dead) ? opts[opts.length-1] : Math.random() < .2 ? opts[Math.floor(Math.random()*opts.length)] : opts[0]; o.dx = pick[0]; o.dy = pick[1]; });
         const gx = q.x + q.dx*q.prog, gy = q.y + q.dy*q.prog, px = pac.x + pac.dx*pac.prog, py = pac.y + pac.dy*pac.prog;
-        if (!q.dead && Math.hypot(gx-px, gy-py) < .7) { if (power > 0) { q.dead = 1; score += 200; A.sfx('coin'); api.score(score); } else if (!A.immortal) { lives--; A.sfx('bad'); if (lives <= 0) { st = 'over'; A.sfx('over'); stat(api,'mazeLevel',level,'max'); api.over(score); } else resetPos(); } } });
+        if (!q.dead && Math.hypot(gx-px, gy-py) < .7) { if (power > 0) { q.dead = 1; score += 200; A.sfx('coin'); api.score(score); } else if (!A.immortal) { lives--; A.sfx('bad'); if (lives <= 0) { st = 'quiz'; learn2(host, api, 'CAUGHT! ANSWER TO KEEP A LIFE', () => { lives = 1; resetPos(); st = 'play'; }, () => { st = 'over'; A.sfx('over'); stat(api,'mazeLevel',level,'max'); api.over(score); }); } else resetPos(); } } });
       if (dots <= 0) { level++; score += 500; A.sfx('win'); setup(true); } }
     // draw
     g.fillStyle = '#05050f'; g.fillRect(0,0,w,h);
@@ -173,9 +175,9 @@ A.register('comets', { mount(host, api){
   const addRock = (x, y, s) => { const a = Math.random()*TAU, v = (40 + Math.random()*40) * (1 + wave*.08) * (4-s)*.6; rocks.push({x, y, vx:Math.cos(a)*v, vy:Math.sin(a)*v, s, r:s*14, rot:0, vr:(Math.random()-.5)*2, pts:Array.from({length:10}, () => .75 + Math.random()*.35)}); };
   const reset = () => { ship = {x:w/2, y:h/2, vx:0, vy:0, a:-Math.PI/2}; shots = []; parts = []; score = 0; lives = 3 + A.U('life'); wave = 0; inv = 2 + 2*A.U('shield'); spawnWave(); api.score(0); };
   const boom = (x, y, col, n) => { if (low()) n = Math.min(n, 4); for (let i=0;i<n;i++) { const a = Math.random()*TAU, s = 40 + Math.random()*140; parts.push({x, y, vx:Math.cos(a)*s, vy:Math.sin(a)*s, t:.5+Math.random()*.4, col}); } };
-  const offK = A.keys(e => { keys[e.key] = true; if (st != 'play' && (e.key == ' ' || e.key == 'Enter')) { reset(); st = 'play'; } });
+  const offK = A.keys(e => { keys[e.key] = true; if (st != 'play' && st != 'quiz' && (e.key == ' ' || e.key == 'Enter')) { reset(); st = 'play'; } });
   const ku = e => { keys[e.key] = false; }; window.addEventListener('keyup', ku);
-  c.addEventListener('pointerdown', e => { if (st != 'play') { reset(); st = 'play'; return; } touch = pt(c, e, w, h); });
+  c.addEventListener('pointerdown', e => { if (st == 'quiz') return; if (st != 'play') { reset(); st = 'play'; return; } touch = pt(c, e, w, h); });
   c.addEventListener('pointermove', e => { if (touch) touch = pt(c, e, w, h); });
   const tup = () => { touch = null; }; c.addEventListener('pointerup', tup); c.addEventListener('pointercancel', tup);
   const offL = A.loop(dt => { t += dt;
@@ -188,7 +190,7 @@ A.register('comets', { mount(host, api){
       for (const r of rocks) { r.x = (r.x + r.vx*dt + w) % w; r.y = (r.y + r.vy*dt + h) % h; r.rot += r.vr*dt; }
       for (const s of shots) for (const r of rocks) if (!r.dead && s.t > 0 && Math.hypot(s.x-r.x, s.y-r.y) < r.r) { s.t = 0; r.dead = 1; score += [0,100,50,20][r.s]; api.score(score); boom(r.x, r.y, '#c9b48a', 12); A.tone(160,.08,'square',.04); if (r.s > 1) { addRock(r.x, r.y, r.s-1); addRock(r.x, r.y, r.s-1); } }
       rocks = rocks.filter(r => !r.dead); shots = shots.filter(s => s.t > 0);
-      if (inv <= 0 && !A.immortal) for (const r of rocks) if (Math.hypot(ship.x-r.x, ship.y-r.y) < r.r + 9) { lives--; boom(ship.x, ship.y, '#64CDF5', 30); A.sfx('bad'); inv = 2.5; ship.x = w/2; ship.y = h/2; ship.vx = ship.vy = 0; if (lives <= 0) { st = 'over'; A.sfx('over'); stat(api,'cometWave',wave,'max'); api.over(score); } break; }
+      if (inv <= 0 && !A.immortal) for (const r of rocks) if (Math.hypot(ship.x-r.x, ship.y-r.y) < r.r + 9) { lives--; boom(ship.x, ship.y, '#64CDF5', 30); A.sfx('bad'); inv = 2.5; ship.x = w/2; ship.y = h/2; ship.vx = ship.vy = 0; if (lives <= 0) { st = 'quiz'; learn2(host, api, 'SHIP LOST! ANSWER FOR ONE MORE SHIP', () => { lives = 1; inv = 3; st = 'play'; }, () => { st = 'over'; A.sfx('over'); stat(api,'cometWave',wave,'max'); api.over(score); }); } break; }
       if (!rocks.length) { score += 250*wave; A.sfx('win'); spawnWave(); inv = 1.5 + 2*A.U('shield'); } }
     for (const q of parts) { q.t -= dt; q.x += q.vx*dt; q.y += q.vy*dt; } parts = parts.filter(q => q.t > 0);
     g.fillStyle = '#05061a'; g.fillRect(0,0,w,h); for (const s of stars) { g.fillStyle = 'rgba(255,255,255,'+(.3+s.z*.7)+')'; g.fillRect(s.x, s.y, s.z > .7 ? 2 : 1, s.z > .7 ? 2 : 1); }
@@ -211,11 +213,11 @@ A.register('lumber', { mount(host, api){
   let hats = 0; let st = 'ready', side = -1, logs = [], score = 0, time = 1, t = 0, chopT = 0, flying = [];
   const newLog = () => { const prev = logs.length ? logs[logs.length-1] : 0; const r = Math.random(); return prev ? 0 : r < .35 ? -1 : r < .7 ? 1 : 0; };
   const reset = () => { logs = [0,0,0]; while (logs.length < 9) logs.push(newLog()); score = 0; time = 1; side = -1; hats = A.U('helmet'); api.score(0); };
-  const chop = s => { if (st != 'play') { reset(); st = 'play'; return; } side = s; if (logs[0] == side) return die();
+  const chop = s => { if (st == 'quiz') return; if (st != 'play') { reset(); st = 'play'; return; } side = s; if (logs[0] == side) return die();
     flying.push({side, t:0, b:logs[0]}); logs.shift(); logs.push(newLog()); chopT = .1; score++; api.score(score); time = Math.min(1, time + .06*(1 + .15*A.U('chop'))); A.tone(240 + (score%5)*30, .05, 'square', .04);
     if (logs[0] == side) die(); };
-  const die = () => { if (hats > 0) { hats--; A.sfx('bad'); logs[0] = 0; time = Math.max(time, .4); return; } st = 'over'; A.sfx('over'); stat(api,'lumberBest',score,'max'); api.over(score); };
-  const offK = A.keys(e => { if (e.key == 'ArrowLeft' || e.key == 'a') chop(-1); else if (e.key == 'ArrowRight' || e.key == 'd') chop(1); else if ((e.key == ' ' || e.key == 'Enter') && st != 'play') { reset(); st = 'play'; } });
+  const die = () => { if (hats > 0) { hats--; A.sfx('bad'); logs[0] = 0; time = Math.max(time, .4); return; } st = 'quiz'; learn2(host, api, 'BONK! ANSWER TO KEEP CHOPPING', () => { logs[0] = 0; time = Math.max(time, .5); st = 'play'; }, () => { st = 'over'; A.sfx('over'); stat(api,'lumberBest',score,'max'); api.over(score); }); };
+  const offK = A.keys(e => { if (e.key == 'ArrowLeft' || e.key == 'a') chop(-1); else if (e.key == 'ArrowRight' || e.key == 'd') chop(1); else if ((e.key == ' ' || e.key == 'Enter') && st != 'play' && st != 'quiz') { reset(); st = 'play'; } });
   c.addEventListener('pointerdown', e => { const q = pt(c, e, w, h); chop(q.x < w/2 ? -1 : 1); });
   const offL = A.loop(dt => { t += dt; chopT = Math.max(0, chopT - dt);
     if (st == 'play') { time -= dt * (.14 + Math.min(.5, score*.004)) * (1 - .08*A.U('slow')); if (time <= 0) die(); }
