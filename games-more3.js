@@ -308,7 +308,7 @@ A.register('pipes', { mount(host, api){
     const m = {ArrowLeft:[-1,0], ArrowRight:[1,0], ArrowUp:[0,-1], ArrowDown:[0,1]}[e.key]; if (m) { cx = clamp(cx + m[0], 0, N-1); cy = clamp(cy + m[1], 0, N-1); }
     if (e.key == ' ') tapTile(cx, cy); if (e.key == 'Enter' || e.key == 'r') doRelease(); if (e.key == 'z') { make(level); say('Level restarted.'); } });
   // ---------- draw ----------
-  const offL = A.loop(dt => { t += dt; msgT = Math.max(0, msgT - dt); if (st == 'play' && !quiz) runT += dt;
+  const offL = A.loop(dt => { A.mood(() => ({danger: st=="play" && hearts==1, boss: false})); t += dt; msgT = Math.max(0, msgT - dt); if (st == 'play' && !quiz) runT += dt;
     if (release) { release.t += dt; if (release.t > Math.min(1.6, .25 + release.n*.06)) finishRelease(); }
     g.fillStyle = '#7cb85a'; g.fillRect(0,0,w,h);
     if (T) { const s = S(), ox = OX(), shown = release ? Math.floor(release.t / Math.min(1.6, .25 + release.n*.06) * release.n) : -1, shownSet = new Set((flow.order||[]).slice(0, shown + 1).map(([x,y]) => x+','+y));
@@ -402,7 +402,7 @@ A.register('snowball', { mount(host, api){
   const hurtMe = dmg => { if (me.inv > 0 || A.immortal) return; if (pw.shield > 0) { pw.shield = 0; me.inv = .6; A.tone(900,.1,'sine',.05); return; } me.hp -= dmg; me.inv = .8; A.sfx('bad');
     if (me.hp <= 0) { quiz = learn2(host, api, 'SPLAT! ANSWER TO SHAKE OFF THE SNOW', () => { quiz = false; me.hp = Math.ceil(me.max/2); me.inv = 2; }, () => { quiz = false; st = 'over'; A.sfx('over'); stat(api,'snowWave',wave,'max'); api.over(score); }); } };
   const killFoe = f => { f.dead = 1; const T = TYPES[f.k]; score += T.pts + wave*10; flakes += 10; api.score(score); if (Math.random() < .3) drops.push({x:clamp(f.x, 30, w-30), y:MID + 40 + Math.random()*120, k:['icy','mega','rapid','shield'][Math.floor(Math.random()*4)], life:10}); };
-  const offL = A.loop(dt => { t += dt; dt = Math.min(dt, .033); msgT = Math.max(0, msgT - dt);
+  const offL = A.loop(dt => { A.mood(() => ({danger: st=="play" && me && me.hp==1, boss: st=="play" && !!boss})); t += dt; dt = Math.min(dt, .033); msgT = Math.max(0, msgT - dt);
     for (const f of snowfall) { f.y += 20*f.s*dt; f.x += (A0().wind ? 30 : Math.sin(t + f.y*.02)*6)*dt; if (f.y > FIELD) f.y = 0; if (f.x > w) f.x = 0; }
     if (st == 'play' && !quiz) { const AR = A0(), mx = (K.k.ArrowRight||K.k.d ? 1 : 0) - (K.k.ArrowLeft||K.k.a ? 1 : 0), my = (K.k.ArrowDown||K.k.s ? 1 : 0) - (K.k.ArrowUp||K.k.w ? 1 : 0), sp = 200 * (1 + .05*A.U('boots'));
       let ix = mx, iy = my; if (!mx && !my && hold && aim.y > MID && phase == 'fight') { ix = clamp((aim.x - me.x)/30, -1, 1); iy = clamp((aim.y - me.y)/30, -1, 1); }
@@ -543,7 +543,7 @@ A.register('cardbattle', { mount(host, api){
         if (myHp <= 0 && !A.immortal) quiz = learn2(host, api, 'YOUR CRITTERS ARE TIRED! ANSWER TO HEAL', () => { quiz = false; myHp = Math.ceil(myMax/2); }, () => { quiz = false; st = 'over'; A.sfx('over'); api.over(score); }); }, 650); } };
   c.addEventListener('pointerdown', e => { if (st != 'play') { reset(); st = 'play'; return; } const q = pt(c, e, w, h), L = layout(); deck.forEach((cd, i) => { const x = L.ox + (i % L.cols)*(L.cw+8), y = L.oy + Math.floor(i / L.cols)*(L.ch+8); if (q.x > x && q.x < x + L.cw && q.y > y && q.y < y + L.ch) flip(i); }); });
   let cur = 0; const offK = A.keys(e => { if (e.type != 'keydown') return; if ((e.key == ' ' || e.key == 'Enter') && st != 'play') { reset(); st = 'play'; return; } if (st != 'play') return; const L = layout(), m = {ArrowLeft:-1, ArrowRight:1, ArrowUp:-L.cols, ArrowDown:L.cols}[e.key]; if (m) cur = clamp(cur + m, 0, deck.length-1); if (e.key == ' ' || e.key == 'Enter') flip(cur); });
-  const offL = A.loop(dt => { t += dt; lock = Math.max(0, lock - dt); for (const f of fx) { f.t -= dt; f.y -= 30*dt; } fx = fx.filter(f => f.t > 0);
+  const offL = A.loop(dt => { A.mood(() => ({danger: st=="play" && foe && myHp>0 && myHp<=foe.atk, boss: false})); t += dt; lock = Math.max(0, lock - dt); for (const f of fx) { f.t -= dt; f.y -= 30*dt; } fx = fx.filter(f => f.t > 0);
     const gr = g.createLinearGradient(0,0,0,h); gr.addColorStop(0, '#2a1a4a'); gr.addColorStop(1, '#0b2e24'); g.fillStyle = gr; g.fillRect(0,0,w,h);
     if (foe) { g.font = (58 + Math.sin(t*3)*3)+'px '+A.font; g.textAlign = 'center'; g.fillText(foe.e, w/2, 110); g.fillStyle = '#fff'; g.font = '700 15px '+A.font; g.fillText(foe.n+' · stage '+(stage+1), w/2, 140);
       const fm = foe.hp + Math.max(0, stage - FOES.length + 1)*8; g.fillStyle = 'rgba(255,255,255,.15)'; rr(g, w/2-110, 150, 220, 12, 6); g.fill(); g.fillStyle = '#FF4539'; rr(g, w/2-110, 150, 220*clamp(foeHp/fm, 0, 1), 12, 6); g.fill();

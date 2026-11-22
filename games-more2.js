@@ -32,7 +32,7 @@ A.register('runner', { mount(host, api){
   const pu = () => { duck = false; downY = null; }; c.addEventListener('pointerup', pu); c.addEventListener('pointercancel', pu);
   const hit = () => { if (p.inv > 0 || A.immortal) return; lives--; p.inv = 1.5; A.sfx('bad');
     if (lives <= 0) { st = 'quiz'; quiz = learn2(host, api, 'OOF! ANSWER TO KEEP RUNNING', () => { lives = 1; p.inv = 2; st = 'play'; }, () => { st = 'over'; A.sfx('over'); stat(api,'runnerBest',score,'max'); api.over(score); }); } };
-  const offL = A.loop(dt => { t += dt; dt = Math.min(dt, .033);
+  const offL = A.loop(dt => { A.mood(() => ({danger: st=="play" && lives==1, boss: false})); t += dt; dt = Math.min(dt, .033);
     if (st == 'play') { speed = Math.min(MAXS(), speed + dt * A.D(4,6,8)); dist += speed*dt;
       if (duck && p.y < GROUND) p.vy += 2600*dt;   // ducking in the air drops you fast
       p.vy += GRAV*dt; p.y += p.vy*dt; if (p.y >= GROUND) { p.y = GROUND; p.vy = 0; p.jumps = 0; if (jumpBuf > 0) { jumpBuf = 0; jump(); } } p.inv = Math.max(0, p.inv - dt); jumpBuf = Math.max(0, jumpBuf - dt);
@@ -109,7 +109,7 @@ A.register('pinball', { mount(host, api){
   c.addEventListener('pointerdown', e => { const q = pt(c, e, w, h); if (st != 'play') { reset(); st = 'play'; return; } if (balls.some(b => b.inLane)) { charging = true; return; } if (q.x < w/2) lUp = true; else rUp = true; });
   const pu = e => { lUp = rUp = false; if (charging) { charging = false; balls.forEach(b => { if (b.inLane) { b.vy = -(500 + plunge*600); b.inLane = false; } }); plunge = 0; } };
   c.addEventListener('pointerup', pu); c.addEventListener('pointercancel', pu);
-  const offL = A.loop(dt => { t += dt;
+  const offL = A.loop(dt => { A.mood(() => ({danger: st=="play" && ballsLeft==1, boss: false})); t += dt;
     if (st == 'play' && !quiz) { const L = K.k.ArrowLeft || K.k.a || K.k.z || lUp, R = K.k.ArrowRight || K.k.d || K.k['/'] || rUp; const down = K.k[' '] || K.k.ArrowDown || charging;
       if (down && balls.some(b => b.inLane)) plunge = Math.min(1, plunge + dt*1.2); else if (plunge > 0 && !charging) { balls.forEach(b => { if (b.inLane) { b.vy = -(500 + plunge*600); b.inLane = false; } }); plunge = 0; }
       if (L && !lFlip) A.tone(200,.03,'square',.03); if (R && !rFlip) A.tone(200,.03,'square',.03); lFlip = L ? 1 : 0; rFlip = R ? 1 : 0;
@@ -274,7 +274,7 @@ A.register('platformer', { mount(host, api){
   const touch = {l:false, r:false, j:false}; const tz = e => { const q = pt(c, e, w, h); touch.l = q.x < w*.25; touch.r = q.x > w*.25 && q.x < w*.5; touch.j = q.x > w*.5; };
   c.addEventListener('pointerdown', e => { if (st != 'play') { reset(); st = 'play'; return; } tz(e); }); c.addEventListener('pointermove', e => { if (e.buttons) tz(e); });
   const pu = () => { touch.l = touch.r = touch.j = false; }; c.addEventListener('pointerup', pu); c.addEventListener('pointercancel', pu);
-  const offL = A.loop(dt => { t += dt; dt = Math.min(dt, .033);
+  const offL = A.loop(dt => { A.mood(() => ({danger: st=="play" && lives==1, boss: !!boss})); t += dt; dt = Math.min(dt, .033);
     if (st == 'play' && !quiz) { const L = K.k.ArrowLeft || K.k.a || touch.l, R = K.k.ArrowRight || K.k.d || touch.r, J = K.k[' '] || K.k.ArrowUp || K.k.w || touch.j;
       const acc = 1600, maxv = 220 * (1 + .05*A.U('speed')); p.vx += ((R?1:0) - (L?1:0)) * acc * dt; if (!L && !R) p.vx *= Math.pow(.001, dt); p.vx = clamp(p.vx, -maxv, maxv); if (L) p.face = -1; if (R) p.face = 1;
       if (J && p.on) { p.vy = -560 * (1 + .04*A.U('jump')); p.on = false; A.tone(500,.05,'triangle',.04); }

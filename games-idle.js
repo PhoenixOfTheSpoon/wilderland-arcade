@@ -743,7 +743,7 @@ A.register('idle', { mount(host, api){
   let barT = 0, scT = 0, drawErr = 0;
   const resetMech = () => { objs = []; glyph = null; glyphT = 6; chimeN = 0; chain = 0; noteRun = 0; wakeT = 0; noise = 0; sporeN = 0; evT = 2; hazard = null; gems = []; gemT = 4; };
   const arrive = (from, to) => { const B = DEPTHS[to].b; if (DEPTHS[from].b !== B) story(B.id, STORY[B.id]); [50,100,150,200,250].forEach(m => { if (from+1 < m && to+1 >= m) story('m'+m, STORY['m'+m]); }); };
-  const offL = A.loop(dt => { t += dt; const r = rate(); const active = Date.now() - (A.lastAct||0) < 15000; if (active && (!busy || shop || mapO)) give(r*dt);
+  const offL = A.loop(dt => { A.mood(() => ({danger: false, boss: !!(golem || core)})); t += dt; const r = rate(); const active = Date.now() - (A.lastAct||0) < 15000; if (active && (!busy || shop || mapO)) give(r*dt);
     shake = Math.max(0, shake-dt); comboT -= dt; if (comboT <= 0) combo = 0; trouble = Math.max(0, trouble - dt); if (sellArm > 0) { sellArm -= dt; if (sellArm <= 0) paintBar(); }
     rushT = Math.max(0, rushT - dt);
     const d = depthIdx();

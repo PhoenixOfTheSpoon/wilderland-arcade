@@ -96,7 +96,7 @@ A.register('snake', { mount(host, api){
     if (st=='paused') A.overlayText(g,w,h,'PAUSED','Press P to keep going');
     if (st=='dead') A.overlayText(g,w,h,'GAME OVER','Level '+level+' · score '+score+' · Space to play again');
   };
-  const offL = A.loop(dt=>{ tick+=dt;
+  const offL = A.loop(dt=>{ A.mood(() => ({danger: st=="play" && lives==1, boss: false})); tick+=dt;
     parts.forEach(p=>{p.x+=p.vx*dt;p.y+=p.vy*dt;p.vx*=.92;p.vy*=.92;p.t-=dt;}); parts=parts.filter(p=>p.t>0); flash=Math.max(0,flash-dt); if (banner) banner.t-=dt;
     if (st=='play') { if (readyT>0) readyT-=dt; else { slowT=Math.max(0,slowT-dt); const now=performance.now(); items=items.filter(i=>!i.ttl || (now-i.born)/1000<i.ttl);
         acc+=dt; const stp=stepTime(); while (acc>=stp && st=='play') { acc-=stp; step(); } } }
@@ -162,7 +162,7 @@ A.register('breakout', { mount(host, api){
   const damageBoss=d=>{ const B=boss; if(!B||B.hp<=0)return; B.hp=Math.max(0,B.hp-d); B.hitT=.12; combo++; comboT=4; milestone(); add(20*level*Math.max(1,combo>>2)); A.sfx('hit');
     if(B.hp<=0){ const bb=500*level*(1+B.cyc); add(bb); A.sfx('win'); flash=.2; shots=[]; bricks.forEach(k=>{if(k.sum)k.alive=0;}); burst(B.x+B.w/2,B.y+B.h/2,C.gold,30); api.stat&&api.stat('bossKills',1,'add'); banner={t:2,txt:B.name+' DEFEATED',sub:'+'+bb}; } };
   A.breakoutAdmin={ goLevel:n=>{ level=n; build(); serve(); if(state!='play')state='play'; }, addBalls:n=>{ const src=balls.find(b=>!b.stuck); for(let i=0;i<n;i++){ const a=-Math.PI/2+(Math.random()-.5)*1.6, v=spd(); balls.push({x:src?src.x:px,y:src?src.y:h-40,vx:Math.cos(a)*v,vy:Math.sin(a)*v}); } if(state!='play')state='play'; A.sfx('coin'); } };
-  const offL=A.loop(dt=>{
+  const offL=A.loop(dt=>{ A.mood(() => ({danger: lives==1, boss: !!(boss && boss.hp>0)}));
     if(state=='play'&&!quizzing){
       wideT=Math.max(0,wideT-dt); if(wideT<=0)wideN=0; slowT=Math.max(0,slowT-dt); flash=Math.max(0,flash-dt); fireT=Math.max(0,fireT-dt); catchT=Math.max(0,catchT-dt); if(combo>0){comboT-=dt; if(comboT<=0)combo=0;} if(banner)banner.t-=dt;
       const pb=A.D(100,80,64),tw=Math.min(w-20,pb+50*wideN)*(shrinkT>0?.6:1); pw+=(tw-pw)*Math.min(1,dt*10);

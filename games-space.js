@@ -179,7 +179,7 @@ A.register('space', { mount(host, api){
   const up = () => { touching = false; touchX = null; }; c.addEventListener('pointerup', up); c.addEventListener('pointercancel', up);
   const resumeBtn = el('button', {display:'none', margin:'8px auto 0', fontFamily:A.font, fontWeight:700, fontSize:'14px', border:'none', borderRadius:'999px', padding:'8px 16px', background:C.gold, color:C.forest, cursor:'pointer'}, 'Resume saved run'); wrap.appendChild(resumeBtn);
   resumeBtn.onclick = () => { if (api.resume) newGame(api.resume); };
-  const offL = A.loop(dt => { resumeBtn.style.display = state=='menu' && api.resume && (api.resume.wave || api.resume.v3) ? 'block' : 'none';
+  const offL = A.loop(dt => { A.mood(() => ({danger: state=="play" && lives==1, boss: !!boss})); resumeBtn.style.display = state=='menu' && api.resume && (api.resume.wave || api.resume.v3) ? 'block' : 'none';
     if (state=='play' || state=='clear') { let left = Math.min(dt, .1); while (left > 0) { const s = Math.min(left, 1/60); step(s); left -= s; } } draw(); });
   api.snap && api.snap(() => (state=='play' || state=='clear') && wave >= 1 ? {v3:1, wave: state=='clear' ? wave : wave-1, score, lives, wing} : null);   // saves from wave 1 on (resumes at the start of the wave you were on)
   A._space = {get: () => ({state, wave, score, lives, shots, hits, aliens: aliens.length, boss: boss ? {n:boss.n, hp:boss.hp} : null, wing, shield, pw:{...pw}}), newGame, kill: () => { aliens.forEach(a => a.dead = 1); }, hurtBoss: n => { if (boss) boss.hp = Math.min(boss.hp, n); }, jump: w => { wave = w - 1; startWave(); }};

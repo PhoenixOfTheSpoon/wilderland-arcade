@@ -1671,7 +1671,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-12-03b';
+const BUILD = '2026-12-03c';
 const SCRIPTS = ['arcade-core.js','music.js','prizes-more.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js','games-secrets.js','games-more.js','games-more2.js','games-more3.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
@@ -1934,7 +1934,7 @@ class Component extends DCLogic {
     if (d) { let ok = false; try { ok = JSON.stringify(this.P.saves[id]) === JSON.stringify(saves[id]); } catch(e){} if (!ok) { console.error('[save-check] '+id+' save did not read back'); if (this.state.admin) this.toast('⚠ SAVE CHECK FAILED · '+id); } }
     return !!d; }
   unmountGame(keep = true){ let saved = false; if (keep) saved = this.saveGame(); this.snapFn = null; if (this.mounted) this.endSess();
-    if (this.cleanup) { try{ this.cleanup(); }catch(e){} } this.cleanup = null; if (this.mounted && window.WLMusic) window.WLMusic.mood('floor'); this.mounted = null; if (this.gameRef.current) this.gameRef.current.innerHTML = ''; return saved; }
+    if (this.cleanup) { try{ this.cleanup(); }catch(e){} } this.cleanup = null; if (this.mounted && window.WLMusic) { if (window.Arcade) { window.Arcade._mDanger = undefined; window.Arcade._mBoss = undefined; } window.WLMusic.mood('floor'); } this.mounted = null; if (this.gameRef.current) this.gameRef.current.innerHTML = ''; return saved; }
   rects(){ return [...POS.map(p=>({x:p.x,y:p.y,w:140,h:130})), ...KIOSKS]; }
   blocked(x,y){ const r=17; if (x<r||y<14+r||x>FW-r||y>FH-r) return true; return false; }
   findNear(){

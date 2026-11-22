@@ -142,7 +142,7 @@ A.register('maze', { mount(host, api){
     if (Math.hypot(dx, dy) < 12) { const px = pac.x*CW+CW/2, py = pac.y*CW+CW/2, ax = q.x - px, ay = q.y - py; want = Math.abs(ax) > Math.abs(ay) ? [Math.sign(ax),0] : [0,Math.sign(ay)]; }
     else want = Math.abs(dx) > Math.abs(dy) ? [Math.sign(dx),0] : [0,Math.sign(dy)]; });
   const step = (o, sp, dt, choose) => { o.prog += sp*dt; while (o.prog >= 1) { o.prog -= 1; o.x += o.dx; o.y += o.dy; if (o.x < 0) o.x = Cn-1; if (o.x >= Cn) o.x = 0; choose(o); } if (!o.dx && !o.dy) { o.prog = 0; choose(o); } };
-  const offL = A.loop(dt => { t += dt;
+  const offL = A.loop(dt => { A.mood(() => ({danger: st=="play" && lives==1, boss: false})); t += dt;
     if (st == 'play') { const sp = 6.2 + level*.25;
       step(pac, sp, dt, o => { if (want && !wall(o.x+want[0], o.y+want[1])) { o.dx = want[0]; o.dy = want[1]; } if (wall(o.x+o.dx, o.y+o.dy)) { o.dx = 0; o.dy = 0; }
         const ch = grid[o.y][o.x]; if (ch == '.' || ch == 'o') { grid[o.y][o.x] = ' '; dots--; score += ch == 'o' ? 50 : 10; api.score(score); if (ch == 'o') { power = 7 - Math.min(4, level*.5) + A.U('power'); A.sfx('win'); } else A.tone(660,.03,'square',.02); } });
@@ -193,7 +193,7 @@ A.register('comets', { mount(host, api){
   c.addEventListener('pointerdown', e => { if (st == 'quiz') return; if (st != 'play') { reset(); st = 'play'; return; } touch = pt(c, e, w, h); });
   c.addEventListener('pointermove', e => { if (touch) touch = pt(c, e, w, h); });
   const tup = () => { touch = null; }; c.addEventListener('pointerup', tup); c.addEventListener('pointercancel', tup);
-  const offL = A.loop(dt => { t += dt;
+  const offL = A.loop(dt => { A.mood(() => ({danger: st=="play" && lives==1, boss: false})); t += dt;
     if (st == 'play') { let turn = (keys.ArrowLeft||keys.a ? -1 : 0) + (keys.ArrowRight||keys.d ? 1 : 0), thrust = keys.ArrowUp||keys.w, fire = keys[' '];
       if (touch) { const want = Math.atan2(touch.y - ship.y, touch.x - ship.x); let d = want - ship.a; while (d > Math.PI) d -= TAU; while (d < -Math.PI) d += TAU; turn = Math.max(-1, Math.min(1, d*3)); fire = true; thrust = Math.hypot(touch.x-ship.x, touch.y-ship.y) > 110; }
       ship.a += turn*4.2*dt; if (thrust) { ship.vx += Math.cos(ship.a)*260*dt; ship.vy += Math.sin(ship.a)*260*dt; if (!low() && Math.random() < .6) parts.push({x:ship.x - Math.cos(ship.a)*12, y:ship.y - Math.sin(ship.a)*12, vx:-Math.cos(ship.a)*80+(Math.random()-.5)*40, vy:-Math.sin(ship.a)*80+(Math.random()-.5)*40, t:.3, col:'#FF8A3C'}); }

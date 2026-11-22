@@ -376,7 +376,7 @@ A.register('rootout', { mount(host, api){
   const offK = A.keys(e=>{ const k = e.key.length==1 ? e.key.toLowerCase() : e.key;
     if (k==' ' || k=='ArrowDown' || k=='Enter') { if (state=='dead') { reset(); state = 'play'; } else drop(); }
     else if (k=='r' || k=='x') root(); else if (k=='p' || k=='w') pull(); else return false; });
-  const offL = A.loop(dt=>{ if (state=='play') tick(dt); draw(); });
+  const offL = A.loop(dt=>{ A.mood(() => ({danger: false, boss: !!(boss && boss.hp>0)})); if (state=='play') tick(dt); draw(); });
   api.snap && api.snap(()=> state=='play' || (state=='ready' && resumed) ? {layers:layers.map(l=>({...l})), score, health, pulls, perfects, rooted, seen, seeds} : null);
   return () => { stat(api,'rootHeight',layers.length-1); offK(); offL(); };
 }});

@@ -7,7 +7,7 @@ let on = true; try { on = localStorage.getItem(KEY) !== 'off'; } catch(e){}
 let muted = false, ctx = null, master = null, cur = null, timer = null, step = 0, nextT = 0, started = false, noiseBuf = null;
 
 // Each mood: key root (MIDI), scale, tempo, chord progression (scale degrees), instrument colors, seed for its melody.
-const MAJ = [0,2,4,5,7,9,11], MIN = [0,2,3,5,7,8,10], DOR = [0,2,3,5,7,9,10], PENT = [0,2,4,7,9];
+const MAJ = [0,2,4,5,7,9,11], MIN = [0,2,3,5,7,8,10], DOR = [0,2,3,5,7,9,10], PENT = [0,2,4,7,9], HARM = [0,2,3,5,7,8,11], PHRY = [0,1,3,5,7,8,10];
 const MOODS = {
   floor:  {root:60, sc:MAJ, bpm:112, prog:[0,4,5,3], lead:'square',   arp:'triangle', bass:'triangle', drums:1, seed:7,  vol:1},
   action: {root:57, sc:MIN, bpm:138, prog:[0,5,2,6], lead:'square',   arp:'square',   bass:'sawtooth', drums:2, seed:21, vol:.9},
@@ -16,6 +16,9 @@ const MOODS = {
   mines:  {root:64, sc:MIN, bpm:100, prog:[0,3,6,4], lead:'triangle', arp:'square',   bass:'triangle', drums:1, seed:12, vol:1},
   calm:   {root:67, sc:PENT,bpm:84,  prog:[0,3,4,2], lead:'sine',     arp:'triangle', bass:'sine',     drums:0, seed:3,  vol:1.1},
   story:  {root:62, sc:MIN, bpm:76,  prog:[0,5,3,4], lead:'triangle', arp:'sine',     bass:'sine',     drums:0, seed:44, vol:1.1},
+  // super dramatic (original): last life, and boss fights — they take over from the game's own tune until it's over
+  danger: {root:57, sc:HARM,bpm:168, prog:[0,5,6,4], lead:'sawtooth', arp:'square',   bass:'sawtooth', drums:3, seed:66, vol:.8},
+  boss:   {root:52, sc:PHRY,bpm:150, prog:[0,1,0,6], lead:'sawtooth', arp:'sawtooth', bass:'square',   drums:3, seed:91, vol:.8},
 };
 const mtof = m => 440 * Math.pow(2, (m-69)/12);
 const rnd = seed => () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
@@ -44,7 +47,7 @@ const schedule = () => { if (!cur || !ctx) return; const {M, deg, mel} = cur, e 
     const arpT = [c, c+2, c+4, c+7][beat % 4]; note(mtof(deg(arpT)), t, e*.8, M.arp, .022*V);
     // bass on beats 1 and 3 (and a pickup)
     if (beat == 0 || beat == 4 || (beat == 7 && M.drums)) note(mtof(deg(c) - 24), t, e*1.8, M.bass, .07*V);
-    if (M.drums) { if (beat % 2 == 1) hat(t, .025); if (beat == 0 || beat == 4 || (M.drums > 1 && beat == 6)) kick(t, .12); }
+    if (M.drums) { if (beat % 2 == 1 || M.drums > 2) hat(t, M.drums > 2 ? .018 : .025); if (beat == 0 || beat == 4 || (M.drums > 1 && beat == 6) || (M.drums > 2 && beat % 2 == 0)) kick(t, M.drums > 2 ? .15 : .12); if (M.drums > 2 && beat == 0) note(mtof(deg(c) - 36), t, e*3, 'sine', .12*V); }
     nextT += e; step++; } };
 
 const audible = () => on && !muted && !document.hidden && started;
@@ -56,18 +59,23 @@ let audio = null, audioKey = '';
 const playFile = () => { const F = FILES[track]; if (!audio || audioKey !== track) { if (audio) audio.pause(); audio = new Audio(F.src); audio.loop = true; audio.volume = .35; audioKey = track; }
   const pr = audio.play(); if (pr && pr.catch) pr.catch(() => {}); };
 const pauseFile = () => { if (audio) audio.pause(); };
+const dramatic = () => flagsNow.danger || flagsNow.boss;
 const run = () => { if (!audible()) { stop(); return; }
-  if (FILES[track]) { stopChip(); playFile(); return; } pauseFile(); if (!cur) return; if (!ensure()) return; if (ctx.state == 'suspended') ctx.resume();
+  if (FILES[track] && !dramatic()) { stopChip(); playFile(); return; } pauseFile(); if (!cur) return; if (!ensure()) return; if (ctx.state == 'suspended') ctx.resume();
   if (!timer) { nextT = ctx.currentTime + .1; timer = setInterval(schedule, 90); schedule(); } fade(.5, .8); };
 const stopChip = () => { if (!ctx) return; fade(0, .4); if (timer) { const tm = timer; timer = null; setTimeout(() => clearInterval(tm), 450); } };
 const stop = () => { stopChip(); pauseFile(); };
 
-let moodName = 'floor';
+let moodName = 'floor', baseMood = 'floor', flagsNow = {danger:false, boss:false};
 const WLMusic = {
-  mood(name){ if (!MOODS[name]) name = 'floor'; if (name === moodName && cur) return; moodName = name;
-    if (timer && !FILES[track]) { fade(0, .3); setTimeout(() => { cur = build(moodName); step = 0; if (ctx) nextT = ctx.currentTime + .05; if (audible()) fade(.5, .8); }, 320); } else { cur = build(name); step = 0; run(); } },
+  mood(name){ if (!MOODS[name]) name = 'floor'; baseMood = name; if (name == 'floor') flagsNow = {danger:false, boss:false}; this._apply(); },
+  // games report "last life" (danger) and "boss fight" (boss); boss music wins over danger music
+  flags(o){ flagsNow = {danger:!!o.danger, boss:!!o.boss}; this._apply(); },
+  _apply(){ const name = flagsNow.boss ? 'boss' : flagsNow.danger ? 'danger' : baseMood; if (name === moodName && cur) { run(); return; } const wasFile = FILES[track] && !['boss','danger'].includes(moodName); moodName = name;
+    if (FILES[track]) { cur = build(name); step = 0; stop(); run(); return; }
+    if (timer && !wasFile) { fade(0, .3); setTimeout(() => { cur = build(moodName); step = 0; if (ctx) nextT = ctx.currentTime + .05; if (audible()) fade(.5, .8); }, 320); } else { cur = build(name); step = 0; run(); } },
   setOn(v){ on = !!v; try { localStorage.setItem(KEY, on ? 'on' : 'off'); } catch(e){} if (on) { started = true; if (!cur) cur = build(moodName); run(); } else stop(); },
-  _state: () => ({ctx: ctx && ctx.state, playing: !!timer, mood: moodName}),
+  _state: () => ({ctx: ctx && ctx.state, playing: !!timer, mood: moodName, flags: flagsNow, file: !!(audio && !audio.paused)}),
   // MUSIC button: Chiptune → each song file → Off → Chiptune …
   cycle(){ const order = ['chip', ...Object.keys(FILES), 'off'], curK = on ? track : 'off', nx = order[(order.indexOf(curK)+1) % order.length];
     if (nx == 'off') { this.setOn(false); return; } track = nx; try { localStorage.setItem(KEY+'-track', track); } catch(e){} if (!on) this.setOn(true); else { stop(); started = true; if (!cur) cur = build(moodName); run(); } },

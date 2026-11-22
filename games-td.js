@@ -418,7 +418,7 @@ A.register('td', { w:720, mount(host, api){
     if (k=='u') upgrade(); if (k==' ') startWave(); });
   let ut = 0;
   const prof = {step:0, draw:0, n:0};
-  const offL = A.loop(dt=>{ const t0 = performance.now(); if (state=='build' || state=='wave') { simT += dt*spd; const maxN = Math.min(90, Math.max(30, Math.ceil(dt*spd/STEP) + 2)); let n = 0; while (simT >= STEP && n < maxN) { step(STEP); simT -= STEP; n++; if (state!='build' && state!='wave') break; } if (n >= maxN) simT = 0; }
+  const offL = A.loop(dt=>{ A.mood(() => ({danger: (state=="build"||state=="wave") && lives>0 && lives<10, boss: enemies.some(e => e.D && e.D.boss && !e.dead)})); const t0 = performance.now(); if (state=='build' || state=='wave') { simT += dt*spd; const maxN = Math.min(90, Math.max(30, Math.ceil(dt*spd/STEP) + 2)); let n = 0; while (simT >= STEP && n < maxN) { step(STEP); simT -= STEP; n++; if (state!='build' && state!='wave') break; } if (n >= maxN) simT = 0; }
     const t1 = performance.now(); draw(); const t2 = performance.now(); prof.step = prof.step*.95 + (t1-t0)*.05; prof.draw = prof.draw*.95 + (t2-t1)*.05; ut += dt; if (ut>.25) { ut = 0; if (state=='build'||state=='wave') ui(); } });
   // Save: the running game — or, if you leave from the menu without starting anything, keep the old saved run instead of deleting it.
   api.snap && api.snap(()=> (state=='build'||state=='wave') && (wave>0 || towers.length) ? {map, mode, wave: state=='wave' ? wave-1 : wave, gold, lives, score, perfect, towers: towers.map(({c,r,type,lvl,spent,mode})=>({c,r,type,lvl,spent,mode}))}
@@ -427,7 +427,7 @@ A.register('td', { w:720, mount(host, api){
   { const R = api.resume; if (R && R.towers && MAPS[R.map]) { resumedUsed = true; newGame(R.map, R); } }
   setMap(0); ui();
   // test hook (used by the arcade's automated checks)
-  A._td = {prof, get: () => ({state, wave, enemies: enemies.length, towers: towers.length, fx: fx.length, map, spd, perf, gold}), newGame, startWave, setSpd: v => { spd = v; ui(); }, setPerf: v => { perf = v; bg = null; ui(); }, place: (type, cc, rr) => { if (!free(cc,rr) || towers.some(t=>t.c==cc&&t.r==rr)) return false; towers.push({c:cc,r:rr,type,lvl:5,spent:0,mode:'first',cd:0,heat:0,tg:null,buff:0}); return true; }, spawn: (t, ri) => spawn(t, 0, ri), cast, setGold: v => { gold = v; }, enemiesList: () => enemies, freeCells: () => { const out = []; for (let x=0;x<cols;x++) for (let y=0;y<rows;y++) if (free(x,y)) out.push([x,y]); return out; }};
+  A._td = {prof, get: () => ({state, wave, enemies: enemies.length, towers: towers.length, fx: fx.length, map, spd, perf, gold}), newGame, startWave, setSpd: v => { spd = v; ui(); }, setPerf: v => { perf = v; bg = null; ui(); }, place: (type, cc, rr) => { if (!free(cc,rr) || towers.some(t=>t.c==cc&&t.r==rr)) return false; towers.push({c:cc,r:rr,type,lvl:5,spent:0,mode:'first',cd:0,heat:0,tg:null,buff:0}); return true; }, spawn: (t, ri) => spawn(t, 0, ri), cast, setGold: v => { gold = v; }, setLives: v => { lives = v; }, enemiesList: () => enemies, freeCells: () => { const out = []; for (let x=0;x<cols;x++) for (let y=0;y<rows;y++) if (free(x,y)) out.push([x,y]); return out; }};
   return ()=>{ offK(); offL(); A._td = null; };
 }});
 })();

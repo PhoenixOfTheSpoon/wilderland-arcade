@@ -125,7 +125,7 @@ A.register('whack', { mount(host, api){
     running = true; paint();
     if (init && init.level) say('WELCOME BACK · LEVEL '+st.level); else showProb();
     let pt = 0;
-    offL = A.loop(dt=>{ if (!running) return;
+    offL = A.loop(dt=>{ A.mood(() => ({danger: !!(st && st.lives==1), boss: !!king})); if (!running) return;
       if (frozen>0) { frozen -= dt; grid.style.filter = 'hue-rotate(150deg) saturate(.75) brightness(1.08)'; if (frozen<=0) grid.style.filter = ''; }
       else {
         spawnT -= dt; const upN = holes.filter(h=>h.up && h.type!='king' && h.type!='tank').length, maxUp = Math.min(5, 1 + Math.floor(st.level/2));
@@ -309,7 +309,7 @@ A.register('crossing', { mount(host, api){
   const offK = A.keys(e=>{ const k = e.key.length==1 ? e.key.toLowerCase() : e.key;
     if (st!='play') { if (k==' ' || k=='Enter') { if (st=='dead') reset(); st = 'play'; } return; }
     const m = {ArrowUp:[0,-1],w:[0,-1],ArrowDown:[0,1],s:[0,1],ArrowLeft:[-1,0],a:[-1,0],ArrowRight:[1,0],d:[1,0]}[k]; if (m && !e.repeat) hop(m[0],m[1]); });
-  const offL = A.loop(dt=>{ if (st=='play') tick(dt); draw(); });
+  const offL = A.loop(dt=>{ A.mood(() => ({danger: st=="play" && lives==1, boss: false})); if (st=='play') tick(dt); draw(); });
   api.snap && api.snap(()=> st=='play' || (st=='ready' && resumed) ? {level,score,lives,dens,shieldN} : null);
   return ()=>{ offK(); offL(); };
 }});
