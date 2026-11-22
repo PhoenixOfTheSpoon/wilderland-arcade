@@ -76,7 +76,8 @@ A.register('td', { w:720, mount(host, api){
     golem:{hp:3200,sp:.45,b:320,col:'#7d8a86',r:.5,dmg:15,armor:10,boss:'Stone Golem'},
   };
   const AB = {meteor:{n:'Meteor',k:'Q',cd:25}, freeze:{n:'Freeze',k:'W',cd:40}, rally:{n:'Rally',k:'E',cd:35}, reveal:{n:'Reveal',k:'R',cd:30}};
-  const SPEEDS = [.5, 1, 2, 3, 5];
+  const SPEEDS = [.5, 1, 2, 3, 5, 10, 20, 50];
+  const CB = [{id:'meteor', e:'☄'}, {id:'freeze', e:'❄'}, {id:'rally', e:'📯'}, {id:'reveal', e:'🏮'}, {id:'speed', small:1}, {id:'next', e:'▶'}].map((b, i) => ({...b, x: 720 - 26, y: 30 + i*46}));   // on-map buttons (right edge)
 
   // ---------------- map geometry ----------------
   let map = 0, T = 40, OX = 0, OY = 0, cols = 12, rows = 10, routes = [], pathSet = new Set(), waterSet = new Set(), bg = null;
@@ -167,11 +168,13 @@ A.register('td', { w:720, mount(host, api){
     stat(api,'tdWave',wave); stat(api,'tdPerfect',perfect); A.sfx('coin');
     say('WAVE '+wave+' CLEARED','+'+bonus+' gold'+(inc?' (pans +'+inc+')':'')+(leaked?'':' · no leaks')); ui(); };
   const gameOver = () => { state = 'over'; A.sfx('over'); api.over(Math.round(score*M().mult)); ui(); };
-  const cast = (id,x,y) => { if (cds[id]>0 || (state!='wave' && state!='build')) return false; cds[id] = AB[id].cd; A.sfx('coin');
-    if (id=='meteor') { const dmg = 60 + wave*14, R2 = T*1.6; for (const e of enemies) if (Math.hypot(e.x-x,e.y-y)<R2) hurt(e,dmg); addFx('ring',x,y,R2,0,C.orange,.45); flash = .12; A.tone(70,.35,'sawtooth',.08); }
-    if (id=='freeze') { freezeT = 3; say('FREEZE','Every critter stops for 3 seconds'); }
-    if (id=='rally') { rallyT = 6; say('RALLY','Towers fire twice as fast for 6 seconds'); }
-    if (id=='reveal') { revealT = 6; say('REVEAL','Every ghost — even the Phantom King — can be hit for 6 seconds'); }
+  // Workshop ability upgrades: stronger Meteor, longer Freeze/Rally/Reveal, shorter cooldowns
+  const abCd = id => AB[id].cd * Math.pow(.92, Math.min(10, A.U('abcool'))), freezeLen = () => 3 + .5*A.U('abfreeze'), rallyLen = () => 6 + A.U('abrally'), revealLen = () => 6 + A.U('abreveal');
+  const cast = (id,x,y) => { if (cds[id]>0 || (state!='wave' && state!='build')) return false; cds[id] = abCd(id); A.sfx('coin');
+    if (id=='meteor') { const dmg = (60 + wave*14) * (1 + .3*A.U('abmeteor')), R2 = T*1.6*(1 + .06*Math.min(10, A.U('abmeteor'))); for (const e of enemies) if (Math.hypot(e.x-x,e.y-y)<R2) hurt(e,dmg); addFx('ring',x,y,R2,0,C.orange,.45); flash = .12; A.tone(70,.35,'sawtooth',.08); }
+    if (id=='freeze') { freezeT = freezeLen(); say('FREEZE','Every critter stops for '+freezeLen()+' seconds'); }
+    if (id=='rally') { rallyT = rallyLen(); say('RALLY','Towers fire twice as fast for '+rallyLen()+' seconds'); }
+    if (id=='reveal') { revealT = revealLen(); say('REVEAL','Every ghost — even the Phantom King — can be hit for '+revealLen()+' seconds'); }
     ui(); return true; };
   const findTarget = (t, cx, cy, S, D) => { let best = null, bv = -1e9; const R2 = S.range*S.range;
     for (const e of enemies) { if (e.dead || !canHit(e,D)) continue; const dx = e.x-cx, dy = e.y-cy, dd = dx*dx+dy*dy; if (dd > R2) continue;
@@ -297,7 +300,7 @@ A.register('td', { w:720, mount(host, api){
     if (!bg) bg = drawBg(); g.drawImage(bg, 0, 0, W, H);
     if (!perf) for (const t of towers) { if (t.type!='lantern') continue; const R = tstat(t).range, cx = OX+t.c*T+T/2, cy = OY+t.r*T+T/2; g.fillStyle = 'rgba(255,242,168,.12)'; g.beginPath(); g.arc(cx,cy,R,0,TAU); g.fill(); }
     if (hover && (state=='build'||state=='wave')) { const {cc,rr,x,y} = hover;
-      if (aim=='meteor') { g.strokeStyle = C.red; g.lineWidth = 2; g.beginPath(); g.arc(x,y,T*1.6,0,TAU); g.stroke(); g.fillStyle = 'rgba(255,69,57,.15)'; g.fill(); }
+      if (aim=='meteor') { g.strokeStyle = C.red; g.lineWidth = 2; g.beginPath(); g.arc(x,y,T*1.6*(1 + .06*Math.min(10, A.U('abmeteor'))),0,TAU); g.stroke(); g.fillStyle = 'rgba(255,69,57,.15)'; g.fill(); }
       else if (build && free(cc,rr) && !towers.some(t=>t.c==cc&&t.r==rr)) { const D = TW[build]; g.fillStyle = gold>=D.cost ? 'rgba(213,243,103,.35)' : 'rgba(255,69,57,.3)'; g.fillRect(OX+cc*T,OY+rr*T,T,T);
         if (D.range) { g.strokeStyle = 'rgba(255,255,255,.5)'; g.lineWidth = 1.5; g.beginPath(); g.arc(OX+cc*T+T/2,OY+rr*T+T/2,D.range*T,0,TAU); g.stroke(); } } }
     if (sel && TW[sel.type].range) { const S = tstat(sel); g.fillStyle = 'rgba(255,255,255,.1)'; g.beginPath(); g.arc(OX+sel.c*T+T/2,OY+sel.r*T+T/2,S.range,0,TAU); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 1.5; g.stroke(); }
@@ -322,9 +325,15 @@ A.register('td', { w:720, mount(host, api){
     if (rallyT>0) { g.strokeStyle = C.gold; g.lineWidth = 4; g.strokeRect(2,2,W-4,H-4); }
     if (flash>0) { g.fillStyle = 'rgba(255,69,57,'+flash+')'; g.fillRect(0,0,W,H); }
     // HUD
-    if (state!='menu') { g.fillStyle = 'rgba(18,19,19,.72)'; rrect(g,6,H-32,360,26,13); g.fill(); g.fillStyle = '#fff'; g.font = '700 13px '+A.font; g.textAlign = 'left';
-      g.fillText('WAVE '+wave+'   ♥ '+lives+'   ● '+gold+' gold   '+spd+'×'+(perf?'   ⚡perf':''),16,H-14);
+    if (state!='menu') { g.fillStyle = 'rgba(18,19,19,.72)'; rrect(g,6,H-32,430,26,13); g.fill(); g.fillStyle = '#fff'; g.font = '700 13px '+A.font; g.textAlign = 'left';
+      g.fillText('WAVE '+wave+'   ♥ '+lives+'   ● '+gold+' gold   👾 '+(state=='wave' ? (queue.length-qi+enemies.length)+' left' : '0 left')+'   '+spd+'×'+(perf?'   ⚡perf':''),16,H-14);
       if (state=='build' && wave>0) { g.textAlign = 'right'; g.fillStyle = C.lime; g.fillText('Next wave in '+Math.ceil(between)+'s',W-12,H-14); } }
+    // ON-SCREEN BUTTONS: abilities, speed and next wave are always on the map, even on small screens
+    if (state=='build' || state=='wave') { CB.forEach(b => { const cd = AB[b.id] ? cds[b.id] : 0, ready = AB[b.id] ? cd <= 0 : true, on = b.id == 'meteor' && aim == 'meteor';
+        g.fillStyle = on ? C.lime : ready ? 'rgba(18,19,19,.78)' : 'rgba(18,19,19,.45)'; g.beginPath(); g.arc(b.x, b.y, 19, 0, TAU); g.fill();
+        if (AB[b.id] && cd > 0) { g.strokeStyle = C.gold; g.lineWidth = 3; g.beginPath(); g.arc(b.x, b.y, 19, -Math.PI/2, -Math.PI/2 + TAU*(1 - cd/abCd(b.id))); g.stroke(); }
+        g.fillStyle = on ? C.forest : '#fff'; g.font = (b.small ? '700 11px ' : '17px ')+A.font; g.textAlign = 'center'; g.fillText(b.id == 'speed' ? spd+'×' : b.id == 'next' ? (state=='build' ? '▶' : '…') : b.e, b.x, b.y + (b.small ? 4 : 6));
+        if (AB[b.id] && cd > 0) { g.font = '700 10px '+A.font; g.fillStyle = C.gold; g.fillText(Math.ceil(cd)+'s', b.x, b.y + 31); } }); }
     // BOSS BAR (big, with name) — strongest living boss
     let boss = null; for (const e of enemies) if (e.D.boss && (!boss || e.hp > boss.hp)) boss = e;
     if (boss) { const bw = Math.min(460, W-40), bx = (W-bw)/2; g.fillStyle = 'rgba(18,19,19,.8)'; rrect(g,bx-8,6,bw+16,38,10); g.fill();
@@ -381,7 +390,7 @@ A.register('td', { w:720, mount(host, api){
     TIDS.forEach(id=>{ const D = TW[id], x = tBtn[id]; x.textContent = ''; x.append(el('div',{overflow:'hidden',textOverflow:'ellipsis'},(D.k?D.k+' · ':'')+D.n), el('div',{fontSize:'11px',fontWeight:500},D.cost+' gold')); paintBtn(x,build==id,gold>=D.cost); });
     Object.entries(AB).forEach(([id,D])=>{ const x = aBtn[id], cd = cds[id]; x.textContent = D.k+' · '+D.n+(cd>0?' '+Math.ceil(cd)+'s':''); paintBtn(x,aim==id,cd<=0); });
     nextBtn.textContent = state=='wave' ? 'Wave '+wave+' · '+(queue.length-qi+enemies.length)+' left' : (wave==0 ? 'Space · Start wave 1' : 'Space · Next wave'); paintBtn(nextBtn,state=='build',state=='build');
-    spdBtn.textContent = 'X · Speed '+spd+'×'; paintBtn(spdBtn,spd!=1,true); perfBtn.textContent = 'Perf '+(perf?'ON':'OFF'); paintBtn(perfBtn,perf,true);
+    spdBtn.textContent = 'X · '+spd+'× speed'; paintBtn(spdBtn,spd!=1,true); perfBtn.textContent = 'Perf '+(perf?'ON':'OFF'); paintBtn(perfBtn,perf,true);
     if (sel) { const D = TW[sel.type], S = tstat(sel), mx = MAXLV(sel);
       selLbl.textContent = D.n+' · Lv '+sel.lvl+(sel.buff?' · boosted +'+Math.round(sel.buff*100)+'%':'')+(D.range ? (D.dmg ? ' · '+Math.round(S.dmg)+' dmg' : '')+(D.buff ? ' · +'+Math.round(S.tbuff*100)+'% to nearby towers' : '')+(D.poison ? ' · poison '+Math.round(S.poison)+'/s' : '') : ' · now +'+S.inc+' gold/wave → next level +'+tstat({...sel, lvl:sel.lvl+1}).inc+' gold/wave (no level cap)');
       { const pl = upPlan(sel); upBtn.textContent = sel.lvl>=mx ? 'Max level' : 'U · Upgrade '+(pl.n > 1 ? '×'+pl.n+' · '+pl.tot : upCost(sel)); paintBtn(upBtn,false,sel.lvl<mx && gold>=upCost(sel)); }
@@ -393,6 +402,7 @@ A.register('td', { w:720, mount(host, api){
   c.addEventListener('pointerleave',()=>{ hover = null; });
   c.addEventListener('pointerdown',e=>{ const p = at(e); hover = p;
     if (state=='over') { state = 'menu'; ui(); return; } if (state=='menu') return;
+    { const b = CB.find(b2 => Math.hypot(p.x - b2.x, p.y - b2.y) < 22); if (b && (state=='build' || state=='wave')) { if (b.id == 'speed') spd = SPEEDS[(SPEEDS.indexOf(spd)+1)%SPEEDS.length]; else if (b.id == 'next') { if (state=='build') startWave(); } else if (cds[b.id] > 0) A.sfx('bad'); else if (b.id == 'meteor') aim = aim=='meteor' ? null : 'meteor'; else cast(b.id); ui(); return; } }
     if (e.button==2) { sel = null; aim = null; ui(); return; }
     if (aim=='meteor') { if (cast('meteor',p.x,p.y)) aim = null; ui(); return; }
     const t = towers.find(t=>t.c==p.cc && t.r==p.rr); if (t) { sel = sel===t ? null : t; A.sfx('blip'); ui(); return; }
@@ -408,7 +418,7 @@ A.register('td', { w:720, mount(host, api){
     if (k=='u') upgrade(); if (k==' ') startWave(); });
   let ut = 0;
   const prof = {step:0, draw:0, n:0};
-  const offL = A.loop(dt=>{ const t0 = performance.now(); if (state=='build' || state=='wave') { simT += dt*spd; let n = 0; while (simT >= STEP && n < 30) { step(STEP); simT -= STEP; n++; if (state!='build' && state!='wave') break; } if (n >= 30) simT = 0; }
+  const offL = A.loop(dt=>{ const t0 = performance.now(); if (state=='build' || state=='wave') { simT += dt*spd; const maxN = Math.min(90, Math.max(30, Math.ceil(dt*spd/STEP) + 2)); let n = 0; while (simT >= STEP && n < maxN) { step(STEP); simT -= STEP; n++; if (state!='build' && state!='wave') break; } if (n >= maxN) simT = 0; }
     const t1 = performance.now(); draw(); const t2 = performance.now(); prof.step = prof.step*.95 + (t1-t0)*.05; prof.draw = prof.draw*.95 + (t2-t1)*.05; ut += dt; if (ut>.25) { ut = 0; if (state=='build'||state=='wave') ui(); } });
   // Save: the running game — or, if you leave from the menu without starting anything, keep the old saved run instead of deleting it.
   api.snap && api.snap(()=> (state=='build'||state=='wave') && (wave>0 || towers.length) ? {map, mode, wave: state=='wave' ? wave-1 : wave, gold, lives, score, perfect, towers: towers.map(({c,r,type,lvl,spent,mode})=>({c,r,type,lvl,spent,mode}))}
