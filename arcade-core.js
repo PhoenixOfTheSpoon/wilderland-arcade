@@ -42,6 +42,9 @@ A.solved = p => p.kind=='spell' ? 'The word is “'+p.word+'”' : p.q.replace('
 A.qText = p => p.kind=='math' ? p.q+' = ?' : p.q;
 A.learnOn = () => !!(A.edu && A.edu.on);
 A.U = k => (A.upg && A.upg[k]) || 0; // Upgrade Workshop level for the current game
+// Lives never go over 20 in any game. A life gained past 20 pays a small ticket bonus instead.
+A.MAXLIVES = 20; A.lives = n => Math.max(0, Math.min(A.MAXLIVES, Math.floor(n)));
+A.addLife = (cur, api, n = 1) => { const nx = cur + n; if (nx <= A.MAXLIVES) return nx; try { api && api.tix && api.tix(25 * (nx - A.MAXLIVES), 0, 'MAX LIVES · BONUS TICKETS'); } catch(e){} try { A.sfx('coin'); } catch(e){} return A.MAXLIVES; };
 A.quiz = (host, title, cb) => { const p = A.problem(), E = A.el;
   if (getComputedStyle(host).position=='static') host.style.position = 'relative';
   const o = E('div',{position:'absolute',inset:0,background:'rgba(1,86,64,.95)',display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:'14px',zIndex:40,color:'#fff',textAlign:'center',padding:'20px',boxSizing:'border-box',fontFamily:A.font,borderRadius:'12px'});

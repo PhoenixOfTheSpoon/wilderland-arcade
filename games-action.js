@@ -26,7 +26,7 @@ A.register('snake', { mount(host, api){
     portals = []; [L.portals, L.portals2].forEach((pp,ix)=>{ if(pp) { portals.push({x:pp[0][0],y:pp[0][1],to:portals.length+1,c:ix?C.sky:C.lavender},{x:pp[1][0],y:pp[1][1],to:portals.length,c:ix?C.sky:C.lavender}); } });
     portals.forEach(p=>walls.delete(K(p.x,p.y))); };
   const placeSnake = () => { snake=[{x:6,y:9},{x:5,y:9},{x:4,y:9},{x:3,y:9}]; prev=snake.map(s=>({...s})); dir={x:1,y:0}; q=[]; acc=0; items=[]; spawn('apple'); readyT=1; };
-  const reset = () => { level=1; score=0; lives=A.D(5,3,2)+A.U('life'); eaten=0; slowT=0; resumed=false; loadLevel(); placeSnake(); api.score(0); };
+  const reset = () => { level=1; score=0; lives=A.lives(A.D(5,3,2)+A.U('life')); eaten=0; slowT=0; resumed=false; loadLevel(); placeSnake(); api.score(0); };
   reset();
   const R = api.resume; if (R && R.v==2) { level=R.level; score=R.score; lives=R.lives; eaten=R.eaten||0; loadLevel(); placeSnake(); api.score(score); resumed=true; }
   const burst = (x,y,c,n=12) => { for(let i=0;i<n;i++){ const a=Math.random()*6.3, v=40+Math.random()*120; parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v,t:.6,c}); } };
@@ -134,7 +134,7 @@ A.register('breakout', { mount(host, api){
       const hp=1+(r<Math.floor(level/2)?Math.ceil(level/3):0);
       bricks.push({x:k*bw,y:46+r*(BH+4),r,hp,max:hp,alive:1,tnt:level>=3&&Math.random()<.07,gold:Math.random()<.04,mv:(level>=8&&level%2==0&&r%2)?(40+Math.min(200,level*2))*(r%4==1?1:-1):0}); }
     drops=[]; banner={t:1.6,txt:'LEVEL '+level}; };
-  const reset=()=>{px=w/2;pw=A.D(100,80,64)+10*A.U('wide');score=0;lives=A.D(5,3,2)+A.U('life');level=1;combo=0;comboT=0;fireT=laserT=catchT=0;bombN=0;wideT=slowT=0;wideN=0;flash=0;build();serve();api.score(0);};
+  const reset=()=>{px=w/2;pw=A.D(100,80,64)+10*A.U('wide');score=0;lives=A.lives(A.D(5,3,2)+A.U('life'));level=1;combo=0;comboT=0;fireT=laserT=catchT=0;bombN=0;wideT=slowT=0;wideN=0;flash=0;build();serve();api.score(0);};
   reset();
   let resumed=false; const RS=api.resume;
   if(RS&&RS.level){ level=RS.level; score=RS.score; lives=RS.lives; build(); if(level%5&&RS.bricks)bricks=RS.bricks.map(k=>Object.assign({},k,{alive:1})); serve(); api.score(score); resumed=true; banner={t:2,txt:'WELCOME BACK',sub:'Level '+level+' · '+lives+' lives'}; }
@@ -241,7 +241,7 @@ A.register('breakout', { mount(host, api){
       if(lost&&!balls.length){ const die=()=>{ if(!A.immortal) lives--; combo=0; A.sfx('bad'); flash=.3; wideT=0; wideN=0; fireT=laserT=catchT=0; bombN=0; if(lives<=0){state='dead';A.sfx('over');api.over(score);} else serve(); };
         if(A.learnOn()){ quizzing=true; A.quiz(host,'BALL LOST · ANSWER TO KEEP YOUR LIFE',ok=>{ quizzing=false; edu(ok); if(ok){ combo=0; serve(); } else die(); }); } else die(); }
       drops.forEach(d=>{ d.y+=150*dt; if(d.y>h-34&&d.y<h-14&&Math.abs(d.x-px)<pw/2+10){ d.got=1; A.sfx('coin');
-        if(d.k=='wide'){wideT=12;wideN++;banner={t:1,txt:'WIDE ×'+wideN};} if(d.k=='slow')slowT=10; if(d.k=='life')lives=Math.min(6,lives+1); if(d.k=='fire'){fireT=8;banner={t:1,txt:'FIREBALL'};} if(d.k=='laser'){laserT=10;banner={t:1,txt:'LASERS'};} if(d.k=='bomb'){bombN++;banner={t:1,txt:'BOMB ×'+bombN};} if(d.k=='catch'){catchT=12;banner={t:1,txt:'MAGNET'};}
+        if(d.k=='wide'){wideT=12;wideN++;banner={t:1,txt:'WIDE ×'+wideN};} if(d.k=='slow')slowT=10; if(d.k=='life')lives=A.addLife(lives,api); if(d.k=='fire'){fireT=8;banner={t:1,txt:'FIREBALL'};} if(d.k=='laser'){laserT=10;banner={t:1,txt:'LASERS'};} if(d.k=='bomb'){bombN++;banner={t:1,txt:'BOMB ×'+bombN};} if(d.k=='catch'){catchT=12;banner={t:1,txt:'MAGNET'};}
         if(d.k=='multi'){const src=balls.find(b=>!b.stuck)||balls[0]; if(src){ for(const s of[-.5,.5]){const a=Math.atan2(src.vy,src.vx)+s;balls.push({x:src.x,y:src.y,vx:Math.cos(a)*spd(),vy:Math.sin(a)*spd()});} }}
         add(50); } });
       drops=drops.filter(d=>!d.got&&d.y<h+20);

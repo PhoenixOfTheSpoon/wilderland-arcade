@@ -27,7 +27,7 @@ A.register('space', { mount(host, api){
   const keys = {}; let touchX = null, touching = false;
   for (let i=0;i<70;i++) stars.push({x:Math.random()*W, y:Math.random()*H, z:.3+Math.random()*1.4});
   const say = (t, s) => banner = {t, s, life:2.4};
-  const lives0 = () => A.D(7,5,3) + A.U('life');
+  const lives0 = () => A.lives(A.D(7,5,3) + A.U('life'));
   const bulCap = () => Math.min(10, 3 + Math.floor(wave/3)) + (boss ? 6 : 0);   // max enemy shots on screen at once
   // ---------------- waves ----------------
   const makeBunkers = () => { bunkers = []; const n = A.D(4,4,3); for (let b=0;b<n;b++) { const bx = W*(b+1)/(n+1) - 24, by = H-140; const cells = [];
@@ -166,11 +166,11 @@ A.register('space', { mount(host, api){
       if (banner.s) { g.fillStyle = '#fff'; g.font = '500 13px '+A.font; g.fillText(banner.s, W/2, H/2+4, W-100); } g.globalAlpha = 1; }
     if (state=='menu') { A.overlayText(g, W, H, 'STAR RANGER', 'Press Space or tap to launch'); g.fillStyle = '#fff'; g.font = '500 13px '+A.font; g.textAlign = 'center';
       ['← → / A D or drag to move · Space or hold to fire', 'Power-ups: II double · ≋ spread · » rapid · ◯ shield · ✈ wing mate', 'Mini-boss every 5 waves · big boss every 10'].forEach((t,i) => g.fillText(t, W/2, H/2+56+i*20));
-      if (api.resume && api.resume.wave) { g.fillStyle = C.gold; g.fillText('Saved run: wave '+(api.resume.wave+1)+' — press R or tap “Resume” below', W/2, H/2+124); } }
+      if (api.resume && (api.resume.wave || api.resume.v3)) { g.fillStyle = C.gold; g.fillText('Saved run: wave '+(api.resume.wave+1)+' — press R or tap “Resume” below', W/2, H/2+124); } }
     if (state=='over') A.overlayText(g, W, H, 'GAME OVER', 'Wave '+wave+' · '+score.toLocaleString()+' points · accuracy '+(shots ? Math.round(hits/shots*100) : 0)+'% · tap to play again'); };
   // ---------------- input ----------------
   const offK = A.keys(e => { const k = e.key.length==1 ? e.key.toLowerCase() : e.key; keys[k] = true;
-    if (state=='menu' && (k==' ' || k=='Enter')) { newGame(); return; } if (state=='menu' && k=='r' && api.resume && api.resume.wave) { newGame(api.resume); return; }
+    if (state=='menu' && (k==' ' || k=='Enter')) { newGame(); return; } if (state=='menu' && k=='r' && api.resume && (api.resume.wave || api.resume.v3)) { newGame(api.resume); return; }
     if (state=='over' && (k==' ' || k=='Enter')) { state = 'menu'; } });
   const ku = e => { const k = e.key.length==1 ? e.key.toLowerCase() : e.key; keys[k] = false; }; window.addEventListener('keyup', ku);
   const at = e => { const r = c.getBoundingClientRect(); return (e.clientX - r.left) * W / r.width; };
@@ -179,9 +179,9 @@ A.register('space', { mount(host, api){
   const up = () => { touching = false; touchX = null; }; c.addEventListener('pointerup', up); c.addEventListener('pointercancel', up);
   const resumeBtn = el('button', {display:'none', margin:'8px auto 0', fontFamily:A.font, fontWeight:700, fontSize:'14px', border:'none', borderRadius:'999px', padding:'8px 16px', background:C.gold, color:C.forest, cursor:'pointer'}, 'Resume saved run'); wrap.appendChild(resumeBtn);
   resumeBtn.onclick = () => { if (api.resume) newGame(api.resume); };
-  const offL = A.loop(dt => { resumeBtn.style.display = state=='menu' && api.resume && api.resume.wave ? 'block' : 'none';
+  const offL = A.loop(dt => { resumeBtn.style.display = state=='menu' && api.resume && (api.resume.wave || api.resume.v3) ? 'block' : 'none';
     if (state=='play' || state=='clear') { let left = Math.min(dt, .1); while (left > 0) { const s = Math.min(left, 1/60); step(s); left -= s; } } draw(); });
-  api.snap && api.snap(() => (state=='play' || state=='clear') && wave > 1 ? {wave: wave-1, score, lives, wing} : null);
+  api.snap && api.snap(() => (state=='play' || state=='clear') && wave >= 1 ? {v3:1, wave: state=='clear' ? wave : wave-1, score, lives, wing} : null);   // saves from wave 1 on (resumes at the start of the wave you were on)
   A._space = {get: () => ({state, wave, score, lives, shots, hits, aliens: aliens.length, boss: boss ? {n:boss.n, hp:boss.hp} : null, wing, shield, pw:{...pw}}), newGame, kill: () => { aliens.forEach(a => a.dead = 1); }, hurtBoss: n => { if (boss) boss.hp = Math.min(boss.hp, n); }, jump: w => { wave = w - 1; startWave(); }};
   return () => { offK(); offL(); window.removeEventListener('keyup', ku); A._space = null; };
 }});

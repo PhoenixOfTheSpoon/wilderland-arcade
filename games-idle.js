@@ -140,6 +140,12 @@ const UPS = [
   {id:'fgem',  n:'💎 Foreman: Gem Scout',   d:'Grabs gems for you if you don’t tap them within 2 seconds', max:1, cost:()=>2e6, fo:1, tog:1},
   {id:'fcrew', n:'👷 Foreman: Merge Crew',  d:'+1 extra merge every time the Foreman merges', max:Infinity, cost:l=>1e6*Math.pow(1.8,l), fo:1},
   {id:'fdig',  n:'⛏ Foreman: Rock Breaker', d:'Digs the rock for you: +1 auto-tap per second per level (half a normal tap)', max:Infinity, cost:l=>50000*Math.pow(1.6,l), fo:1},
+  // Breakthrough upgrades — they all kick in when you break through to a new layer
+  {id:'bbonus',n:'💥 Breakthrough Bonus', d:'Each breakthrough pays 20 seconds of ore per level, right away', max:Infinity, cost:l=>8000*Math.pow(1.7,l)},
+  {id:'bexp',  n:'🚀 Express Shaft',     d:'Breakthroughs need less digging: lifetime ore counts +10% more per level toward the next layer', max:Infinity, cost:l=>25000*Math.pow(1.9,l)},
+  {id:'brush', n:'⚡ Breakthrough Rush',  d:'Each breakthrough starts a GOLD RUSH (×3 ore) for 3 s per level (up to 60 s)', max:20, cost:l=>40000*Math.pow(2,l)},
+  {id:'bgem',  n:'💎 Lucky Seam',        d:'+1 gem per level every time you break through', max:Infinity, cost:l=>60000*Math.pow(2.1,l)},
+  {id:'bdepth',n:'🏔 Depth Mastery',     d:'Every layer you\'ve reached gives +1% ore per level', max:Infinity, cost:l=>100000*Math.pow(2.3,l)},
   {id:'fsell2',n:'💰 Foreman: Better Deals', d:'Clean Sweep and selling pay +50% more per level', max:Infinity, cost:l=>400000*Math.pow(2.2,l), fo:1},
 ];
 // ---------------- GEM TREE: permanent Mines upgrades bought with gems — never reset by Rebirth ----------------
@@ -194,9 +200,9 @@ A.register('idle', { mount(host, api){
   const bQty = mkb(()=>{ const o = [1,10,100,'max'], q = getQ(); setQ(o[(o.indexOf(q)+1) % o.length]); A.sfx('blip'); rerenderAll(); }, 'rgba(255,255,255,.14)', '#D5F367'); bQty.title = 'Buy amount for hiring and upgrades';
 
   // ---------- economy ----------
-  const depthIdx = () => { let d = 0; for (let i=0;i<DEPTHS.length;i++) if (S.life >= DEPTHS[i].at) d = i; return d; };
+  const depthIdx = () => { const life = S.life * (1 + .1*((S.up||{}).bexp||0)); let d = 0; for (let i=0;i<DEPTHS.length;i++) if (life >= DEPTHS[i].at) d = i; return d; };   // Express Shaft makes lifetime ore count for more
   const extraStart = () => Math.max(0, 1 + U('hire') + A.U('start') + GL2('vet') - (MAXL-1));
-  const mult = () => (1 + .05*Math.max(0, U('gem')-GEM_MAX)) * (1 + .02*Math.max(0, U('auto')-FORE_MAX)) * (1 + .25*GL2('ore')) * (1 + .25*U('cart')) * (1 + .2*depthIdx()) * (1 + .1*U('drill')) * (1 + .15*extraStart()) * (traitOf(depthIdx()) && traitOf(depthIdx()).k == 'crew' ? 1.25 : 1);
+  const mult = () => (1 + .01*U('bdepth')*depthIdx()) * (1 + .05*Math.max(0, U('gem')-GEM_MAX)) * (1 + .02*Math.max(0, U('auto')-FORE_MAX)) * (1 + .25*GL2('ore')) * (1 + .25*U('cart')) * (1 + .2*depthIdx()) * (1 + .1*U('drill')) * (1 + .15*extraStart()) * (traitOf(depthIdx()) && traitOf(depthIdx()).k == 'crew' ? 1.25 : 1);
   const minerCount = () => S.grid.reduce((a,L)=>a+(L?1:0),0);
   let trouble = 0;   // a hazard went off: miners dig at half speed for a few seconds
   const rate = () => S.grid.reduce((a,L)=>a+lvRate(L),0) * mult() * (trouble > 0 ? .5 : 1);
@@ -205,6 +211,12 @@ A.register('idle', { mount(host, api){
   const hireCost = () => Math.min(BIG, Math.ceil(8*Math.pow(1.09, S.hires) * Math.pow(2.5, Math.min(U('hire'), 60)) * Math.pow(.85, A.U('cheap'))));
   const hireLv = () => Math.min(MAXL-1, 1 + U('hire') + A.U('start') + GL2('vet'));
   let rushT = 0, golem = null, golemT = 110 + Math.random()*60, core = null;
+  // rewards from the breakthrough upgrades (n = how many layers you went down at once)
+  const breakBonus = n => { const parts2 = [];
+    if (U('bbonus')) { const ore = Math.max(10, rate()*20*U('bbonus')*n); give(ore); parts2.push('+'+fmt(ore)+' ore'); }
+    if (U('brush')) { rushT = Math.max(rushT, Math.min(60, 3*U('brush'))); parts2.push('GOLD RUSH '+Math.min(60, 3*U('brush'))+' s'); }
+    if (U('bgem')) { addGems(U('bgem')*n); parts2.push('+'+(U('bgem')*n)+' 💎'); }
+    if (parts2.length) setTimeout(() => say('BREAKTHROUGH BONUS!', parts2.join(' · '), C.gold), 1200); };
   const give = n => { n = fin(n); if (rushT > 0) n *= 3; S.ore = fin(S.ore + n); S.life = fin(S.life + n); };
   const tixFor = ore => Math.floor(Math.sqrt(fin(ore))/3);
   const score = () => Math.min(99999999, Math.floor(Math.sqrt(S.life)));
@@ -736,7 +748,7 @@ A.register('idle', { mount(host, api){
     rushT = Math.max(0, rushT - dt);
     const d = depthIdx();
     // breaking through to a new layer: the floor gives way and the next layer slides in
-    if (d > lastDepth && !trans) { trans = {from:lastDepth, to:d, t:0, dur:lowFx() ? 1.9 : 2.7, n:d-lastDepth}; lastDepth = d; resetMech(); golem = null; A.sfx('win'); A.tone(70,.6,'sawtooth',.05); stat(api,'mineDepth',d+1); shake = .3; }
+    if (d > lastDepth && !trans) { trans = {from:lastDepth, to:d, t:0, dur:lowFx() ? 1.9 : 2.7, n:d-lastDepth}; breakBonus(d - lastDepth); lastDepth = d; resetMech(); golem = null; A.sfx('win'); A.tone(70,.6,'sawtooth',.05); stat(api,'mineDepth',d+1); shake = .3; }
     else if (d < lastDepth) lastDepth = d;
     if (trans) { trans.t += dt; if (trans.t >= trans.dur) { const tr = trans; trans = null; arrive(tr.from, tr.to); } }
     if (dlg) dlg.shown = Math.min(dlg.txt.length, dlg.shown + dt*45);

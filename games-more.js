@@ -13,9 +13,10 @@ const learn2 = (host, api, title, yes, no) => { if (!A.learnOn || !A.learnOn()) 
 // BOUNCE UP — hop from cloud to cloud, as high as you can. ← → / A D / tilt by dragging.
 // =====================================================================================================
 A.register('bounce', { mount(host, api){
+  let __skip = false;   // set when a saved game was restored: the next start continues it instead of resetting
   const {c,g,w,h} = A.canvas(host, 480, 560); c.style.touchAction = 'none';
   let chutes = 0, jumpN = -580, jumpS = -980; let st = 'ready', p, plats, camY, score, best = 0, coins, keys = {}, dragX = null, parts = [], t = 0;
-  const reset = () => { p = {x:w/2, y:h-80, vx:0, vy:-560, face:1}; chutes = A.U('life'); const J = 1 + .05*A.U('spring'); jumpN = -580*J; jumpS = -980*J; plats = []; camY = 0; score = 0; coins = 0; parts = [];
+  const reset = () => { if (__skip) { __skip = false; return; } p = {x:w/2, y:h-80, vx:0, vy:-560, face:1}; chutes = A.U('life'); const J = 1 + .05*A.U('spring'); jumpN = -580*J; jumpS = -980*J; plats = []; camY = 0; score = 0; coins = 0; parts = [];
     for (let i = 0; i < 12; i++) addPlat(h - 40 - i*50); plats[0].x = w/2 - 40; plats[0].kind = 'n'; api.score(0); };
   const addPlat = y => { const lvl = Math.max(0, -y)/1500, r = Math.random(); const kind = r < Math.min(.25, .05+lvl*.04) ? 'm' : r < Math.min(.4, .1+lvl*.05) ? 'b' : r < .5 ? 's' : 'n';
     plats.push({x: 20 + Math.random()*(w-120), y, w: Math.max(52, 84 - lvl*6), kind, vx: kind=='m' ? (60+lvl*20)*(Math.random()<.5?-1:1) : 0, broke:false, coin: Math.random() < .18}); };
@@ -56,9 +57,12 @@ A.register('bounce', { mount(host, api){
       g.fillStyle = '#fff'; g.beginPath(); g.arc(-4, -7, 5, 0, TAU); g.arc(7, -7, 5, 0, TAU); g.fill(); g.fillStyle = '#121313'; g.beginPath(); g.arc(-2.5, -7, 2.4, 0, TAU); g.arc(8.5, -7, 2.4, 0, TAU); g.fill(); g.restore(); }
     g.restore();
     g.fillStyle = '#121313'; g.font = '700 18px '+A.font; g.textAlign = 'left'; g.fillText(score.toLocaleString()+'  · 🪙 '+coins, 12, 26);
-    if (st == 'ready') A.overlayText(g, w, h, 'BOUNCE UP', '← → or drag to steer · tap / Space to start');
+    if (st == 'ready') A.overlayText(g, w, h, 'BOUNCE UP', __skip ? 'Saved game · tap or press Space to continue' : '← → or drag to steer · tap / Space to start');
     if (st == 'over') A.overlayText(g, w, h, 'YOU FELL!', score.toLocaleString()+' points · tap to bounce again'); });
   reset(); st = 'ready';
+  // ---- save & resume (Save & leave, reloads, closing the browser) ----
+  api.snap && api.snap(() => (st == 'play' || st == 'quiz') ? {v:1, p, plats, camY, score, coins, chutes, jumpN, jumpS} : null);
+  { const R0 = api.resume; if (R0 && R0.v == 1) { try { ({p, plats, camY, score, coins, chutes, jumpN, jumpS} = R0); api.score(score); __skip = true; st = 'ready'; } catch(e) { console.error('[save] bounce resume failed', e); } } }
   return () => { offK(); offL(); window.removeEventListener('keyup', ku); };
 }});
 
@@ -66,6 +70,7 @@ A.register('bounce', { mount(host, api){
 // GEM MATCH — swap neighbouring gems to make 3+ in a row. 30 moves; specials for 4 and 5.
 // =====================================================================================================
 A.register('gems', { mount(host, api){
+  let __skip = false;   // set when a saved game was restored: the next start continues it instead of resetting
   const N = 8, S = 54, OX = 24, OY = 70, {c,g,w,h} = A.canvas(host, 480, 520); c.style.touchAction = 'none';
   const COL = ['#FF4539','#F9BF01','#00B451','#64CDF5','#b48cff','#ff8fd0'], SH = ['◆','●','▲','■','★','♥'];
   let B, sel = null, score = 0, moves = 30, st = 'ready', anim = 0, fall = [], pops = [], combo = 0, level = 1, target = 2500, t = 0;
@@ -93,7 +98,7 @@ A.register('gems', { mount(host, api){
   c.addEventListener('pointerdown', e => { const q = pt(c, e, w, h); if (st != 'play') { if (st != 'anim' && st != 'quiz') start(); return; } if (anim > 0) return;
     const x = Math.floor((q.x-OX)/S), y = Math.floor((q.y-OY)/S); if (!at(x,y)) { sel = null; return; }
     if (sel && Math.abs(sel[0]-x) + Math.abs(sel[1]-y) == 1) { swap(sel, [x,y]); sel = null; } else { sel = [x,y]; A.sfx('blip'); } });
-  const start = () => { score = 0; moves = 30 + 3*A.U('moves'); level = 1; target = 2500; combo = 0; fill(); for (let k=0;k<A.U('special');k++) { const x = Math.floor(Math.random()*N), y = Math.floor(Math.random()*N); B[y][x].sp = 1 + (k%2); } st = 'play'; api.score(0); };
+  const start = () => { if (__skip) { __skip = false; return; } score = 0; moves = 30 + 3*A.U('moves'); level = 1; target = 2500; combo = 0; fill(); for (let k=0;k<A.U('special');k++) { const x = Math.floor(Math.random()*N), y = Math.floor(Math.random()*N); B[y][x].sp = 1 + (k%2); } st = 'play'; api.score(0); };
   const offL = A.loop(dt => { t += dt;
     if (st == 'play') { if (anim > 0) { anim -= dt; for (let y=0;y<N;y++) for (let x=0;x<N;x++) if (B[y][x]) B[y][x].dy = Math.max(0, B[y][x].dy - 900*dt); if (anim <= 0) { if (!clear()) { combo = 0;
           if (score >= target) { level++; target = Math.round(target*2.2); moves += 20; A.sfx('win'); }
@@ -110,8 +115,11 @@ A.register('gems', { mount(host, api){
       g.fillStyle = 'rgba(255,255,255,.85)'; g.font = '700 16px '+A.font; g.textAlign = 'center'; g.fillText(SH[cell.k]||'', px+S/2, py+S/2+6);
       if (cell.sp) { g.strokeStyle = '#fff'; g.lineWidth = 3; g.beginPath(); if (cell.sp==1) { g.moveTo(px+8, py+S/2); g.lineTo(px+S-8, py+S/2); } else if (cell.sp==2) { g.moveTo(px+S/2, py+8); g.lineTo(px+S/2, py+S-8); } else g.arc(px+S/2, py+S/2, S*.42, 0, TAU); g.stroke(); } }
     for (const q of pops) { g.globalAlpha = q.t*2.5; g.strokeStyle = q.col; g.lineWidth = 4; g.beginPath(); g.arc(q.x, q.y, 26 - q.t*40, 0, TAU); g.stroke(); } g.globalAlpha = 1;
-    if (st == 'ready') A.overlayText(g, w, h, 'GEM MATCH', 'Tap a gem, then a neighbour to swap · tap to start');
+    if (st == 'ready') A.overlayText(g, w, h, 'GEM MATCH', __skip ? 'Saved game · tap or press Space to continue' : 'Tap a gem, then a neighbour to swap · tap to start');
     if (st == 'over') A.overlayText(g, w, h, 'OUT OF MOVES', score.toLocaleString()+' points · level '+level+' · tap to play again'); });
+  // ---- save & resume (Save & leave, reloads, closing the browser) ----
+  api.snap && api.snap(() => (st == 'play' || st == 'quiz') ? {v:1, B, score, moves, level, target} : null);
+  { const R0 = api.resume; if (R0 && R0.v == 1) { try { ({B, score, moves, level, target} = R0); anim = 0; combo = 0; api.score(score); __skip = true; st = 'ready'; } catch(e) { console.error('[save] gems resume failed', e); } } }
   return () => { offL(); };
 }});
 
@@ -119,13 +127,14 @@ A.register('gems', { mount(host, api){
 // MAZE MUNCHER — eat every dot, dodge the ghosts, grab a power berry to turn the tables.
 // =====================================================================================================
 A.register('maze', { mount(host, api){
+  let __skip = false;   // set when a saved game was restored: the next start continues it instead of resetting
   const MAP = ['###################','#........#........#','#o##.###.#.###.##o#','#.................#','#.##.#.#####.#.##.#','#....#...#...#....#','####.### # ###.####','   #.#   G   #.#   ','####.# ##-## #.####','#......#   #......#','####.# ##### #.####','   #.#       #.#   ','####.# ##### #.####','#........#........#','#.##.###.#.###.##.#','#o.#.....P.....#.o#','##.#.#.#####.#.#.##','#....#...#...#....#','#.######.#.######.#','#.................#','###################'];
   const CW = 24, R = MAP.length, Cn = MAP[0].length, {c,g,w,h} = A.canvas(host, Cn*CW, R*CW + 34); c.style.touchAction = 'none';
   let grid, dots, pac, ghosts, st = 'ready', score = 0, lives = 3, level = 1, power = 0, t = 0, want = null, swipe = null;
   const wall = (x, y) => { if (x < 0 || x >= Cn) return false; const ch = (grid[y]||'')[x]; return ch == '#' || ch == '-'; };
-  const setup = keepScore => { grid = MAP.map(r => r.split('')); dots = 0; ghosts = [];
+  const setup = keepScore => { if (__skip && !keepScore) { __skip = false; return; } grid = MAP.map(r => r.split('')); dots = 0; ghosts = [];
     for (let y=0;y<R;y++) for (let x=0;x<Cn;x++) { const ch = grid[y][x]; if (ch == '.' || ch == 'o') dots++; if (ch == 'P') { pac = {x, y, px:x, py:y, dx:0, dy:0, prog:0}; grid[y][x] = ' '; } if (ch == 'G') { grid[y][x] = ' '; [0,1,2,3].forEach(i => ghosts.push({x:x-1+i%3, y, sx:x-1+i%3, sy:y, dx:0, dy:0, prog:0, col:['#FF4539','#ff8fd0','#64CDF5','#F9BF01'][i], wait:i*2.5, dead:0})); } }
-    if (!keepScore) { score = 0; lives = 3 + A.U('life'); level = 1; } power = 0; api.score(score); };
+    if (!keepScore) { score = 0; lives = A.lives(3 + A.U('life')); level = 1; } power = 0; api.score(score); };
   const resetPos = () => { pac.x = pac.px; pac.y = pac.py; pac.dx = pac.dy = 0; pac.prog = 0; ghosts.forEach((q,i) => { q.x = q.sx; q.y = q.sy; q.prog = 0; q.dx = q.dy = 0; q.wait = i*2; q.dead = 0; }); };
   const offK = A.keys(e => { const m = {ArrowLeft:[-1,0], a:[-1,0], ArrowRight:[1,0], d:[1,0], ArrowUp:[0,-1], w:[0,-1], ArrowDown:[0,1], s:[0,1]}[e.key]; if (m) want = m; if (st != 'play' && st != 'quiz' && (e.key==' '||e.key=='Enter')) { setup(false); st = 'play'; } });
   c.addEventListener('pointerdown', e => { if (st == 'quiz') return; if (st != 'play') { setup(false); st = 'play'; return; } swipe = pt(c, e, w, h); });
@@ -159,9 +168,12 @@ A.register('maze', { mount(host, api){
         if (!q.dead) { g.fillStyle = scared ? (power < 2 && Math.sin(t*16) > 0 ? '#fff' : '#2f4aff') : q.col; g.beginPath(); g.arc(gx, gy-2, CW*.4, Math.PI, 0); g.lineTo(gx+CW*.4, gy+CW*.38); for (let k=0;k<4;k++) g.lineTo(gx+CW*.4 - (k+.5)*CW*.2, gy+CW*.38 - (k%2?0:4)); g.lineTo(gx-CW*.4, gy+CW*.38); g.fill(); }
         g.fillStyle = '#fff'; g.beginPath(); g.arc(gx-4, gy-3, 3.2, 0, TAU); g.arc(gx+4, gy-3, 3.2, 0, TAU); g.fill(); g.fillStyle = '#121313'; g.beginPath(); g.arc(gx-4+q.dx*1.4, gy-3+q.dy*1.4, 1.5, 0, TAU); g.arc(gx+4+q.dx*1.4, gy-3+q.dy*1.4, 1.5, 0, TAU); g.fill(); }); }
     g.fillStyle = '#fff'; g.font = '700 16px '+A.font; g.textAlign = 'left'; g.fillText('Score '+score.toLocaleString()+'   Level '+level, 10, R*CW+22); g.textAlign = 'right'; g.fillText('❤'.repeat(Math.max(0, Math.min(lives, 6))), w-10, R*CW+22);
-    if (st == 'ready') A.overlayText(g, w, h, 'MAZE MUNCHER', 'Arrows / WASD or swipe · eat the dots · tap to start');
+    if (st == 'ready') A.overlayText(g, w, h, 'MAZE MUNCHER', __skip ? 'Saved game · tap or press Space to continue' : 'Arrows / WASD or swipe · eat the dots · tap to start');
     if (st == 'over') A.overlayText(g, w, h, 'CAUGHT!', score.toLocaleString()+' points · level '+level+' · tap to play again'); });
   setup(false); st = 'ready';
+  // ---- save & resume (Save & leave, reloads, closing the browser) ----
+  api.snap && api.snap(() => (st == 'play' || st == 'quiz') ? {v:1, grid, dots, pac, ghosts, score, lives, level, power} : null);
+  { const R0 = api.resume; if (R0 && R0.v == 1) { try { ({grid, dots, pac, ghosts, score, lives, level, power} = R0); api.score(score); __skip = true; st = 'ready'; } catch(e) { console.error('[save] maze resume failed', e); } } }
   return () => { offK(); offL(); };
 }});
 
@@ -169,11 +181,12 @@ A.register('maze', { mount(host, api){
 // COMET DASH — spin, thrust and blast the comets apart before they hit your ship.
 // =====================================================================================================
 A.register('comets', { mount(host, api){
+  let __skip = false;   // set when a saved game was restored: the next start continues it instead of resetting
   const {c,g,w,h} = A.canvas(host, 480, 480); c.style.touchAction = 'none';
   let st = 'ready', ship, rocks, shots, parts = [], score = 0, lives = 3, wave = 0, keys = {}, cool = 0, inv = 0, t = 0, touch = null, stars = Array.from({length:60}, () => ({x:Math.random()*480, y:Math.random()*480, z:Math.random()}));
   const spawnWave = () => { wave++; rocks = []; for (let i = 0; i < 2 + wave; i++) { let x, y; do { x = Math.random()*w; y = Math.random()*h; } while (Math.hypot(x-w/2, y-h/2) < 140); addRock(x, y, 3); } };
   const addRock = (x, y, s) => { const a = Math.random()*TAU, v = (40 + Math.random()*40) * (1 + wave*.08) * (4-s)*.6; rocks.push({x, y, vx:Math.cos(a)*v, vy:Math.sin(a)*v, s, r:s*14, rot:0, vr:(Math.random()-.5)*2, pts:Array.from({length:10}, () => .75 + Math.random()*.35)}); };
-  const reset = () => { ship = {x:w/2, y:h/2, vx:0, vy:0, a:-Math.PI/2}; shots = []; parts = []; score = 0; lives = 3 + A.U('life'); wave = 0; inv = 2 + 2*A.U('shield'); spawnWave(); api.score(0); };
+  const reset = () => { if (__skip) { __skip = false; return; } ship = {x:w/2, y:h/2, vx:0, vy:0, a:-Math.PI/2}; shots = []; parts = []; score = 0; lives = A.lives(3 + A.U('life')); wave = 0; inv = 2 + 2*A.U('shield'); spawnWave(); api.score(0); };
   const boom = (x, y, col, n) => { if (low()) n = Math.min(n, 4); for (let i=0;i<n;i++) { const a = Math.random()*TAU, s = 40 + Math.random()*140; parts.push({x, y, vx:Math.cos(a)*s, vy:Math.sin(a)*s, t:.5+Math.random()*.4, col}); } };
   const offK = A.keys(e => { keys[e.key] = true; if (st != 'play' && st != 'quiz' && (e.key == ' ' || e.key == 'Enter')) { reset(); st = 'play'; } });
   const ku = e => { keys[e.key] = false; }; window.addEventListener('keyup', ku);
@@ -200,8 +213,11 @@ A.register('comets', { mount(host, api){
     for (const q of parts) { g.globalAlpha = Math.min(1, q.t*2); g.fillStyle = q.col; g.fillRect(q.x, q.y, 3, 3); } g.globalAlpha = 1;
     if (ship && st == 'play' && !(inv > 0 && Math.sin(t*20) > 0)) { g.save(); g.translate(ship.x, ship.y); g.rotate(ship.a); g.fillStyle = '#64CDF5'; g.strokeStyle = '#fff'; g.lineWidth = 2; g.beginPath(); g.moveTo(16, 0); g.lineTo(-10, -10); g.lineTo(-5, 0); g.lineTo(-10, 10); g.closePath(); g.fill(); g.stroke(); g.fillStyle = '#fff'; g.beginPath(); g.arc(3, 0, 3, 0, TAU); g.fill(); g.restore(); }
     g.fillStyle = '#fff'; g.font = '700 16px '+A.font; g.textAlign = 'left'; g.fillText('Score '+score.toLocaleString()+'   Wave '+wave, 10, 24); g.textAlign = 'right'; g.fillText('▲'.repeat(Math.max(0, Math.min(lives, 6))), w-10, 24);
-    if (st == 'ready') A.overlayText(g, w, h, 'COMET DASH', '← → turn · ↑ thrust · Space fire · or hold a finger where to fly');
+    if (st == 'ready') A.overlayText(g, w, h, 'COMET DASH', __skip ? 'Saved game · tap or press Space to continue' : '← → turn · ↑ thrust · Space fire · or hold a finger where to fly');
     if (st == 'over') A.overlayText(g, w, h, 'SHIP LOST', score.toLocaleString()+' points · wave '+wave+' · tap to fly again'); });
+  // ---- save & resume (Save & leave, reloads, closing the browser) ----
+  api.snap && api.snap(() => (st == 'play' || st == 'quiz') ? {v:1, ship, rocks, shots, score, lives, wave, inv} : null);
+  { const R0 = api.resume; if (R0 && R0.v == 1) { try { ({ship, rocks, shots, score, lives, wave, inv} = R0); parts = []; api.score(score); __skip = true; st = 'ready'; } catch(e) { console.error('[save] comets resume failed', e); } } }
   return () => { offK(); offL(); window.removeEventListener('keyup', ku); };
 }});
 
@@ -209,10 +225,11 @@ A.register('comets', { mount(host, api){
 // LUMBER JUMP — chop the tree from the left or right side; dodge the branches; don't run out of time.
 // =====================================================================================================
 A.register('lumber', { mount(host, api){
+  let __skip = false;   // set when a saved game was restored: the next start continues it instead of resetting
   const {c,g,w,h} = A.canvas(host, 420, 540); c.style.touchAction = 'none';
   let hats = 0; let st = 'ready', side = -1, logs = [], score = 0, time = 1, t = 0, chopT = 0, flying = [];
   const newLog = () => { const prev = logs.length ? logs[logs.length-1] : 0; const r = Math.random(); return prev ? 0 : r < .35 ? -1 : r < .7 ? 1 : 0; };
-  const reset = () => { logs = [0,0,0]; while (logs.length < 9) logs.push(newLog()); score = 0; time = 1; side = -1; hats = A.U('helmet'); api.score(0); };
+  const reset = () => { if (__skip) { __skip = false; return; } logs = [0,0,0]; while (logs.length < 9) logs.push(newLog()); score = 0; time = 1; side = -1; hats = A.U('helmet'); api.score(0); };
   const chop = s => { if (st == 'quiz') return; if (st != 'play') { reset(); st = 'play'; return; } side = s; if (logs[0] == side) return die();
     flying.push({side, t:0, b:logs[0]}); logs.shift(); logs.push(newLog()); chopT = .1; score++; api.score(score); time = Math.min(1, time + .06*(1 + .15*A.U('chop'))); A.tone(240 + (score%5)*30, .05, 'square', .04);
     if (logs[0] == side) die(); };
@@ -236,8 +253,11 @@ A.register('lumber', { mount(host, api){
     g.save(); g.translate(12, -36); g.rotate(chopT > 0 ? .3 : -1.1); g.fillStyle = '#8D5B1D'; g.fillRect(0, -3, 34, 5); g.fillStyle = '#c9ccd1'; g.beginPath(); g.moveTo(30, -10); g.lineTo(42, -6); g.lineTo(42, 8); g.lineTo(30, 6); g.fill(); g.restore(); g.restore();
     g.fillStyle = 'rgba(0,0,0,.25)'; rr(g, w/2-100, 16, 200, 14, 7); g.fill(); g.fillStyle = time > .3 ? C.lime : C.red; rr(g, w/2-100, 16, 200*Math.max(0, time), 14, 7); g.fill();
     g.fillStyle = '#121313'; g.font = '700 30px '+A.font; g.textAlign = 'center'; g.fillText(String(score), w/2, 70);
-    if (st == 'ready') A.overlayText(g, w, h, 'LUMBER JUMP', 'Tap left / right (or ← →) to chop · dodge branches');
+    if (st == 'ready') A.overlayText(g, w, h, 'LUMBER JUMP', __skip ? 'Saved game · tap or press Space to continue' : 'Tap left / right (or ← →) to chop · dodge branches');
     if (st == 'over') A.overlayText(g, w, h, 'TIMBER!', score+' logs · tap to chop again'); });
+  // ---- save & resume (Save & leave, reloads, closing the browser) ----
+  api.snap && api.snap(() => (st == 'play' || st == 'quiz') ? {v:1, logs, score, time, side, hats} : null);
+  { const R0 = api.resume; if (R0 && R0.v == 1) { try { ({logs, score, time, side, hats} = R0); api.score(score); __skip = true; st = 'ready'; } catch(e) { console.error('[save] lumber resume failed', e); } } }
   return () => { offK(); offL(); };
 }});
 })();

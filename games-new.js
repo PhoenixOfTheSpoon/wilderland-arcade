@@ -26,7 +26,7 @@ A.register('whack', { mount(host, api){
   const run = (init) => {
     if (offL) { offL(); offL = null; }
     b.innerHTML = '';
-    st = Object.assign({level:1,score:0,lives:A.D(7,5,3)+A.U('life'),whacks:0,charges:{quake:1+A.U('charge'),freeze:1+A.U('charge'),shield:1+A.U('charge')},shield:0,bestCombo:0}, init||{});
+    st = Object.assign({level:1,score:0,lives:A.lives(A.D(7,5,3)+A.U('life')),whacks:0,charges:{quake:1+A.U('charge'),freeze:1+A.U('charge'),shield:1+A.U('charge')},shield:0,bestCombo:0}, init||{});
     st.charges = Object.assign({quake:0,freeze:0,shield:0}, st.charges); st.combo = 0;
     let spawnT = .7, frozen = 0, king = null, kingT = 0, tankT = 3 + Math.random()*4;
     const learn = !!(A.edu && A.edu.on); let prob = learn ? A.problem() : null;
@@ -94,7 +94,7 @@ A.register('whack', { mount(host, api){
     const whacked = (h,i) => { const T = TYPES[h.type], wasAns = learn && h.label!=null && h.label===prob.a; if (wasAns) { edu(true); setTimeout(newProb, 0); }
       st.combo++; st.bestCombo = Math.max(st.bestCombo, st.combo);
       const pts = Math.round(T.pts * mult() * (1 + (st.level-1)*.1));
-      if (h.type=='heart') { st.lives = Math.min(9, st.lives+1); pop('+1 ♥',i,'#ffd0e8'); A.sfx('coin'); }
+      if (h.type=='heart') { st.lives = A.addLife(st.lives, api); pop('+1 ♥',i,'#ffd0e8'); A.sfx('coin'); }
       else if (h.type=='ice') { frozen = 3.5; pop('FREEZE',i,C.mint); A.sfx('coin'); }
       else if (h.type=='tank') { const bonus = 100*st.level; stat(api,'whackTank',1,'add'); pop('+'+bonus,i,C.gold); A.sfx('win'); say('THE TANK MOLE IS DOWN · '+(st.level*10)+' HELMETS · +'+bonus); st.score += bonus; }
       else if (h.type=='king') { king = null; stat(api,'whackKing',1,'add'); pop('+'+pts,i,C.gold); A.sfx('win'); say('THE KING IS BONKED · +'+pts); }
@@ -172,7 +172,7 @@ A.register('crossing', { mount(host, api){
       {r:7,dir:-1,sp:70,kind:'truck',len:2,gap:2.6}, {r:8,dir:1,sp:95,kind:'car',len:1,gap:3.2}, {r:9,dir:-1,sp:50,kind:'tractor',len:1.5,gap:2.4}, {r:10,dir:1,sp:135,kind:'racer',len:1,gap:5.5}];
     defs.forEach(d=>{ const lane = Object.assign({},d,{sp:d.sp*s*(.9+Math.random()*.2),objs:[]}); const span = (d.len + d.len*d.gap)*T, n = Math.ceil((w + d.len*T)/span) + 1, off = Math.random()*span;
       for (let i=0;i<n;i++) lane.objs.push({x:i*span+off-span,len:d.len,ph:Math.random()*6.28,dive:i%2==0}); lane.wrap = n*span; L.push(lane); }); return L; };
-  const reset = () => { level = 1; score = 0; lives = A.D(5,4,3)+A.U('life'); dens = [0,0,0,0,0]; shieldN = A.U('shield'); slowT = 0; pickup = null; fly = null; resumed = false; lanes = mkLanes(); respawn(); api.score(0); newProb(); };
+  const reset = () => { level = 1; score = 0; lives = A.lives(A.D(5,4,3)+A.U('life')); dens = [0,0,0,0,0]; shieldN = A.U('shield'); slowT = 0; pickup = null; fly = null; resumed = false; lanes = mkLanes(); respawn(); api.score(0); newProb(); };
   const respawn = () => { px = 240; pr = 11; furthest = 11; };
   const submerged = o => level>=2 && o.dive && Math.sin(time*1.1+o.ph) < -.55;
   const sinking = o => level>=2 && o.dive && Math.sin(time*1.1+o.ph) < -.2;
@@ -189,7 +189,7 @@ A.register('crossing', { mount(host, api){
       if (learn) { try { api.edu && api.edu(true); } catch(e){} }
       dens[i] = 1; let bonus = 100*level; if (fly && fly.i==i) { bonus += 200; fly = null; banner = {t:1.2,txt:'FIREFLY BONUS +200'}; }
       score += bonus; api.score(score); A.sfx('point');
-      if (dens.every(Boolean)) { score += 500*level; level++; lives = Math.min(7,lives+1); dens = [0,0,0,0,0]; lanes = mkLanes(); A.sfx('win');
+      if (dens.every(Boolean)) { score += 500*level; level++; lives = A.addLife(lives, api); dens = [0,0,0,0,0]; lanes = mkLanes(); A.sfx('win');
         banner = {t:2,txt:'LEVEL '+level,sub:level==2?'Some turtles dive now':level==3?'Gators! Only ride their backs':'Everything is faster · +1 life'};
         api.score(score); stat(api,'crossLevel',level); }
       newProb(); respawn(); } };
