@@ -61,5 +61,95 @@ service cloud.firestore {
       allow update: if validScore() && game == '_tix' && id == request.auth.uid && resource.data.uid == request.auth.uid;
       allow delete: if isAdmin();
     }
+
+    // ================= WILDERLAND BUSINESS TYCOON =================
+    // Nothing here can touch profiles (tickets, prizes, stars, pets, homes, avatars) — those stay owner-only above.
+    function signedIn() { return request.auth != null; }
+    function bizPath(uid) { return /databases/$(database)/documents/biz/$(uid); }
+    function hasBiz(uid) { return exists(bizPath(uid)); }
+    function biz(uid) { return get(bizPath(uid)).data; }
+    function shielded(uid) { return biz(uid).shieldUntil > request.time; }
+    // A rival can only be targeted by players between 1/10 and 10x its company value
+    function inRange(a, b) { return biz(a).value <= biz(b).value * 10 + 1000 && biz(a).value * 10 + 1000 >= biz(b).value; }
+    function cleanName(n) { return n is string && n.size() >= 2 && n.size() <= 24 && n.matches('^[A-Za-z0-9 \'&.!-]+$'); }
+
+    // One business per player, owned by that player. Everyone can read (shared market + leaderboards).
+    match /biz/{uid} {
+      allow read: if true;
+      allow create: if signedIn() && request.auth.uid == uid
+        && cleanName(request.resource.data.name)
+        && request.resource.data.created == request.time
+        && request.resource.data.shieldUntil == request.time + duration.value(3, 'd')
+        && request.resource.data.credit >= 300 && request.resource.data.credit <= 850
+        && request.resource.data.value is number && request.resource.data.cash is number;
+      // The owner can't change when they started or stretch their protection shield
+      allow update: if (signedIn() && request.auth.uid == uid
+          && cleanName(request.resource.data.name)
+          && request.resource.data.created == resource.data.created
+          && request.resource.data.shieldUntil <= resource.data.shieldUntil
+          && request.resource.data.credit >= 300 && request.resource.data.credit <= 850
+          && request.resource.data.value is number && request.resource.data.value < 1e300)
+        || isAdmin();
+      allow delete: if isAdmin() || (signedIn() && request.auth.uid == uid);
+    }
+
+    // PvP actions. Doc id = fromUid_toUid_type_YYYY-MM-DD, so each action can happen once per day per rival.
+    // The target's own game applies the effect, then marks it applied. Admin can read the whole log.
+    match /bizActions/{id} {
+      allow read: if isAdmin() || (signedIn() && (resource.data.from == request.auth.uid || resource.data.to == request.auth.uid));
+      allow create: if signedIn()
+        && request.resource.data.from == request.auth.uid
+        && request.resource.data.to != request.auth.uid
+        && id == request.auth.uid + '_' + request.resource.data.to + '_' + request.resource.data.type + '_' + request.resource.data.day
+        && request.resource.data.type in ['price', 'poach', 'takeover', 'offer']
+        && request.resource.data.at == request.time
+        && request.resource.data.applied == false
+        && hasBiz(request.auth.uid) && hasBiz(request.resource.data.to)
+        && !shielded(request.resource.data.to) && !shielded(request.auth.uid)
+        && inRange(request.auth.uid, request.resource.data.to)
+        && (request.resource.data.type != 'takeover' || biz(request.resource.data.to).lossDays >= 3);
+      // Only the target marks an action as applied/answered (accept or decline a buyout offer)
+      allow update: if signedIn() && resource.data.to == request.auth.uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['applied', 'answer']);
+      allow delete: if isAdmin();
+    }
+
+    // Town map lots. Outbid only with at least 10% more, never a shielded owner's lot, at most once a day per lot.
+    match /bizLots/{lot} {
+      allow read: if true;
+      allow create: if signedIn() && request.resource.data.owner == request.auth.uid && hasBiz(request.auth.uid)
+        && request.resource.data.bid is number && request.resource.data.bid > 0 && request.resource.data.at == request.time;
+      allow update: if isAdmin() || (signedIn() && hasBiz(request.auth.uid)
+        && request.resource.data.owner == request.auth.uid
+        && request.resource.data.at == request.time
+        && (resource.data.owner == request.auth.uid
+            || (request.resource.data.bid >= resource.data.bid * 1.1
+                && request.time > resource.data.at + duration.value(1, 'd')
+                && !(hasBiz(resource.data.owner) && shielded(resource.data.owner)))));
+      allow delete: if isAdmin() || (signedIn() && resource.data.owner == request.auth.uid);
+    }
+
+    // Alliances: up to 6 members; you can only add or remove yourself.
+    match /bizAlliances/{id} {
+      allow read: if true;
+      allow create: if signedIn() && cleanName(request.resource.data.name)
+        && request.resource.data.members == [request.auth.uid] && request.resource.data.founder == request.auth.uid;
+      allow update: if isAdmin() || (signedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members'])
+        && request.resource.data.members.size() <= 6
+        && (request.resource.data.members.toSet().difference(resource.data.members.toSet()) == [request.auth.uid].toSet()
+            || resource.data.members.toSet().difference(request.resource.data.members.toSet()) == [request.auth.uid].toSet()));
+      allow delete: if isAdmin() || (signedIn() && resource.data.founder == request.auth.uid);
+    }
+
+    // Preset messages only (a number that picks "Nice move!", "Want to team up?", "Good game"...) — no free text.
+    match /bizMsgs/{id} {
+      allow read: if signedIn() && (resource.data.to == request.auth.uid || resource.data.from == request.auth.uid || isAdmin());
+      allow create: if signedIn() && request.resource.data.from == request.auth.uid
+        && request.resource.data.keys().hasOnly(['from', 'to', 'm', 'at'])
+        && request.resource.data.m is int && request.resource.data.m >= 0 && request.resource.data.m < 12
+        && request.resource.data.at == request.time;
+      allow delete: if isAdmin() || (signedIn() && resource.data.to == request.auth.uid);
+    }
   }
 }
