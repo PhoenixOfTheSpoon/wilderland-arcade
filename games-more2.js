@@ -1,4 +1,4 @@
-// Wilderland Arcade · GAMES PACK 2 — Brick Quest, Trail Runner, Pine Pinball, Fishing Hole, Beat Hopper, Mossy Leap, Pinecone Rally, Bubble Pop.
+// Wilderland Arcade · GAMES PACK 2 — Trail Runner, Pine Pinball, Fishing Hole, Beat Hopper, Mossy Leap, Pinecone Rally, Bubble Pop.
 // All original. Keyboard + touch, Easy/Normal/Hard via A.D, Workshop upgrades via A.U, Learn mode "answer for a second chance" via A.quiz.
 (function(){
 const A = window.Arcade, C = A.C, TAU = Math.PI*2;
@@ -11,63 +11,6 @@ const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
 const learn2 = (host, api, title, yes, no) => { if (!A.learnOn || !A.learnOn()) { no(); return false; } A.quiz(host, title, ok => { try { api.edu && api.edu(ok); } catch(e){} ok ? yes() : no(); }); return true; };
 const keysDown = () => { const k = {}; const d = e => { k[e.key] = true; }, u = e => { k[e.key] = false; }; window.addEventListener('keydown', d); window.addEventListener('keyup', u); return {k, off:() => { window.removeEventListener('keydown', d); window.removeEventListener('keyup', u); }}; };
 const sky = (g, w, h, a, b) => { const gr = g.createLinearGradient(0,0,0,h); gr.addColorStop(0,a); gr.addColorStop(1,b); g.fillStyle = gr; g.fillRect(0,0,w,h); };
-
-// =====================================================================================================
-// BRICK QUEST — breakout where you draft a power-up after every cleared wall.
-// =====================================================================================================
-A.register('brickrogue', { mount(host, api){
-  const {c,g,w,h} = A.canvas(host, 480, 560); c.style.touchAction = 'none';
-  const K = keysDown(); let st = 'ready', pad, balls, bricks, level, score, lives, perks, draft = null, quiz = false, t = 0, parts = [];
-  const PERKS = [{k:'wide',n:'Wide Paddle',d:'+30% paddle width',e:'↔'},{k:'multi',n:'Multiball',d:'+1 ball at the start of each wall',e:'⚪'},{k:'fire',n:'Fireball',d:'Balls smash through 1 extra brick',e:'🔥'},{k:'slow',n:'Slow Time',d:'Ball 10% slower',e:'🐢'},{k:'life',n:'Extra Life',d:'+1 life now',e:'❤'},{k:'magnet',n:'Sticky Paddle',d:'Catch the ball, tap to launch',e:'🧲'},{k:'gold',n:'Gold Bricks',d:'+25% points per brick',e:'💰'},{k:'laser',n:'Lasers',d:'Paddle shoots tiny lasers',e:'⚡'}];
-  const pv = k => perks[k]||0;
-  const newWall = () => { bricks = []; const rows = Math.min(9, 4 + level), cols = 8, bw = (w-40)/cols;
-    for (let r = 0; r < rows; r++) for (let q = 0; q < cols; q++) { const pat = (level*7 + r*3 + q) % 11; if (level > 1 && pat == 0) continue;
-      const hp = 1 + (r < level/2 ? 1 : 0) + (level > 5 && r == 0 ? 1 : 0); bricks.push({x:20+q*bw, y:60+r*24, w:bw-4, h:18, hp, max:hp, col:['#FF4539','#FF8A3C','#F9BF01','#00B451','#64CDF5','#b48cff','#ff8fd0','#D5F367','#c9ccd1'][r%9]}); }
-    pad.w = A.D(110,90,72) * (1 + .3*pv('wide')) + 8*A.U('wide'); balls = []; for (let i = 0; i <= pv('multi'); i++) launchBall(true, i); };
-  const launchBall = (stuck, i=0) => { const sp = A.D(300,350,410) * (1 + level*.03) * Math.pow(.9, pv('slow')); balls.push({x:pad.x, y:pad.y-12, vx:(i%2?-1:1)*sp*.5, vy:-sp*.85, r:7, sp, stuck, fire:pv('fire')}); };
-  const reset = () => { pad = {x:w/2, y:h-34, w:100}; level = 1; score = 0; lives = A.D(5,3,2) + A.U('life'); perks = {}; lasers = []; newWall(); api.score(0); };
-  let lasers = [], laserT = 0;
-  const offerDraft = () => { const pool = PERKS.slice().sort(() => Math.random() - .5).slice(0, 3); draft = pool; st = 'draft'; A.sfx('win'); };
-  const pick = i => { const p = draft[i]; if (!p) return; perks[p.k] = pv(p.k) + 1; if (p.k == 'life') lives++; draft = null; level++; newWall(); st = 'play'; A.sfx('coin'); };
-  const loseBall = () => { if (balls.length) return; if (A.immortal) { launchBall(true); return; }
-    const die = () => { lives--; if (lives <= 0) { st = 'over'; A.sfx('over'); stat(api,'brickLevel',level,'max'); api.over(score); } else { launchBall(true); A.sfx('bad'); } };
-    quiz = learn2(host, api, 'BALL LOST · ANSWER TO KEEP YOUR LIFE', () => { quiz = false; launchBall(true); }, () => { quiz = false; die(); }); };
-  const offK = A.keys(e => { if (e.key == ' ' || e.key == 'Enter') { if (st == 'ready' || st == 'over') { reset(); st = 'play'; } else balls.forEach(b => b.stuck = false); }
-    if (st == 'draft' && ['1','2','3'].includes(e.key)) pick(+e.key - 1); });
-  c.addEventListener('pointerdown', e => { const q = pt(c, e, w, h); if (st == 'ready' || st == 'over') { reset(); st = 'play'; return; }
-    if (st == 'draft') { const i = Math.floor((q.x - 30) / ((w-60)/3)); if (q.y > 200 && q.y < 400) pick(clamp(i,0,2)); return; } pad.x = q.x; balls.forEach(b => b.stuck = false); });
-  c.addEventListener('pointermove', e => { if (st == 'play') pad.x = pt(c, e, w, h).x; });
-  const offL = A.loop(dt => { t += dt; dt = Math.min(dt, .033);
-    if (st == 'play' && !quiz) { const ax = (K.k.ArrowLeft||K.k.a ? -1 : 0) + (K.k.ArrowRight||K.k.d ? 1 : 0); pad.x = clamp(pad.x + ax*520*dt, pad.w/2, w - pad.w/2);
-      if (pv('laser')) { laserT -= dt; if (laserT <= 0) { laserT = .7 / pv('laser'); lasers.push({x:pad.x - pad.w/2 + 6, y:pad.y}, {x:pad.x + pad.w/2 - 6, y:pad.y}); } }
-      for (const L of lasers) { L.y -= 600*dt; const hit = bricks.find(b => b.hp > 0 && L.x > b.x && L.x < b.x+b.w && L.y > b.y && L.y < b.y+b.h); if (hit) { L.y = -99; hitBrick(hit); } } lasers = lasers.filter(L => L.y > 0);
-      for (const b of balls) { if (b.stuck) { b.x = pad.x; b.y = pad.y - 12; continue; }
-        b.x += b.vx*dt; b.y += b.vy*dt;
-        if (b.x < b.r) { b.x = b.r; b.vx = Math.abs(b.vx); } if (b.x > w - b.r) { b.x = w - b.r; b.vx = -Math.abs(b.vx); } if (b.y < b.r + 30) { b.y = b.r + 30; b.vy = Math.abs(b.vy); }
-        if (b.vy > 0 && b.y + b.r >= pad.y - 6 && b.y < pad.y + 8 && Math.abs(b.x - pad.x) < pad.w/2 + b.r) { const off = (b.x - pad.x) / (pad.w/2), ang = off * 1.05; b.vx = Math.sin(ang)*b.sp; b.vy = -Math.cos(ang)*b.sp; b.y = pad.y - 7 - b.r; A.tone(440,.04,'square',.03); if (pv('magnet')) b.stuck = true; }
-        let pierce = b.fire; for (const br of bricks) { if (br.hp <= 0) continue; if (b.x + b.r > br.x && b.x - b.r < br.x + br.w && b.y + b.r > br.y && b.y - b.r < br.y + br.h) {
-          hitBrick(br); if (pierce > 0 && br.hp <= 0) { pierce--; continue; } const ox = Math.min(b.x + b.r - br.x, br.x + br.w - (b.x - b.r)), oy = Math.min(b.y + b.r - br.y, br.y + br.h - (b.y - b.r)); if (ox < oy) b.vx *= -1; else b.vy *= -1; break; } }
-        if (b.y > h + 20) b.dead = 1; }
-      balls = balls.filter(b => !b.dead); if (!balls.length) loseBall();
-      if (bricks.every(b => b.hp <= 0)) { score += 200*level; api.score(score); offerDraft(); } }
-    for (const q of parts) { q.t -= dt; q.x += q.vx*dt; q.y += q.vy*dt; q.vy += 400*dt; } parts = parts.filter(q => q.t > 0);
-    sky(g, w, h, '#1a1440', '#0b2e24'); g.fillStyle = '#fff'; g.font = '700 16px '+A.font; g.textAlign = 'left'; g.fillText('Wall '+level+'   '+score.toLocaleString(), 12, 22); g.textAlign = 'right'; g.fillText('❤'.repeat(clamp(lives,0,8)), w-12, 22);
-    const pk = Object.keys(perks).map(k => PERKS.find(p => p.k == k).e + (perks[k] > 1 ? perks[k] : '')).join(' '); g.textAlign = 'center'; g.font = '600 13px '+A.font; g.fillText(pk, w/2, 22);
-    if (bricks) for (const br of bricks) { if (br.hp <= 0) continue; g.fillStyle = br.col; g.globalAlpha = .45 + .55*br.hp/br.max; rr(g, br.x, br.y, br.w, br.h, 5); g.fill(); g.globalAlpha = 1; if (br.max > 1) { g.fillStyle = 'rgba(255,255,255,.5)'; g.fillRect(br.x+4, br.y+3, (br.w-8)*br.hp/br.max, 3); } }
-    if (pad) { g.fillStyle = '#D5F367'; rr(g, pad.x - pad.w/2, pad.y - 6, pad.w, 12, 6); g.fill(); if (pv('magnet')) { g.fillStyle = '#ff8fd0'; g.fillRect(pad.x - 6, pad.y - 6, 12, 4); } }
-    g.fillStyle = '#ff5a5a'; for (const L of lasers) g.fillRect(L.x-1, L.y-8, 2, 8);
-    if (balls) for (const b of balls) { g.fillStyle = b.fire ? '#FF8A3C' : '#fff'; g.beginPath(); g.arc(b.x, b.y, b.r, 0, TAU); g.fill(); }
-    for (const q of parts) { g.globalAlpha = q.t*2; g.fillStyle = q.col; g.fillRect(q.x, q.y, 3, 3); } g.globalAlpha = 1;
-    if (st == 'draft') { g.fillStyle = 'rgba(0,0,0,.75)'; g.fillRect(0,0,w,h); g.fillStyle = '#F9BF01'; g.font = '800 24px '+A.font; g.textAlign = 'center'; g.fillText('WALL CLEARED! PICK A POWER', w/2, 170);
-      draft.forEach((p, i) => { const x = 30 + i*(w-60)/3, cw = (w-60)/3 - 10; g.fillStyle = '#2a1a4a'; rr(g, x, 210, cw, 180, 14); g.fill(); g.strokeStyle = '#D5F367'; g.lineWidth = 2; g.stroke();
-        g.fillStyle = '#fff'; g.font = '32px '+A.font; g.fillText(p.e, x+cw/2, 260); g.font = '700 14px '+A.font; g.fillText(p.n, x+cw/2, 296); g.font = '12px '+A.font; g.fillStyle = '#d8c8ff'; wrapText(g, p.d, x+cw/2, 318, cw-12, 15); g.fillStyle = '#D5F367'; g.font = '700 13px '+A.font; g.fillText('Press '+(i+1), x+cw/2, 376); }); }
-    if (st == 'ready') A.overlayText(g, w, h, 'BRICK QUEST', 'Clear a wall, pick a power, repeat · tap or Space to start');
-    if (st == 'over') A.overlayText(g, w, h, 'GAME OVER', score.toLocaleString()+' points · wall '+level+' · tap to try again'); });
-  const hitBrick = br => { br.hp--; if (br.hp <= 0) { score += Math.round(10 * (1 + .25*pv('gold')) * (1 + level*.1)); api.score(score); A.tone(600 + Math.random()*200,.04,'square',.03); if (!low()) for (let i=0;i<6;i++) parts.push({x:br.x+br.w/2, y:br.y+br.h/2, vx:(Math.random()-.5)*200, vy:-Math.random()*150, t:.5, col:br.col}); } else A.tone(300,.03,'square',.02); };
-  const wrapText = (g, s, x, y, mw, lh) => { const words = s.split(' '); let line = ''; words.forEach(wd => { const tt = line ? line+' '+wd : wd; if (g.measureText(tt).width > mw) { g.fillText(line, x, y); y += lh; line = wd; } else line = tt; }); g.fillText(line, x, y); };
-  reset(); st = 'ready';
-  return () => { offK(); offL(); K.off(); };
-}});
 
 // =====================================================================================================
 // TRAIL RUNNER — endless forest run. Jump (and double jump) over logs and rocks, duck under branches.
