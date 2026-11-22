@@ -12,8 +12,8 @@ const low = () => !!A.lowFx;
 // =====================================================================================================
 A.register('bounce', { mount(host, api){
   const {c,g,w,h} = A.canvas(host, 480, 560); c.style.touchAction = 'none';
-  let st = 'ready', p, plats, camY, score, best = 0, coins, keys = {}, dragX = null, parts = [], t = 0;
-  const reset = () => { p = {x:w/2, y:h-80, vx:0, vy:-560, face:1}; plats = []; camY = 0; score = 0; coins = 0; parts = [];
+  let chutes = 0, jumpN = -580, jumpS = -980; let st = 'ready', p, plats, camY, score, best = 0, coins, keys = {}, dragX = null, parts = [], t = 0;
+  const reset = () => { p = {x:w/2, y:h-80, vx:0, vy:-560, face:1}; chutes = A.U('life'); const J = 1 + .05*A.U('spring'); jumpN = -580*J; jumpS = -980*J; plats = []; camY = 0; score = 0; coins = 0; parts = [];
     for (let i = 0; i < 12; i++) addPlat(h - 40 - i*50); plats[0].x = w/2 - 40; plats[0].kind = 'n'; api.score(0); };
   const addPlat = y => { const lvl = Math.max(0, -y)/1500, r = Math.random(); const kind = r < Math.min(.25, .05+lvl*.04) ? 'm' : r < Math.min(.4, .1+lvl*.05) ? 'b' : r < .5 ? 's' : 'n';
     plats.push({x: 20 + Math.random()*(w-120), y, w: Math.max(52, 84 - lvl*6), kind, vx: kind=='m' ? (60+lvl*20)*(Math.random()<.5?-1:1) : 0, broke:false, coin: Math.random() < .18}); };
@@ -31,11 +31,12 @@ A.register('bounce', { mount(host, api){
       for (const q of plats) { if (q.kind == 'm') { q.x += q.vx*dt; if (q.x < 8 || q.x + q.w > w-8) q.vx *= -1; }
         if (p.vy > 0 && !q.broke && oy+16 <= q.y && p.y+16 >= q.y && p.x > q.x-8 && p.x < q.x+q.w+8) {
           if (q.kind == 'b') { q.broke = true; A.tone(180,.08,'square',.03); continue; }
-          p.vy = q.kind == 's' ? -980 : -580; A.tone(q.kind=='s'?700:420,.06,'triangle',.04); if (!low()) for (let i=0;i<6;i++) parts.push({x:p.x, y:q.y, vx:(Math.random()-.5)*160, vy:-Math.random()*80, t:.4, col:'#fff'}); } }
-      for (const q of plats) if (q.coin && Math.hypot(p.x-(q.x+q.w/2), p.y-(q.y-22)) < 22) { q.coin = false; coins++; A.sfx('coin'); }
+          p.vy = q.kind == 's' ? jumpS : jumpN; A.tone(q.kind=='s'?700:420,.06,'triangle',.04); if (!low()) for (let i=0;i<6;i++) parts.push({x:p.x, y:q.y, vx:(Math.random()-.5)*160, vy:-Math.random()*80, t:.4, col:'#fff'}); } }
+      for (const q of plats) if (q.coin && Math.hypot(p.x-(q.x+q.w/2), p.y-(q.y-22)) < 22 + 14*A.U('magnet')) { q.coin = false; coins++; A.sfx('coin'); }
       if (p.y < camY + h*.4) camY = p.y - h*.4;
       score = Math.max(score, Math.floor((h-80 - p.y)/10) + coins*25); api.score(score);
       plats = plats.filter(q => q.y < camY + h + 40); while (plats.length < 14) addPlat(Math.min(...plats.map(q=>q.y)) - (46 + Math.random()*22 + Math.min(30, -camY/500)));
+      if (p.y > camY + h + 40 && chutes > 0) { chutes--; p.y = camY + h - 20; p.vy = jumpS*1.2; A.sfx('win'); }
       if (p.y > camY + h + 40) { st = 'over'; best = Math.max(best, score); A.sfx('over'); stat(api,'bounceBest',score,'max'); api.over(score); } }
     for (const q of parts) { q.t -= dt; q.x += q.vx*dt; q.y += q.vy*dt; q.vy += 300*dt; } parts = parts.filter(q => q.t > 0);
     // draw
@@ -78,7 +79,7 @@ A.register('gems', { mount(host, api){
     const extra = new Set(hit); hit.forEach(key => { const [x,y] = key.split(',').map(Number), cell = B[y][x]; if (cell.sp == 1) for (let i=0;i<N;i++) { extra.add(i+','+y); } if (cell.sp == 2) for (let i=0;i<N;i++) extra.add(x+','+i); if (cell.sp == 3) for (let yy=0;yy<N;yy++) for (let xx=0;xx<N;xx++) if (B[yy][xx].k == cell.k) extra.add(xx+','+yy); });
     const keep = {}; runs.forEach(r => { if (r.len >= 4) { const [x,y] = r.cells[Math.floor(r.len/2)]; keep[x+','+y] = {k:B[y][x].k, sp: r.len >= 5 ? 3 : (r.cells[0][1]==r.cells[1][1] ? 1 : 2)}; } });
     extra.forEach(key => { const [x,y] = key.split(',').map(Number); pops.push({x:OX+x*S+S/2, y:OY+y*S+S/2, col:COL[B[y][x].k], t:.4}); B[y][x] = keep[key] ? {...keep[key], dy:0} : null; });
-    score += extra.size * 20 * combo; api.score(score); A.tone(500+combo*90,.08,'triangle',.05);
+    score += Math.round(extra.size * 20 * combo * (combo > 1 ? 1 + .1*A.U('combo') : 1)); api.score(score); A.tone(500+combo*90,.08,'triangle',.05);
     for (let x=0;x<N;x++) { let wy = N-1; for (let y=N-1;y>=0;y--) if (B[y][x]) { const cell = B[y][x]; B[y][x] = null; B[wy][x] = cell; cell.dy = (wy - y)*S; wy--; } for (let y=wy;y>=0;y--) B[y][x] = {k:rnd(), sp:0, dy:(wy+1)*S}; }
     anim = .22; return true; };
   const anyMove = () => { for (let y=0;y<N;y++) for (let x=0;x<N;x++) for (const [dx,dy] of [[1,0],[0,1]]) { const x2=x+dx, y2=y+dy; if (x2>=N||y2>=N) continue; [B[y][x],B[y2][x2]]=[B[y2][x2],B[y][x]]; const ok = find().hit.size>0; [B[y][x],B[y2][x2]]=[B[y2][x2],B[y][x]]; if (ok) return true; } return false; };
@@ -90,7 +91,7 @@ A.register('gems', { mount(host, api){
   c.addEventListener('pointerdown', e => { const q = pt(c, e, w, h); if (st != 'play') { if (st != 'anim') start(); return; } if (anim > 0) return;
     const x = Math.floor((q.x-OX)/S), y = Math.floor((q.y-OY)/S); if (!at(x,y)) { sel = null; return; }
     if (sel && Math.abs(sel[0]-x) + Math.abs(sel[1]-y) == 1) { swap(sel, [x,y]); sel = null; } else { sel = [x,y]; A.sfx('blip'); } });
-  const start = () => { score = 0; moves = 30; level = 1; target = 2500; combo = 0; fill(); st = 'play'; api.score(0); };
+  const start = () => { score = 0; moves = 30 + 3*A.U('moves'); level = 1; target = 2500; combo = 0; fill(); for (let k=0;k<A.U('special');k++) { const x = Math.floor(Math.random()*N), y = Math.floor(Math.random()*N); B[y][x].sp = 1 + (k%2); } st = 'play'; api.score(0); };
   const offL = A.loop(dt => { t += dt;
     if (st == 'play') { if (anim > 0) { anim -= dt; for (let y=0;y<N;y++) for (let x=0;x<N;x++) if (B[y][x]) B[y][x].dy = Math.max(0, B[y][x].dy - 900*dt); if (anim <= 0) { if (!clear()) { combo = 0;
           if (score >= target) { level++; target = Math.round(target*2.2); moves += 20; A.sfx('win'); }
@@ -122,7 +123,7 @@ A.register('maze', { mount(host, api){
   const wall = (x, y) => { if (x < 0 || x >= Cn) return false; const ch = (grid[y]||'')[x]; return ch == '#' || ch == '-'; };
   const setup = keepScore => { grid = MAP.map(r => r.split('')); dots = 0; ghosts = [];
     for (let y=0;y<R;y++) for (let x=0;x<Cn;x++) { const ch = grid[y][x]; if (ch == '.' || ch == 'o') dots++; if (ch == 'P') { pac = {x, y, px:x, py:y, dx:0, dy:0, prog:0}; grid[y][x] = ' '; } if (ch == 'G') { grid[y][x] = ' '; [0,1,2,3].forEach(i => ghosts.push({x:x-1+i%3, y, sx:x-1+i%3, sy:y, dx:0, dy:0, prog:0, col:['#FF4539','#ff8fd0','#64CDF5','#F9BF01'][i], wait:i*2.5, dead:0})); } }
-    if (!keepScore) { score = 0; lives = 3; level = 1; } power = 0; api.score(score); };
+    if (!keepScore) { score = 0; lives = 3 + A.U('life'); level = 1; } power = 0; api.score(score); };
   const resetPos = () => { pac.x = pac.px; pac.y = pac.py; pac.dx = pac.dy = 0; pac.prog = 0; ghosts.forEach((q,i) => { q.x = q.sx; q.y = q.sy; q.prog = 0; q.dx = q.dy = 0; q.wait = i*2; q.dead = 0; }); };
   const offK = A.keys(e => { const m = {ArrowLeft:[-1,0], a:[-1,0], ArrowRight:[1,0], d:[1,0], ArrowUp:[0,-1], w:[0,-1], ArrowDown:[0,1], s:[0,1]}[e.key]; if (m) want = m; if (st != 'play' && (e.key==' '||e.key=='Enter')) { setup(false); st = 'play'; } });
   c.addEventListener('pointerdown', e => { if (st != 'play') { setup(false); st = 'play'; return; } swipe = pt(c, e, w, h); });
@@ -133,9 +134,9 @@ A.register('maze', { mount(host, api){
   const offL = A.loop(dt => { t += dt;
     if (st == 'play') { const sp = 6.2 + level*.25;
       step(pac, sp, dt, o => { if (want && !wall(o.x+want[0], o.y+want[1])) { o.dx = want[0]; o.dy = want[1]; } if (wall(o.x+o.dx, o.y+o.dy)) { o.dx = 0; o.dy = 0; }
-        const ch = grid[o.y][o.x]; if (ch == '.' || ch == 'o') { grid[o.y][o.x] = ' '; dots--; score += ch == 'o' ? 50 : 10; api.score(score); if (ch == 'o') { power = 7 - Math.min(4, level*.5); A.sfx('win'); } else A.tone(660,.03,'square',.02); } });
+        const ch = grid[o.y][o.x]; if (ch == '.' || ch == 'o') { grid[o.y][o.x] = ' '; dots--; score += ch == 'o' ? 50 : 10; api.score(score); if (ch == 'o') { power = 7 - Math.min(4, level*.5) + A.U('power'); A.sfx('win'); } else A.tone(660,.03,'square',.02); } });
       power = Math.max(0, power - dt);
-      ghosts.forEach(q => { if (q.wait > 0) { q.wait -= dt; return; } const gs = q.dead ? 12 : power > 0 ? 3.6 : 4.6 + level*.3;
+      ghosts.forEach(q => { if (q.wait > 0) { q.wait -= dt; return; } const gs = (q.dead ? 12 : power > 0 ? 3.6 : 4.6 + level*.3) * (q.dead ? 1 : 1 - .06*A.U('slow'));
         step(q, gs, dt, o => { const opts = [[1,0],[-1,0],[0,1],[0,-1]].filter(([dx,dy]) => !wall(o.x+dx, o.y+dy) && !(dx == -o.dx && dy == -o.dy && (o.dx||o.dy)));
           const tx = o.dead ? o.sx : pac.x, ty = o.dead ? o.sy : pac.y; if (o.dead && o.x == o.sx && o.y == o.sy) o.dead = 0;
           if (!opts.length) { o.dx = -o.dx; o.dy = -o.dy; return; }
@@ -170,7 +171,7 @@ A.register('comets', { mount(host, api){
   let st = 'ready', ship, rocks, shots, parts = [], score = 0, lives = 3, wave = 0, keys = {}, cool = 0, inv = 0, t = 0, touch = null, stars = Array.from({length:60}, () => ({x:Math.random()*480, y:Math.random()*480, z:Math.random()}));
   const spawnWave = () => { wave++; rocks = []; for (let i = 0; i < 2 + wave; i++) { let x, y; do { x = Math.random()*w; y = Math.random()*h; } while (Math.hypot(x-w/2, y-h/2) < 140); addRock(x, y, 3); } };
   const addRock = (x, y, s) => { const a = Math.random()*TAU, v = (40 + Math.random()*40) * (1 + wave*.08) * (4-s)*.6; rocks.push({x, y, vx:Math.cos(a)*v, vy:Math.sin(a)*v, s, r:s*14, rot:0, vr:(Math.random()-.5)*2, pts:Array.from({length:10}, () => .75 + Math.random()*.35)}); };
-  const reset = () => { ship = {x:w/2, y:h/2, vx:0, vy:0, a:-Math.PI/2}; shots = []; parts = []; score = 0; lives = 3; wave = 0; inv = 2; spawnWave(); api.score(0); };
+  const reset = () => { ship = {x:w/2, y:h/2, vx:0, vy:0, a:-Math.PI/2}; shots = []; parts = []; score = 0; lives = 3 + A.U('life'); wave = 0; inv = 2 + 2*A.U('shield'); spawnWave(); api.score(0); };
   const boom = (x, y, col, n) => { if (low()) n = Math.min(n, 4); for (let i=0;i<n;i++) { const a = Math.random()*TAU, s = 40 + Math.random()*140; parts.push({x, y, vx:Math.cos(a)*s, vy:Math.sin(a)*s, t:.5+Math.random()*.4, col}); } };
   const offK = A.keys(e => { keys[e.key] = true; if (st != 'play' && (e.key == ' ' || e.key == 'Enter')) { reset(); st = 'play'; } });
   const ku = e => { keys[e.key] = false; }; window.addEventListener('keyup', ku);
@@ -182,13 +183,13 @@ A.register('comets', { mount(host, api){
       if (touch) { const want = Math.atan2(touch.y - ship.y, touch.x - ship.x); let d = want - ship.a; while (d > Math.PI) d -= TAU; while (d < -Math.PI) d += TAU; turn = Math.max(-1, Math.min(1, d*3)); fire = true; thrust = Math.hypot(touch.x-ship.x, touch.y-ship.y) > 110; }
       ship.a += turn*4.2*dt; if (thrust) { ship.vx += Math.cos(ship.a)*260*dt; ship.vy += Math.sin(ship.a)*260*dt; if (!low() && Math.random() < .6) parts.push({x:ship.x - Math.cos(ship.a)*12, y:ship.y - Math.sin(ship.a)*12, vx:-Math.cos(ship.a)*80+(Math.random()-.5)*40, vy:-Math.sin(ship.a)*80+(Math.random()-.5)*40, t:.3, col:'#FF8A3C'}); }
       ship.vx *= Math.pow(.5, dt); ship.vy *= Math.pow(.5, dt); ship.x = (ship.x + ship.vx*dt + w) % w; ship.y = (ship.y + ship.vy*dt + h) % h;
-      cool -= dt; inv = Math.max(0, inv - dt); if (fire && cool <= 0) { cool = .2; shots.push({x:ship.x + Math.cos(ship.a)*14, y:ship.y + Math.sin(ship.a)*14, vx:Math.cos(ship.a)*460 + ship.vx, vy:Math.sin(ship.a)*460 + ship.vy, t:.95}); A.tone(880,.03,'square',.02); }
+      cool -= dt; inv = Math.max(0, inv - dt); if (fire && cool <= 0) { cool = .2 * (1 - .1*A.U('rapid')); shots.push({x:ship.x + Math.cos(ship.a)*14, y:ship.y + Math.sin(ship.a)*14, vx:Math.cos(ship.a)*460 + ship.vx, vy:Math.sin(ship.a)*460 + ship.vy, t:.95}); A.tone(880,.03,'square',.02); }
       for (const s of shots) { s.x = (s.x + s.vx*dt + w) % w; s.y = (s.y + s.vy*dt + h) % h; s.t -= dt; }
       for (const r of rocks) { r.x = (r.x + r.vx*dt + w) % w; r.y = (r.y + r.vy*dt + h) % h; r.rot += r.vr*dt; }
       for (const s of shots) for (const r of rocks) if (!r.dead && s.t > 0 && Math.hypot(s.x-r.x, s.y-r.y) < r.r) { s.t = 0; r.dead = 1; score += [0,100,50,20][r.s]; api.score(score); boom(r.x, r.y, '#c9b48a', 12); A.tone(160,.08,'square',.04); if (r.s > 1) { addRock(r.x, r.y, r.s-1); addRock(r.x, r.y, r.s-1); } }
       rocks = rocks.filter(r => !r.dead); shots = shots.filter(s => s.t > 0);
       if (inv <= 0 && !A.immortal) for (const r of rocks) if (Math.hypot(ship.x-r.x, ship.y-r.y) < r.r + 9) { lives--; boom(ship.x, ship.y, '#64CDF5', 30); A.sfx('bad'); inv = 2.5; ship.x = w/2; ship.y = h/2; ship.vx = ship.vy = 0; if (lives <= 0) { st = 'over'; A.sfx('over'); stat(api,'cometWave',wave,'max'); api.over(score); } break; }
-      if (!rocks.length) { score += 250*wave; A.sfx('win'); spawnWave(); inv = 1.5; } }
+      if (!rocks.length) { score += 250*wave; A.sfx('win'); spawnWave(); inv = 1.5 + 2*A.U('shield'); } }
     for (const q of parts) { q.t -= dt; q.x += q.vx*dt; q.y += q.vy*dt; } parts = parts.filter(q => q.t > 0);
     g.fillStyle = '#05061a'; g.fillRect(0,0,w,h); for (const s of stars) { g.fillStyle = 'rgba(255,255,255,'+(.3+s.z*.7)+')'; g.fillRect(s.x, s.y, s.z > .7 ? 2 : 1, s.z > .7 ? 2 : 1); }
     if (rocks) for (const r of rocks) { g.save(); g.translate(r.x, r.y); g.rotate(r.rot); g.fillStyle = '#5a4a3a'; g.strokeStyle = '#c9b48a'; g.lineWidth = 2; g.beginPath(); r.pts.forEach((k, i) => { const a = i/r.pts.length*TAU; g.lineTo(Math.cos(a)*r.r*k, Math.sin(a)*r.r*k); }); g.closePath(); g.fill(); g.stroke();
@@ -207,17 +208,17 @@ A.register('comets', { mount(host, api){
 // =====================================================================================================
 A.register('lumber', { mount(host, api){
   const {c,g,w,h} = A.canvas(host, 420, 540); c.style.touchAction = 'none';
-  let st = 'ready', side = -1, logs = [], score = 0, time = 1, t = 0, chopT = 0, flying = [];
+  let hats = 0; let st = 'ready', side = -1, logs = [], score = 0, time = 1, t = 0, chopT = 0, flying = [];
   const newLog = () => { const prev = logs.length ? logs[logs.length-1] : 0; const r = Math.random(); return prev ? 0 : r < .35 ? -1 : r < .7 ? 1 : 0; };
-  const reset = () => { logs = [0,0,0]; while (logs.length < 9) logs.push(newLog()); score = 0; time = 1; side = -1; api.score(0); };
+  const reset = () => { logs = [0,0,0]; while (logs.length < 9) logs.push(newLog()); score = 0; time = 1; side = -1; hats = A.U('helmet'); api.score(0); };
   const chop = s => { if (st != 'play') { reset(); st = 'play'; return; } side = s; if (logs[0] == side) return die();
-    flying.push({side, t:0, b:logs[0]}); logs.shift(); logs.push(newLog()); chopT = .1; score++; api.score(score); time = Math.min(1, time + .06); A.tone(240 + (score%5)*30, .05, 'square', .04);
+    flying.push({side, t:0, b:logs[0]}); logs.shift(); logs.push(newLog()); chopT = .1; score++; api.score(score); time = Math.min(1, time + .06*(1 + .15*A.U('chop'))); A.tone(240 + (score%5)*30, .05, 'square', .04);
     if (logs[0] == side) die(); };
-  const die = () => { st = 'over'; A.sfx('over'); stat(api,'lumberBest',score,'max'); api.over(score); };
+  const die = () => { if (hats > 0) { hats--; A.sfx('bad'); logs[0] = 0; time = Math.max(time, .4); return; } st = 'over'; A.sfx('over'); stat(api,'lumberBest',score,'max'); api.over(score); };
   const offK = A.keys(e => { if (e.key == 'ArrowLeft' || e.key == 'a') chop(-1); else if (e.key == 'ArrowRight' || e.key == 'd') chop(1); else if ((e.key == ' ' || e.key == 'Enter') && st != 'play') { reset(); st = 'play'; } });
   c.addEventListener('pointerdown', e => { const q = pt(c, e, w, h); chop(q.x < w/2 ? -1 : 1); });
   const offL = A.loop(dt => { t += dt; chopT = Math.max(0, chopT - dt);
-    if (st == 'play') { time -= dt * (.14 + Math.min(.5, score*.004)); if (time <= 0) die(); }
+    if (st == 'play') { time -= dt * (.14 + Math.min(.5, score*.004)) * (1 - .08*A.U('slow')); if (time <= 0) die(); }
     for (const f of flying) f.t += dt; flying = flying.filter(f => f.t < .6);
     const sky = g.createLinearGradient(0,0,0,h); sky.addColorStop(0, '#9fd8ff'); sky.addColorStop(1, '#e8f8ff'); g.fillStyle = sky; g.fillRect(0,0,w,h);
     g.fillStyle = '#3fae5a'; for (let i=0;i<6;i++) { g.beginPath(); g.moveTo(i*80-20, h-60); g.lineTo(i*80+20, h-200-(i%2)*40); g.lineTo(i*80+60, h-60); g.fill(); }

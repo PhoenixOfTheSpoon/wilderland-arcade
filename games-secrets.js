@@ -97,6 +97,8 @@ A.register('secrets', { mount(host, api){
   const fresh = () => ({v:1, ch:0, items:[], secrets:{}, solved:{}, paid:{}, intro:{}, hints:{}, clk:{h:12, m:0}, done:false});
   let S = api.stored && api.stored.v == 1 ? JSON.parse(JSON.stringify(api.stored)) : fresh();
   const save = () => { try { api.store && api.store(S); } catch(e){} };
+  // repair older saves: a solved place always unlocks the one after it
+  { let k = 0; while (k < SCENES.length-1 && S.solved[SCENES[k].id]) k++; S.ch = Math.max(S.ch|0, k); }
   const found = () => Object.keys(S.secrets).length, solvedN = () => Object.keys(S.solved).length;
   const score = () => solvedN()*500 + found()*150 + (S.done ? 2000 : 0);
   const pay = (key, n, label) => { if (S.paid[key]) return 0; S.paid[key] = 1; let got = 0; try { got = api.tix ? api.tix(n, score(), label) : 0; } catch(e){} save(); return got; };
@@ -119,6 +121,7 @@ A.register('secrets', { mount(host, api){
   const openModal = (title, body) => { closeModal(); modal = H('div', {style:{position:'absolute', inset:0, background:'rgba(10,6,3,.9)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:'12px', padding:'14px', zIndex:5, textAlign:'center'}},
       H('div', {style:{fontWeight:800, fontSize:'18px', color:C.gold}}, title), body, btn('Close', closeModal)); stage.append(modal); };
   const solve = id => { if (S.solved[id]) return; const sc = SCENES.find(x => x.id == id); S.solved[id] = 1; if (sc.reward && !S.items.includes(sc.reward)) S.items.push(sc.reward); closeModal(); A.sfx('win');
+    if (id != 'vault') S.ch = Math.max(S.ch, SCENES.indexOf(sc)+1);   // unlock the next place right away, even if the talk is skipped
     const got = pay('p_'+id, 120*(SCENES.indexOf(sc)+1), 'SECRETS'); stat(api, 'secretsChapters', solvedN()); api.score(score());
     say([sc.next, 'You got: '+ITEMS[sc.reward]+(got ? ' · +'+got.toLocaleString()+' tickets' : '')], () => { if (id == 'vault') finale(); else { S.ch = Math.max(S.ch, SCENES.indexOf(sc)+1); view = SCENES.indexOf(sc)+1; save(); render(); story(); } }); save(); render(); };
   const finale = () => { S.done = true; const all = found() >= N_SECRETS; const got = pay('finale', 1500, 'SECRETS'); stat(api, 'secretsDone', 1); api.score(score()); save(); render();

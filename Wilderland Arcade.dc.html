@@ -982,6 +982,11 @@ const UPG_RAW = {
   stack:[{k:'saw',n:'Extra Saw',d:'+1 line-clearing saw per level',base:400}],
   space:[{k:'life',n:'Extra Ship',d:'Start with +1 ship per level',base:350},{k:'shield',n:'Deflector',d:'Start every run with a shield charge per level',base:500},{k:'power',n:'Twin Cannons',d:'Start with Double Shot for 20 seconds',base:900,one:1}],
   rootout:[{k:'health',n:'Healthy Soil',d:'+1 ecosystem health per level',base:300},{k:'pull',n:'Weed Puller',d:'+1 root-out pull per level',base:400}],
+  bounce:[{k:'life',n:'Parachute',d:'Bounce back once from a fall per level, each run',base:400},{k:'spring',n:'Springy Shoes',d:'Jump 5% higher per level',base:300,cap:6},{k:'magnet',n:'Coin Magnet',d:'Grab coins from further away',base:250,cap:5}],
+  gems:[{k:'moves',n:'Extra Moves',d:'+3 starting moves per level',base:300},{k:'special',n:'Lucky Start',d:'Start with 1 striped gem on the board per level',base:400,cap:6},{k:'combo',n:'Combo Spark',d:'Chain combos score +10% per level',base:350,cap:10}],
+  maze:[{k:'life',n:'Extra Life',d:'+1 starting life per level',base:300},{k:'power',n:'Long Berries',d:'Power berries last +1 s per level',base:350,cap:5},{k:'slow',n:'Sleepy Ghosts',d:'Ghosts move 6% slower per level',base:400,cap:5}],
+  comets:[{k:'life',n:'Extra Ship',d:'+1 ship per level',base:350},{k:'rapid',n:'Rapid Fire',d:'Shoot 10% faster per level',base:300,cap:5},{k:'shield',n:'Warp Shield',d:'+2 s of safety at the start of each wave per level',base:400,cap:5}],
+  lumber:[{k:'chop',n:'Chop Power',d:'Every chop refills 15% more of the timer per level',base:300,cap:6},{k:'slow',n:'Slow Clock',d:'The timer drains 8% slower per level',base:350,cap:6},{k:'helmet',n:'Hard Hat',d:'Survive one branch bonk per level, each run',base:500}],
   idle:[{k:'cheap',n:'Miners’ Union Deal',d:'Hiring miners costs 15% less per level (stacks)',base:300},{k:'start',n:'Starter Crew',d:'New miners hired 1 level higher per level · past the top miner level, +15% Mines ore per level',base:1500}],
 };
 const UPG = {}; GAMES.forEach(g => { const list = (UPG_RAW[g.id]||[]).slice(); if (g.id!='2048') list.push({k:'boost',n:'Ticket Booster',d:'+10% tickets from this machine per level, forever',base:200,grow:1.45}); UPG[g.id] = list; });
@@ -1613,7 +1618,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-12-01b';
+const BUILD = '2026-12-01c';
 const SCRIPTS = ['arcade-core.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js','games-secrets.js','games-more.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
