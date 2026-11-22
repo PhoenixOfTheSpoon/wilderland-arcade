@@ -65,6 +65,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
       <button onClick="{{ openAccount }}" style="background:{{ acctHeadBg }}; color:{{ acctHeadFg }}; border:1.5px solid #D5F367; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ acctHeadLabel }}</button>
       <button onClick="{{ openCode }}" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">{{ adminLabel }}</button>
       <button onClick="{{ toggleSound }}" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">{{ soundLabel }}</button>
+      <button onClick="{{ toggleMusic }}" title="Background music on or off" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">{{ musicLabel }}</button>
       <button onClick="{{ openAv }}" style="background:#D5F367; color:#015640; border:none; border-radius:999px; padding:8px 14px; font-weight:800; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:6px;"><img src="{{ avImg }}" alt="" style="width:22px; height:22px; margin:-3px 0;">AVATAR</button>
       <button onClick="{{ openSug }}" title="Submit a suggestion" style="background:transparent; color:#D5F367; border:1.5px solid #D5F367; border-radius:999px; padding:7px 12px; font-weight:700; font-size:13px; cursor:pointer;">💡 SUGGEST</button>
       <button onClick="{{ openChat }}" title="Chat (T)" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">CHAT · T</button>
@@ -966,6 +967,8 @@ const RIVAL = id => RIVALS.find(r=>r[0]==id);
 // Upgrade Workshop: per-game upgrades bought with tickets. Levels go on forever (∞): prices keep rising.
 // `cap` = the most the game effect can stack (more would break the game); levels past the cap still add +2% tickets each.
 // one:1 = a one-time unlock. Every machine (except 2048) also has an infinite Ticket Booster (+10% tickets per level).
+// Which background tune each machine plays (music.js)
+const MUSIC_MOOD = {snake:'action',breakout:'action',flappy:'action',pong:'action',whack:'action',crossing:'action',td:'action',bounce:'action',maze:'action',lumber:'action',space:'space',comets:'space','2048':'puzzle',memory:'puzzle',tictactoe:'puzzle',connect4:'puzzle',mines:'puzzle',simon:'puzzle',stack:'puzzle',gems:'puzzle',typing:'puzzle',reaction:'puzzle',rootout:'calm',trace:'calm',idle:'mines',secrets:'story'};
 const UPG_RAW = {
   snake:[{k:'life',n:'Extra Life',d:'Start every run with +1 life per level',base:300},{k:'calm',n:'Calm Start',d:'Snake moves 10% slower per level',base:200,cap:5}],
   breakout:[{k:'life',n:'Spare Balls',d:'+1 life per level',base:300},{k:'wide',n:'Wide Paddle',d:'Paddle 10px wider per level',base:250,cap:6}],
@@ -1618,8 +1621,8 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-12-01c';
-const SCRIPTS = ['arcade-core.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js','games-secrets.js','games-more.js'];
+const BUILD = '2026-12-01d';
+const SCRIPTS = ['arcade-core.js','music.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js','games-secrets.js','games-more.js'];
 const fmt = n => Math.round(n).toLocaleString();
 
 class Component extends DCLogic {
@@ -1849,7 +1852,7 @@ class Component extends DCLogic {
     if ((this.P.cursor||'') !== this._cursor) { this._cursor = this.P.cursor||''; applyCursor(this._cursor); }
     const {game} = this.state;
     if (game && this.gameRef.current && this.mounted != game && this.ready) {
-      this.unmountGame(); this.mounted = game;
+      this.unmountGame(); this.mounted = game; if (window.WLMusic) window.WLMusic.mood(MUSIC_MOOD[game] || 'action');
       const A = window.Arcade; A.lowFx = LOWFX; A.rebirths = this.P.rebirths||0; A.upg = upgFor(this.P, game); A.immortal = this.state.admin && this.state.immortal; A.diff = (RIVAL(this.P.difficulty) && game!='connect4') ? 'hard' : this.P.difficulty; A.speed = SPEEDS[this.P.speed] || 1; A.muted = this.state.muted || this.props.sound === false;
       A.edu = {on: !!this.eduOn() && EDU_SWITCH.includes(game), topic: this.P.edu.topic};
       const resume = this.P.saves[this.saveKey(game)] || null;
@@ -1877,7 +1880,7 @@ class Component extends DCLogic {
     if (d) { try { saves[id] = JSON.parse(JSON.stringify(d)); } catch(e) { return false; } } else delete saves[id];
     if (d || had) this.setP({saves}); return !!d; }
   unmountGame(keep = true){ let saved = false; if (keep) saved = this.saveGame(); this.snapFn = null; if (this.mounted) this.endSess();
-    if (this.cleanup) { try{ this.cleanup(); }catch(e){} } this.cleanup = null; this.mounted = null; if (this.gameRef.current) this.gameRef.current.innerHTML = ''; return saved; }
+    if (this.cleanup) { try{ this.cleanup(); }catch(e){} } this.cleanup = null; if (this.mounted && window.WLMusic) window.WLMusic.mood('floor'); this.mounted = null; if (this.gameRef.current) this.gameRef.current.innerHTML = ''; return saved; }
   rects(){ return [...POS.map(p=>({x:p.x,y:p.y,w:140,h:130})), ...KIOSKS]; }
   blocked(x,y){ const r=17; if (x<r||y<14+r||x>FW-r||y>FH-r) return true; return false; }
   findNear(){
@@ -2299,7 +2302,7 @@ class Component extends DCLogic {
       uRules: unameRules(uv, !!uOwner && uOwner!==myK).map(([label,ok])=>({label, color: ok?'#015640':'#4a4a4a', dot: ok?'#00B451':'#b0ab95', mark: ok?'✓':'·'})),
       boardShadow: ni===NG+2?glow:base, learnShadow: ni===NG+3?glow:base, boardIcon: KIOSK_ICONS.board, learnIcon: KIOSK_ICONS.learn,
       lbLeader: (lbRows('_tix','all',1)[0]||{}).name || 'Nobody yet',
-      tickets: fmtN(P.tickets), multLabelHead: '×'+(window.WLP ? window.WLP.fmt(window.WLP.totalMult(P)) : '1')+' total'+((P.stars||0) ? ' · ⭐'+P.stars : '')+(window.WLE && window.WLE.diamonds(P) ? ' · 💎'+window.WLE.diaFree(P) : ''), soundLabel: s.muted ? 'SOUND OFF' : 'SOUND ON',
+      tickets: fmtN(P.tickets), multLabelHead: '×'+(window.WLP ? window.WLP.fmt(window.WLP.totalMult(P)) : '1')+' total'+((P.stars||0) ? ' · ⭐'+P.stars : '')+(window.WLE && window.WLE.diamonds(P) ? ' · 💎'+window.WLE.diaFree(P) : ''), soundLabel: s.muted ? 'SOUND OFF' : 'SOUND ON', musicLabel: (window.WLMusic && window.WLMusic.on()) ? '🎵 MUSIC ON' : '🎵 MUSIC OFF', toggleMusic: ()=>{ if (window.WLMusic) { window.WLMusic.setOn(!window.WLMusic.on()); this.setState({musicTick:Date.now()}); } },
       showCash: !!s.game && s.game!='idle' && s.game!='secrets', cashOutGame: ()=>this.cashOutGame(), cashLabel: s.admin ? 'Cash out · (admin)' : 'Cash out · '+fmtN(s.liveScore||0),
       expFloor: window.WLE ? window.WLE.EXP.filter(x=>(P.exp||{})[x.k]).map(x=>({key:x.k+'-'+P.exp[x.k], e:x.e, n:x.n, lv:P.exp[x.k]})) : [], expEmpty: !window.WLE || !window.WLE.EXP.some(x=>(P.exp||{})[x.k]),
       openExp: ()=>{ this.keys = {}; this._pzTab = 'exp'; this.setState({prizesOpen:true}); },
@@ -2310,7 +2313,7 @@ class Component extends DCLogic {
       rbReady: !s.admin && P.autoRb === false && !!window.WLP && P.tickets >= window.WLP.rebirthNeed(P), rebirthNow: ()=>this.checkRebirth(true),
       notifLabel: ({all:'🔔 NOTIFICATIONS ON', few:'🔉 NOTIFICATIONS: FEW', off:'🔕 NOTIFICATIONS OFF'})[this.notifMode()], toggleNotif: ()=>{ const o = ['all','few','off'], m = o[(o.indexOf(this.notifMode())+1)%3]; try { localStorage.setItem('wl-notif', m); } catch(e){} this.setState({toasts:[]}); this.toast(m=='all' ? 'NOTIFICATIONS ON' : m=='few' ? 'NOTIFICATIONS: ONLY IMPORTANT ONES' : 'NOTIFICATIONS OFF · TAP AGAIN TO TURN ON', true); },
       fxLabel: LOWFX ? 'PERFORMANCE MODE ON' : 'PERFORMANCE MODE OFF', toggleFx: ()=>{ LOWFX = !LOWFX; try { localStorage.setItem('wl-arcade-lowfx', LOWFX?'1':'0'); } catch(e){} applyLowFx(LOWFX); if (window.Arcade) window.Arcade.lowFx = LOWFX; this.toast(LOWFX ? 'PERFORMANCE MODE ON · FEWER EFFECTS, SMOOTHER ON SLOW DEVICES' : 'PERFORMANCE MODE OFF · FULL EFFECTS'); this.forceUpdate(); },
-      toggleSound: ()=>{ const m=!s.muted; this.setState({muted:m}); if (window.Arcade) window.Arcade.muted = m; },
+      toggleSound: ()=>{ const m=!s.muted; this.setState({muted:m}); if (window.Arcade) window.Arcade.muted = m; if (window.WLMusic) window.WLMusic.setMuted(m); },
       wrapRef: this.wrapRef, gameRef: this.gameRef, pzRef: this.pzRef, scale: s.scale, floorTransform: 'scale(' + s.scale + ')', scaledH: Math.round(FH*s.scale),
       cabinets: GAMES.map((c,i)=>({...c, ...POS[i], icon: ICON(c.id), best:fmtN(P.best[c.id]||0), daily:i==di, saved:savedOf(c.id), isNew:!!c.isNew && !P.played[c.id] && !savedOf(c.id), learn: !!c.learn || (eduOn && EDU_SWITCH.includes(c.id)), shadow: (ni===i?glow:base)+(P.skin && window.WLP ? ', '+window.WLP.skinStyle(P.skin) : ''), open:()=>this.open(c.id)})),
       prizeShadow: ni===NG?glow:base, dailyShadow: ni===NG+1?glow:base,
