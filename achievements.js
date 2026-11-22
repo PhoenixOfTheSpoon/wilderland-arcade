@@ -116,6 +116,8 @@ A.init = ctx => { if (FAM.length) return; const G = ctx.games || [], NG = G.leng
   Z('zero','🥚','Goose Egg','Finish a game with a score of exactly 0','Everyone starts somewhere…', s => sm(s,'zero'));
   Z('marathon','🏃','Marathon','Play one machine for 30 minutes straight','Stamina is a skill too.', s => sm(s,'marathon'), 'Marathoner');
   Z('trophy','🏆','Arcade Legend','Claim the Golden Trophy from the Arcade Classics','The oldest prize still shines.', s => (s.prizes||{}).trophy ? 1 : 0, 'Arcade Legend');
+  // Mega Sets (prizes2.js): finishing every set in a group gives a title
+  ((window.WLP && window.WLP.MEGA) || []).forEach(M => add('mega_'+M.id, 'Collector', M.e, M.n, () => 'Complete all '+M.sets.length+' sets in the '+M.n+' Mega Set', s => M.sets.every(id => (s.colDone||{})[id]) ? 1 : 0, [1], {titles:{0:M.t}}));
   Z('allin','🎲','All In','Own 10 different Mythic prizes','Luck favors the bold.', s => window.WLP && window.WLP.catalog ? window.WLP.catalog().filter(it => it.r===5 && (s.prizes||{})[it.id]).length >= 10 ? 1 : 0 : 0);
 };
 

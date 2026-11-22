@@ -171,6 +171,36 @@ const COLS = [
   '🌟|Golden Star Pin|For your first Rebirth.;🏅|Gilded Medal|Shines brighter every Rebirth.;👑|Golden Crown|Rule the arcade.;🗿|Golden Statue|They built a statue in your honor.;🦚|Golden Peacock|Feathers of pure light.;🐉|Golden Dragon|Hoards tickets instead of gold.;🏰|Golden Castle|Your own arcade kingdom.;🌋|Golden Volcano|Erupts with confetti.;🪐|Golden Planet|Ringed with ticket stubs.;☀️|Golden Sun|Brighter than a thousand Turbo runs.;🌌|Golden Galaxy|A billion golden stars.;♾️|The Infinite Ticket|Worth everything. And then some.'},
 ];
 
+// ---- more sets (prizes-more.js) go in before the seasonal ones ----
+if (window.WLP_MORE && window.WLP_MORE.length) { const at = COLS.findIndex(c => c.id == 'winter'); COLS.splice(at < 0 ? COLS.length : at, 0, ...window.WLP_MORE.filter(m => !COLS.some(c => c.id == m.id))); }
+// ---- themes for the collection filters ----
+const THEMES = [['animals','🐾','Animals'],['ocean','🌊','Ocean'],['nature','🌲','Nature & Science'],['space','🪐','Space'],['food','🍕','Food'],['fantasy','🐉','Fantasy'],['history','🏰','History'],['tech','🤖','Tech'],['arcade','🕹️','Arcade'],['hobbies','🎨','Hobbies & Sports'],['seasons','🎉','Seasons & Holidays'],['mines','⛏️','Mine Relics'],['royal','👑','Wilderland & Vaults']];
+const TH_OF = {forest:'animals',invasive:'nature',ocean:'ocean',dino:'animals',birds:'animals',bugs:'animals',space:'space',retro:'tech',food:'food',wizard:'fantasy',legends:'arcade',rocks:'nature',weather:'nature',trees:'nature',camp:'hobbies',robots:'tech',music:'hobbies',sports:'hobbies',classics:'arcade',cosmic:'space',desert:'animals',rainforest:'animals',arctic:'animals',savanna:'animals',farm:'animals',pets:'animals',myth:'fantasy',pirate:'history',castle:'history',egypt:'history',inventions:'tech',planets:'space',volcano:'nature',toys:'hobbies',treats:'food',breakfast:'food',vehicles:'tech',shells:'ocean',tokens:'arcade',pixel:'arcade',science:'nature',math:'nature',cats:'animals',sharks:'ocean',frogs:'animals',peaks:'nature',stars:'space',monsters:'fantasy',heroes:'fantasy',garden:'food',night:'animals',circus:'hobbies',magic:'fantasy',explorers:'space',fossils:'nature',winter:'seasons',spring:'seasons',summer:'seasons',fall:'seasons',treasure:'royal',vault:'royal',diavault:'royal',golden:'royal'};
+COLS.forEach(C => { if (!C.th) C.th = TH_OF[C.id] || 'hobbies'; });
+W.THEMES = THEMES;
+// ---- set bonuses: bigger and rarer sets give a bigger permanent multiplier (old ×1.2 sets give at least ×1.2) ----
+const topR = C => C.prestige || C.starLadder ? 7 : C.ladder ? C.r : C.classic ? 4 : Math.min(7, (C.b||0) + (C.s||1) - 1);
+const setBonus = C => { const n = C.size || (C.items ? C.items.split(';').filter(Boolean).length : 16); return Math.max(1.2, Math.round((1.1 + .03*topR(C) + .006*n) * 100) / 100); };
+W.setBonus = id => { const C = COLS.find(c => c.id == id); return C ? setBonus(C) : 1; };
+// ---- Mega Sets: finish every set in a group for a big bonus and a title ----
+const MEGA = [
+  {id:'seas',    e:'🌊', n:'Master of the Seas',   t:'Master of the Seas', mult:2,  sets:['ocean','coral','deepsea','sharks','shells','merfolk']},
+  {id:'wild',    e:'🦁', n:'Wild Kingdom',          t:'Wildlife Ranger',    mult:2,  sets:['forest','savanna','rainforest','arctic','desert','outback','cats','reptiles']},
+  {id:'sky',     e:'🦅', n:'Ruler of the Skies',    t:'Sky Ruler',          mult:1.5,sets:['birds','raptors','butterflies','flight']},
+  {id:'prehist', e:'🦖', n:'Prehistoric Pro',       t:'Fossil Finder',      mult:1.5,sets:['dino','fossils','iceage']},
+  {id:'stars',   e:'🚀', n:'Starship Commander',    t:'Starship Commander', mult:2,  sets:['space','planets','stars','explorers','aliens','wonders','cosmic']},
+  {id:'feast',   e:'🍽️', n:'Grand Feast',           t:'Master Chef',        mult:1.5,sets:['food','treats','breakfast','candy','pizza','veggies','bakery','fruits','smoothies']},
+  {id:'myth',    e:'🐉', n:'Legends & Myths',       t:'Dragon Tamer',       mult:2,  sets:['myth','beasts','dragons','wizard','potions','fairy']},
+  {id:'history', e:'🏛️', n:'Time Keeper',           t:'Historian',          mult:2,  sets:['egypt','greece','maya','vikings','castle','armory','ninja','pirate','westernlife','timetravel']},
+  {id:'tech',    e:'🤖', n:'Tech Genius',           t:'Inventor',           mult:1.5,sets:['robots','robofactory','coding','inventions','retro','trains','vehicles','backyard','science']},
+  {id:'arcade',  e:'🕹️', n:'Arcade Champion',       t:'Arcade Champion',    mult:2,  sets:['legends','classics','tokens','pixel','pixelheroes','workshop','tickets','tdarsenal','boardgames']},
+  {id:'party',   e:'🎉', n:'Holiday Hero',          t:'Holiday Hero',       mult:2,  sets:['winter','spring','summer','fall','spooky','feast','friendship','newyear','birthday']},
+  {id:'mines',   e:'⛏️', n:'Mine Master',           t:'Mine Master',        mult:3,  sets:['mr_soil','mr_stone','mr_crystal','mr_magma','mr_core','mr_cosmic','mr_ice','mr_fungal','mr_ruins','mr_sunken','mr_clock','mr_candy','mr_jungle','mr_dragon','mr_desert','mr_cathedral','mr_cloud','mr_rift','mr_neon','mr_void','mr_armageddon']},
+  {id:'royal',   e:'👑', n:'Wilderland Royalty',    t:'Wilderland Royalty', mult:5,  sets:['royal','golden','diavault','vault','treasure']},
+];
+W.MEGA = MEGA;
+W.megaStatus = P => { const d = P.colDone||{}; return MEGA.map(M => { const have = M.sets.filter(id => d[id]).length; return {...M, have, size:M.sets.length, done: have >= M.sets.length}; }); };
+
 // The original 16 prizes keep their ids, so old saves show up in the new Trophy Room.
 const CLASSICS = [['sticker','Sticker Pack','common','Stick it on everything.'],['bracelet','Glow Bracelet','common','Glows at the arcade after dark.'],['ball','Bouncy Ball','common','Bounces higher than you think.'],['snake','Rubber Snake','common','Not a real snake. Probably.'],
   ['pin','Mountain Pin','rare','A badge for every trail.'],['moose','Plush Moose','rare','Extremely huggable.'],['lamp','Lava Lamp','rare','Blobs go up, blobs come down.'],['robot','Pinecone Robot','rare','Built from the forest floor.'],
@@ -270,7 +300,7 @@ const glv = (P,g) => (((P.mult||{}).game||{})[g])|0;
 // Golden Stars: every star you've ever EARNED counts (spending them on Wilderland prizes doesn't lower this).
 const starMult = P => Math.pow(1 + (P.stars||0), 0.6);
 W.starMult = starMult;
-const colMult = P => Math.pow(1.2, Object.keys(P.colDone||{}).length);
+const colMult = P => { const d = P.colDone||{}; let m = 1; Object.keys(d).forEach(id => { m *= W.setBonus(id); }); MEGA.forEach(M => { if (M.sets.every(id => d[id])) m *= M.mult; }); return Math.min(1e300, m); };
 const loginMult = P => 1 + Math.min(30, (P.login||{}).streak||0) * (lv(P,'daily') ? MSHOP[2].eff(lv(P,'daily')) : .01);
 const comboN = P => { const c = P.combo||{}, E2 = window.WLE, warm = E2 ? E2.comboWarmMs(P) : 300000; return c.t && Date.now() - c.t > warm ? 1 : (c.n||1); };
 const comboMult = P => { const E2 = window.WLE, cap = E2 ? E2.comboCap(P) : 10, str = E2 ? E2.comboStrength(P) : 1; return 1 + Math.min(cap, Math.max(0, comboN(P)-1)) * (lv(P,'combo') ? MSHOP[1].eff(lv(P,'combo')) : .01) * str; };
@@ -440,7 +470,7 @@ W.reveal = (it, label, low, sfx, opts) => { ensureCss(); sfx = sfx || (n => wind
 W.mount = (root, api) => {
   ensureCss(); build(api.classicArt);
   const games = api.games();
-  let bumpK = null, expN = 1; let tab = api.tab || 'shop', colF = 'featured', rarF = -1, affordOnly = false, live = true, q = '', upgF = 'all', catF = 'all', avOff = null;
+  let bumpK = null, expN = 1; let tab = api.tab || 'shop', colF = 'featured', thF = 'all', doneF = 'all', rarF = -1, affordOnly = false, live = true, q = '', upgF = 'all', catF = 'all', avOff = null;
   const wrap = E('div', {cls:'wlp'+(api.lowFx()?' wlp-low':'')}); root.appendChild(wrap);
   const P = () => api.P();
   const set = patch => { api.setP(patch); };
@@ -464,7 +494,8 @@ W.mount = (root, api) => {
 
   const checkCols = () => { const st = W.colStatus(P()), done = {...(P().colDone||{})}; let newly = null;
     st.forEach(c => { if (c.done && !done[c.id]) { done[c.id] = true; newly = c; } });
-    if (newly) { set({colDone:done}); api.toast('COLLECTION COMPLETE · '+newly.n.toUpperCase()+' · PERMANENT ×1.2'); } };
+    if (newly) { const before = W.megaStatus(P()).filter(m => m.done).map(m => m.id); set({colDone:done}); api.toast('COLLECTION COMPLETE · '+newly.n.toUpperCase()+' · PERMANENT ×'+W.setBonus(newly.id));
+      W.megaStatus(P()).filter(m => m.done && !before.includes(m.id)).forEach(m => api.toast('MEGA SET COMPLETE · '+m.e+' '+m.n.toUpperCase()+' · ×'+m.mult+' · TITLE: '+m.t.toUpperCase(), true)); } };
 
   const buy = (it, price) => { const p = P(); if (api.admin()) { api.toast('ADMIN MODE · SHOPPING DISABLED'); return; }
     const {n, cost} = bulk(it, price); const lbl = n > 1 ? 'BOUGHT ×'+n : null;
@@ -518,7 +549,11 @@ W.mount = (root, api) => {
     // filters
     box.appendChild(E('div', {cls:'wlp-h'}, 'BROWSE'));
     const chips = E('div', {style:{display:'flex', gap:'5px', flexWrap:'wrap', marginBottom:'8px'}});
-    [['featured','All'], ...COLS.map(C=>[C.id, C.e+' '+C.n+(C.season && C.season!==seasonNow()?' (away)':'')])].forEach(([id,t]) => chips.appendChild(E('button', {cls:'wlp-chip'+(colF==id?' on':''), onclick:()=>{ colF = id; render(); }}, t)));
+    // theme first, then the sets inside that theme (there are 130+ sets, so they don't all show at once)
+    const thRow = E('div', {style:{display:'flex', gap:'5px', flexWrap:'wrap', marginBottom:'6px'}});
+    [['all','📋','All themes'], ...THEMES].forEach(([id,e,n]) => thRow.appendChild(E('button', {cls:'wlp-chip'+(thF==id?' on':''), onclick:()=>{ thF = id; colF = 'featured'; render(); }}, e+' '+n)));
+    box.appendChild(thRow);
+    [['featured', thF=='all' ? 'All sets' : 'All in this theme'], ...(thF=='all' ? [] : COLS.filter(C => C.th==thF && !C.repeat).map(C=>[C.id, C.e+' '+C.n+(C.season && C.season!==seasonNow()?' (away)':'')]))].forEach(([id,t]) => chips.appendChild(E('button', {cls:'wlp-chip'+(colF==id?' on':''), onclick:()=>{ colF = id; render(); }}, t)));
     box.appendChild(chips);
     const rch = E('div', {style:{display:'flex', gap:'5px', flexWrap:'wrap', marginBottom:'10px', alignItems:'center'}});
     rch.appendChild(E('button', {cls:'wlp-chip'+(rarF<0?' on':''), onclick:()=>{ rarF = -1; render(); }}, 'Any rarity'));
@@ -526,23 +561,40 @@ W.mount = (root, api) => {
     rch.appendChild(E('button', {cls:'wlp-chip'+(affordOnly?' on':''), onclick:()=>{ affordOnly = !affordOnly; render(); }}, 'Can afford'));
     box.appendChild(rch);
     const grid = E('div', {cls:'wlp-grid'});
-    let list = CAT.filter(it => (colF=='featured' || it.col===colF) && (rarF<0 || it.r===rarF) && (!affordOnly || (isStar(it) ? freeStars(p) >= starPrice(it,p) : priceOf(it,p) <= (p.tickets||0))) && match(it.n, it.d, R[it.r].n));
+    const thOf = id => { const C = COLS.find(c => c.id==id); return C ? C.th : ''; };
+    let list = CAT.filter(it => (colF=='featured' ? (thF=='all' || thOf(it.col)==thF) : it.col===colF) && (rarF<0 || it.r===rarF) && (!affordOnly || (isStar(it) ? freeStars(p) >= starPrice(it,p) : priceOf(it,p) <= (p.tickets||0))) && match(it.n, it.d, R[it.r].n));
     list.sort((a,b) => priceOf(a,p)-priceOf(b,p));
     list.forEach(it => grid.appendChild(prizeCard(it)));
     if (!list.length) grid.appendChild(E('div', {cls:'wlp-small'}, 'Nothing here yet. Keep playing!'));
     box.appendChild(grid); return box; };
 
-  const trophy = () => { const p = P(), inv = p.prizes||{}, box = E('div'), st = W.colStatus(p);
+  const trophy = () => { const p = P(), inv = p.prizes||{}, box = E('div'); let st = W.colStatus(p);
     const own = W.ownedCount(p), tot = W.total(), pct = Math.floor(own/tot*100);
-    box.appendChild(E('div', {cls:'wlp-box'}, E('div', {style:{fontWeight:800, fontSize:'18px', color:'#015640'}}, 'Trophy Room · '+pct+'% complete'), E('div', {cls:'wlp-small'}, own+' of '+tot+' prizes · each finished collection gives a permanent ×1.2 and a trophy on the arcade floor'),
+    box.appendChild(E('div', {cls:'wlp-box'}, E('div', {style:{fontWeight:800, fontSize:'18px', color:'#015640'}}, 'Trophy Room · '+pct+'% complete'), E('div', {cls:'wlp-small'}, own+' of '+tot+' prizes · each finished collection gives a permanent bonus (bigger and rarer sets give more) and a trophy on the arcade floor · '+Object.keys(p.colDone||{}).length+' / '+COLS.length+' sets complete'),
       E('div', {cls:'wlp-bar', style:{marginTop:'8px'}}, E('div', {style:{width:pct+'%', background:'linear-gradient(90deg,#00B451,#F9BF01,#ff5fd2)'}}))));
     const rarRow = E('div', {style:{display:'flex', gap:'6px', flexWrap:'wrap', margin:'10px 0'}});
     R.forEach((r,i) => { const n = CAT.filter(it => it.r===i && inv[it.id]).length, t = CAT.filter(it=>it.r===i && !it.repeat).length; rarRow.appendChild(E('div', {style:{border:'2px solid '+(r.rainbow?'#ff5fd2':r.c), borderRadius:'10px', padding:'4px 9px', fontSize:'12px', fontWeight:700, background:'#fff'}}, E('span', {cls:r.rainbow?'wlp-rain':'', style:{color:r.c}}, r.n), ' '+n+'/'+t)); });
     box.appendChild(rarRow);
+    // Mega Sets
+    const megaBox = E('div', {cls:'wlp-box', style:{marginBottom:'10px'}}); megaBox.appendChild(E('div', {style:{fontWeight:800, fontSize:'16px', color:'#015640', marginBottom:'6px'}}, '🏆 Mega Sets · finish every set in a group'));
+    const mg = E('div', {style:{display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(210px,1fr))', gap:'8px'}});
+    W.megaStatus(p).forEach(m => mg.appendChild(E('div', {style:{border:'2px solid '+(m.done?'#00B451':'#e2dccb'), borderRadius:'12px', padding:'8px 10px', background:m.done?'#eefbe8':'#fff'}},
+      E('div', {style:{fontWeight:800, fontSize:'14px'}}, m.e+' '+m.n+(m.done?' ✓':'')), E('div', {cls:'wlp-small'}, m.have+' / '+m.size+' sets · reward ×'+m.mult+' + title “'+m.t+'”'),
+      E('div', {cls:'wlp-bar', style:{marginTop:'5px'}}, E('div', {style:{width:Math.floor(m.have/m.size*100)+'%', background:'#00B451'}})))));
+    megaBox.appendChild(mg); box.appendChild(megaBox);
+    // filters: theme + completion
+    const fr = E('div', {style:{display:'flex', gap:'5px', flexWrap:'wrap', margin:'6px 0'}});
+    [['all','📋','All themes'], ...THEMES].forEach(([id,e,n]) => fr.appendChild(E('button', {cls:'wlp-chip'+(thF==id?' on':''), onclick:()=>{ thF = id; renderBody(); }}, e+' '+n)));
+    box.appendChild(fr);
+    const fr2b = E('div', {style:{display:'flex', gap:'5px', flexWrap:'wrap', margin:'0 0 10px'}});
+    [['all','All'],['done','🏆 Complete'],['part','In progress'],['none','Not started']].forEach(([id,n]) => fr2b.appendChild(E('button', {cls:'wlp-chip'+(doneF==id?' on':''), onclick:()=>{ doneF = id; renderBody(); }}, n)));
+    box.appendChild(fr2b);
+    st = st.filter(c => { const C = COLS.find(x=>x.id==c.id); return (thF=='all' || C.th==thF) && (doneF=='all' || (doneF=='done' ? c.done : doneF=='none' ? c.own==0 : (!c.done && c.own>0))); });
+    if (!st.length) box.appendChild(E('div', {cls:'wlp-small'}, 'No sets match these filters.'));
     st.forEach(c => { const C = COLS.find(x=>x.id==c.id), items = CAT.filter(it=>it.col===c.id && !it.repeat).sort((a,b)=>a.r-b.r);
       const sec = E('div', {style:{background:'linear-gradient(#3b2614,#2a1b0e)', borderRadius:'14px', padding:'10px 12px', marginBottom:'10px', boxShadow:'inset 0 0 0 3px #5a3a1c'}});
       sec.appendChild(E('div', {style:{display:'flex', justifyContent:'space-between', alignItems:'center', color:'#EDE9D8', fontWeight:700, gap:'8px', flexWrap:'wrap'}},
-        E('span', null, C.e+' '+C.n+(C.season?' · '+SEASON_NAME[C.season]+' only':'')+(C.prestige?' · Rebirth prizes':'')), E('span', {style:{color: c.done ? '#D5F367' : '#cfc6a8', fontSize:'13px'}}, c.done ? '🏆 COMPLETE · ×1.2' : c.own+' / '+c.size+' · '+Math.floor(c.own/c.size*100)+'%')));
+        E('span', null, C.e+' '+C.n+(C.season?' · '+SEASON_NAME[C.season]+' only':'')+(C.prestige?' · Rebirth prizes':'')), E('span', {style:{color: c.done ? '#D5F367' : '#cfc6a8', fontSize:'13px'}}, c.done ? '🏆 COMPLETE · ×'+W.setBonus(c.id) : '×'+W.setBonus(c.id)+' when done · '+ c.own+' / '+c.size+' · '+Math.floor(c.own/c.size*100)+'%')));
       const row = E('div', {style:{display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(64px,1fr))', gap:'8px', marginTop:'8px'}});
       items.forEach(it => { const o = !!inv[it.id]; const cell = E('div', {title: o ? it.n+' · '+it.d : '??? ('+R[it.r].n+')', style:{display:'flex', flexDirection:'column', alignItems:'center', gap:'3px', cursor:o?'pointer':'default'}, onclick:()=>{ if (o) reveal(it, R[it.r].n.toUpperCase()); }}, icon(it, o), E('div', {style:{fontSize:'9.5px', color:o?'#EDE9D8':'#7d6a55', fontWeight:700, textAlign:'center', lineHeight:1.1}}, o ? it.n : '???'));
         cell.firstChild.style.width = cell.firstChild.style.height = '52px'; cell.firstChild.style.fontSize = '28px'; row.appendChild(cell); });
