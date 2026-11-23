@@ -358,7 +358,7 @@ A.register('rootout', { mount(host, api){
     if (cur && state!='dead') { const y = cur.fall ? 70 + cur.fall.y : 70; drawBlock(cur.x,y,cur.w,cur.sp,0,tagsVisible());
       if (!cur.fall) { g.strokeStyle = 'rgba(18,19,19,.25)'; g.setLineDash([4,6]); g.beginPath(); g.moveTo(cur.x,y+LH); g.lineTo(cur.x,GROUND-layers.length*LH+camY); g.moveTo(cur.x+cur.w,y+LH); g.lineTo(cur.x+cur.w,GROUND-layers.length*LH+camY); g.stroke(); g.setLineDash([]); } }
     g.fillStyle = 'rgba(18,19,19,.72)'; rrect(g,8,8,w-16,30,15); g.fill(); g.textAlign = 'left'; g.font = '700 13px '+A.font; g.fillStyle = '#fff';
-    const inf = layers.filter(l=>l.inf).length; g.fillText('HEIGHT '+(layers.length-1)+'   LV '+level()+'   '+score.toLocaleString(), 20, 28);
+    const inf = layers.filter(l=>l.inf).length; g.fillText('HEIGHT '+(layers.length-1)+'   LV '+level()+'   '+A.fmt(score), 20, 28);
     g.textAlign = 'right'; g.fillStyle = '#ffd0e8'; g.fillText('♥'.repeat(Math.max(0,health)), w-20, 28);
     if (inf) { g.fillStyle = '#d9a8ff'; g.fillText('CORRUPTION '+inf+'/'+MAXINF, w-20-health*14-12, 28); }
     if (boss) { const bw = 300, bx = (w-bw)/2; g.fillStyle = 'rgba(18,19,19,.78)'; rrect(g,bx-8,44,bw+16,32,10); g.fill(); g.fillStyle = '#fff'; g.font = '700 12px '+A.font; g.textAlign = 'center'; g.fillText('KUDZU KING · strikes in '+Math.ceil(boss.t)+'s', w/2, 57);

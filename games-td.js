@@ -342,7 +342,7 @@ A.register('td', { w:720, mount(host, api){
     if (banner && banner.t>0 && state!='menu') { g.globalAlpha = Math.min(1,banner.t); g.fillStyle = 'rgba(1,86,64,.88)'; rrect(g,W/2-220,H/2-40,440,banner.sub?72:46,14); g.fill();
       g.fillStyle = C.lime; g.textAlign = 'center'; g.font = '700 22px '+A.font; g.fillText(banner.txt,W/2,H/2-9); if (banner.sub) { g.fillStyle = '#fff'; g.font = '500 13px '+A.font; g.fillText(banner.sub,W/2,H/2+15,420); } g.globalAlpha = 1; }
     if (state=='menu') A.overlayText(g,W,H,'TRAILHEAD DEFENSE','Pick a trail below — the big ones have several entrances.');
-    if (state=='over') A.overlayText(g,W,H,'CAMP OVERRUN','Reached wave '+wave+' on '+MAPS[map].name+' ('+M().n+') · score '+Math.round(score*M().mult).toLocaleString()+' · click to play again');
+    if (state=='over') A.overlayText(g,W,H,'CAMP OVERRUN','Reached wave '+wave+' on '+MAPS[map].name+' ('+M().n+') · score '+A.fmt(Math.round(score*M().mult))+' · click to play again');
   };
 
   // ---------------- toolbar ----------------

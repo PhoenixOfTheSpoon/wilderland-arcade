@@ -38,15 +38,16 @@ div[style*="position:fixed; inset:0"] > div[style*="border-radius:20px"]{animati
 .wl-pop{animation:wlPop .45s cubic-bezier(.2,.9,.3,1.4);}
 @keyframes wlGlow{0%,100%{filter:drop-shadow(0 0 0 rgba(213,243,103,0))}50%{filter:drop-shadow(0 0 7px rgba(213,243,103,.55))}}
 img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
+@keyframes wlMenuIn{from{transform:translateX(40px);opacity:0;}to{transform:none;opacity:1;}}
 @media (prefers-reduced-motion: reduce){ *,*::before,*::after{animation:none !important;transition:none !important;} }
 </style>
 </helmet>
 <div style="min-height:100vh; background:#0b2e24; font-family:'Uncut Sans','Inter',system-ui,sans-serif; color:#EDE9D8; display:flex; flex-direction:column;">
 
   <header style="display:flex; align-items:center; gap:14px 20px; padding:{{ headPad }}; background:#015640; border-bottom:3px solid #D5F367; flex-wrap:wrap;">
-    <div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">
-      <img src="assets/logo-mark-ondark.svg" alt="" style="height:30px;">
-      <div style="font-weight:700; letter-spacing:0.189em; font-size:18px; color:#ffffff;">WILDERLAND <span style="color:#D5F367;">ARCADE</span></div>
+    <div style="display:flex; align-items:center; gap:10px 12px; flex-shrink:1; flex-wrap:wrap; min-width:0;">
+      <img src="assets/logo-mark-ondark.svg" alt="" style="height:{{ logoH }};">
+      <div style="font-weight:700; letter-spacing:{{ brandLs }}; font-size:{{ brandFs }}; color:#ffffff; white-space:nowrap;">WILDERLAND <span style="color:#D5F367;">ARCADE</span></div>
       <div role="tablist" aria-label="Site section" style="display:inline-flex; background:#0b2e24; border-radius:999px; padding:3px; gap:2px; border:1.5px solid rgba(213,243,103,.5);"><button role="tab" aria-selected="{{ arcSel }}" onClick="{{ goArcade }}" style="border:none; border-radius:999px; padding:6px 14px; font-weight:800; font-size:13px; cursor:pointer; background:{{ arcBg }}; color:{{ arcFg }};">🕹️ Arcade</button><button role="tab" aria-selected="{{ calSel }}" onClick="{{ goCal }}" style="border:none; border-radius:999px; padding:6px 14px; font-weight:800; font-size:13px; cursor:pointer; background:{{ calBg }}; color:{{ calFg }};">📅 Calendar</button></div>
     </div>
     <div style="flex:1; min-width:160px; overflow:hidden; background:#0b2e24; border-radius:999px; padding:8px 0; display:{{ tickerDisp }};">
@@ -60,27 +61,32 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
         <span style="display:inline-block; width:18px; height:12px; background:#015640; border-radius:3px;"></span>{{ tickets }} tickets
       </div>
       <div onClick="{{ openMultCats }}" title="Your total multiplier · tap for the breakdown by category" style="cursor:pointer; background:#015640; color:#D5F367; border:1.5px solid #D5F367; font-weight:700; font-size:15px; padding:7px 13px; border-radius:999px; white-space:nowrap;">{{ multLabelHead }}</div>
-      <button onClick="{{ toggleEdu }}" aria-pressed="{{ eduPressed }}" style="background:{{ eduHeadBg }}; color:{{ eduHeadFg }}; border:1.5px solid #64CDF5; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;">{{ eduLabel }}</button>
-      <button onClick="{{ openUname }}" style="background:transparent; color:#F9BF01; border:1.5px solid #F9BF01; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ unameLabel }}</button>
-      <button onClick="{{ openAccount }}" style="background:{{ acctHeadBg }}; color:{{ acctHeadFg }}; border:1.5px solid #D5F367; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer; max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ acctHeadLabel }}</button>
-      <button onClick="{{ openCode }}" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">{{ adminLabel }}</button>
-      <button onClick="{{ toggleSound }}" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">{{ soundLabel }}</button>
-      <button onClick="{{ toggleMusic }}" title="Background music: tap to switch Chiptune → songs → off" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">{{ musicLabel }}</button>
-      <button onClick="{{ openAv }}" style="background:#D5F367; color:#015640; border:none; border-radius:999px; padding:8px 14px; font-weight:800; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:6px;"><img src="{{ avImg }}" alt="" style="width:22px; height:22px; margin:-3px 0;">AVATAR</button>
-      <button onClick="{{ openSug }}" title="Submit a suggestion" style="background:transparent; color:#D5F367; border:1.5px solid #D5F367; border-radius:999px; padding:7px 12px; font-weight:700; font-size:13px; cursor:pointer;">💡 SUGGEST</button>
-      <button onClick="{{ openChat }}" title="Chat (T)" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">CHAT · T</button>
-      <button onClick="{{ toggleAutoRb }}" title="Rebirth automatically when you reach the milestone" style="background:{{ autoRbBg }}; color:{{ autoRbFg }}; border:1.5px solid #F9BF01; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;">{{ autoRbLabel }}</button>
+      <button onClick="{{ openAv }}" title="Your avatar" style="background:#D5F367; color:#015640; border:none; border-radius:999px; padding:6px 12px 6px 8px; font-weight:800; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:6px;"><img src="{{ avImg }}" alt="" style="width:24px; height:24px; margin:-3px 0;">AVATAR</button>
+      <button onClick="{{ openAccount }}" title="Your account" style="background:{{ acctHeadBg }}; color:{{ acctHeadFg }}; border:1.5px solid #D5F367; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ acctHeadLabel }}</button>
       <sc-if value="{{ rbReady }}" hint-placeholder-val="{{ false }}"><button onClick="{{ rebirthNow }}" style="background:#F9BF01; color:#121313; border:none; border-radius:999px; padding:8px 14px; font-weight:800; font-size:13px; cursor:pointer; white-space:nowrap;">⭐ REBIRTH NOW</button></sc-if>
- <button onClick="{{ siteFsBtn }}" title="Full screen for the whole site (Y)" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;">⛶ FULL SCREEN · Y</button>
-      <button onClick="{{ toggleNotif }}" title="All pop-ups · only important ones · off" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">{{ notifLabel }}</button>
-      <button onClick="{{ toggleFx }}" style="background:transparent; color:#EDE9D8; border:1.5px solid rgba(237,233,216,.5); border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;" style-hover="border-color:#D5F367; color:#D5F367;">{{ fxLabel }}</button>
+      <button onClick="{{ openMenu }}" aria-label="Menu" aria-expanded="{{ menuOn }}" style="background:#0b2e24; color:#D5F367; border:1.5px solid #D5F367; border-radius:999px; padding:8px 16px; font-weight:800; font-size:14px; cursor:pointer; white-space:nowrap;">☰ Menu</button>
     </div>
   </header>
+  <sc-if value="{{ menuOn }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeMenu }}" style="position:fixed; inset:0; background:rgba(4,20,14,.55); z-index:640;"></div>
+    <nav aria-label="Menu" style="position:fixed; top:0; right:0; bottom:0; width:{{ menuW }}; max-width:100vw; background:#0b2e24; border-left:3px solid #D5F367; z-index:641; display:flex; flex-direction:column; box-shadow:-12px 0 40px rgba(0,0,0,.4); animation:wlMenuIn .18s ease-out;">
+      <div style="display:flex; align-items:center; justify-content:space-between; padding:16px 18px 10px;">
+        <div style="font-weight:800; font-size:20px; color:#D5F367; letter-spacing:.06em;">☰ MENU</div>
+        <button onClick="{{ closeMenu }}" aria-label="Close menu" style="background:rgba(255,255,255,.1); color:#fff; border:none; border-radius:999px; width:36px; height:36px; font-size:18px; cursor:pointer;">✕</button>
+      </div>
+      <div style="overflow-y:auto; flex:1; padding:0 14px 20px; display:flex; flex-direction:column; gap:6px;">
+        <sc-for list="{{ menuItems }}" as="mi" hint-placeholder-count="10">
+          <sc-if value="{{ mi.hdr }}" hint-placeholder-val="{{ false }}"><div style="font-size:11px; font-weight:800; letter-spacing:.16em; color:#8fb9a8; margin:12px 4px 2px;">{{ mi.label }}</div></sc-if>
+          <sc-if value="{{ mi.btn }}" hint-placeholder-val="{{ true }}"><button onClick="{{ mi.run }}" style="display:flex; align-items:center; gap:12px; width:100%; text-align:left; background:{{ mi.bg }}; color:#EDE9D8; border:1.5px solid {{ mi.bd }}; border-radius:14px; padding:11px 14px; font-family:inherit; font-weight:700; font-size:14px; cursor:pointer;"><span style="font-size:20px; width:26px; text-align:center;">{{ mi.icon }}</span><span style="flex:1;">{{ mi.label }}</span><span style="font-size:12px; font-weight:800; color:{{ mi.valFg }};">{{ mi.val }}</span></button></sc-if>
+        </sc-for>
+      </div>
+    </nav>
+  </sc-if>
   <sc-if value="{{ arcEvOn }}" hint-placeholder-val="{{ false }}"><div onClick="{{ goCal }}" style="cursor:pointer; background:linear-gradient(90deg,#EA55AB,#F9BF01); color:#121313; font-weight:800; font-size:14px; text-align:center; padding:8px 12px; letter-spacing:.02em;">🕹️ {{ arcEvText }} <span style="font-weight:600; font-size:12px;">· from the Wilderland Calendar</span></div></sc-if>
   <div onClick="{{ openRebirth }}" title="{{ rbLabel }}" style="cursor:pointer; background:#0b2e24; padding:6px 16px; display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(213,243,103,.2);">
-    <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:#F9BF01; white-space:nowrap;">⭐ NEXT REBIRTH</div>
+    <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:#F9BF01; white-space:nowrap;">⭐<span style="display:{{ rbWordDisp }};"> NEXT REBIRTH</span></div>
     <div style="flex:1; height:10px; border-radius:999px; background:rgba(255,255,255,.1); overflow:hidden;"><div style="height:100%; width:{{ rbPct }}; background:linear-gradient(90deg,#00B451,#D5F367,#F9BF01); border-radius:999px; transition:width .4s;"></div></div>
-    <div style="font-size:11px; font-weight:700; color:#EDE9D8; white-space:nowrap; font-variant-numeric:tabular-nums;">{{ rbShort }}</div>
+    <div style="font-size:11px; font-weight:700; color:#EDE9D8; white-space:nowrap; font-variant-numeric:tabular-nums; min-width:0; overflow:hidden; text-overflow:ellipsis; flex-shrink:1; max-width:62%;">{{ rbShort }}</div>
   </div>
 
   <main style="flex:1; display:flex; flex-wrap:wrap; align-items:flex-start; gap:20px; padding:{{ mainPad }};">
@@ -1671,9 +1677,9 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-12-03l';
+const BUILD = '2026-12-04a';
 const SCRIPTS = ['arcade-core.js','music.js','prizes-more.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js','games-secrets.js','games-more.js','games-more2.js','games-more3.js'];
-const fmt = n => Math.round(n).toLocaleString();
+const fmt = n => fmtN(Math.round(n));
 
 class Component extends DCLogic {
   constructor(p){
@@ -1758,7 +1764,7 @@ class Component extends DCLogic {
     const best = pickBest([rec && rec.P, rec && rec.bk, local, getJSON(BK+KEY+':cloud:'+u.uid, null)], (window.WLCloud.resetAt && window.WLCloud.resetAt()) || 0);
     let P = best ? normP(best) : (carry ? normP({...this.P, saves:{}}) : normP(local || {}));
     this.cloudUid = u.uid; this.acct = null; this.cloudMeta = {name: (rec && rec.name) || name || (u.email||'player').split('@')[0].slice(0,16), created: (rec && rec.created) || today(), email: u.email};
-    this.P = P; setTimeout(()=>this.postTix(), 2500); setTimeout(()=>this.logAct('join', 'came online · '+fmtN(P.tickets||0)+' 🎟 · '+(P.stars||0)+' ⭐'), 1500); this.setState({...P, account:u.email||u.displayName||'Player', authOpen:false, aBusy:false, aPass:'', aPass2:'', aMsg:'', aInfo:''}); this.persist(true);
+    this.P = P; setTimeout(()=>this.postTix(), 2500); setTimeout(()=>this.logAct('join', 'came online · '+fmtN(P.tickets||0)+' 🎟 · '+fmtN(P.stars||0)+' ⭐'), 1500); this.setState({...P, account:u.email||u.displayName||'Player', authOpen:false, aBusy:false, aPass:'', aPass2:'', aMsg:'', aInfo:''}); this.persist(true);
     try { const C = window.WLCloud, ra = C.resetAt ? C.resetAt() : 0;
       if (ra && rec && rec.P && (rec.updated||0) < ra && (this.P.resetSeen||0) < ra) { this.P = normP({username:this.P.username, avatar:this.P.avatar, savesV:2, resetSeen:ra, wipeAt:ra}); this._bkForce = true; this.setState({...this.P}); this.persist(true); this.toast('THE ARCADE WAS RESET · FRESH START FOR EVERYONE'); }
       if (ra && (this.P.resetSeen||0) < ra) { this.P = {...this.P, resetSeen:ra}; }
@@ -1815,7 +1821,7 @@ class Component extends DCLogic {
     (async()=>{ for (const s of SCRIPTS) await new Promise(r=>{ const e=document.createElement('script'); e.src=s+'?v='+BUILD; e.onload=r; e.onerror=r; document.head.appendChild(e); }); this.ready=true; })();
     this.kd = e => {
       const k = e.key.length==1 ? e.key.toLowerCase() : e.key;
-      if (k=='Escape') { if (this.state.fs) { this.setFs(false); return; } if (this.state.chatOpen) { this.closeChat(); return; } this.closeAll(); this.setState({codeOpen:false}); return; }
+      if (k=='Escape') { if (this.state.menuOpen) { this.setState({menuOpen:false}); return; } if (this.state.fs) { this.setFs(false); return; } if (this.state.chatOpen) { this.closeChat(); return; } this.closeAll(); this.setState({codeOpen:false}); return; }
       if (k=='y' && !this.state.game && !this.state.chatOpen && !(e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName))) { e.preventDefault(); this.siteFs(); return; }
       if (k=='y' && this.state.game && !(e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) && !(this.state.game=='typing' && !e.shiftKey)) { e.preventDefault(); this.setFs(!this.state.fs); return; }
       const tg = e.target && e.target.tagName; if (tg=='INPUT' || tg=='TEXTAREA' || tg=='SELECT') return;
@@ -1953,7 +1959,7 @@ class Component extends DCLogic {
   async adminAct(id){ const s = this.state; if (!s.admin) return;
     if (s.admArm !== id) return this.setState({admArm:id, admMsg:''});
     const P = this.P, C = window.WLCloud, fixTix = async () => { if (s.cloud && C && this.cloudUid) { try { await C.deleteUserScores('_tix', this.cloudUid); } catch(e){} this.addScore('_none',0); this._bAt = {}; } };
-    if (id=='tix') { const n = Math.min(1e9, parseInt(s.admTix||'0',10)||0); this.setP({tickets:n, earned:Math.min(P.earned, Math.max(n, 0))}); await fixTix(); this.setState({admArm:'', admMsg:'Tickets set to '+n.toLocaleString()+'.'}); }
+    if (id=='tix') { const n = Math.min(1e9, parseInt(s.admTix||'0',10)||0); this.setP({tickets:n, earned:Math.min(P.earned, Math.max(n, 0))}); await fixTix(); this.setState({admArm:'', admMsg:'Tickets set to '+fmtN(n)+'.'}); }
     if (id=='zero') { this.setP({tickets:0, earned:0}); await fixTix(); this.setState({admArm:'', admMsg:'Tickets and lifetime earnings reset to 0.'}); }
     if (id=='bests') { this.setP({best:{}}); this.setState({admArm:'', admMsg:'All your high scores are cleared.'}); }
     if (id=='saves') { this.setP({saves:{}}); this.setState({admArm:'', admMsg:'All your saved games are cleared.'}); }
@@ -1965,7 +1971,7 @@ class Component extends DCLogic {
     let amt = 0, all = false;
     if (kind=='tix') { const raw = String(s.admRm||'').trim().toLowerCase(); all = raw=='' || raw=='all'; amt = all ? -1 : Math.max(0, parseInt(raw.replace(/[^0-9]/g,''),10)||0);
       if (!all && !amt) return this.setState({admArm:'', admMsg:'Type how many tickets to remove (or leave it empty for all).'}); }
-    const what = kind=='tix' ? (all?'all':amt.toLocaleString())+' tickets' : kind=='upg' ? 'every Workshop upgrade' : 'EVERYTHING (full reset)';
+    const what = kind=='tix' ? (all?'all':fmtN(amt))+' tickets' : kind=='upg' ? 'every Workshop upgrade' : 'EVERYTHING (full reset)';
     if (s.cloud) { const C = window.WLCloud;
       if (!this.cloudUid) return this.setState({admArm:'', admMsg:'Log in as jonah@wilderland.academy first.'});
       try { if (kind=='tix') await C.adjust(x.k, amt); else await C.adminFlag(x.k, kind=='upg' ? {upg:true} : {full:true});
@@ -2082,7 +2088,7 @@ class Component extends DCLogic {
     this.setP(patch);
     if (refund > 0) this.toast('REFUND · +'+fmtN(refund)+' TICKETS FOR GOLDEN TICKET UPGRADES');
     if (back > 0) setTimeout(()=>this.toast('REFUND · +'+back+' GOLDEN STARS BACK TO SPEND ON WILDERLAND PRIZES'), 900);
-    if (v < 3 && had) window.WLE.welcome({lines:['🎟 '+fmtN(P.tickets||0)+' tickets', '🏆 '+Object.keys(P.prizes||{}).length+' kinds of prizes kept', '⭐ '+(P.stars||0)+' Golden Stars', '🏅 '+(P.ach||[]).length+' achievements', '🛠 Workshop and multiplier levels kept until your next Rebirth']}); }
+    if (v < 3 && had) window.WLE.welcome({lines:['🎟 '+fmtN(P.tickets||0)+' tickets', '🏆 '+Object.keys(P.prizes||{}).length+' kinds of prizes kept', '⭐ '+fmtN(P.stars||0)+' Golden Stars', '🏅 '+(P.ach||[]).length+' achievements', '🛠 Workshop and multiplier levels kept until your next Rebirth']}); }
   // Golden critter rewards land here
   addTix(n, from){ if (this.state.admin) return; n = Math.max(0, Math.round(n)); if (!n) return; const P = this.P;
     this.setP({tickets:P.tickets+n, earned:P.earned+n}); if (from && window.WLE) window.WLE.fly(n, from); }
@@ -2099,7 +2105,7 @@ class Component extends DCLogic {
     putJSON(BOARD_KEY, {e:[]}); this.P = normP({username:this.P.username, avatar:this.P.avatar, savesV:2, wipeAt:Date.now()}); this._bkForce = true; this.persist(true); this.setState({...this.P, admArm:'', admMsg:'Full reset done on this device.'}); }
   async adminDelete(g, x){ const s = this.state, key = 'del:'+(x.id||x.k+x.s); if (!s.admin) return;
     if (s.admArm !== key) return this.setState({admArm:key, admMsg:''});
-    if (s.cloud) { const C = window.WLCloud; try { if (g=='_tix') await C.deleteUserScores('_tix', x.k); else await C.deleteScore(g, x.id); this._bAt = {}; this.cloudBoard = {}; this.setState({admArm:'', admMsg:'Removed '+x.u+' ('+x.s.toLocaleString()+').'}); }
+    if (s.cloud) { const C = window.WLCloud; try { if (g=='_tix') await C.deleteUserScores('_tix', x.k); else await C.deleteScore(g, x.id); this._bAt = {}; this.cloudBoard = {}; this.setState({admArm:'', admMsg:'Removed '+x.u+' ('+fmtN(x.s)+').'}); }
       catch(e) { this.setState({admArm:'', admMsg: String(e && e.code||'').includes('permission') ? 'Firebase said no. Make sure you’re logged in as jonah@wilderland.academy (log out and back in once so your game sets up the admin control record), then try again.' : 'Couldn’t delete: '+(e && (e.code||e.message))}); } }
     else { const B = getJSON(BOARD_KEY,{e:[]}); B.e = B.e.filter(y=>!(y.g==g && (g=='_tix' ? y.k==x.k : (y.k==x.k && y.s==x.s && y.d==x.d)))); putJSON(BOARD_KEY,B); this.setState({admArm:'', admMsg:'Removed '+x.u+'.'}); } }
   // Pop-up notifications: All (max 3 on screen, repeats merge into one with ×N) · Few (one at a time, no XP / payout spam) · Off (only "you can't do that" messages)
@@ -2126,7 +2132,7 @@ class Component extends DCLogic {
       ...(pk.game[g] ? [['Wilderland prize power', f(pk.game[g]), 'Tickets from this cabinet only']] : []), ...(P.ptFav==g ? [['Prestige Tree · favourite machine', f(E2.ptGame(P,g)), 'Tickets from this cabinet only']] : [])];
     const I = P.idle || {}, IU = I.up || {}, iw = (P.upg||{}).idle || {}, GTr = I.gtree || {};
     const cats = [
-      {id:'all', e:'🎟', n:'All Tickets', d:'Boosts tickets from every game', rows:[['Ticket Multiplier (lv '+lvM('global')+')', f(M[0].eff(lvM('global'))), 'Every ticket you earn'], ['Golden Stars ('+(P.stars||0)+')', f(WP.breakdown(P)[1][1]), 'Every ticket you earn'],
+      {id:'all', e:'🎟', n:'All Tickets', d:'Boosts tickets from every game', rows:[['Ticket Multiplier (lv '+lvM('global')+')', f(M[0].eff(lvM('global'))), 'Every ticket you earn'], ['Golden Stars ('+fmtN(P.stars||0)+')', f(WP.breakdown(P)[1][1]), 'Every ticket you earn'],
         ['Collections ('+Object.keys(P.colDone||{}).length+')', f(WP.breakdown(P)[2][1]), 'Every ticket you earn'], ['Login streak', f(WP.breakdown(P)[3][1]), 'Every ticket you earn'], ['Wilderland prizes', f(pk.all), 'Every ticket you earn'],
         ['Achievements (Platinum & Diamond)', f(A2 && A2.bonus ? A2.bonus(P) : 1), 'Every ticket you earn'], ['Arcade Expansions', f(E2 ? E2.gameMult(P)/(pt.games||1) : 1), 'Tickets you earn by playing'], ['Combo streak', f(WP.breakdown(P)[8][1]), 'Game payouts while your combo lasts']]},
       {id:'mineTix', e:'⛏️', n:'Mine Tickets', d:'Boosts tickets from The Mines only', rows: [...gameRows('idle'), ['Gem Market (Gem Tree lv '+(GTr.market||0)+')', f(1+.1*(GTr.market||0)), 'Tickets when you cash out ore · permanent']]},
@@ -2309,8 +2315,8 @@ class Component extends DCLogic {
     const uv = (s.uVal||'').trim(), ureg = s.uOpen ? getJSON(UNAME_KEY,{}) : {}, uOwner = ureg[uv.toLowerCase()];
     const pad = s.game && PADS[s.game];
     const mkPad = key => ({down: e=>{ if (e && e.preventDefault) e.preventDefault(); this.padHeld[key] = 1; fireKey(key,'keydown'); }, up: ()=>{ if (this.padHeld[key]) { this.padHeld[key] = 0; fireKey(key,'keyup'); } }});
-    return {
-      narrow, wide: !narrow, mainPad: narrow ? '14px 12px' : '20px 24px', headPad: narrow ? '12px 14px' : '14px 24px', floorH: FH, exY1018: 1018+EY, exY950: 950+EY, exY892: 892+EY, exY890: 890+EY,
+    const R0 = {
+      narrow, wide: !narrow, mainPad: narrow ? '14px 12px' : '20px 24px', headPad: narrow ? '12px 14px' : '14px 24px', logoH: narrow ? '22px' : '30px', rbWordDisp: narrow ? 'none' : 'inline', brandFs: narrow ? '14px' : '18px', brandLs: narrow ? '0.12em' : '0.189em', floorH: FH, exY1018: 1018+EY, exY950: 950+EY, exY892: 892+EY, exY890: 890+EY,
       modalW, modalPad, gameScale, gameBoxW: Math.round(GW*gameScale), gameBoxH: Math.round(GH*gameScale), gameW: GW, fsOn, liveScoreFmt: fmtN(s.liveScore||0), toggleFs: ()=>this.setFs(!s.fs), fsExit: vw < 560 ? 'Exit · Y' : 'Exit full screen · Y', fsLabel: s.game=='typing' ? '⛶ Full screen · Shift+Y' : '⛶ Full screen · Y',
       boxPos: fsOn ? 'fixed' : 'relative', boxInset: fsOn ? '0' : 'auto', boxZ: fsOn ? 700 : 'auto', boxBg: fsOn ? '#0b2e24' : 'transparent', boxWcss: fsOn ? '100vw' : Math.round(GW*gameScale)+'px', boxHcss: fsOn ? '100vh' : Math.round(GH*gameScale)+'px',
       gameLeft: fsOn ? Math.max(0, Math.round((vw - GW*gameScale)/2)) : 0, gameTop: fsOn ? 48 + Math.max(0, Math.round((vh - 52 - padRes - GH*gameScale)/2)) : 0, padPos: fsOn ? 'fixed' : 'static', padBottom: fsOn ? 'max(10px, env(safe-area-inset-bottom))' : 'auto', padZ: fsOn ? 720 : 'auto', boxRef: this.boxRef, boxTouch: s.game && SWIPE.includes(s.game) ? 'none' : 'manipulation',
@@ -2338,7 +2344,7 @@ class Component extends DCLogic {
       eduCapable: !!g && (EDU_SWITCH.includes(g.id) || LEARN_GAMES.includes(g.id)), eduSwitchable: !!g && EDU_SWITCH.includes(g.id), eduMath: !!g && EDU_SWITCH.includes(g.id) && g.id!='typing' && eduOn,
       eduGameNote: !g ? '' : (!eduOn && EDU_SWITCH.includes(g.id)) ? 'Turn on Learn mode for the learning version: '+LEARN_NOTES[g.id].charAt(0).toLowerCase()+LEARN_NOTES[g.id].slice(1) : 'Learn mode: '+LEARN_NOTES[g.id],
       learnToday: fmtDur(td.l)+' learning · '+fmtDur(td.r)+' regular play today',
-      learnTotals: [{k:'TIME IN LEARN MODE', v:fmtDur(sumL)},{k:'QUESTIONS', v:(okN+badN).toLocaleString()},{k:'ACCURACY', v: okN+badN ? Math.round(okN/(okN+badN)*100)+'%' : '—'},{k:'LEARN SESSIONS', v:learnLog.length}],
+      learnTotals: [{k:'TIME IN LEARN MODE', v:fmtDur(sumL)},{k:'QUESTIONS', v:fmtN(okN+badN)},{k:'ACCURACY', v: okN+badN ? Math.round(okN/(okN+badN)*100)+'%' : '—'},{k:'LEARN SESSIONS', v:learnLog.length}],
       learnDays: last7.map(x=>({label:x.label, lw: Math.round(x.l/maxDay*100), rw: Math.round(x.r/maxDay*100), txt: fmtDur(x.l)+' / '+fmtDur(x.r)})),
       learnByGame: Object.entries(byGame).map(([id,b])=>({name:gname(id), d:fmtDur(b.d), acc: b.ok+b.bad ? b.ok+' right · '+b.bad+' wrong' : 'no questions yet'})),
       hasByGame: Object.keys(byGame).length>0,
@@ -2362,7 +2368,7 @@ class Component extends DCLogic {
       uRules: unameRules(uv, !!uOwner && uOwner!==myK).map(([label,ok])=>({label, color: ok?'#015640':'#4a4a4a', dot: ok?'#00B451':'#b0ab95', mark: ok?'✓':'·'})),
       boardShadow: ni===NG+2?glow:base, learnShadow: ni===NG+3?glow:base, boardIcon: KIOSK_ICONS.board, learnIcon: KIOSK_ICONS.learn,
       lbLeader: (lbRows('_tix','all',1)[0]||{}).name || 'Nobody yet',
-      tickets: fmtN(P.tickets), multLabelHead: '×'+(window.WLP ? window.WLP.fmt(window.WLP.totalMult(P)) : '1')+' total'+((P.stars||0) ? ' · ⭐'+P.stars : '')+(window.WLE && window.WLE.diamonds(P) ? ' · 💎'+window.WLE.diaFree(P) : ''), soundLabel: s.muted ? 'SOUND OFF' : 'SOUND ON', musicLabel: '🎵 '+(window.WLMusic ? window.WLMusic.label() : 'MUSIC'), musicCredit: window.WLMusic ? window.WLMusic.credit() : '', toggleMusic: ()=>{ if (window.WLMusic) { window.WLMusic.cycle(); this.setState({musicTick:Date.now()}); } },
+      tickets: fmtN(P.tickets), multLabelHead: '×'+(window.WLP ? window.WLP.fmt(window.WLP.totalMult(P)) : '1')+' total'+((P.stars||0) ? ' · ⭐'+fmtN(P.stars) : '')+(window.WLE && window.WLE.diamonds(P) ? ' · 💎'+fmtN(window.WLE.diaFree(P)) : ''), soundLabel: s.muted ? 'SOUND OFF' : 'SOUND ON', musicLabel: '🎵 '+(window.WLMusic ? window.WLMusic.label() : 'MUSIC'), musicCredit: window.WLMusic ? window.WLMusic.credit() : '', toggleMusic: ()=>{ if (window.WLMusic) { window.WLMusic.cycle(); this.setState({musicTick:Date.now()}); } },
       showCash: !!s.game && s.game!='idle' && s.game!='secrets', cashOutGame: ()=>this.cashOutGame(), cashLabel: s.admin ? 'Cash out · (admin)' : 'Cash out · '+fmtN(s.liveScore||0),
       expFloor: window.WLE ? window.WLE.EXP.filter(x=>(P.exp||{})[x.k]).map(x=>({key:x.k+'-'+P.exp[x.k], e:x.e, n:x.n, lv:P.exp[x.k]})) : [], expEmpty: !window.WLE || !window.WLE.EXP.some(x=>(P.exp||{})[x.k]),
       openExp: ()=>{ this.keys = {}; this._pzTab = 'exp'; this.setState({prizesOpen:true}); },
@@ -2378,7 +2384,7 @@ class Component extends DCLogic {
       cabinets: GAMES.map((c,i)=>({...c, ...POS[i], icon: ICON(c.id), best:fmtN(P.best[c.id]||0), daily:i==di, saved:savedOf(c.id), isNew:!!c.isNew && !P.played[c.id] && !savedOf(c.id), learn: !!c.learn || (eduOn && EDU_SWITCH.includes(c.id)), shadow: (ni===i?glow:base)+(P.skin && window.WLP ? ', '+window.WLP.skinStyle(P.skin) : ''), open:()=>this.open(c.id)})),
       prizeShadow: ni===NG?glow:base, dailyShadow: ni===NG+1?glow:base,
       prizesOwned: Object.values(P.prizes).reduce((a,b)=>a+b,0),
-      daily: {name:dg.title, target:dg.target.toLocaleString(), status: dailyDone?'Completed today':'Not yet cleared'},
+      daily: {name:dg.title, target:fmtN(dg.target), status: dailyDone?'Completed today':'Not yet cleared'},
       openDaily: ()=>this.open(dg.id), openPrizes: ()=>this.openShopTab('shop'), openMultCats: ()=>this.openShopTab('mult'), closePrizes: ()=>this.closeAll(), closeGame: ()=>this.closeAll(),
       player: {x:s.px, y:s.py, ex:9+dx*6, ey:9+dy*6}, nearLabel,
       ...(()=>{ const W = window.WLH; if (!W) return {hasNPet:false, hasMount:false, emoteOn:false, emoteAnim:'none', walkY:s.py, cardPetImg:'', cardHomeImg:'', cardPetName:'', cardHomeName:'', emoteBtns:[]};
@@ -2407,7 +2413,7 @@ class Component extends DCLogic {
       acctKicker: s.account ? 'MEMBER' : 'PLAYING AS GUEST', acctName: s.account ? (me?me.name:s.account) : 'Guest',
       acctSub: s.account ? s.account : 'Make an account so your tickets and trophies have a home', acctBtn: s.account ? 'Account' : 'Sign up',
       acctEmail: s.account || '', acctSince: me ? me.created : '',
-      acctStats: [{k:'TICKETS',v:fmtN(P.tickets)},{k:'TROPHIES',v:achCount+'/'+achTot},{k:'GAMES',v:plays(P).toLocaleString()}],
+      acctStats: [{k:'TICKETS',v:fmtN(P.tickets)},{k:'TROPHIES',v:achCount+'/'+achTot},{k:'GAMES',v:fmtN(plays(P))}],
       openAccount: ()=>this.openAuth(s.account ? 'account' : 'signup'), closeAuth: ()=>this.setState({authOpen:false}), logout: ()=>this.logout(),
       authOpen: s.authOpen, isAccountView: s.authMode=='account' && !!s.account, isAuthForm: s.authMode!='account' || !s.account,
       authTitle: s.authMode=='account' && s.account ? 'Your account' : isSignup ? 'Create your account' : 'Welcome back',
@@ -2422,7 +2428,7 @@ class Component extends DCLogic {
       pwAuto: isSignup ? 'new-password' : 'current-password',
       strPct, strColor, strLabel: pw ? strLabel : 'Strength',
       rules: pwRules(pw, s.aPass2||'', email).map(([label,ok])=>({label, color: ok?'#015640':'#4a4a4a', dot: ok?'#00B451':'#b0ab95', mark: ok?'✓':'·'})),
-      showBring: !!guestP && (guestP.tickets>0 || guestP.ach.length>0), guestTickets: guestP ? guestP.tickets.toLocaleString() : '0', guestAch: guestP ? guestP.ach.length : 0,
+      showBring: !!guestP && (guestP.tickets>0 || guestP.ach.length>0), guestTickets: guestP ? fmtN(guestP.tickets) : '0', guestAch: guestP ? guestP.ach.length : 0,
       toggleBring: ()=>this.setState({aBring:!s.aBring}), toggleRemember: ()=>this.setState({aRemember:!s.aRemember}),
       submitAuth: ()=>this.submitAuth(), submitLabel: s.aBusy ? 'Working…' : isSignup ? 'Create account' : 'Log in',
       // game modal
@@ -2500,21 +2506,39 @@ class Component extends DCLogic {
       shopGames: !s.shopOpen ? [] : Object.entries(UPG).map(([gid,list])=>{ const gm = GAMES.find(x=>x.id==gid); const tm = upgTixMult(P, gid); return {id:gid, name:gm.title+(tm>1.001?'  ·  +'+fmtN(Math.round((tm-1)*100))+'% tickets':''), color:gm.color, icon:ICON(gid),
         ups: list.map(u=>{ const lv = ((P.upg||{})[gid]||{})[u.k]||0, max = upgMax(u), maxed = lv>=max, cost = maxed?0:upgCost(u, lv), can = !maxed && P.tickets>=cost, capped = u.cap && lv >= u.cap;
           return {key:gid+u.k, n:u.n, d:u.d+(capped?' · effect maxed, each level now +2% tickets':''), lv: u.one ? (lv?'unlocked':'locked') : 'lv '+fmtN(lv)+' / ∞', pips: u.one ? [{k:0, bg: lv?'#F9BF01':'#d9d3bd'}] : [...Array(Math.min(10, u.cap||10))].map((_,i)=>({k:i, bg: i < Math.min(lv, u.cap||10) ? (capped?'#00B451':'#F9BF01') : '#d9d3bd'})), label: maxed?'OWNED':fmtN(cost)+' tix', bg: maxed?'#cfc9b3':can?'#015640':'#bdb7a1', fg: maxed?'#4a4a4a':'#ffffff', cur: can?'pointer':'default', buy: ()=>this.buyUpg(gid,u.k)}; }) }; }),
-      prizes: !s.prizesOpen ? [] : PRIZES.map(p=>{ const ok = P.tickets>=p.cost; return {...p, img:PZ(p.art), tc:PTIER[p.tier].c, tbg:PTIER[p.tier].bg, owned:P.prizes[p.id]||0, cost:p.cost.toLocaleString(), btnBg: ok?'#015640':'#D9D9D9', btnFg: ok?'#ffffff':'#4a4a4a', cursor: ok?'pointer':'not-allowed', buy:()=>this.buy(p)}; }),
+      prizes: !s.prizesOpen ? [] : PRIZES.map(p=>{ const ok = P.tickets>=p.cost; return {...p, img:PZ(p.art), tc:PTIER[p.tier].c, tbg:PTIER[p.tier].bg, owned:P.prizes[p.id]||0, cost:fmtN(p.cost), btnBg: ok?'#015640':'#D9D9D9', btnFg: ok?'#ffffff':'#4a4a4a', cursor: ok?'pointer':'not-allowed', buy:()=>this.buy(p)}; }),
       floorTrophies: window.WLP ? window.WLP.floorTrophies(P) : [], trophyEmpty: !window.WLP || window.WLP.floorTrophies(P).length==0, trophyPct: window.WLP ? window.WLP.ownedCount(P)+' / '+window.WLP.total()+' prizes owned' : '',
       kioskPrizes: PRIZES.filter((p,i)=>i%2==0).map(p=>({img:PZ(p.art), op: P.prizes[p.id] ? 1 : .55})),
       ptCounter: (s.prizeTab||'counter')=='counter', ptShelf: s.prizeTab=='shelf', ptPlayed: s.prizeTab=='played',
       ptTabs: [['counter','Prize Counter'],['shelf','Trophy Shelves'],['played','Most Played']].map(([id,t])=>({id, t, bg:(s.prizeTab||'counter')==id?'#015640':'#ffffff', fg:(s.prizeTab||'counter')==id?'#ffffff':'#015640', pick:()=>this.setState({prizeTab:id})})),
       shelves: !s.prizesOpen ? [] : ['Common','Rare','Epic','Legendary'].map(t=>({t, c:PTIER[t].c, items: PRIZES.filter(p=>p.tier==t).map(p=>{ const n = P.prizes[p.id]||0; return {id:p.id, name:p.name, img:PZ(p.art), n:'×'+n, has:n>0, multi:n>1, filt:n?'':'grayscale(1) brightness(.3)', label:n?p.name:'???'}; })})),
       shelfCount: PRIZES.filter(p=>P.prizes[p.id]).length+' / '+PRIZES.length+' prizes on display',
-      mostPlayed: !s.prizesOpen ? [] : (()=>{ const rows = GAMES.map(gm=>({id:gm.id, name:gm.title, color:gm.color, icon:ICON(gm.id), n:P.played[gm.id]||0, best:(P.best[gm.id]||0).toLocaleString()})).sort((a,b)=>b.n-a.n); const mxp = Math.max(1, ...rows.map(r=>r.n)); return rows.map((r,i)=>({...r, rank:i+1, w:Math.round(r.n/mxp*100)+'%', nLabel:r.n+(r.n==1?' play':' plays')})); })(),
-      playedTotal: plays(P).toLocaleString()+' games finished in total · kept with your profile across every update',
+      mostPlayed: !s.prizesOpen ? [] : (()=>{ const rows = GAMES.map(gm=>({id:gm.id, name:gm.title, color:gm.color, icon:ICON(gm.id), n:P.played[gm.id]||0, best:fmtN(P.best[gm.id]||0)})).sort((a,b)=>b.n-a.n); const mxp = Math.max(1, ...rows.map(r=>r.n)); return rows.map((r,i)=>({...r, rank:i+1, w:Math.round(r.n/mxp*100)+'%', nLabel:r.n+(r.n==1?' play':' plays')})); })(),
+      playedTotal: fmtN(plays(P))+' games finished in total · kept with your profile across every update',
       avImg: avSVG(P.avatar, (P.ach||[]).length, {npet:petOf(petTag(P))}), avLevel: (P.ach||[]).length, avFrameName: (avFrame((P.ach||[]).length)||{n:'No'}).n+' frame',
       acctTitle: window.WLA ? window.WLA.title(P) : '', hasTitle: !!(window.WLA && window.WLA.title(P)), acctPins: window.WLA ? window.WLA.pins(P).map(x=>({key:x.id, e:x.e, g:x.g, name:x.name})) : [],
       avOpen: !!s.avOpen, openAv: ()=>{ this.keys = {}; this.setState({avOpen:true, avTab:s.avTab||'hat'}); }, closeAv: ()=>this.closeAll(),
       hallPlayers: lbRows('_tix','all',6), hallEmpty: lbRows('_tix','all',1).length==0,
       toasts: s.toasts,
     };
+    // ☰ Menu: everything that used to crowd the header, grouped with icons
+    const go = fn => () => { this.setState({menuOpen:false}); R0[fn](); }, stay = fn => () => R0[fn]();
+    const onv = (t, on) => ({val:t, valFg: on ? '#D5F367' : '#9fb8ad'});
+    const autoOn = this.P.autoRb !== false, musicNow = window.WLMusic ? String(window.WLMusic.label()) : '', notifM = this.notifMode();
+    const H = label => ({key:'h'+label, hdr:true, btn:false, label, icon:'', run:null, bg:'', bd:'', val:'', valFg:''});
+    const I = (key, icon, label, run, v, accent) => ({key, hdr:false, btn:true, icon, label, run, bg: accent ? 'rgba(249,191,1,.14)' : 'rgba(255,255,255,.05)', bd: accent ? '#F9BF01' : 'rgba(237,233,216,.18)', ...(v || {val:'', valFg:'#9fb8ad'})});
+    R0.menuItems = [
+      H('YOU'), I('acct', '👤', s.account ? 'Account' : 'Sign up / Log in', go('openAccount'), s.account ? {val:'logged in', valFg:'#D5F367'} : null), I('uname', '🏷️', 'Username', go('openUname'), {val: this.P.username ? '@'+this.P.username : 'create one', valFg:'#F9BF01'}), I('av', '🎨', 'Avatar', go('openAv')),
+      H('LEARNING'), I('edu', '🎓', 'Learn mode', stay('toggleEdu'), onv(this.eduOn() ? 'ON' : 'OFF', this.eduOn())),
+      H('REBIRTH'), I('autorb', '♻️', 'Auto rebirth', stay('toggleAutoRb'), onv(autoOn ? 'ON' : 'OFF', autoOn), true), ...(R0.rbReady ? [I('rbnow', '⭐', 'Rebirth now', go('rebirthNow'), null, true)] : []),
+      H('PLAY TOGETHER'), I('chat', '💬', 'Chat', go('openChat'), {val:'T', valFg:'#9fb8ad'}), I('sug', '💡', 'Suggest an idea', go('openSug')),
+      H('SETTINGS'), I('sound', s.muted ? '🔇' : '🔊', 'Sound', stay('toggleSound'), onv(s.muted ? 'OFF' : 'ON', !s.muted)), I('music', '🎵', 'Music', stay('toggleMusic'), onv(musicNow.replace(/^MUSIC\s*·?\s*/i, '') || 'ON', !/off/i.test(musicNow))),
+        I('notif', '🔔', 'Notifications', stay('toggleNotif'), onv({all:'ALL', few:'FEW', off:'OFF'}[notifM] || 'ALL', notifM != 'off')), I('fx', '🐢', 'Performance mode', stay('toggleFx'), onv(LOWFX ? 'ON' : 'OFF', LOWFX)),
+        I('fs', '⛶', 'Full screen', go('siteFsBtn'), {val:'Y', valFg:'#9fb8ad'}),
+      H('ADMIN'), I('code', s.admin ? '🛠️' : '🔑', s.admin ? 'Admin tools' : 'Enter a code', go('openCode'), s.admin ? {val:'∞', valFg:'#F9BF01'} : null)];
+    R0.menuOn = !!s.menuOpen; R0.menuW = narrow ? '100vw' : '340px';
+    R0.openMenu = () => { this.keys = {}; this.setState({menuOpen:true}); }; R0.closeMenu = () => this.setState({menuOpen:false});
+    return R0;
   }
 }
 </script>

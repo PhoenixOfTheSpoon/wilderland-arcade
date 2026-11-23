@@ -11,7 +11,7 @@ const W = {};
 const SUF = ['K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc'];
 W.fmt = n => { n = Number(n); if (n !== n) n = 0; const neg = n < 0; n = Math.abs(n); let out;
   if (!isFinite(n)) out = '∞';
-  else if (n < 10000) out = (n % 1 ? n.toFixed(1) : String(Math.round(n))).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  else if (n < 10000) out = (n % 1 && n < 100 ? String(+n.toFixed(n < 10 ? 2 : 1)) : String(Math.round(n))).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   else if (n >= 1e36) out = n.toExponential(2).replace('e+','e');
   else { let i = -1; while (n >= 1000 && i < SUF.length-1) { n /= 1000; i++; } out = (n < 10 ? n.toFixed(2) : n < 100 ? n.toFixed(1) : Math.floor(n)) + SUF[i]; }
   return (neg?'-':'') + out; };
@@ -681,12 +681,12 @@ W.mount = (root, api) => {
   const rebirth = () => { const p = P(), box = E('div'), need = W.rebirthNeed(p), stars = W.rebirthStars(p), pct = Math.min(100, (p.tickets||0)/need*100);
     box.appendChild(E('div', {cls:'wlp-box', style:{border:'3px solid #F9BF01'}},
       E('div', {style:{fontWeight:800, fontSize:'20px', color:'#015640'}}, '⭐ Rebirth'),
-      E('div', {cls:'wlp-small'}, 'When you reach the milestone you Rebirth automatically: your tickets and Multiplier upgrades reset, every game’s saved run restarts, the whole Upgrade Workshop resets, and The Mines clears its miners, ore and mine upgrades (you keep the depth you reached). In return you get Golden Stars: they boost every ticket forever (×'+W.fmt(starMult(p))+' right now), buy Star prizes with permanent powers and unlock Golden Hall prizes and cabinet skins — and The Mines’ max miner level grows 15% (now '+(function(){ let m = 30; for (let i=0;i<(p.rebirths||0);i++) m = Math.floor(m*1.15); return m; })()+'). You keep high scores, prizes, collections and achievements.'),
-      E('div', {style:{marginTop:'10px', fontWeight:700}}, 'Rebirths: '+(p.rebirths||0)+' · Prestige '+(window.WLE?window.WLE.prestige(p):0)+' ('+(window.WLE?window.WLE.diaFree(p):0)+' 💎 to spend · Rebirth '+((p.rebirths||0)%10)+' / 10 to next Diamond Star) · Golden Stars earned: '+(p.stars||0)+' ('+W.fmt(freeStars(p))+' to spend) · star bonus ×'+W.fmt(starMult(p))),
+      E('div', {cls:'wlp-small'}, 'When you reach the milestone you Rebirth automatically: your tickets and Multiplier upgrades reset, every game’s saved run restarts, the whole Upgrade Workshop resets, and The Mines clears its miners, ore and mine upgrades (you keep the depth you reached). In return you get Golden Stars: they boost every ticket forever (×'+W.fmt(starMult(p))+' right now), buy Star prizes with permanent powers and unlock Golden Hall prizes and cabinet skins — and The Mines’ max miner level grows 15% (now '+W.fmt((function(){ let m = 30; for (let i=0;i<(p.rebirths||0) && m < 1000;i++) m = Math.floor(m*1.15); return Math.min(1000, m); })())+'). You keep high scores, prizes, collections and achievements.'),
+      E('div', {style:{marginTop:'10px', fontWeight:700}}, 'Rebirths: '+(p.rebirths||0)+' · Prestige '+(window.WLE?window.WLE.prestige(p):0)+' ('+(window.WLE?window.WLE.diaFree(p):0)+' 💎 to spend · Rebirth '+((p.rebirths||0)%10)+' / 10 to next Diamond Star) · Golden Stars earned: '+W.fmt(p.stars||0)+' ('+W.fmt(freeStars(p))+' to spend) · star bonus ×'+W.fmt(starMult(p))),
       E('div', {style:{marginTop:'6px', fontSize:'13px'}}, 'Next milestone: '+W.fmt(need)+' tickets'),
       E('div', {cls:'wlp-small'}, 'Milestones: '+[0,1,2,3,4,5].map(i=>W.fmt(1e7*Math.pow(1000,(p.rebirths||0)+i))).join(' → ')+' → …'),
       E('div', {cls:'wlp-bar', style:{margin:'6px 0'}}, E('div', {style:{width:pct+'%', background:'#F9BF01'}})),
-      E('div', {style:{fontWeight:700, color:'#015640', fontSize:'13px'}}, (api.autoRb && !api.autoRb() ? 'Auto Rebirth is off — press Rebirth now when you reach '+W.fmt(need)+' tickets.' : 'No button needed — the Rebirth happens the moment you reach '+W.fmt(need)+' tickets.')+' You’ll earn about '+Math.max(1, W.lifetimeStars({...p, earned:Math.max(p.earned||0, need)}) - (p.stars||0))+' Golden Star(s).')));
+      E('div', {style:{fontWeight:700, color:'#015640', fontSize:'13px'}}, (api.autoRb && !api.autoRb() ? 'Auto Rebirth is off — press Rebirth now when you reach '+W.fmt(need)+' tickets.' : 'No button needed — the Rebirth happens the moment you reach '+W.fmt(need)+' tickets.')+' You’ll earn about '+W.fmt(Math.max(1, W.lifetimeStars({...p, earned:Math.max(p.earned||0, need)}) - (p.stars||0)))+' Golden Star(s).')));
     if (api.autoRb) { const on = api.autoRb(), ready = (p.tickets||0) >= need; const row = E('div', {style:{display:'flex', gap:'8px', flexWrap:'wrap', alignItems:'center', margin:'0 0 10px'}});
       row.appendChild(E('button', {cls:'wlp-chip'+(on?' on':''), onclick:()=>{ api.setAutoRb(!on); api.sfx('blip'); render(); }}, 'Auto Rebirth: '+(on?'ON':'OFF')));
       if (!on) { const b = E('button', {cls:'wlp-buy', style:{width:'auto', minWidth:'160px'}, onclick:()=>api.rebirthNow()}, ready ? '⭐ Rebirth now' : 'Rebirth at '+W.fmt(need)+' 🎟'); if (!ready) b.disabled = true; row.appendChild(b); }
@@ -701,9 +701,9 @@ W.mount = (root, api) => {
     const gg = E('div', {cls:'wlp-grid'}); CAT.filter(it => it.col==='golden').forEach(it => gg.appendChild(prizeCard(it))); box.appendChild(gg); return box; };
 
   const stats = () => { const p = P(), box = E('div'); const rows = games.map(g => ({g, n:(p.played||{})[g.id]||0, best:(p.best||{})[g.id]||0})).sort((a,b)=>b.n-a.n), mx = Math.max(1, ...rows.map(r=>r.n));
-    box.appendChild(E('div', {cls:'wlp-small', style:{marginBottom:'8px'}}, Object.values(p.played||{}).reduce((a,b)=>a+b,0)+' games finished in total · kept with your profile across every update'));
+    box.appendChild(E('div', {cls:'wlp-small', style:{marginBottom:'8px'}}, W.fmt(Object.values(p.played||{}).reduce((a,b)=>a+b,0))+' games finished in total · kept with your profile across every update'));
     rows.forEach((r,i) => box.appendChild(E('div', {cls:'wlp-row', style:{marginBottom:'5px', padding:'6px 10px'}}, E('b', {style:{width:'20px', color:'#8a8a8a'}}, i+1), E('img', {src:api.icon(r.g.id), alt:'', style:{width:'30px', height:'30px', background:'#015640', borderRadius:'7px'}}),
-      E('div', {style:{flex:1, minWidth:0}}, E('div', {style:{display:'flex', justifyContent:'space-between', fontWeight:700, fontSize:'13px', color:'#015640'}}, E('span', null, r.g.title), E('span', null, r.n+' plays')), E('div', {cls:'wlp-bar', style:{marginTop:'3px'}}, E('div', {style:{width:Math.round(r.n/mx*100)+'%', background:r.g.color}}))),
+      E('div', {style:{flex:1, minWidth:0}}, E('div', {style:{display:'flex', justifyContent:'space-between', fontWeight:700, fontSize:'13px', color:'#015640'}}, E('span', null, r.g.title), E('span', null, W.fmt(r.n)+' plays')), E('div', {cls:'wlp-bar', style:{marginTop:'3px'}}, E('div', {style:{width:Math.round(r.n/mx*100)+'%', background:r.g.color}}))),
       E('span', {style:{fontSize:'11px', color:'#4a4a4a', minWidth:'70px', textAlign:'right'}}, 'best '+W.fmt(r.best)))));
     return box; };
 

@@ -96,13 +96,13 @@ A.register('sokoban', { mount(host, api){
         if (isTgt(ch)) { g.strokeStyle = '#FF4539'; g.lineWidth = 3; g.beginPath(); g.arc(X+S/2, Y+S/2, S*.25, 0, TAU); g.stroke(); }
         if (isCrate(ch)) { g.fillStyle = ch == '*' ? '#00B451' : '#8D5B1D'; rr(g, X+4, Y+4, S-8, S-8, 5); g.fill(); g.strokeStyle = ch == '*' ? '#D5F367' : '#c8964a'; g.lineWidth = 2; g.beginPath(); g.moveTo(X+8, Y+8); g.lineTo(X+S-8, Y+S-8); g.moveTo(X+S-8, Y+8); g.lineTo(X+8, Y+S-8); g.stroke(); } }));
       const X = ox + P.x*S, Y = oy + P.y*S; g.fillStyle = '#DD8B03'; g.beginPath(); g.arc(X+S/2, Y+S/2, S*.36, 0, TAU); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(X+S*.4, Y+S*.42, S*.08, 0, TAU); g.arc(X+S*.6, Y+S*.42, S*.08, 0, TAU); g.fill(); g.fillStyle = '#121313'; g.beginPath(); g.arc(X+S*.4, Y+S*.44, S*.04, 0, TAU); g.arc(X+S*.6, Y+S*.44, S*.04, 0, TAU); g.fill(); }
-    g.fillStyle = '#fff'; g.font = '700 16px '+A.font; g.textAlign = 'left'; g.fillText('Level '+(lvl+1)+'/'+LV.length+'   Moves '+(moves||0), 12, 26); g.textAlign = 'right'; g.fillText((score||0).toLocaleString(), w-12, 26);
+    g.fillStyle = '#fff'; g.font = '700 16px '+A.font; g.textAlign = 'left'; g.fillText('Level '+(lvl+1)+'/'+LV.length+'   Moves '+(moves||0), 12, 26); g.textAlign = 'right'; g.fillText(A.fmt(score||0), w-12, 26);
     ['↶ Undo (Z)','⟲ Restart (R)','🏁 Finish & cash in'].forEach((tx, i) => { g.fillStyle = 'rgba(255,255,255,.12)'; rr(g, 8 + i*w/3, h-42, w/3-16, 34, 10); g.fill(); g.fillStyle = '#fff'; g.font = '700 13px '+A.font; g.textAlign = 'center'; g.fillText(tx, i*w/3 + w/6, h-20); });
     if (hintMark && map) { const S = cellSize(), ox = (w - map[0].length*S)/2, oy = 50, X = ox + hintMark.x*S + S/2, Y = oy + hintMark.y*S + S/2; g.strokeStyle = '#F9BF01'; g.lineWidth = 4; g.strokeRect(X - S/2 + 2, Y - S/2 + 2, S - 4, S - 4);
       g.fillStyle = '#F9BF01'; g.beginPath(); const ax = X + hintMark.dx*S*.75, ay = Y + hintMark.dy*S*.75; g.moveTo(ax + hintMark.dx*10, ay + hintMark.dy*10); g.lineTo(ax - hintMark.dy*9, ay + hintMark.dx*9); g.lineTo(ax + hintMark.dy*9, ay - hintMark.dx*9); g.fill(); }
     if (hintT > 0) { hintT -= 1/60; g.fillStyle = 'rgba(0,0,0,.75)'; rr(g, 10, h - 84, w - 20, 34, 10); g.fill(); g.fillStyle = '#F9BF01'; g.textAlign = 'center'; let fs = 14; do { g.font = '700 ' + fs + 'px '+A.font; fs--; } while (fs > 9 && g.measureText(hintMsg).width > w - 36); g.fillText(hintMsg, w/2, h - 62); }
     if (st == 'ready') A.overlayText(g, w, h, 'CRATE CAMP', __skip ? 'Saved game · tap or press Space to continue' : (startLvl() > 0 ? 'Tap to continue from level '+(startLvl()+1)+' · press 1 to start at level 1' : 'Push every crate onto a red circle · arrows / WASD or swipe · tap to start'));
-    if (st == 'over') A.overlayText(g, w, h, solved >= LV.length ? 'ALL CRATES CAMPED!' : 'NICE PUSHING', (score||0).toLocaleString()+' points · '+solved+' levels · tap to play again'); });
+    if (st == 'over') A.overlayText(g, w, h, solved >= LV.length ? 'ALL CRATES CAMPED!' : 'NICE PUSHING', A.fmt(score||0)+' points · '+solved+' levels · tap to play again'); });
   const inside = (x, y) => { let l = false, r2 = false; for (let i = 0; i < x; i++) if (map[y][i] == '#') l = true; for (let i = x+1; i < map[y].length; i++) if (map[y][i] == '#') r2 = true; return l && r2; };
   load(); A._dbg = A._dbg || {}; A._dbg.crate = { s: () => ({st, lvl, moves, left: map ? map.flat().filter(c2 => c2 == '$').length : -1, busy: hintBusy, msg: hintMsg}), hint: () => runHint(false), solve: () => solveFrom(map, P, 250000), go: n => { lvl = n; st = 'play'; load(); }, move: (dx, dy) => move(dx, dy) };
   // ---- save & resume (Save & leave, reloads, closing the browser) ----
@@ -177,9 +177,9 @@ A.register('airhockey', { mount(host, api){
     if (puck) { g.fillStyle = '#121313'; g.beginPath(); g.arc(puck.x, puck.y, puck.r, 0, TAU); g.fill(); g.strokeStyle = '#555'; g.lineWidth = 2; g.beginPath(); g.arc(puck.x, puck.y, puck.r - 5, 0, TAU); g.stroke(); }
     for (const [m, col] of [[me, '#00B451'], [ai, '#FF4539']]) { if (!m) continue; g.fillStyle = col; g.beginPath(); g.arc(m.x, m.y, m.r, 0, TAU); g.fill(); g.fillStyle = 'rgba(255,255,255,.35)'; g.beginPath(); g.arc(m.x, m.y, m.r*.5, 0, TAU); g.fill(); }
     g.fillStyle = '#121313'; g.font = '800 40px '+A.font; g.textAlign = 'right'; g.globalAlpha = .25; g.fillText(String(sAi||0), w - 16, h/2 - 14); g.fillText(String(sMe||0), w - 16, h/2 + 46); g.globalAlpha = 1;
-    g.font = '700 14px '+A.font; g.textAlign = 'left'; g.fillText((score||0).toLocaleString()+' pts · first to 7', 10, h/2 - 8);
+    g.font = '700 14px '+A.font; g.textAlign = 'left'; g.fillText(A.fmt(score||0)+' pts · first to 7', 10, h/2 - 8);
     if (st == 'ready') A.overlayText(g, w, h, 'AIR HOCKEY', __skip ? 'Saved game · tap or press Space to continue' : 'Move your green mallet with the mouse, a finger or WASD · first to 7');
-    if (st == 'over') A.overlayText(g, w, h, sMe > sAi ? 'YOU WIN!' : 'CPU WINS', sMe+' – '+sAi+' · '+score.toLocaleString()+' points · tap for a rematch'); });
+    if (st == 'over') A.overlayText(g, w, h, sMe > sAi ? 'YOU WIN!' : 'CPU WINS', sMe+' – '+sAi+' · '+A.fmt(score)+' points · tap for a rematch'); });
   reset(); st = 'ready'; A._dbg = A._dbg || {}; A._dbg.hockey = { s: () => ({st, me, ai, puck, sMe, sAi}), start: () => { reset(); st = 'play'; } };
   // ---- save & resume (Save & leave, reloads, closing the browser) ----
   api.snap && api.snap(() => (st == 'play' || st == 'quiz') ? {v:1, sMe, sAi, score} : null);
@@ -267,9 +267,9 @@ A.register('words', { mount(host, api){
       g.fillStyle = '#1a3a2a'; g.font = '700 '+Math.floor(s*.55)+'px '+A.font; g.textAlign = 'center'; g.textBaseline = 'middle';
       for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) g.fillText(grid[y][x], ox + (x+.5)*s, OY + (y+.5)*s);
       g.textBaseline = 'alphabetic'; const by = OY + s*N + 24; g.font = '700 14px '+A.font; words.forEach((x, i) => { const col = i % 3, row = Math.floor(i/3); g.fillStyle = found.includes(x.wd) ? '#9aa5a1' : '#015640'; g.textAlign = 'center'; g.fillText(found.includes(x.wd) ? '✓ '+x.wd : x.wd, w/6 + col*w/3, by + row*20); }); }
-    g.fillStyle = '#015640'; g.font = '700 16px '+A.font; g.textAlign = 'left'; g.fillText('Round '+(round||1)+'   '+(score||0).toLocaleString(), 12, 28); g.textAlign = 'right'; g.fillStyle = timeLeft < 20 ? '#FF4539' : '#015640'; g.fillText('⏱ '+Math.ceil(timeLeft||0), w-12, 28);
+    g.fillStyle = '#015640'; g.font = '700 16px '+A.font; g.textAlign = 'left'; g.fillText('Round '+(round||1)+'   '+A.fmt(score||0), 12, 28); g.textAlign = 'right'; g.fillStyle = timeLeft < 20 ? '#FF4539' : '#015640'; g.fillText('⏱ '+Math.ceil(timeLeft||0), w-12, 28);
     if (st == 'ready') A.overlayText(g, w, h, 'WORD WOODS', __skip ? 'Saved game · tap or press Space to continue' : 'Drag across the letters to find every word · tap to start');
-    if (st == 'over') A.overlayText(g, w, h, 'TIME\'S UP', (score||0).toLocaleString()+' points · tap to search again'); });
+    if (st == 'over') A.overlayText(g, w, h, 'TIME\'S UP', A.fmt(score||0)+' points · tap to search again'); });
   // ---- save & resume (Save & leave, reloads, closing the browser) ----
   api.snap && api.snap(() => (st == 'play' || st == 'quiz') ? {v:1, N, grid, words, found, score, round, timeLeft} : null);
   { const R0 = api.resume; if (R0 && R0.v == 1) { try { ({N, grid, words, found, score, round, timeLeft} = R0); api.score(score); __skip = true; st = 'ready'; } catch(e) { console.error('[save] words resume failed', e); } } }
@@ -397,14 +397,14 @@ A.register('pipes', { mount(host, api){
       // leak markers in the preview
       if (!release) for (const [x,y,b] of flow.leaks) { const [, dx, dy] = DIRS.find(d => d[0] == b), X = ox + (x + .5 + dx*.5)*s, Y = OY + (y + .5 + dy*.5)*s; g.fillStyle = 'rgba(58,200,255,'+(.5 + .4*Math.sin(t*8))+')'; g.beginPath(); g.arc(X, Y, s*.1, 0, TAU); g.fill(); } }
     // HUD
-    g.fillStyle = '#121313'; g.font = '700 16px '+A.font; g.textAlign = 'left'; g.fillText('Level '+level+'   '+(score||0).toLocaleString()+'   Moves '+moves, 12, 26);
+    g.fillStyle = '#121313'; g.font = '700 16px '+A.font; g.textAlign = 'left'; g.fillText('Level '+level+'   '+A.fmt(score||0)+'   Moves '+moves, 12, 26);
     g.textAlign = 'right'; g.fillText('❤'.repeat(clamp(hearts,0,20)), w - 12, 26);
     if (flow) { g.textAlign = 'left'; g.font = '13px '+A.font; g.fillText('🌳/🐸 '+flow.goals.filter(g2 => g2.ok).length+'/'+flow.goals.length+' reached in the preview · '+flow.leaks.length+' leak'+(flow.leaks.length == 1 ? '' : 's')+(speed ? '   ⏱ '+runT.toFixed(1)+' s' : ''), 12, 48); }
     if (st == 'play') { [['💧 Release water (Enter)', '#3ac8ff'], ['⟲ Restart level (Z)', 'rgba(255,255,255,.35)']].forEach(([tx, col], i) => { g.fillStyle = col; rr(g, 10 + i*w/2, h - 56, w/2 - 20, 46, 12); g.fill(); g.fillStyle = '#121313'; g.font = '700 15px '+A.font; g.textAlign = 'center'; g.fillText(tx, i*w/2 + w/4, h - 27); }); }
     if (msgT > 0 && st == 'play') { g.fillStyle = 'rgba(0,0,0,.65)'; rr(g, 16, h - 112, w - 32, 44, 12); g.fill(); g.fillStyle = '#fff'; g.font = '700 13px '+A.font; g.textAlign = 'center'; g.fillText(msg, w/2, h - 85); }
     if (st == 'ready') { A.overlayText(g, w, h, 'STREAM FIXER', __skip ? 'Saved game · tap or press Space to continue' : 'Turn pipes so water reaches every 🐸 pond and flows through every 🌳 tree, then release it');
       if (!__skip) { g.fillStyle = '#fff'; g.font = '700 13px '+A.font; g.textAlign = 'center'; g.fillText('Tap middle: level '+startLvl()+'   ·   bottom-left: level 1   ·   bottom-right (or S): ⏱ speedrun', w/2, h - 70); } }
-    if (st == 'over') A.overlayText(g, w, h, 'THE STREAM IS STUCK', (score||0).toLocaleString()+' points · level '+level+' · tap to try again'); });
+    if (st == 'over') A.overlayText(g, w, h, 'THE STREAM IS STUCK', A.fmt(score||0)+' points · level '+level+' · tap to try again'); });
   // ---- save & resume ----
   api.snap && api.snap(() => st == 'play' && T ? {v:2, level, score, hearts, moves, events, N, T, srcs, speed, runT} : null);
   { const R0 = api.resume; if (R0 && R0.v == 2) { try { ({level, score, hearts, moves, events, N, T, srcs, speed, runT} = R0); compute(); api.score(score); __skip = true; st = 'ready'; } catch(e) { console.error('[save] pipes resume failed', e); } } }
@@ -526,7 +526,7 @@ A.register('snowball', { mount(host, api){
     if (balls) for (const b of balls) { g.fillStyle = b.kind == 'icy' ? '#aee6ff' : b.kind == 'mega' ? '#fff' : '#fff'; g.strokeStyle = b.mine ? '#a0b8d0' : '#d08080'; g.lineWidth = 1; g.beginPath(); g.arc(b.x, b.y, b.r, 0, TAU); g.fill(); g.stroke(); }
     g.fillStyle = 'rgba(255,255,255,.9)'; for (const f of snowfall) g.fillRect(f.x, f.y, 2*f.s, 2*f.s);
     // HUD + shop bar
-    g.fillStyle = '#14204a'; g.font = '700 15px '+A.font; g.textAlign = 'left'; g.fillText('Wave '+(wave||0)+' · '+A0().n+'   '+(score||0).toLocaleString(), 10, boss ? 56 : 22); g.textAlign = 'right'; g.fillText('❄ '+(flakes||0)+'   ♥ '+(me ? Math.max(0, me.hp) : 0)+'/'+(me ? me.max : 0), w - 10, boss ? 56 : 22);
+    g.fillStyle = '#14204a'; g.font = '700 15px '+A.font; g.textAlign = 'left'; g.fillText('Wave '+(wave||0)+' · '+A0().n+'   '+A.fmt(score||0), 10, boss ? 56 : 22); g.textAlign = 'right'; g.fillText('❄ '+(flakes||0)+'   ♥ '+(me ? Math.max(0, me.hp) : 0)+'/'+(me ? me.max : 0), w - 10, boss ? 56 : 22);
     const act = Object.keys(pw).filter(k2 => pw[k2] > 0).map(k2 => ({icy:'❄',mega:'💥',rapid:'⚡',shield:'🛡'}[k2] + (k2 == 'shield' ? '' : Math.ceil(pw[k2])))).join('  '); if (act) { g.textAlign = 'left'; g.fillText(act, 10, FIELD - 10); }
     g.fillStyle = '#14204a'; g.fillRect(0, FIELD, w, h - FIELD);
     if (phase == 'build' && st == 'play') TOOLS.forEach((T2, i) => { const x = i*w/TOOLS.length, cost = toolCost(T2.k), can = T2.k == 'go' || flakes >= cost; g.fillStyle = tool == i ? '#D5F367' : can ? 'rgba(255,255,255,.18)' : 'rgba(255,255,255,.06)'; rr(g, x + 4, FIELD + 8, w/TOOLS.length - 8, h - FIELD - 16, 10); g.fill();
@@ -535,7 +535,7 @@ A.register('snowball', { mount(host, api){
     if (msgT > 0) { g.fillStyle = 'rgba(20,32,74,.8)'; rr(g, 30, MID - 22, w - 60, 40, 12); g.fill(); g.fillStyle = '#fff'; g.font = '700 14px '+A.font; g.textAlign = 'center'; g.fillText(msg, w/2, MID + 3); }
     if (phase == 'build' && st == 'play') { g.fillStyle = '#14204a'; g.font = '700 13px '+A.font; g.textAlign = 'center'; g.fillText('BUILD TIME · pick 🧱 or 🗼 or 💣, then tap your side to place it', w/2, MID + 40); }
     if (st == 'ready') A.overlayText(g, w, h, 'SNOWBALL SHOWDOWN', __skip ? 'Saved game · tap or press Space to continue' : 'Survive the waves · build forts and towers between waves · hire teammates · beat the bosses');
-    if (st == 'over') A.overlayText(g, w, h, 'SNOWED UNDER', (score||0).toLocaleString()+' points · wave '+wave+' · tap to play again'); });
+    if (st == 'over') A.overlayText(g, w, h, 'SNOWED UNDER', A.fmt(score||0)+' points · wave '+wave+' · tap to play again'); });
   // ---- save & resume ----
   api.snap && api.snap(() => (st == 'play') ? {v:2, me, foes, walls, towers, mates, drops, score, wave, flakes, boss, phase, arena, pw} : null);
   { const R0 = api.resume; if (R0 && R0.v == 2) { try { ({me, foes, walls, towers, mates, drops, score, wave, flakes, boss, phase, arena, pw} = R0); balls = []; api.score(score); __skip = true; st = 'ready'; } catch(e) { console.error('[save] snowball resume failed', e); } } }
@@ -581,9 +581,9 @@ A.register('farm', { mount(host, api){
     CROPS.forEach((cr, i) => { const X = i*w/7; g.fillStyle = seed == i ? '#D5F367' : 'rgba(255,255,255,.55)'; rr(g, X+4, h-56, w/7-8, 50, 10); g.fill(); g.font = '24px '+A.font; g.textAlign = 'center'; g.fillText(cr.e, X + w/14, h-24); g.fillStyle = '#5a3a1a'; g.font = '700 10px '+A.font; g.fillText((inv[cr.k]||0)+' · '+(i+1), X + w/14, h-10); });
     g.fillStyle = 'rgba(255,255,255,.55)'; rr(g, 5*w/7+4, h-56, 2*w/7-8, 50, 10); g.fill(); g.fillStyle = '#5a3a1a'; g.font = '700 11px '+A.font; g.textAlign = 'center'; g.fillText('Tap a growing plant', 6*w/7, h-34); g.fillText('to water it 💧', 6*w/7, h-18);
     for (const cp of coinsPop) { g.globalAlpha = cp.t; g.fillStyle = '#015640'; g.font = '800 20px '+A.font; g.textAlign = 'center'; g.fillText(cp.txt, cp.x, cp.y); } g.globalAlpha = 1;
-    g.fillStyle = '#015640'; g.font = '700 16px '+A.font; g.textAlign = 'left'; g.fillText('🌾 '+(score||0).toLocaleString(), 12, 26); g.textAlign = 'right'; g.fillText('☀ '+Math.ceil(timeLeft||0)+' s', w-12, 26);
+    g.fillStyle = '#015640'; g.font = '700 16px '+A.font; g.textAlign = 'left'; g.fillText('🌾 '+A.fmt(score||0), 12, 26); g.textAlign = 'right'; g.fillText('☀ '+Math.ceil(timeLeft||0)+' s', w-12, 26);
     if (st == 'ready') A.overlayText(g, w, h, 'SPROUT FARM', __skip ? 'Saved game · tap or press Space to continue' : 'Pick a seed below, tap a plot to plant, tap to water, tap to pick · fill orders!');
-    if (st == 'over') A.overlayText(g, w, h, 'WHAT A DAY!', (score||0).toLocaleString()+' points · tap to farm again'); });
+    if (st == 'over') A.overlayText(g, w, h, 'WHAT A DAY!', A.fmt(score||0)+' points · tap to farm again'); });
   // ---- save & resume (Save & leave, reloads, closing the browser) ----
   api.snap && api.snap(() => (st == 'play' || st == 'quiz') ? {v:1, inv:{...inv}, orders, score, timeLeft, plots: plots.map(p2 => ({...p2, c: p2.c ? p2.c.k : null}))} : null);
   { const R0 = api.resume; if (R0 && R0.v == 1) { try { ({orders, score, timeLeft} = R0); Object.assign(inv, R0.inv||{}); plots = R0.plots.map(p2 => ({...p2, c: p2.c ? CROPS.find(cc => cc.k == p2.c) : null})); api.score(score); __skip = true; st = 'ready'; } catch(e) { console.error('[save] farm resume failed', e); } } }
@@ -621,9 +621,9 @@ A.register('cardbattle', { mount(host, api){
         if (cd.up) { g.font = Math.floor(L.cw*.45)+'px '+A.font; g.textAlign = 'center'; g.fillText(cd.e, x + L.cw/2, y + L.ch*.55); g.fillStyle = '#5a3a1a'; g.font = '700 10px '+A.font; g.fillText(cd.n+' · '+cd.dmg+'⚔'+(cd.heal?' +'+cd.heal+'❤':'')+(cd.shield?' 🛡':''), x + L.cw/2, y + L.ch - 8); }
         else { g.fillStyle = 'rgba(255,255,255,.15)'; g.font = Math.floor(L.cw*.4)+'px '+A.font; g.textAlign = 'center'; g.fillText('🐾', x + L.cw/2, y + L.ch*.6); } }); }
     for (const f of fx) { g.globalAlpha = f.t*1.6; g.fillStyle = f.col; g.font = '800 28px '+A.font; g.textAlign = 'center'; g.fillText(f.txt, f.x, f.y); } g.globalAlpha = 1;
-    g.fillStyle = '#fff'; g.font = '700 16px '+A.font; g.textAlign = 'left'; g.fillText((score||0).toLocaleString(), 12, 26);
+    g.fillStyle = '#fff'; g.font = '700 16px '+A.font; g.textAlign = 'left'; g.fillText(A.fmt(score||0), 12, 26);
     if (st == 'ready') A.overlayText(g, w, h, 'CRITTER CARDS', __skip ? 'Saved game · tap or press Space to continue' : 'Match pairs to attack · a miss lets the rival hit back · tap to start');
-    if (st == 'over') A.overlayText(g, w, h, 'BATTLE OVER', (score||0).toLocaleString()+' points · reached stage '+(stage+1)+' · tap to battle again'); });
+    if (st == 'over') A.overlayText(g, w, h, 'BATTLE OVER', A.fmt(score||0)+' points · reached stage '+(stage+1)+' · tap to battle again'); });
   // ---- save & resume (Save & leave, reloads, closing the browser) ----
   api.snap && api.snap(() => (st == 'play' || st == 'quiz') ? {v:1, deck, stage, foeHp, myHp, myMax, shield, score} : null);
   { const R0 = api.resume; if (R0 && R0.v == 1) { try { ({deck, stage, foeHp, myHp, myMax, shield, score} = R0); foe = FOES[Math.min(stage, FOES.length-1)]; open = []; api.score(score); __skip = true; st = 'ready'; } catch(e) { console.error('[save] cardbattle resume failed', e); } } }

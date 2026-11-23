@@ -123,11 +123,11 @@ A.register('secrets', { mount(host, api){
   const solve = id => { if (S.solved[id]) return; const sc = SCENES.find(x => x.id == id); S.solved[id] = 1; if (sc.reward && !S.items.includes(sc.reward)) S.items.push(sc.reward); closeModal(); A.sfx('win');
     if (id != 'vault') S.ch = Math.max(S.ch, SCENES.indexOf(sc)+1);   // unlock the next place right away, even if the talk is skipped
     const got = pay('p_'+id, 120*(SCENES.indexOf(sc)+1), 'SECRETS'); stat(api, 'secretsChapters', solvedN()); api.score(score());
-    say([sc.next, 'You got: '+ITEMS[sc.reward]+(got ? ' · +'+got.toLocaleString()+' tickets' : '')], () => { if (id == 'vault') finale(); else { S.ch = Math.max(S.ch, SCENES.indexOf(sc)+1); view = SCENES.indexOf(sc)+1; save(); render(); story(); } }); save(); render(); };
+    say([sc.next, 'You got: '+ITEMS[sc.reward]+(got ? ' · +'+A.fmt(got)+' tickets' : '')], () => { if (id == 'vault') finale(); else { S.ch = Math.max(S.ch, SCENES.indexOf(sc)+1); view = SCENES.indexOf(sc)+1; save(); render(); story(); } }); save(); render(); };
   const finale = () => { S.done = true; const all = found() >= N_SECRETS; const got = pay('finale', 1500, 'SECRETS'); stat(api, 'secretsDone', 1); api.score(score()); save(); render();
-    say(['Juniper smiles. “Every arcade needs a keeper. I think it’s time I had a helper.”', 'You are now a Keeper of the Wilderland Arcade! 🌲'+(got ? ' · +'+got.toLocaleString()+' tickets' : ''),
+    say(['Juniper smiles. “Every arcade needs a keeper. I think it’s time I had a helper.”', 'You are now a Keeper of the Wilderland Arcade! 🌲'+(got ? ' · +'+A.fmt(got)+' tickets' : ''),
       all ? 'Juniper leans in and whispers: “You found ALL '+N_SECRETS+' secrets. Nobody has ever done that. The arcade itself thanks you.” ✨' : 'Juniper winks: “There are still '+(N_SECRETS - found())+' secrets hiding in these places. A true keeper finds them all.”'],
-      () => { if (all) { const g2 = pay('allsecrets', 3000, 'SECRETS'); if (g2) say(['SECRET ENDING · +'+g2.toLocaleString()+' tickets. You are the Secret Keeper!']); } }); };
+      () => { if (all) { const g2 = pay('allsecrets', 3000, 'SECRETS'); if (g2) say(['SECRET ENDING · +'+A.fmt(g2)+' tickets. You are the Secret Keeper!']); } }); };
   // ---------------- puzzles ----------------
   const PUZ = {
     lock: () => { const d = [0,0,0], disp = H('div', {style:{display:'flex', gap:'10px'}}); const draw = () => { disp.innerHTML = ''; d.forEach((v, i) => disp.append(H('div', {style:{display:'flex', flexDirection:'column', alignItems:'center', gap:'4px'}},
@@ -182,7 +182,7 @@ A.register('secrets', { mount(host, api){
     if (id == 'tower') { P(240, 140, 90, () => S.solved.tower ? say('The clock ticks happily.') : PUZ.clock(), true); }
     if (id == 'vault') { P(240, 140, 100, () => S.solved.vault ? say('The Heart of the Arcade glows warmly.') : PUZ.slide(), true); }
     (SECRETS[id] || []).forEach(sec => P(sec.x, sec.y, sec.r, () => { if (S.secrets[id+':'+sec.id]) return say(sec.t); S.secrets[id+':'+sec.id] = 1; A.sfx('coin');
-      const got = pay('s_'+id+':'+sec.id, 60, 'SECRETS'); stat(api, 'secretsFound', found()); api.score(score()); say(['✨ SECRET FOUND! ('+found()+'/'+N_SECRETS+')', sec.t+(got ? ' · +'+got.toLocaleString()+' tickets' : '')]); save(); render(); }));
+      const got = pay('s_'+id+':'+sec.id, 60, 'SECRETS'); stat(api, 'secretsFound', found()); api.score(score()); say(['✨ SECRET FOUND! ('+found()+'/'+N_SECRETS+')', sec.t+(got ? ' · +'+A.fmt(got)+' tickets' : '')]); save(); render(); }));
     return L; };
   let view = 0;   // which scene you're looking at (you can go back to earlier ones to hunt secrets)
   const render = () => { const sc = SCENES[Math.min(view, SCENES.length-1)];

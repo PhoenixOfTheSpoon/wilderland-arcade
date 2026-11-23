@@ -3,6 +3,8 @@ const A = window.Arcade = window.Arcade || { games:{} };
 A.register = (id, def) => { A.games[id] = def; };
 A.C = { forest:'#015640', green:'#00B451', lime:'#D5F367', ink:'#121313', cream:'#EDE9D8', sand:'#DAD3B1', paper:'#F0F2F0', pink:'#EA55AB', sky:'#64CDF5', gold:'#F9BF01', red:'#FF4539', orange:'#DD8B03', lavender:'#E9B9F7', mint:'#C7F1EE', blue:'#014987', bark:'#8D5B1D', peach:'#FBB99D' };
 A.diff = 'normal'; A.speed = 1; A.D = (e,n,h) => A.diff=='easy'?e:A.diff=='hard'?h:n;
+// Short number format everywhere (1.2K, 3.4M … then 3.92e49) — uses the prize counter's formatter once it has loaded.
+A.fmt = n => window.WLP ? window.WLP.fmt(n) : (n = Number(n) || 0, Math.abs(n) < 1e4 ? String(Math.round(n)) : n.toExponential(2).replace('e+', 'e'));
 A.hinter = (api, run, max) => { if (max == null) max = A.D(5,3,1); let left = max;
   const push = () => api.hint && api.hint({ left: A.infiniteHints ? Infinity : left, run: (quiet) => { if (left <= 0 && !A.infiniteHints) { if (!quiet) A.sfx('bad'); return; } if (run(quiet) !== false) { if (!A.infiniteHints) left--; if (!quiet) { A.sfx('coin'); push(); } } } });
   push(); return { reset(){ left = max; push(); } }; };

@@ -56,9 +56,9 @@ A.register('bounce', { mount(host, api){
       g.scale(1/sq, sq); g.fillStyle = '#00B451'; rr(g, -14, -16, 28, 30, 12); g.fill(); g.fillStyle = '#D5F367'; rr(g, -9, -2, 18, 12, 6); g.fill();
       g.fillStyle = '#fff'; g.beginPath(); g.arc(-4, -7, 5, 0, TAU); g.arc(7, -7, 5, 0, TAU); g.fill(); g.fillStyle = '#121313'; g.beginPath(); g.arc(-2.5, -7, 2.4, 0, TAU); g.arc(8.5, -7, 2.4, 0, TAU); g.fill(); g.restore(); }
     g.restore();
-    g.fillStyle = '#121313'; g.font = '700 18px '+A.font; g.textAlign = 'left'; g.fillText(score.toLocaleString()+'  · 🪙 '+coins, 12, 26);
+    g.fillStyle = '#121313'; g.font = '700 18px '+A.font; g.textAlign = 'left'; g.fillText(A.fmt(score)+'  · 🪙 '+coins, 12, 26);
     if (st == 'ready') A.overlayText(g, w, h, 'BOUNCE UP', __skip ? 'Saved game · tap or press Space to continue' : '← → or drag to steer · tap / Space to start');
-    if (st == 'over') A.overlayText(g, w, h, 'YOU FELL!', score.toLocaleString()+' points · tap to bounce again'); });
+    if (st == 'over') A.overlayText(g, w, h, 'YOU FELL!', A.fmt(score)+' points · tap to bounce again'); });
   reset(); st = 'ready';
   // ---- save & resume (Save & leave, reloads, closing the browser) ----
   api.snap && api.snap(() => (st == 'play' || st == 'quiz') ? {v:1, p, plats, camY, score, coins, chutes, jumpN, jumpS} : null);
@@ -106,8 +106,8 @@ A.register('gems', { mount(host, api){
           else if (!anyMove()) fill(); } } } }
     for (const q of pops) q.t -= dt; pops = pops.filter(q => q.t > 0);
     g.fillStyle = '#1a1030'; g.fillRect(0,0,w,h); g.fillStyle = '#2a1a4a'; rr(g, OX-6, OY-6, N*S+12, N*S+12, 12); g.fill();
-    g.fillStyle = '#fff'; g.font = '700 18px '+A.font; g.textAlign = 'left'; g.fillText('Score '+score.toLocaleString(), 24, 30); g.textAlign = 'right'; g.fillText('Moves '+moves, w-24, 30);
-    g.font = '600 12px '+A.font; g.fillStyle = '#d8c8ff'; g.textAlign = 'center'; g.fillText('Level '+level+' · reach '+target.toLocaleString()+' for +20 moves', w/2, 54);
+    g.fillStyle = '#fff'; g.font = '700 18px '+A.font; g.textAlign = 'left'; g.fillText('Score '+A.fmt(score), 24, 30); g.textAlign = 'right'; g.fillText('Moves '+moves, w-24, 30);
+    g.font = '600 12px '+A.font; g.fillStyle = '#d8c8ff'; g.textAlign = 'center'; g.fillText('Level '+level+' · reach '+A.fmt(target)+' for +20 moves', w/2, 54);
     if (B) for (let y=0;y<N;y++) for (let x=0;x<N;x++) { const cell = B[y][x]; if (!cell) continue; const px = OX+x*S, py = OY+y*S - (cell.dy||0); if (py < OY-S) continue;
       const on = sel && sel[0]==x && sel[1]==y; g.fillStyle = on ? 'rgba(255,255,255,.25)' : 'rgba(255,255,255,.05)'; rr(g, px+2, py+2, S-4, S-4, 10); g.fill();
       const col = COL[cell.k] || '#fff', gr = g.createRadialGradient(px+S*.4, py+S*.35, 2, px+S/2, py+S/2, S*.45); gr.addColorStop(0, '#fff'); gr.addColorStop(.25, col); gr.addColorStop(1, col);
@@ -116,7 +116,7 @@ A.register('gems', { mount(host, api){
       if (cell.sp) { g.strokeStyle = '#fff'; g.lineWidth = 3; g.beginPath(); if (cell.sp==1) { g.moveTo(px+8, py+S/2); g.lineTo(px+S-8, py+S/2); } else if (cell.sp==2) { g.moveTo(px+S/2, py+8); g.lineTo(px+S/2, py+S-8); } else g.arc(px+S/2, py+S/2, S*.42, 0, TAU); g.stroke(); } }
     for (const q of pops) { g.globalAlpha = q.t*2.5; g.strokeStyle = q.col; g.lineWidth = 4; g.beginPath(); g.arc(q.x, q.y, 26 - q.t*40, 0, TAU); g.stroke(); } g.globalAlpha = 1;
     if (st == 'ready') A.overlayText(g, w, h, 'GEM MATCH', __skip ? 'Saved game · tap or press Space to continue' : 'Tap a gem, then a neighbour to swap · tap to start');
-    if (st == 'over') A.overlayText(g, w, h, 'OUT OF MOVES', score.toLocaleString()+' points · level '+level+' · tap to play again'); });
+    if (st == 'over') A.overlayText(g, w, h, 'OUT OF MOVES', A.fmt(score)+' points · level '+level+' · tap to play again'); });
   // ---- save & resume (Save & leave, reloads, closing the browser) ----
   api.snap && api.snap(() => (st == 'play' || st == 'quiz') ? {v:1, B, score, moves, level, target} : null);
   { const R0 = api.resume; if (R0 && R0.v == 1) { try { ({B, score, moves, level, target} = R0); anim = 0; combo = 0; api.score(score); __skip = true; st = 'ready'; } catch(e) { console.error('[save] gems resume failed', e); } } }
@@ -167,9 +167,9 @@ A.register('maze', { mount(host, api){
       ghosts.forEach(q => { const gx = (q.x + q.dx*q.prog)*CW+CW/2, gy = (q.y + q.dy*q.prog)*CW+CW/2, scared = power > 0 && !q.dead;
         if (!q.dead) { g.fillStyle = scared ? (power < 2 && Math.sin(t*16) > 0 ? '#fff' : '#2f4aff') : q.col; g.beginPath(); g.arc(gx, gy-2, CW*.4, Math.PI, 0); g.lineTo(gx+CW*.4, gy+CW*.38); for (let k=0;k<4;k++) g.lineTo(gx+CW*.4 - (k+.5)*CW*.2, gy+CW*.38 - (k%2?0:4)); g.lineTo(gx-CW*.4, gy+CW*.38); g.fill(); }
         g.fillStyle = '#fff'; g.beginPath(); g.arc(gx-4, gy-3, 3.2, 0, TAU); g.arc(gx+4, gy-3, 3.2, 0, TAU); g.fill(); g.fillStyle = '#121313'; g.beginPath(); g.arc(gx-4+q.dx*1.4, gy-3+q.dy*1.4, 1.5, 0, TAU); g.arc(gx+4+q.dx*1.4, gy-3+q.dy*1.4, 1.5, 0, TAU); g.fill(); }); }
-    g.fillStyle = '#fff'; g.font = '700 16px '+A.font; g.textAlign = 'left'; g.fillText('Score '+score.toLocaleString()+'   Level '+level, 10, R*CW+22); g.textAlign = 'right'; g.fillText('❤'.repeat(Math.max(0, Math.min(lives, 6))), w-10, R*CW+22);
+    g.fillStyle = '#fff'; g.font = '700 16px '+A.font; g.textAlign = 'left'; g.fillText('Score '+A.fmt(score)+'   Level '+level, 10, R*CW+22); g.textAlign = 'right'; g.fillText('❤'.repeat(Math.max(0, Math.min(lives, 6))), w-10, R*CW+22);
     if (st == 'ready') A.overlayText(g, w, h, 'MAZE MUNCHER', __skip ? 'Saved game · tap or press Space to continue' : 'Arrows / WASD or swipe · eat the dots · tap to start');
-    if (st == 'over') A.overlayText(g, w, h, 'CAUGHT!', score.toLocaleString()+' points · level '+level+' · tap to play again'); });
+    if (st == 'over') A.overlayText(g, w, h, 'CAUGHT!', A.fmt(score)+' points · level '+level+' · tap to play again'); });
   setup(false); st = 'ready';
   // ---- save & resume (Save & leave, reloads, closing the browser) ----
   api.snap && api.snap(() => (st == 'play' || st == 'quiz') ? {v:1, grid, dots, pac, ghosts, score, lives, level, power} : null);
@@ -212,9 +212,9 @@ A.register('comets', { mount(host, api){
     if (shots) { g.fillStyle = '#D5F367'; for (const s of shots) { g.beginPath(); g.arc(s.x, s.y, 2.6, 0, TAU); g.fill(); } }
     for (const q of parts) { g.globalAlpha = Math.min(1, q.t*2); g.fillStyle = q.col; g.fillRect(q.x, q.y, 3, 3); } g.globalAlpha = 1;
     if (ship && st == 'play' && !(inv > 0 && Math.sin(t*20) > 0)) { g.save(); g.translate(ship.x, ship.y); g.rotate(ship.a); g.fillStyle = '#64CDF5'; g.strokeStyle = '#fff'; g.lineWidth = 2; g.beginPath(); g.moveTo(16, 0); g.lineTo(-10, -10); g.lineTo(-5, 0); g.lineTo(-10, 10); g.closePath(); g.fill(); g.stroke(); g.fillStyle = '#fff'; g.beginPath(); g.arc(3, 0, 3, 0, TAU); g.fill(); g.restore(); }
-    g.fillStyle = '#fff'; g.font = '700 16px '+A.font; g.textAlign = 'left'; g.fillText('Score '+score.toLocaleString()+'   Wave '+wave, 10, 24); g.textAlign = 'right'; g.fillText('▲'.repeat(Math.max(0, Math.min(lives, 6))), w-10, 24);
+    g.fillStyle = '#fff'; g.font = '700 16px '+A.font; g.textAlign = 'left'; g.fillText('Score '+A.fmt(score)+'   Wave '+wave, 10, 24); g.textAlign = 'right'; g.fillText('▲'.repeat(Math.max(0, Math.min(lives, 6))), w-10, 24);
     if (st == 'ready') A.overlayText(g, w, h, 'COMET DASH', __skip ? 'Saved game · tap or press Space to continue' : '← → turn · ↑ thrust · Space fire · or hold a finger where to fly');
-    if (st == 'over') A.overlayText(g, w, h, 'SHIP LOST', score.toLocaleString()+' points · wave '+wave+' · tap to fly again'); });
+    if (st == 'over') A.overlayText(g, w, h, 'SHIP LOST', A.fmt(score)+' points · wave '+wave+' · tap to fly again'); });
   // ---- save & resume (Save & leave, reloads, closing the browser) ----
   api.snap && api.snap(() => (st == 'play' || st == 'quiz') ? {v:1, ship, rocks, shots, score, lives, wave, inv} : null);
   { const R0 = api.resume; if (R0 && R0.v == 1) { try { ({ship, rocks, shots, score, lives, wave, inv} = R0); parts = []; api.score(score); __skip = true; st = 'ready'; } catch(e) { console.error('[save] comets resume failed', e); } } }

@@ -62,7 +62,7 @@ A.register('whack', { mount(host, api){
     const pop = (txt,i,col) => { const h = holes[i].el; const t = el('div',{position:'absolute',left:(grid.offsetLeft+h.offsetLeft+h.offsetWidth/2)+'px',top:(grid.offsetTop+h.offsetTop+6)+'px',transform:'translateX(-50%)',color:col||C.lime,fontWeight:700,fontSize:'18px',pointerEvents:'none',transition:'transform .7s ease-out, opacity .7s',zIndex:3,textShadow:'0 2px 0 rgba(0,0,0,.45)',whiteSpace:'nowrap'},txt);
       b.appendChild(t); requestAnimationFrame(()=>{ t.style.transform='translate(-50%,-36px)'; t.style.opacity=0; }); setTimeout(()=>t.remove(),760); };
     const paint = () => { if (!st) return;
-      hL.textContent = 'LV '+st.level+' · '+st.score.toLocaleString();
+      hL.textContent = 'LV '+st.level+' · '+A.fmt(st.score);
       hH.textContent = '♥'.repeat(Math.max(0,Math.min(9,st.lives))) + (st.shield ? '  ⛉'+st.shield : '');
       hC.textContent = st.combo>1 ? 'COMBO '+st.combo+' · ×'+mult() : '';
       barIn.style.width = (king ? Math.max(0,kingT/14*100) : Math.min(100, st.whacks/need(st.level)*100)) + '%';
@@ -145,11 +145,11 @@ A.register('whack', { mount(host, api){
   };
   const end = () => { running = false; if (offL) { offL(); offL = null; } const s = st; st = null;
     stat(api,'whackCombo',s.bestCombo); A.sfx('over'); api.over(s.score);
-    setTimeout(()=>splash(b,'OUT OF LIVES','Level '+s.level+' · '+s.score.toLocaleString()+' points · best combo '+s.bestCombo,'Play again',()=>run()),450); };
+    setTimeout(()=>splash(b,'OUT OF LIVES','Level '+s.level+' · '+A.fmt(s.score)+' points · best combo '+s.bestCombo,'Play again',()=>run()),450); };
   const offK = A.keys(e=>{ const k = e.key.toLowerCase(); const id = {q:'quake','1':'quake',w:'freeze','2':'freeze',e:'shield','3':'shield'}[k]; if (id && running && run.use) run.use(id); });
   api.snap && api.snap(()=> running && st ? {level:st.level,score:st.score,lives:st.lives,whacks:st.whacks,charges:st.charges,shield:st.shield,bestCombo:st.bestCombo} : null);
   const R = api.resume;
-  if (R && R.level) choice(b,'WELCOME BACK','Level '+R.level+' · '+(R.score||0).toLocaleString()+' points · '+R.lives+' lives left',[['Resume',()=>run(R)],['New game',()=>run()]]);
+  if (R && R.level) choice(b,'WELCOME BACK','Level '+R.level+' · '+A.fmt(R.score||0)+' points · '+R.lives+' lives left',[['Resume',()=>run(R)],['New game',()=>run()]]);
   else splash(b,'WHACK-A-GOPHER','No clock — you have lives. Bonk gophers before they duck. Skip red bombs. Q/W/E fire Quake, Freeze and Shield.','Start',()=>run());
   return ()=>{ if (st) stat(api,'whackCombo',st.bestCombo); running = false; if (offL) offL(); offK(); clearTimeout(sayTo); };
 }});
@@ -298,11 +298,11 @@ A.register('crossing', { mount(host, api){
         else { g.fillStyle = C.ink; g.beginPath(); g.arc(px-8,y-8.5,2.1,0,7); g.arc(px+8,y-8.5,2.1,0,7); g.fill(); g.fillStyle = '#fff'; g.fillRect(px-8,y-10,1,1); g.fillRect(px+8,y-10,1,1); }
         g.fillStyle = '#ff9fbf'; g.beginPath(); g.arc(px-8, y-1, 2, 0, 7); g.arc(px+8, y-1, 2, 0, 7); g.fill(); g.strokeStyle = '#2f6e2e'; g.lineWidth = 1.4; g.beginPath(); g.arc(px, y-1, 4, .3, Math.PI-.3); g.stroke();
         if (shieldN>0) { g.strokeStyle = C.mint; g.lineWidth = 3; g.beginPath(); g.arc(px,y,18,0,7); g.stroke(); } } }
-    g.fillStyle = '#fff'; g.font = '700 13px '+A.font; g.textAlign = 'left'; g.fillText('LV '+level+'   '+score.toLocaleString(),10,11*T+25); if (learn && prob) { g.textAlign = 'center'; g.fillStyle = C.lime; g.font = '700 17px '+A.font; g.fillText(A.qText(prob), w/2, 11*T+26); }
+    g.fillStyle = '#fff'; g.font = '700 13px '+A.font; g.textAlign = 'left'; g.fillText('LV '+level+'   '+A.fmt(score),10,11*T+25); if (learn && prob) { g.textAlign = 'center'; g.fillStyle = C.lime; g.font = '700 17px '+A.font; g.fillText(A.qText(prob), w/2, 11*T+26); }
     g.textAlign = 'right'; g.fillStyle = '#ffd0e8'; g.fillText('♥'.repeat(Math.max(0,lives))+(shieldN?'  ⛉'+shieldN:'')+(slowT>0?'  SLOW '+Math.ceil(slowT):''),w-10,11*T+25);
     if (banner && banner.t>0) { g.globalAlpha = Math.min(1,banner.t); g.fillStyle = 'rgba(1,86,64,.88)'; rrect(g,70,6*T-14,340,banner.sub?66:44,14); g.fill(); g.fillStyle = C.lime; g.textAlign = 'center'; g.font = '700 20px '+A.font; g.fillText(banner.txt,w/2,6*T+14); if (banner.sub) { g.fillStyle = '#fff'; g.font = '500 13px '+A.font; g.fillText(banner.sub,w/2,6*T+38); } g.globalAlpha = 1; }
     if (st=='ready') A.overlayText(g,w,h,resumed?'PAUSED':'CRITTER CROSSING',resumed?'Level '+level+' · Space to keep crossing':'Fill all 5 dens · Arrows/WASD to hop · Space');
-    if (st=='dead') A.overlayText(g,w,h,'OUT OF LIVES','Level '+level+' · score '+score.toLocaleString()+' · Space to try again');
+    if (st=='dead') A.overlayText(g,w,h,'OUT OF LIVES','Level '+level+' · score '+A.fmt(score)+' · Space to try again');
   };
   reset();
   const R = api.resume; if (R && R.level) { level = R.level; score = R.score; lives = R.lives; dens = R.dens || [0,0,0,0,0]; shieldN = R.shieldN||0; lanes = mkLanes(); respawn(); api.score(score); resumed = true; newProb(); }
@@ -367,12 +367,12 @@ A.register('stack', { mount(host, api){
     const X = 262; g.textAlign = 'left'; g.fillStyle = C.lime; g.font = '700 12px '+A.font; g.fillText('NEXT',X,34);
     next.slice(0,3).forEach((k,i)=>mini(k,X,44+i*48));
     g.fillStyle = C.lime; g.fillText('HOLD · C',X+120,34); if (hold) mini(hold,X+120,44);
-    const rows = [['SCORE',score.toLocaleString()],['LINES',lines],['LEVEL',level],['SAWS · X','×'+saws]];
+    const rows = [['SCORE',A.fmt(score)],['LINES',lines],['LEVEL',level],['SAWS · X','×'+saws]];
     rows.forEach(([a,b],i)=>{ g.fillStyle = '#9fb8ad'; g.font = '700 11px '+A.font; g.fillText(a,X,210+i*44); g.fillStyle = '#fff'; g.font = '700 20px '+A.font; g.fillText(String(b),X,232+i*44); });
     g.fillStyle = '#9fb8ad'; g.font = '500 11px '+A.font; ['← → move   ↑ rotate   Z rotate back','↓ soft drop   Space hard drop'].forEach((t,i)=>g.fillText(t,X,404+i*16));
     if (banner && banner.t>0) { g.globalAlpha = Math.min(1,banner.t); g.fillStyle = 'rgba(1,86,64,.9)'; rrect(g,BX+10,180,CW*S-20,banner.sub?70:44,12); g.fill(); g.fillStyle = C.lime; g.textAlign = 'center'; g.font = '700 22px '+A.font; g.fillText(banner.txt,BX+CW*S/2,210); if (banner.sub) { g.fillStyle = '#fff'; g.font = '500 11px '+A.font; g.fillText(banner.sub,BX+CW*S/2,234,CW*S-30); } g.globalAlpha = 1; }
     if (st=='ready') A.overlayText(g,w,h,resumed?'PAUSED':'TIMBER STACK',resumed?'Lines '+lines+' · Space to keep stacking':'Clear lines · every 10 earns a saw · Space');
-    if (st=='dead') A.overlayText(g,w,h,'STACKED OUT','Lines '+lines+' · score '+score.toLocaleString()+' · Space to replay');
+    if (st=='dead') A.overlayText(g,w,h,'STACKED OUT','Lines '+lines+' · score '+A.fmt(score)+' · Space to replay');
   };
   reset();
   const R = api.resume; if (R && R.grid) { grid = R.grid; score = R.score; lines = R.lines; level = R.level; saws = R.saws; hold = R.hold || null; next = R.next && R.next.length ? R.next.slice() : next; spawnP(); api.score(score); resumed = true; }

@@ -105,7 +105,7 @@ A.register('space', { mount(host, api){
       if (!b.dead && boss) { const bw = boss.kind=='mini' ? 44 : 90, bh = boss.kind=='mini' ? 18 : 40;
         if (Math.abs(b.x-boss.x) < bw && Math.abs(b.y-boss.y) < bh) { b.dead = 1; const core = boss.kind=='big' && Math.abs(b.x-boss.x) < 22; boss.hp -= core ? 3 : 1; hits++; burst(b.x, b.y, core ? '#F9BF01' : '#ffffff', core ? 5 : 2);
           if (boss.hp <= 0) { const big = boss.kind=='big'; addScore((big ? 5000 : 1500) * Math.ceil(wave/5)); burst(boss.x, boss.y, '#F9BF01', 60); burst(boss.x, boss.y, '#EA55AB', 40); shake = .6; A.sfx('win'); stat(api,'spaceBoss',1,'add');
-            say(boss.n.toUpperCase()+' DEFEATED!', '+'+((big ? 5000 : 1500) * Math.ceil(wave/5)).toLocaleString()+' points'); drops.push({x:boss.x, y:boss.y, k:'rescue', vy:90}); drops.push({x:boss.x+30, y:boss.y, k:PKEYS[Math.random()*3|0], vy:80}); boss = null; } } } }
+            say(boss.n.toUpperCase()+' DEFEATED!', '+'+A.fmt((big ? 5000 : 1500) * Math.ceil(wave/5))+' points'); drops.push({x:boss.x, y:boss.y, k:'rescue', vy:90}); drops.push({x:boss.x+30, y:boss.y, k:PKEYS[Math.random()*3|0], vy:80}); boss = null; } } } }
     // enemy bullets
     for (const b of ebul) { b.x += (b.vx||0)*dt; b.y += b.vy*dt; if (b.y > H+10) { b.dead = 1; continue; } if (hitBunker(b)) { b.dead = 1; continue; }
       const r = b.big ? 10 : 5; if (Math.abs(b.x-ship.x) < 14+r*.4 && Math.abs(b.y-ship.y) < 12+r*.4) { b.dead = 1; killShip(); }
@@ -157,7 +157,7 @@ A.register('space', { mount(host, api){
     g.restore();
     // HUD
     g.fillStyle = 'rgba(0,0,0,.45)'; g.fillRect(0, H-26, W, 26); g.fillStyle = '#fff'; g.font = '700 14px '+A.font; g.textAlign = 'left';
-    g.fillText('WAVE '+wave+'   '+score.toLocaleString(), 10, H-8); g.textAlign = 'right'; g.fillText((shield ? '◯×'+shield+'  ' : '')+'♥ '.repeat(Math.max(0,Math.min(lives,6)))+(lives>6?'+'+(lives-6):''), W-10, H-8);
+    g.fillText('WAVE '+wave+'   '+A.fmt(score), 10, H-8); g.textAlign = 'right'; g.fillText((shield ? '◯×'+shield+'  ' : '')+'♥ '.repeat(Math.max(0,Math.min(lives,6)))+(lives>6?'+'+(lives-6):''), W-10, H-8);
     let px = 10; for (const k of ['double','spread','rapid']) if (pw[k] > 0) { g.fillStyle = POW[k].c; g.fillRect(px, H-36, 70*(pw[k]/POW[k].t), 5); g.fillStyle = '#fff'; g.font = '600 10px '+A.font; g.textAlign = 'left'; g.fillText(POW[k].n, px, H-40); px += 84; }
     if (combo >= 5) { g.fillStyle = C.gold; g.font = '700 16px '+A.font; g.textAlign = 'right'; g.fillText('COMBO ×'+combo, W-10, H-40); }
     if (boss) { const bw = 360, bx = (W-bw)/2; g.fillStyle = 'rgba(0,0,0,.7)'; g.fillRect(bx-8, 6, bw+16, 34); g.fillStyle = '#fff'; g.font = '700 12px '+A.font; g.textAlign = 'center'; g.fillText(boss.n.toUpperCase()+(boss.kind=='big' ? ' · PHASE '+boss.phase : ''), W/2, 20);
@@ -167,7 +167,7 @@ A.register('space', { mount(host, api){
     if (state=='menu') { A.overlayText(g, W, H, 'STAR RANGER', 'Press Space or tap to launch'); g.fillStyle = '#fff'; g.font = '500 13px '+A.font; g.textAlign = 'center';
       ['← → / A D or drag to move · Space or hold to fire', 'Power-ups: II double · ≋ spread · » rapid · ◯ shield · ✈ wing mate', 'Mini-boss every 5 waves · big boss every 10'].forEach((t,i) => g.fillText(t, W/2, H/2+56+i*20));
       if (api.resume && (api.resume.wave || api.resume.v3)) { g.fillStyle = C.gold; g.fillText('Saved run: wave '+(api.resume.wave+1)+' — press R or tap “Resume” below', W/2, H/2+124); } }
-    if (state=='over') A.overlayText(g, W, H, 'GAME OVER', 'Wave '+wave+' · '+score.toLocaleString()+' points · accuracy '+(shots ? Math.round(hits/shots*100) : 0)+'% · tap to play again'); };
+    if (state=='over') A.overlayText(g, W, H, 'GAME OVER', 'Wave '+wave+' · '+A.fmt(score)+' points · accuracy '+(shots ? Math.round(hits/shots*100) : 0)+'% · tap to play again'); };
   // ---------------- input ----------------
   const offK = A.keys(e => { const k = e.key.length==1 ? e.key.toLowerCase() : e.key; keys[k] = true;
     if (state=='menu' && (k==' ' || k=='Enter')) { newGame(); return; } if (state=='menu' && k=='r' && api.resume && (api.resume.wave || api.resume.v3)) { newGame(api.resume); return; }

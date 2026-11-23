@@ -71,9 +71,9 @@ A.register('runner', { mount(host, api){
       g.fillStyle = '#c8742c'; rr(g, px-14, p.y-ph, 28, ph-8, 10); g.fill(); g.fillStyle = '#fff3e0'; g.beginPath(); g.arc(px+6, p.y-ph+10, 7, 0, TAU); g.fill();
       g.fillStyle = '#121313'; g.beginPath(); g.arc(px+8, p.y-ph+9, 2.2, 0, TAU); g.fill(); g.strokeStyle = '#8D5B1D'; g.lineWidth = 5; g.lineCap = 'round'; g.beginPath(); g.moveTo(px-6, p.y-8); g.lineTo(px-6 - run*6, p.y); g.moveTo(px+6, p.y-8); g.lineTo(px+6 + run*6, p.y); g.stroke();
       g.fillStyle = '#c8742c'; g.beginPath(); g.ellipse(px-18, p.y-ph+16, 9, 16, -.6, 0, TAU); g.fill(); }
-    g.fillStyle = '#121313'; g.font = '700 17px '+A.font; g.textAlign = 'left'; g.fillText(score.toLocaleString()+' · 🌰 '+acorns, 12, 24); g.textAlign = 'right'; g.fillText('❤'.repeat(clamp(lives,0,8)), w-12, 24);
+    g.fillStyle = '#121313'; g.font = '700 17px '+A.font; g.textAlign = 'left'; g.fillText(A.fmt(score)+' · 🌰 '+acorns, 12, 24); g.textAlign = 'right'; g.fillText('❤'.repeat(clamp(lives,0,8)), w-12, 24);
     if (st == 'ready') A.overlayText(g, w, h, 'TRAIL RUNNER', __skip ? 'Saved game · tap or press Space to continue' : 'Space / tap to jump (tap again in the air for a double jump) · ↓ or tap low to duck under branches and birds');
-    if (st == 'over') A.overlayText(g, w, h, 'TRIPPED!', score.toLocaleString()+' points · tap to run again'); });
+    if (st == 'over') A.overlayText(g, w, h, 'TRIPPED!', A.fmt(score)+' points · tap to run again'); });
   A._dbg = A._dbg || {}; A._dbg.runner = () => ({p, obs, speed, lives, st, dist, max:MAXS(), set:o => { if (o.speed) speed = o.speed; if (o.dist) dist = o.dist; if (o.duck !== undefined) duck = o.duck; }, jump});
   reset(); st = 'ready';
   // ---- save & resume (Save & leave, reloads, closing the browser) ----
@@ -137,9 +137,9 @@ A.register('pinball', { mount(host, api){
     for (const [f, ang] of [[FL.l, lAng], [FL.r, rAng]]) { const e2 = flipEnd(f, ang); g.strokeStyle = '#FF8A3C'; g.lineWidth = 12; g.beginPath(); g.moveTo(f.x, f.y); g.lineTo(e2.x, e2.y); g.stroke(); }
     g.fillStyle = '#8D5B1D'; g.fillRect(372, 575 + plunge*20, 18, 45);
     if (balls) for (const b of balls) { const gr = g.createRadialGradient(b.x-3, b.y-3, 1, b.x, b.y, b.r); gr.addColorStop(0, '#fff'); gr.addColorStop(1, '#9aa5a1'); g.fillStyle = gr; g.beginPath(); g.arc(b.x, b.y, b.r, 0, TAU); g.fill(); }
-    g.fillStyle = '#fff'; g.font = '700 16px '+A.font; g.textAlign = 'left'; g.fillText(score.toLocaleString(), 28, 22); g.textAlign = 'right'; g.fillText((mult > 1 ? '×'+mult+'  ' : '')+'Balls '+ballsLeft, 386, 22);
+    g.fillStyle = '#fff'; g.font = '700 16px '+A.font; g.textAlign = 'left'; g.fillText(A.fmt(score), 28, 22); g.textAlign = 'right'; g.fillText((mult > 1 ? '×'+mult+'  ' : '')+'Balls '+ballsLeft, 386, 22);
     if (st == 'ready') A.overlayText(g, w, h, 'PINE PINBALL', __skip ? 'Saved game · tap or press Space to continue' : '← → (or tap left/right) flip · hold Space or tap to launch');
-    if (st == 'over') A.overlayText(g, w, h, 'GAME OVER', score.toLocaleString()+' points · tap to play again'); });
+    if (st == 'over') A.overlayText(g, w, h, 'GAME OVER', A.fmt(score)+' points · tap to play again'); });
   reset(); st = 'ready';
   A._dbg = A._dbg || {}; A._dbg.pinball = () => ({balls, ballsLeft, st, score});
   // ---- save & resume (Save & leave, reloads, closing the browser) ----
@@ -615,10 +615,10 @@ A.register('rhythm', { mount(host, api){
     g.fillStyle = 'rgba(255,255,255,.85)'; g.fillRect(0, HIT-2, w, 4);
     if (notes) { const ft = fallT(); for (const n of notes) { if (n.hit) continue; const y = HIT - (n.at - songT) / ft * HIT; if (y < -30 || y > h + 30) continue; g.fillStyle = COLS[n.lane]; rr(g, n.lane*LW + 10, y - 12, LW - 20, 24, 12); g.fill(); g.fillStyle = 'rgba(255,255,255,.5)'; rr(g, n.lane*LW + 16, y - 9, LW - 32, 6, 3); g.fill(); } }
     for (let i = 0; i < 4; i++) { g.strokeStyle = COLS[i]; g.lineWidth = 3; g.beginPath(); g.arc(i*LW + LW/2, HIT, 18, 0, TAU); g.stroke(); g.fillStyle = 'rgba(255,255,255,.6)'; g.font = '700 14px '+A.font; g.textAlign = 'center'; g.fillText(KEYS[i].toUpperCase(), i*LW + LW/2, h - 30); }
-    g.fillStyle = '#fff'; g.font = '700 18px '+A.font; g.textAlign = 'left'; g.fillText(Math.round(score||0).toLocaleString(), 12, 26); g.textAlign = 'right'; g.fillText('Combo '+(combo||0), w-12, 26);
+    g.fillStyle = '#fff'; g.font = '700 18px '+A.font; g.textAlign = 'left'; g.fillText(A.fmt(Math.round(score||0)), 12, 26); g.textAlign = 'right'; g.fillText('Combo '+(combo||0), w-12, 26);
     if (judgeT > 0) { g.fillStyle = judge == 'MISS' ? '#ff6a6a' : judge == 'PERFECT' ? '#F9BF01' : '#D5F367'; g.font = '800 30px '+A.font; g.textAlign = 'center'; g.fillText(judge, w/2, HIT - 160); }
     if (st == 'ready') A.overlayText(g, w, h, 'BEAT HOPPER', __skip ? 'Saved game · tap or press Space to continue' : 'D F J K (or arrows, or tap the lanes) when notes hit the line');
-    if (st == 'over') A.overlayText(g, w, h, 'SONG OVER', Math.round(score).toLocaleString()+' points · best combo '+best+' · tap to dance again'); });
+    if (st == 'over') A.overlayText(g, w, h, 'SONG OVER', A.fmt(Math.round(score))+' points · best combo '+best+' · tap to dance again'); });
   const tick = {b:-1};
   // ---- save & resume (Save & leave, reloads, closing the browser) ----
   api.snap && api.snap(() => (st == 'play' || st == 'quiz') ? {v:1, notes, score, combo, best, miss, songT, bpm, beat, nextBeat, song} : null);
@@ -683,10 +683,10 @@ A.register('platformer', { mount(host, api){
       g.fillStyle = '#F9BF01'; g.beginPath(); g.moveTo(B.x+8, B.y); g.lineTo(B.x+16, B.y-14); g.lineTo(B.x+28, B.y-4); g.lineTo(B.x+40, B.y-14); g.lineTo(B.x+48, B.y); g.fill(); }
     if (p && !(p.inv > 0 && Math.sin(t*25) > 0)) { g.fillStyle = '#00B451'; rr(g, p.x, p.y, 20, 26, 8); g.fill(); g.fillStyle = '#D5F367'; rr(g, p.x+3, p.y+12, 14, 8, 4); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(p.x+10 + p.face*4, p.y+7, 4, 0, TAU); g.fill(); g.fillStyle = '#121313'; g.beginPath(); g.arc(p.x+11 + p.face*5, p.y+7, 2, 0, TAU); g.fill(); }
     g.restore();
-    g.fillStyle = '#121313'; g.font = '700 16px '+A.font; g.textAlign = 'left'; g.fillText('Level '+(lvl+1)+'  ·  '+(score||0).toLocaleString(), 12, 22); g.textAlign = 'right'; g.fillText('❤'.repeat(clamp(lives||0,0,8)), w-12, 22);
+    g.fillStyle = '#121313'; g.font = '700 16px '+A.font; g.textAlign = 'left'; g.fillText('Level '+(lvl+1)+'  ·  '+A.fmt(score||0), 12, 22); g.textAlign = 'right'; g.fillText('❤'.repeat(clamp(lives||0,0,8)), w-12, 22);
     if (boss) { g.fillStyle = 'rgba(0,0,0,.3)'; rr(g, w/2-100, 32, 200, 10, 5); g.fill(); g.fillStyle = '#b48cff'; rr(g, w/2-100, 32, 200*boss.hp/boss.max, 10, 5); g.fill(); g.fillStyle = '#121313'; g.font = '700 12px '+A.font; g.textAlign = 'center'; g.fillText('THE BRAMBLE KING · stomp on his head!', w/2, 56); }
     if (st == 'ready') A.overlayText(g, w, h, 'MOSSY LEAP', __skip ? 'Saved game · tap or press Space to continue' : '← → move · Space jump · phone: left quarter / next quarter move, right half jump');
-    if (st == 'over') A.overlayText(g, w, h, 'GAME OVER', (score||0).toLocaleString()+' points · level '+(lvl+1)+' · tap to try again'); });
+    if (st == 'over') A.overlayText(g, w, h, 'GAME OVER', A.fmt(score||0)+' points · level '+(lvl+1)+' · tap to try again'); });
   reset(); st = 'ready';
   // ---- save & resume (Save & leave, reloads, closing the browser) ----
   api.snap && api.snap(() => (st == 'play' || st == 'quiz') ? {v:1, lvl, score, lives, total} : null);
@@ -718,7 +718,7 @@ A.register('racing', { mount(host, api){
   const progress = car => car.done ? 1e6 - finish.indexOf(car) : car.lap*CPN + ((car.cp - 1 + CPN) % CPN) + (1 - Math.min(1, Math.hypot(TR[CP[car.cp]].x - car.x, TR[CP[car.cp]].y - car.y)/200))*.9;
   const respawn = car => { const p = TR[CP[car.last]]; car.x = p.x; car.y = p.y; car.dir = Math.atan2(p.ty, p.tx); car.sp = 0; car.off = 0; car.inv = 1.2; car.near = CP[car.last]; if (car.me) A.tone(220,.2,'triangle',.05); };
   const endRace = place => { if (st != 'play') return; const sc = Math.max(100, Math.round((4 - place) * 800 + Math.max(0, 150 - raceT) * 20 + A.D(0, 200, 500))); A.sfx(place == 1 ? 'win' : 'coin'); stat(api,'raceWins',place == 1 ? 1 : 0,'add'); api.score(sc);
-    overText = place+(['st','nd','rd','th'][place-1])+' place! '+sc.toLocaleString()+' points'; st = 'over'; api.over(sc); };
+    overText = place+(['st','nd','rd','th'][place-1])+' place! '+A.fmt(sc)+' points'; st = 'over'; api.over(sc); };
   const angDiff = (a, b) => { let d = a - b; while (d > Math.PI) d -= TAU; while (d < -Math.PI) d += TAU; return d; };
   const offL = A.loop(dt => { t += dt; dt = Math.min(dt, .033);
     if (st == 'play') { if (countdown > 0) { const before = Math.ceil(countdown); countdown -= dt; if (Math.ceil(countdown) != before) A.tone(countdown <= 0 ? 880 : 440, .15, 'square', .05); }
@@ -816,9 +816,9 @@ A.register('bubble', { mount(host, api){
     if (st == 'play') { g.strokeStyle = 'rgba(255,255,255,.35)'; g.setLineDash([4,8]); g.beginPath(); g.moveTo(w/2, h-50); let ax = w/2, ay = h-50, vx = Math.cos(aim), vy = Math.sin(aim); for (let k = 0; k < 40; k++) { ax += vx*10; ay += vy*10; if (ax < R || ax > w-R) vx *= -1; g.lineTo(ax, ay); if (ay < 60) break; } g.stroke(); g.setLineDash([]); }
     if (cur != null) ball(w/2, h-50, cur); if (next != null) ball(w/2 + 60, h-40, next, 11);
     if (shot) ball(shot.x, shot.y, shot.c);
-    g.fillStyle = '#fff'; g.font = '700 16px '+A.font; g.textAlign = 'left'; g.fillText((score||0).toLocaleString(), 10, 24); g.textAlign = 'right'; g.fillText('Drop in '+(shotsToDrop||0), w-10, 24); g.font = '11px '+A.font; g.textAlign = 'center'; g.fillText('swap', w/2 + 60, h-16);
+    g.fillStyle = '#fff'; g.font = '700 16px '+A.font; g.textAlign = 'left'; g.fillText(A.fmt(score||0), 10, 24); g.textAlign = 'right'; g.fillText('Drop in '+(shotsToDrop||0), w-10, 24); g.font = '11px '+A.font; g.textAlign = 'center'; g.fillText('swap', w/2 + 60, h-16);
     if (st == 'ready') A.overlayText(g, w, h, 'BUBBLE POP', __skip ? 'Saved game · tap or press Space to continue' : 'Aim with the mouse or ← →, tap / Space to shoot · match 3 to pop');
-    if (st == 'over') A.overlayText(g, w, h, 'GAME OVER', (score||0).toLocaleString()+' points · tap to play again'); });
+    if (st == 'over') A.overlayText(g, w, h, 'GAME OVER', A.fmt(score||0)+' points · tap to play again'); });
   reset(); st = 'ready';
   // ---- save & resume (Save & leave, reloads, closing the browser) ----
   api.snap && api.snap(() => (st == 'play' || st == 'quiz') ? {v:1, grid, drop, score, shotsToDrop, cur, next} : null);
