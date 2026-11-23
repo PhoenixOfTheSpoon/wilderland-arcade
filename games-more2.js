@@ -205,7 +205,7 @@ A.register('fishing', { mount(host, api){
     {k:'steer', n:'Quick Steer', d:L => 'Hook moves '+(100+10*L)+'% → '+(110+10*L)+'% as fast', b:25, gr:1.32, max:20},
     {k:'luck', n:'Lucky Lure', d:L => 'Rare & Epic fish +'+(12*L)+'% → +'+(12*L+12)+'%', b:50, gr:1.42},
     {k:'magnet', n:'Magnet Hook', d:L => 'Grab fish from '+(3*L)+' → '+(3*L+3)+' px farther away', b:80, gr:1.5, max:15},
-    {k:'ghost', n:'Ghost Lure', d:L => 'Slip past '+L+' → '+(L+1)+' fish on the way down (saves hook space for deep fish)', b:100, gr:1.6},
+    {k:'ghost', n:'Ghost Lure', d:L => 'On the way down your hook ignores ' + GHOST[Math.min(3, L)] + (L < 3 ? ' → ' + GHOST[L+1] : ''), b:150, gr:9, max:3},
     {k:'shield', n:'Jelly Guard', d:L => 'Block '+L+' → '+(L+1)+' jellyfish stings per dive', b:120, gr:1.55},
     {k:'gold', n:'Golden Bait', d:L => 'Golden fish (×5): '+goldP(L).toFixed(1)+'% → '+goldP(L+1).toFixed(1)+'%', b:150, gr:1.45, max:40},
     {k:'combo', n:'Combo Charm', d:L => 'Each fish in a row adds +'+(10+4*L)+'% → +'+(14+4*L)+'%', b:90, gr:1.45},
@@ -213,6 +213,8 @@ A.register('fishing', { mount(host, api){
     {k:'chest', n:'Treasure Map', d:L => 'Chests '+(25*L)+'% → '+(25*L+25)+'% more common & richer', b:300, gr:1.5},
     {k:'buddy', n:'Fishing Buddy', d:L => 'Earns '+fmt(buddyRate(L))+' → '+fmt(buddyRate(L+1))+' coins/s for you', b:250, gr:1.42},
     {k:'sonar', n:'Sonar', d:L => ['Rare fish get a colored ring','Shows each fish’s price','Rares +15% more often','Maxed!'][Math.min(3, L)], b:400, gr:6, max:3}];
+  const GHOST = ['nothing', 'Old Boots & Common fish', 'Boots, Common & Uncommon fish', 'everything below Epic'];
+  const ghosty = o => { const tier = Math.min(3, UL('ghost')); return tier > 0 && !o.jelly && (o.f.junk || (!o.f.chest && !o.gold && o.f.i < tier)); };
   const lineM = L => Math.round(30 + 12*L + .6*L*L);
   const sinkV = L => 20 * (1 + .15*L), reelV = L => 24 * (1 + .15*L) * (1 + .1*A.U('reel'));
   const goldP = L => 1 + .6*L;
@@ -345,7 +347,7 @@ A.register('fishing', { mount(host, api){
     const y0 = Math.max(0, sy(0)), gr = g.createLinearGradient(0, y0, 0, H); gr.addColorStop(0, mixHex(L.sea, '#02040a', dark(Math.max(0, dTop)))); gr.addColorStop(1, mixHex(L.sea, '#02040a', dark(dBot))); g.fillStyle = gr; g.fillRect(0, y0, W, H - y0);
     if (dTop < 60 && !low()) { g.fillStyle = 'rgba(255,255,255,.06)'; for (let i = 0; i < 5; i++) { const x = 60 + i*95 + Math.sin(t*.5 + i)*20; g.beginPath(); g.moveTo(x, y0); g.lineTo(x + 40, y0); g.lineTo(x - 30, Math.min(H, sy(60))); g.lineTo(x - 70, Math.min(H, sy(60))); g.fill(); } }
     if (!low()) { g.fillStyle = 'rgba(255,255,255,.18)'; for (let i = 0; i < 14; i++) { const by = ((i*71 - t*40*(1 + i%3)) % H + H) % H; if (by > y0) g.fillRect((i*83 + Math.sin(t + i)*6) % W, by, 2, 2); } }
-    for (const o of fish) { if (o.dead) continue; const y = sy(o.d); if (y < -30 || y > H + 30) continue; if (o.jelly) drawJelly(o, o.x, y); else drawFish(o, o.x, y);
+    for (const o of fish) { if (o.dead) continue; const y = sy(o.d); if (y < -30 || y > H + 30) continue; const fade = phase == 'drop' && ghosty(o); if (fade) g.globalAlpha = .35; if (o.jelly) drawJelly(o, o.x, y); else drawFish(o, o.x, y); g.globalAlpha = 1;
       if (UL('sonar') >= 2 && !o.jelly && Math.abs(y - sy(hd)) < 120) { g.fillStyle = 'rgba(255,255,255,.85)'; g.font = '700 10px '+A.font; g.textAlign = 'center'; g.fillText('🪙' + fmt(fishVal(o.f, o.d) * (o.gold ? 5 : 1) * coinMult()), o.x, y - o.f.s - 6); } }
     if (dBot > maxD && phase != 'surface') { const yb = sy(maxD + 3); g.strokeStyle = 'rgba(255,69,57,.6)'; g.setLineDash([6, 6]); g.beginPath(); g.moveTo(0, yb); g.lineTo(W, yb); g.stroke(); g.setLineDash([]); }
     const hy = sy(hd); g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(W/2 + 30, Math.max(0, sy(0) - 64)); g.lineTo(hx, hy - 10); g.stroke();
@@ -357,7 +359,7 @@ A.register('fishing', { mount(host, api){
     g.fillStyle = 'rgba(0,0,0,.45)'; rr(g, 6, 6, W - 12, 30, 10); g.fill(); g.font = '700 14px '+A.font; g.textBaseline = 'middle'; g.fillStyle = '#F9BF01'; g.textAlign = 'left'; g.fillText('🪙 ' + fmt(G.coins), 14, 21);
     g.fillStyle = '#fff'; g.textAlign = 'center'; g.fillText((phase == 'surface' || phase == 'tally' ? 'Line ' + fmt(lineM(UL('line'))) : fmt(hd) + ' / ' + fmt(maxD)) + ' m', W/2 - 30, 21);
     g.textAlign = 'right'; g.fillText('🐟 ' + caught.length + '/' + capN() + ' · ' + fmt(score) + ' pts', W - 14, 21); g.textBaseline = 'alphabetic';
-    if (phase == 'drop' || phase == 'reel') { g.font = '600 11px '+A.font; g.textAlign = 'left'; g.fillStyle = 'rgba(255,255,255,.75)'; g.fillText((ghostN ? '👻 ' + ghostN + '  ' : '') + (shieldN ? '🛡 ' + shieldN + '  ' : '') + (combo ? 'COMBO ×' + (combo + 1) : ''), 12, 52);
+    if (phase == 'drop' || phase == 'reel') { g.font = '600 11px '+A.font; g.textAlign = 'left'; g.fillStyle = 'rgba(255,255,255,.75)'; g.fillText((UL('ghost') && phase == 'drop' ? '👻 skipping ' + ['', 'Common', 'Common & Uncommon', 'below Epic'][Math.min(3, UL('ghost'))] + '  ' : '') + (shieldN ? '🛡 ' + shieldN + '  ' : '') + (combo ? 'COMBO ×' + (combo + 1) : ''), 12, 52);
       const bw = 8, bh = H - 120; g.fillStyle = 'rgba(0,0,0,.35)'; rr(g, W - 16, 60, bw, bh, 4); g.fill(); g.fillStyle = '#D5F367'; g.beginPath(); g.arc(W - 12, 60 + bh * Math.min(1, hd / Math.max(1, maxD)), 6, 0, TAU); g.fill(); }
     if (zoneT > 0) { g.globalAlpha = Math.min(1, zoneT); g.fillStyle = 'rgba(0,0,0,.5)'; rr(g, W/2 - 140, 70, 280, 38, 12); g.fill(); g.fillStyle = '#D5F367'; g.font = '800 17px '+A.font; g.textAlign = 'center'; g.fillText(zoneShow, W/2, 95); g.globalAlpha = 1; }
     if (msgT > 0) { g.fillStyle = 'rgba(0,0,0,.6)'; rr(g, W/2 - 170, H - 90, 340, 36, 12); g.fill(); g.fillStyle = '#fff'; g.font = '700 15px '+A.font; g.textAlign = 'center'; g.fillText(msg, W/2, H - 66); }
@@ -383,7 +385,7 @@ A.register('fishing', { mount(host, api){
         const z = zoneOf(hd); if (z != lastZone) { if (lastZone >= 0 || z > 0) { zoneShow = zoneName(hd) + ' · ' + fmt(ZONES[z].d) + ' m'; zoneT = 2; } lastZone = z; }
         if (hd >= 2000 && layerOf(hd) != layerOf(prevD)) { zoneShow = zoneName(hd); zoneT = 2; A.sfx('blip'); }
         for (const o of fish) { if (o.dead || o.jelly || o.passed) continue; if (o.d < prevD - 3 || o.d > hd + 3) continue; if (Math.abs(o.x - hx) < o.f.s + 7) {
-            if (ghostN > 0) { ghostN--; o.passed = true; flash = .25; A.tone(700, .06, 'sine', .04); continue; }
+            if (ghosty(o)) { o.passed = true; continue; }
             o.passed = true; if (caught.length < capN()) { catchIt(o); say('Hooked a ' + o.f.n + ' on the way down' + (caught.length >= capN() ? ' · hook full!' : ''), 1.2); } } }
         if (phase == 'drop' && hd >= maxD) { hd = maxD; startReel('End of the line! Reel up and grab fish'); } }
       else if (phase == 'reel') { const full = caught.length >= capN(), turbo = full || hd < skipD ? 4 : 1; hd -= reelV(UL('reel')) * turbo * dt;

@@ -33,15 +33,50 @@ A.register('sokoban', { mount(host, api){
     ['##########','#    #   #','# $$ # . #','#  $   . #','## @ $ . #','#  ### . #','#        #','##########'],
   ];
   let lvl = 0, map, P, moves, hist, score = 0, solved = 0, st = 'ready', t = 0, swipe = null, quizUsed = false;
-  const load = () => { if (__skip) { __skip = false; return; } map = LV[lvl].map(r => r.padEnd(Math.max(...LV[lvl].map(x => x.length)), ' ').split('')); moves = 0; hist = []; quizUsed = false;
+  const load = () => { if (__skip) { __skip = false; return; } try { if (typeof hints != 'undefined' && hints) hints.reset(); } catch(e){} map = LV[lvl].map(r => r.padEnd(Math.max(...LV[lvl].map(x => x.length)), ' ').split('')); moves = 0; hist = []; quizUsed = false;
     map.forEach((row, y) => row.forEach((ch, x) => { if (ch == '@' || ch == '+') { P = {x, y}; row[x] = ch == '+' ? '.' : ' '; } })); };
   const isCrate = ch => ch == '$' || ch == '*', isTgt = ch => ch == '.' || ch == '*';
-  const move = (dx, dy) => { if (st != 'play') return; const nx = P.x+dx, ny = P.y+dy, ch = map[ny][nx]; if (ch == '#') return;
-    if (isCrate(ch)) { const bx = nx+dx, by = ny+dy, bc = map[by][bx]; if (bc == '#' || isCrate(bc)) return; hist.push({P:{...P}, m:map.map(r => r.slice())}); map[by][bx] = bc == '.' ? '*' : '$'; map[ny][nx] = ch == '*' ? '.' : ' '; A.tone(220,.05,'square',.04); }
+  const move = (dx, dy) => { if (st != 'play') return; let pushed = false; const nx = P.x+dx, ny = P.y+dy, ch = map[ny][nx]; if (ch == '#') return;
+    if (isCrate(ch)) { const bx = nx+dx, by = ny+dy, bc = map[by][bx]; if (bc == '#' || isCrate(bc)) return; hist.push({P:{...P}, m:map.map(r => r.slice())}); map[by][bx] = bc == '.' ? '*' : '$'; map[ny][nx] = ch == '*' ? '.' : ' '; A.tone(220,.05,'square',.04);  pushed = true; }
     else hist.push({P:{...P}, m:map.map(r => r.slice())});
     P.x = nx; P.y = ny; moves++; A.sfx('step');
+    if (pushed && !hintBusy) { try { if (solveFrom(map, P, 1).dead) { hintMsg = '⚠ That crate is stuck now · press Undo (Z) or ask for a Hint'; hintT = 3.5; A.sfx('bad'); } } catch(e){} }
     if (!map.some(r => r.includes('$'))) { const par = LV[lvl].join('').split('').filter(c2 => c2 == '$' || c2 == '*').length * 8 + 6; const gain = Math.max(50, 300 + (par - moves)*10) * (1 + lvl*.25);
       score += Math.round(gain); solved++; api.score(score); A.sfx('win'); try { const gd = api.gdata ? api.gdata() : {}; if (lvl+2 > (gd.unlocked||1)) api.setGdata && api.setGdata({unlocked: Math.min(LV.length, lvl+2)}); } catch(e){} if (A.learnOn && A.learnOn()) learn2(host, api, 'LEVEL DONE! BONUS QUESTION FOR +150', () => { score += 150; api.score(score); }, () => {}); stat(api,'sokoLevel',lvl+1,'max'); lvl++; if (lvl >= LV.length) { st = 'over'; api.over(score); } else setTimeout(load, 500); } };
+  // ---- hints: a real solver works out the best next push from wherever you are, then walks you there and does it ----
+  const solveFrom = (m, p0, limit) => { const Hh = m.length, Ww = m[0].length, D4 = [[1,0],[-1,0],[0,1],[0,-1]];
+    const wall = new Uint8Array(Ww*Hh), goal = new Uint8Array(Ww*Hh), boxes0 = [];
+    m.forEach((row, y) => row.forEach((ch, x) => { const i = y*Ww + x; if (ch == '#') wall[i] = 1; if (ch == '.' || ch == '*') goal[i] = 1; if (ch == '$' || ch == '*') boxes0.push(i); }));
+    const floor = new Uint8Array(Ww*Hh), q0 = [p0.y*Ww + p0.x]; floor[q0[0]] = 1;
+    while (q0.length) { const cc = q0.pop(), x = cc % Ww, y = (cc - x) / Ww; for (const [dx, dy] of D4) { const nx = x+dx, ny = y+dy; if (nx < 0 || ny < 0 || nx >= Ww || ny >= Hh) continue; const n = ny*Ww + nx; if (!wall[n] && !floor[n]) { floor[n] = 1; q0.push(n); } } }
+    const live = new Uint8Array(Ww*Hh), ql = []; for (let i = 0; i < Ww*Hh; i++) if (goal[i] && floor[i]) { live[i] = 1; ql.push(i); }
+    while (ql.length) { const cc = ql.pop(), x = cc % Ww, y = (cc - x) / Ww; for (const [dx, dy] of D4) { const bx = x+dx, by = y+dy, px = x+2*dx, py = y+2*dy; if (px < 0 || py < 0 || px >= Ww || py >= Hh) continue; const b = by*Ww + bx, pp = py*Ww + px; if (floor[b] && floor[pp] && !live[b]) { live[b] = 1; ql.push(b); } } }
+    if (boxes0.some(b => !live[b] && !goal[b])) return {dead:true};
+    const reach = (p, bs) => { const set = new Set(bs), seen = new Uint8Array(Ww*Hh), st2 = [p]; seen[p] = 1; let mn = p;
+      while (st2.length) { const cc = st2.pop(), x = cc % Ww, y = (cc - x) / Ww; if (cc < mn) mn = cc; for (const [dx, dy] of D4) { const n = (y+dy)*Ww + x+dx; if (floor[n] && !seen[n] && !set.has(n)) { seen[n] = 1; st2.push(n); } } } return {seen, mn}; };
+    const done = bs => bs.every(b => goal[b]);
+    const start = {bs:boxes0.slice().sort((a, b) => a - b), p:p0.y*Ww + p0.x, par:null, push:null};
+    if (done(start.bs)) return {path:[]};
+    const key = (bs, mn) => bs.join(',') + '|' + mn, seenK = new Set([key(start.bs, reach(start.p, start.bs).mn)]); let qq = [start], n = 0;
+    while (qq.length) { const nq = []; for (const nd of qq) { if (++n > limit) return {limit:true}; const R = reach(nd.p, nd.bs), set = new Set(nd.bs);
+        for (const b of nd.bs) { const x = b % Ww, y = (b - x) / Ww; for (const [dx, dy] of D4) { const frm = (y-dy)*Ww + x-dx, to = (y+dy)*Ww + x+dx; if (!R.seen[frm] || !live[to] || set.has(to)) continue;
+            const bs = nd.bs.map(v => v == b ? to : v).sort((a1, a2) => a1 - a2), k = key(bs, reach(b, bs).mn); if (seenK.has(k)) continue; seenK.add(k);
+            const ch = {bs, p:b, par:nd, push:{bx:x, by:y, dx, dy}}; if (done(bs)) { const path = []; for (let c2 = ch; c2.par; c2 = c2.par) path.unshift(c2.push); return {path}; } nq.push(ch); } } } qq = nq; }
+    return {dead:true}; };
+  const walkTo = (tx, ty) => { const Hh = map.length, Ww = map[0].length, prev = {}, q = [[P.x, P.y]]; prev[P.x + ',' + P.y] = null;
+    while (q.length) { const [x, y] = q.shift(); if (x == tx && y == ty) break; for (const [dx, dy] of [[1,0],[-1,0],[0,1],[0,-1]]) { const nx = x+dx, ny = y+dy, kk = nx + ',' + ny; if (kk in prev || ny < 0 || ny >= Hh || nx < 0 || nx >= Ww) continue; const ch = map[ny][nx]; if (ch == '#' || isCrate(ch)) continue; prev[kk] = [x, y, dx, dy]; q.push([nx, ny]); } }
+    const steps = []; let kk = tx + ',' + ty; if (!(kk in prev)) return null; while (prev[kk]) { const [x, y, dx, dy] = prev[kk]; steps.unshift([dx, dy]); kk = x + ',' + y; } return steps; };
+  let hintBusy = false, hintMsg = '', hintT = 0, hintMark = null;
+  const runHint = quiet => { if (st != 'play' || hintBusy) return false;
+    let sol = solveFrom(map, P, 250000), undone = 0;
+    while (sol.dead && hist.length && undone < 80) { undo(); undone++; sol = solveFrom(map, P, 250000); }
+    if (sol.limit) { hintMsg = 'Too tricky to work out from here · try Restart (R)'; hintT = 3; return false; }
+    if (sol.dead || !sol.path || !sol.path.length) { hintMsg = sol.dead ? 'Stuck · press Restart (R)' : 'Already solved!'; hintT = 2.5; return false; }
+    const pu = sol.path[0], steps = walkTo(pu.bx - pu.dx, pu.by - pu.dy); if (!steps) return false; steps.push([pu.dx, pu.dy]);
+    hintMsg = (undone ? 'Dead end! Undid ' + undone + ' move' + (undone == 1 ? '' : 's') + ' · ' : '') + 'Push the glowing crate ' + ({'1,0':'right','-1,0':'left','0,1':'down','0,-1':'up'})[pu.dx + ',' + pu.dy] + ' · ' + sol.path.length + ' push' + (sol.path.length == 1 ? '' : 'es') + ' to go';
+    hintT = 4.5; hintMark = {x:pu.bx, y:pu.by, dx:pu.dx, dy:pu.dy}; hintBusy = true; let i = 0;
+    const iv = setInterval(() => { if (st != 'play' || i >= steps.length) { clearInterval(iv); hintBusy = false; hintMark = null; return; } move(...steps[i++]); }, quiet ? 60 : 140); return true; };
+  const hints = A.hinter(api, q => runHint(q), A.D(8, 5, 3));
   const startLvl = () => { let u = 1; try { u = (api.gdata ? api.gdata().unlocked : 1) || 1; } catch(e){} return Math.max(0, Math.min(LV.length, u) - 1); };
   const undo = () => { const hh = hist.pop(); if (hh) { P = hh.P; map = hh.m; moves++; } };
   const offK = A.keys(e => { if (e.type != 'keydown') return; const m = {ArrowLeft:[-1,0], a:[-1,0], ArrowRight:[1,0], d:[1,0], ArrowUp:[0,-1], w:[0,-1], ArrowDown:[0,1], s:[0,1]}[e.key];
@@ -63,10 +98,13 @@ A.register('sokoban', { mount(host, api){
       const X = ox + P.x*S, Y = oy + P.y*S; g.fillStyle = '#DD8B03'; g.beginPath(); g.arc(X+S/2, Y+S/2, S*.36, 0, TAU); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(X+S*.4, Y+S*.42, S*.08, 0, TAU); g.arc(X+S*.6, Y+S*.42, S*.08, 0, TAU); g.fill(); g.fillStyle = '#121313'; g.beginPath(); g.arc(X+S*.4, Y+S*.44, S*.04, 0, TAU); g.arc(X+S*.6, Y+S*.44, S*.04, 0, TAU); g.fill(); }
     g.fillStyle = '#fff'; g.font = '700 16px '+A.font; g.textAlign = 'left'; g.fillText('Level '+(lvl+1)+'/'+LV.length+'   Moves '+(moves||0), 12, 26); g.textAlign = 'right'; g.fillText((score||0).toLocaleString(), w-12, 26);
     ['↶ Undo (Z)','⟲ Restart (R)','🏁 Finish & cash in'].forEach((tx, i) => { g.fillStyle = 'rgba(255,255,255,.12)'; rr(g, 8 + i*w/3, h-42, w/3-16, 34, 10); g.fill(); g.fillStyle = '#fff'; g.font = '700 13px '+A.font; g.textAlign = 'center'; g.fillText(tx, i*w/3 + w/6, h-20); });
+    if (hintMark && map) { const S = cellSize(), ox = (w - map[0].length*S)/2, oy = 50, X = ox + hintMark.x*S + S/2, Y = oy + hintMark.y*S + S/2; g.strokeStyle = '#F9BF01'; g.lineWidth = 4; g.strokeRect(X - S/2 + 2, Y - S/2 + 2, S - 4, S - 4);
+      g.fillStyle = '#F9BF01'; g.beginPath(); const ax = X + hintMark.dx*S*.75, ay = Y + hintMark.dy*S*.75; g.moveTo(ax + hintMark.dx*10, ay + hintMark.dy*10); g.lineTo(ax - hintMark.dy*9, ay + hintMark.dx*9); g.lineTo(ax + hintMark.dy*9, ay - hintMark.dx*9); g.fill(); }
+    if (hintT > 0) { hintT -= 1/60; g.fillStyle = 'rgba(0,0,0,.75)'; rr(g, 10, h - 84, w - 20, 34, 10); g.fill(); g.fillStyle = '#F9BF01'; g.textAlign = 'center'; let fs = 14; do { g.font = '700 ' + fs + 'px '+A.font; fs--; } while (fs > 9 && g.measureText(hintMsg).width > w - 36); g.fillText(hintMsg, w/2, h - 62); }
     if (st == 'ready') A.overlayText(g, w, h, 'CRATE CAMP', __skip ? 'Saved game · tap or press Space to continue' : (startLvl() > 0 ? 'Tap to continue from level '+(startLvl()+1)+' · press 1 to start at level 1' : 'Push every crate onto a red circle · arrows / WASD or swipe · tap to start'));
     if (st == 'over') A.overlayText(g, w, h, solved >= LV.length ? 'ALL CRATES CAMPED!' : 'NICE PUSHING', (score||0).toLocaleString()+' points · '+solved+' levels · tap to play again'); });
   const inside = (x, y) => { let l = false, r2 = false; for (let i = 0; i < x; i++) if (map[y][i] == '#') l = true; for (let i = x+1; i < map[y].length; i++) if (map[y][i] == '#') r2 = true; return l && r2; };
-  load();
+  load(); A._dbg = A._dbg || {}; A._dbg.crate = { s: () => ({st, lvl, moves, left: map ? map.flat().filter(c2 => c2 == '$').length : -1, busy: hintBusy, msg: hintMsg}), hint: () => runHint(false), solve: () => solveFrom(map, P, 250000), go: n => { lvl = n; st = 'play'; load(); }, move: (dx, dy) => move(dx, dy) };
   // ---- save & resume (Save & leave, reloads, closing the browser) ----
   api.snap && api.snap(() => (st == 'play') ? {v:1, lvl, score, solved, map, P, moves} : null);
   { const R0 = api.resume; if (R0 && R0.v == 1) { try { ({lvl, score, solved, map, P, moves} = R0); hist = []; api.score(score); { const f = map.flat(), cr = f.filter(c2 => c2 == '$' || c2 == '*').length, tg = f.filter(c2 => c2 == '.' || c2 == '*').length; if (cr != tg || !LV[lvl]) { lvl = Math.min(lvl, LV.length-1); load(); } } __skip = true; st = 'ready'; } catch(e) { console.error('[save] sokoban resume failed', e); } } }
