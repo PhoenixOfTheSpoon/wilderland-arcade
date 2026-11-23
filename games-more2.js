@@ -377,6 +377,7 @@ A.register('fishing', { mount(host, api){
   let bookC = null; const book = () => { if (bookC) return bookC; let loc = {}; try { loc = JSON.parse(localStorage.getItem('wl-fishbook') || '{}'); } catch(e){} const sv = (api.gdata && api.gdata().book) || {}; bookC = {...loc}; for (const k in sv) bookC[k] = Math.max(bookC[k]||0, sv[k]); return bookC; };
   const G = Object.assign({coins:0, upg:{}, loc:'lake', locs:{lake:1}, best:0, deepest:0, pearls:0, run:0, tot:0, dives:0, caught:0}, (api.gdata && api.gdata().fg) || {});
   const UL = k => G.upg[k] || 0;
+  const spd = k => Math.max(10, Math.min(100, G[k] == null ? 100 : G[k])) / 100;   // speed sliders: 10–100% of your upgraded speed
   const skipMax = () => Math.min(80, 8*UL('drop')), skipPct = () => G.skip == null ? skipMax() : Math.max(0, Math.min(skipMax(), G.skip));
   const save = () => { try { api.setGdata && api.setGdata({book:book(), fg:G}); } catch(e){} try { localStorage.setItem('wl-fishbook', JSON.stringify(book())); } catch(e){} };
   const LOC = () => LOCS.find(L => L.k == G.loc) || LOCS[0];
@@ -438,12 +439,21 @@ A.register('fishing', { mount(host, api){
   skipIn.addEventListener('pointerdown', e => e.stopPropagation()); skipIn.addEventListener('keydown', e => e.stopPropagation());
   skipIn.addEventListener('input', () => { G.skip = +skipIn.value; skipTx.textContent = skipIn.value + '% · ' + fmt(Math.floor(lineM(UL('line')) * skipPct() / 100)) + ' m'; });
   skipIn.addEventListener('change', () => { save(); skipIn.blur(); });
+  // speed sliders: how fast the hook sinks and reels (10–100% of what your upgrades give)
+  const speedSlider = (key, label, fn) => { const box = el('label', {display:'flex', alignItems:'center', gap:'6px', background:'rgba(1,86,64,.12)', borderRadius:'999px', padding:'4px 12px', font:'700 13px '+A.font, color:'#015640'});
+    const inp = el('input', {width:'100px', accentColor:'#00B451'}); inp.type = 'range'; inp.min = 10; inp.max = 100; inp.step = 5; inp.tabIndex = -1; const tx = el('span', {minWidth:'92px'});
+    const show = () => { inp.value = Math.round(spd(key)*100); tx.textContent = inp.value + '% · ' + fmt(fn() * spd(key)) + ' m/s'; };
+    box.appendChild(el('span', {}, label)); box.appendChild(inp); box.appendChild(tx); bar.appendChild(box);
+    inp.addEventListener('pointerdown', e => e.stopPropagation()); inp.addEventListener('keydown', e => e.stopPropagation());
+    inp.addEventListener('input', () => { G[key] = +inp.value; show(); }); inp.addEventListener('change', () => { save(); inp.blur(); }); return {box, show}; };
+  const sinkSl = speedSlider('sinkPct', '⬇ Sink', () => sinkV(UL('sink'))), reelSl = speedSlider('reelPct', '⬆ Reel', () => reelV(UL('reel')));
   // Ghost Lure: choose which fish your hook ignores on the way down (up to what your upgrade allows)
   const ghostBox = el('div', {display:'none', alignItems:'center', gap:'4px', background:'rgba(1,86,64,.12)', borderRadius:'999px', padding:'4px 8px', font:'700 13px '+A.font, color:'#015640', flexWrap:'wrap'});
   bar.appendChild(ghostBox);
   const drawGhost = () => { ghostBox.innerHTML = ''; ghostBox.appendChild(el('span', {padding:'0 4px'}, '👻 Ignore')); const mx = Math.min(3, UL('ghost')), cur = ghostTier();
     ['Off', 'Common', '≤ Uncommon', '≤ Rare'].slice(0, mx + 1).forEach((n, k) => { const b = mk(n, () => { G.ghostSel = k; save(); drawGhost(); }, cur == k ? '#015640' : 'transparent', cur == k ? '#fff' : '#015640'); b.style.padding = '4px 9px'; b.style.fontSize = '12px'; if (cur != k) b.style.border = '1.5px solid rgba(1,86,64,.35)'; ghostBox.appendChild(b); }); };
   function refreshBar(){ const dive = st == 'play' && (phase == 'drop' || phase == 'reel'); [bUp, bSpot, bPearl].forEach(b => b.style.display = dive ? 'none' : ''); bReel.style.display = st == 'play' && phase == 'drop' ? '' : 'none';
+    [sinkSl, reelSl].forEach(o => { o.box.style.display = dive ? 'none' : 'flex'; o.show(); });
     ghostBox.style.display = UL('ghost') > 0 && !dive ? 'flex' : 'none'; if (UL('ghost') > 0) drawGhost();
     const sm = skipMax(); skipBox.style.display = sm > 0 && !dive ? 'flex' : 'none'; if (sm > 0) { skipIn.max = sm; skipIn.value = skipPct(); skipTx.textContent = skipPct() + '% · ' + fmt(Math.floor(lineM(UL('line')) * skipPct() / 100)) + ' m'; } }
   function closePanel(){ if (panel) { panel.remove(); panel = null; } armPearl = false; try { refreshBar(); } catch(e){} }
@@ -547,14 +557,14 @@ A.register('fishing', { mount(host, api){
       if (kx) { tx = null; hx += kx * sp * dt; } else if (tx != null) { const dx = tx - hx; hx += Math.sign(dx) * Math.min(Math.abs(dx), sp*dt); } hx = clamp(hx, 14, W - 14);
       for (const o of fish) { if (o.dead) continue; const y = sy(o.d); if (y < -200 || y > H + 200) continue; o.x += o.vx * dt; if (o.x < -30) o.x = W + 30; if (o.x > W + 30) o.x = -30; }
       const prevD = hd;
-      if (phase == 'drop') { hd += sinkV(UL('sink')) * dt; gen(hd + 160);
+      if (phase == 'drop') { hd += sinkV(UL('sink')) * spd('sinkPct') * dt; gen(hd + 160);
         const z = zoneOf(hd); if (z != lastZone) { if (lastZone >= 0 || z > 0) { zoneShow = zoneName(hd) + ' · ' + fmt(ZONES[z].d) + ' m'; zoneT = 2; } lastZone = z; }
         if (hd >= 2000 && layerOf(hd) != layerOf(prevD)) { zoneShow = zoneName(hd); zoneT = 2; A.sfx('blip'); }
         for (const o of fish) { if (o.dead || o.jelly || o.passed) continue; if (o.d < prevD - 3 || o.d > hd + 3) continue; if (Math.abs(o.x - hx) < o.f.s + 7) {
             if (ghosty(o)) { o.passed = true; continue; }
             o.passed = true; if (caught.length < capN()) { catchIt(o); say('Hooked a ' + o.f.n + ' on the way down' + (caught.length >= capN() ? ' · hook full!' : ''), 1.2); } } }
         if (phase == 'drop' && hd >= maxD) { hd = maxD; startReel('End of the line! Reel up and grab fish'); } }
-      else if (phase == 'reel') { const full = caught.length >= capN(), turbo = full || hd < skipD ? 4 : 1; hd -= reelV(UL('reel')) * turbo * dt;
+      else if (phase == 'reel') { const full = caught.length >= capN(), turbo = full || hd < skipD ? 4 : 1; hd -= reelV(UL('reel')) * spd('reelPct') * turbo * dt;
         if (!full) for (const o of fish) { if (o.dead) continue; if (o.d > prevD + 4 || o.d < hd - 4) continue; const rad = (o.jelly ? 12 : o.f.s) + 8 + 3*UL('magnet');
           if (Math.abs(o.x - hx) < rad && Math.abs(o.d*PXM - hd*PXM) < rad + Math.abs(prevD - hd)*PXM) {
             if (o.jelly) { o.dead = true; if (shieldN > 0) { shieldN--; A.tone(900, .06, 'sine', .04); say('Jelly Guard blocked a sting!', 1.2); continue; } if (!caught.length) { A.sfx('bad'); continue; }
