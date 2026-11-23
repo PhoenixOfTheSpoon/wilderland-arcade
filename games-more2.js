@@ -205,7 +205,7 @@ A.register('fishing', { mount(host, api){
     {k:'steer', n:'Quick Steer', d:L => 'Hook moves '+(100+10*L)+'% → '+(110+10*L)+'% as fast', b:25, gr:1.32, max:20},
     {k:'luck', n:'Lucky Lure', d:L => 'Rare & Epic fish +'+(12*L)+'% → +'+(12*L+12)+'%', b:50, gr:1.42},
     {k:'magnet', n:'Magnet Hook', d:L => 'Grab fish from '+(3*L)+' → '+(3*L+3)+' px farther away', b:80, gr:1.5, max:15},
-    {k:'ghost', n:'Ghost Lure', d:L => 'Slip past '+L+' → '+(L+1)+' fish on the way down', b:100, gr:1.6},
+    {k:'ghost', n:'Ghost Lure', d:L => 'Slip past '+L+' → '+(L+1)+' fish on the way down (saves hook space for deep fish)', b:100, gr:1.6},
     {k:'shield', n:'Jelly Guard', d:L => 'Block '+L+' → '+(L+1)+' jellyfish stings per dive', b:120, gr:1.55},
     {k:'gold', n:'Golden Bait', d:L => 'Golden fish (×5): '+goldP(L).toFixed(1)+'% → '+goldP(L+1).toFixed(1)+'%', b:150, gr:1.45, max:40},
     {k:'combo', n:'Combo Charm', d:L => 'Each fish in a row adds +'+(10+4*L)+'% → +'+(14+4*L)+'%', b:90, gr:1.45},
@@ -260,9 +260,10 @@ A.register('fishing', { mount(host, api){
     A.sfx(caught.length ? 'win' : 'blip'); if (news.length) setTimeout(() => A.sfx('coin'), 300); };
   const toSurface = () => { phase = 'surface'; tally = null; refreshBar(); };
   const press = () => { if (quiz) return; if (st != 'play') { reset(); st = 'play'; refreshBar(); return; }
-    if (phase == 'surface') startDive(); else if (phase == 'drop') startReel('Reeling in early'); else if (phase == 'tally') toSurface(); };
+    if (phase == 'surface') startDive(); else if (phase == 'tally') toSurface(); };
   const reset = () => { if (__skip) { __skip = false; return; } score = 0; api.score(0); phase = 'surface'; tally = null; caught = []; };
   const offK = A.keys(e => { if (panel && e.key == 'Escape') { closePanel(); return; } if (e.key == ' ' || e.key == 'Enter') { if (!panel) press(); }
+    if ((e.key == 'q' || e.key == 'Q') && st == 'play' && phase == 'drop' && !quiz) startReel('Coming up!');
     if ((e.key == 'u' || e.key == 'U') && phase == 'surface' && st == 'play') openPanel('up'); if ((e.key == 'b' || e.key == 'B') && st == 'play') openPanel('book'); });
   const toX = e => { const r = c.getBoundingClientRect(); return (e.clientX - r.left) * W / r.width; };
   c.addEventListener('pointerdown', e => { ptrDown = true; tx = toX(e); try { c.setPointerCapture(e.pointerId); } catch(_){} if (st != 'play' || phase == 'surface' || phase == 'tally') press(); });
@@ -272,7 +273,7 @@ A.register('fishing', { mount(host, api){
   // ---------- buttons + panels (shop, spots, book, pearls) ----------
   const bar = el('div', {display:'flex', gap:'6px', padding:'6px 0 0', flexWrap:'wrap', justifyContent:'center'}); wrap.appendChild(bar);
   const mk = (txt, fn, bg, fg) => { const b = el('button', {background:bg||'#015640', color:fg||'#fff', border:'none', borderRadius:'999px', padding:'8px 12px', font:'700 13px '+A.font, cursor:'pointer'}, txt); b.tabIndex = -1; b.onclick = e => { e.stopPropagation(); b.blur(); fn(); }; return b; };
-  const bUp = mk('🛒 Upgrades', () => openPanel('up')), bSpot = mk('🗺 Spots', () => openPanel('spot')), bBook = mk('📖 Fish Book', () => openPanel('book')), bPearl = mk('🦪 Pearls', () => openPanel('pearl')), bReel = mk('⏫ Reel in now', () => startReel('Reeling in early'), '#FF4539');
+  const bUp = mk('🛒 Upgrades', () => openPanel('up')), bSpot = mk('🗺 Spots', () => openPanel('spot')), bBook = mk('📖 Fish Book', () => openPanel('book')), bPearl = mk('🦪 Pearls', () => openPanel('pearl')), bReel = mk('⏫ Come up now · Q', () => startReel('Coming up!'), '#FF4539');
   [bUp, bSpot, bBook, bPearl, bReel].forEach(b => bar.appendChild(b));
   function refreshBar(){ const dive = st == 'play' && (phase == 'drop' || phase == 'reel'); [bUp, bSpot, bPearl].forEach(b => b.style.display = dive ? 'none' : ''); bReel.style.display = st == 'play' && phase == 'drop' ? '' : 'none'; }
   function closePanel(){ if (panel) { panel.remove(); panel = null; } armPearl = false; }
@@ -361,7 +362,7 @@ A.register('fishing', { mount(host, api){
     if (zoneT > 0) { g.globalAlpha = Math.min(1, zoneT); g.fillStyle = 'rgba(0,0,0,.5)'; rr(g, W/2 - 140, 70, 280, 38, 12); g.fill(); g.fillStyle = '#D5F367'; g.font = '800 17px '+A.font; g.textAlign = 'center'; g.fillText(zoneShow, W/2, 95); g.globalAlpha = 1; }
     if (msgT > 0) { g.fillStyle = 'rgba(0,0,0,.6)'; rr(g, W/2 - 170, H - 90, 340, 36, 12); g.fill(); g.fillStyle = '#fff'; g.font = '700 15px '+A.font; g.textAlign = 'center'; g.fillText(msg, W/2, H - 66); }
     if (st == 'play' && phase == 'surface') { g.fillStyle = 'rgba(0,0,0,.5)'; rr(g, W/2 - 175, SURF + 60, 350, 62, 14); g.fill(); g.fillStyle = '#fff'; g.font = '800 18px '+A.font; g.textAlign = 'center'; g.fillText('Tap to drop your hook ⬇', W/2, SURF + 86);
-      g.font = '500 12px '+A.font; g.fillStyle = '#cfe3d9'; g.fillText('Dodge fish going down · grab them coming up · ' + LOC().n, W/2, SURF + 108); }
+      g.font = '500 12px '+A.font; g.fillStyle = '#cfe3d9'; g.fillText('Fish you touch get hooked · Q to come up early · ' + LOC().n, W/2, SURF + 108); }
     if (phase == 'tally' && tally) { g.fillStyle = 'rgba(1,40,30,.9)'; rr(g, 40, 120, W - 80, 330, 16); g.fill(); g.textAlign = 'center'; g.fillStyle = '#D5F367'; g.font = '800 22px '+A.font; g.fillText(tally.n ? 'Catch of the dive!' : 'Nothing this time', W/2, 156);
       g.fillStyle = '#F9BF01'; g.font = '800 26px '+A.font; g.fillText('+🪙 ' + fmt(tally.coins), W/2, 194); g.fillStyle = '#fff'; g.font = '700 14px '+A.font; g.fillText('+' + fmt(tally.pts) + ' points · ' + tally.n + ' fish', W/2, 218);
       const cnt = {}; tally.list.forEach(x => { const k = x.f.n + (x.gold ? ' ✨' : ''); cnt[k] = (cnt[k]||0) + 1; }); g.font = '600 13px '+A.font; Object.entries(cnt).slice(0, 7).forEach(([n, k], i) => { g.fillStyle = '#e8f4ff'; g.fillText(n + (k > 1 ? ' ×' + k : ''), W/2, 246 + i*20); });
@@ -383,7 +384,7 @@ A.register('fishing', { mount(host, api){
         if (hd >= 2000 && layerOf(hd) != layerOf(prevD)) { zoneShow = zoneName(hd); zoneT = 2; A.sfx('blip'); }
         for (const o of fish) { if (o.dead || o.jelly || o.passed) continue; if (o.d < prevD - 3 || o.d > hd + 3) continue; if (Math.abs(o.x - hx) < o.f.s + 7) {
             if (ghostN > 0) { ghostN--; o.passed = true; flash = .25; A.tone(700, .06, 'sine', .04); continue; }
-            catchIt(o); startReel('Snagged a ' + o.f.n + '! Reeling up'); break; } }
+            o.passed = true; if (caught.length < capN()) { catchIt(o); say('Hooked a ' + o.f.n + ' on the way down' + (caught.length >= capN() ? ' · hook full!' : ''), 1.2); } } }
         if (phase == 'drop' && hd >= maxD) { hd = maxD; startReel('End of the line! Reel up and grab fish'); } }
       else if (phase == 'reel') { const full = caught.length >= capN(), turbo = full || hd < skipD ? 4 : 1; hd -= reelV(UL('reel')) * turbo * dt;
         if (!full) for (const o of fish) { if (o.dead) continue; if (o.d > prevD + 4 || o.d < hd - 4) continue; const rad = (o.jelly ? 12 : o.f.s) + 8 + 3*UL('magnet');
