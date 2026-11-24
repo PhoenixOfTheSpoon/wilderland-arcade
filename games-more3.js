@@ -513,9 +513,9 @@ A.register('snowball', { mount(host, api){
     balls = []; drops = []; builds = []; mates = []; fx = []; nums = []; score = 0; wave = 0; flakes = 20 + 15*PU('stash'); arena = mode == 'daily' ? today() % 4 : 0; pw = {icy:0, mega:0, rapid:0, shield:0}; boss = null; bossesBeat = 0; builtN = 0; combo = 0;
     walls = [{x:150, y:476, w:80, h:24, hp:wallHp('snow'), max:wallHp('snow'), mine:1, kind:'snow'}, {x:370, y:476, w:80, h:24, hp:wallHp('snow'), max:wallHp('snow'), mine:1, kind:'snow'}];
     for (let i = 0; i < Math.min(4, A.U('mate') + PU('mates')); i++) addMate(['thrower', 'builder', 'medic'][i % 3]);
-    st = 'play'; nextWave(); api.score(0); };
+    rewarded = false; st = 'play'; nextWave(); api.score(0); };
   const addMate = role => { if (mates.length >= 4) return false; const lv = 1 + PU('captain'); mates.push({name:MATE_NAMES[(mates.length + wave) % MATE_NAMES.length], role, lv, xp:0, x:80 + mates.length*140, y:PY + 6, hp:2 + lv, max:2 + lv, ko:false, rev:0, cool:1 + Math.random(), tx:0, duck:false, job:0}); return true; };
-  const spawn = (k, x, y) => { const T = TYPES[k], hp = T.hp + Math.floor(wave/6); foes.push({k, x: x == null ? 60 + R()*480 : x, y: y == null ? 40 + R()*140 : y, hp, max:hp, cool:1 + R()*2, tx:0, ty:0, rt:0, slow:0, kb:0, kx:0, duck:false, dt:0, act:0}); };
+  const spawn = (k, x, y) => { const T = TYPES[k], hp = T.hp + Math.floor(wave/5) + Math.max(0, Math.floor((wave - 20)/2)); foes.push({k, x: x == null ? 60 + R()*480 : x, y: y == null ? 40 + R()*140 : y, hp, max:hp, cool:1 + R()*2, tx:0, ty:0, rt:0, slow:0, kb:0, kx:0, duck:false, dt:0, act:0}); };
   const bossFor = wv => mode == 'rush' ? ['yeti', 'plow', 'witch', 'dragon'][(wv - 1) % 4] : wv % 20 == 0 ? 'dragon' : ['yeti', 'plow', 'witch'][(wv/5 - 1) % 3];
   const nextWave = () => { wave++; foes = []; balls = []; phase = 'fight'; waveHurt = false; haz = null; hazT = 4 + R()*4;
     if (me && wave > 1 && PU('thermos')) me.hp = Math.min(me.max, me.hp + PU('thermos')); if (PU('shield')) pw.shield = 1;
@@ -527,7 +527,7 @@ A.register('snowball', { mount(host, api){
     if (isBoss) { const k = bossFor(wave), B = BOSSES[k], sc = (1 + (wave/5 - 1)*.45) * A.D(.8, 1, 1.25) * (mode == 'rush' ? .7 + wave*.15 : 1);
       boss = {k, n:B.n, x:300, y:k == 'dragon' ? 118 : 100, hp:B.hp*sc, max:B.hp*sc, cool:2, vx:90, charge:0, col:B.col, ph:1, tp:0, kb:0}; say(B.n + ' appears!', 3); A.sfx('bad');
       for (let i = 0; i < 1 + Math.floor(wave/10); i++) spawn('thrower'); return; }
-    const n = Math.min(12, 2 + Math.floor(wave*.8)), pool = ['thrower', 'thrower'];
+    const n = Math.min(12 + Math.floor(Math.max(0, wave - 15)/3), 22, 2 + Math.floor(wave*.8)), pool = ['thrower', 'thrower'];
     if (wave >= 2) pool.push('fast'); if (wave >= 3) pool.push('builder', 'sniper'); if (wave >= 4) pool.push('golem', 'flanker', 'sledder'); if (wave >= 6) pool.push('medic', 'iceman'); if (wave >= 8) pool.push('catapult', 'fast', 'flanker', 'golem'); if (wave >= 12) pool.push('catapult', 'sniper', 'iceman');
     for (let i = 0; i < n; i++) spawn(pool[Math.floor(R()*pool.length)]); };
   // ---------- throwing ----------
@@ -558,7 +558,10 @@ A.register('snowball', { mount(host, api){
   const hurtMe = (dmg, ice) => { if (!me || me.inv > 0 || me.roll > 0 || me.shieldT > 0 || A.immortal) return; if (pw.shield > 0) { pw.shield = 0; me.inv = .6; A.tone(900,.1,'sine',.05); return; }
     me.hp -= dmg; me.inv = .8; me.hitT = .3; waveHurt = true; shake = Math.max(shake, .15); A.sfx('bad'); if (ice) { me.freeze = 1 * (1 - Math.min(.8, .12*gStat('scarf'))); if (me.freeze > .25) say('🥶 Frozen for a moment!', 1.2); }
     if (me.hp <= 0) { quiz = learn2(host, api, 'SPLAT! ANSWER TO SHAKE OFF THE SNOW', () => { quiz = false; me.hp = Math.ceil(me.max/2); me.inv = 2; }, () => { quiz = false; gameOver(); }); } };
-  const gameOver = () => { st = 'over'; A.sfx('over'); stat(api,'snowWave',wave,'max'); const cr = Math.floor(wave*1.5 + bossesBeat*5); PERM.cr += cr; PERM.bank += Math.floor(flakes/2); PERM.best = Math.max(PERM.best, wave); savePerm(); say('+' + cr + ' 🧊 ice crystals for permanent upgrades', 5); api.over(score); };
+  let rewarded = false;
+  const endRewards = () => { if (rewarded) return 0; rewarded = true; stat(api,'snowWave',wave,'max'); const cr = Math.floor(wave*1.5 + bossesBeat*5); PERM.cr += cr; PERM.bank += Math.floor(flakes/2); PERM.best = Math.max(PERM.best, wave); savePerm(); return cr; };
+  A.onCash = A.onCash || {}; A.onCash.snowball = () => { if (st == 'play' && wave > 0) { const cr = endRewards(); A.toast && A.toast('+' + cr + ' ice crystals · +' + Math.floor(flakes/2) + ' banked snowflakes'); } };
+  const gameOver = () => { st = 'over'; A.sfx('over'); const cr = endRewards(); say('+' + cr + ' 🧊 ice crystals for permanent upgrades', 5); api.over(score); };
   const addNum = (x, y, txt, col) => { if (nums.length < 40) nums.push({x, y, txt, col:col || '#14204a', t:1}); };
   const splat = (x, y, n, col) => { const k = low() ? Math.ceil(n/3) : n; for (let i = 0; i < k; i++) fx.push({x, y, vx:(Math.random() - .5)*160, vy:(Math.random() - .8)*140, t:.5 + Math.random()*.3, col:col || '#ffffff', r:1.5 + Math.random()*2.5}); };
   const killFoe = f => { if (f.dead) return; f.dead = 1; const T = TYPES[f.k]; score += T.pts + wave*10; flakes += 10; api.score(score); splat(f.x, f.y, 14);
@@ -575,9 +578,13 @@ A.register('snowball', { mount(host, api){
   const PLACE = ['wall', 'fort', 'turret', 'pit', 'ice', 'fire', 'upgrade', 'remove']; let placed = [], freeTrap = {};   // what you built this break, newest last (for Undo); the Trapper's free pit + ice each break
   const toolCost = k => (PERM.cls == 'builder' && ['wall', 'fort', 'turret', 'pit', 'ice', 'fire', 'upgrade'].includes(k) ? .7 : 1) * (PERM.cls == 'trapper' && freeTrap[k] ? 0 : 1) * toolCost0(k);
   const toolCost0 = k => k == 'repair' ? walls.filter(W2 => W2.mine).reduce((a, W2) => a + Math.ceil(W2.max - W2.hp), 0) * 2 : k == 'mate' ? (mates.length >= 4 ? Infinity : 40 + mates.length*40) : (TOOLS.find(T2 => T2.k == k) || {cost:0}).cost;
+  // the wall under your finger: one whose box contains the tap wins (the last drawn is on top), otherwise the nearest one close by
+  const pickWall = (x, y) => { let best = null, bd = 1e9; walls.forEach((W3, i) => { if (!W3.mine || W3.hp <= 0) return; const dx = Math.max(W3.x - x, 0, x - (W3.x + W3.w)), dy = Math.max(W3.y - y, 0, y - (W3.y + W3.h)), d = Math.hypot(dx, dy) - i*1e-6; if (d < 30 && d < bd) { bd = d; best = W3; } }); return best; };
+  const CAPS = {wall:12, fort:12, turret:6, pit:6, ice:6};
+  const capN = k => k == 'wall' || k == 'fort' ? walls.filter(W3 => W3.mine).length : builds.filter(B3 => B3.k == k).length;
   const useTool = (k, x, y) => { if (k == 'go') { placed = []; nextWave(); return; } const cost = toolCost(k);
     if (k == 'undo') { const last = placed.pop(); if (!last) return say('Nothing to undo'); if (last.up) { last.ref.kind = last.up.kind; last.ref.max = last.up.max; last.ref.hp = Math.min(last.ref.hp, last.ref.max); } else { walls = walls.filter(W2 => W2 !== last.ref); builds = builds.filter(B2 => B2 !== last.ref); } flakes += last.cost; A.sfx('blip'); say('↩ Undone · +' + last.cost + ' ❄ back', 1.4); return; }
-    if (k == 'remove') { y = y == null ? me.y - 60 : y; x = x == null ? me.x : x; const W2 = walls.find(W3 => W3.mine && x > W3.x - 10 && x < W3.x + W3.w + 10 && Math.abs(y - (W3.y + W3.h/2)) < 40), B2 = !W2 && builds.slice().sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y)).find(B3 => Math.hypot(B3.x - x, B3.y - y) < 44);
+    if (k == 'remove') { y = y == null ? me.y - 60 : y; x = x == null ? me.x : x; const W2 = pickWall(x, y), B2 = !W2 && builds.slice().sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y)).find(B3 => Math.hypot(B3.x - x, B3.y - y) < 44);
       const it = W2 || B2; if (!it) return say('Tap one of your walls or buildings to remove it'); const was = placed.find(p2 => p2.ref === it && !p2.up); const back = was ? was.cost : Math.floor(((TOOLS.find(T2 => T2.k == (W2 ? (W2.fort ? 'fort' : 'wall') : B2.k)) || {cost:10}).cost) / 2);
       walls = walls.filter(W3 => W3 !== it); builds = builds.filter(B3 => B3 !== it); placed = placed.filter(p2 => p2.ref !== it); flakes += back; A.sfx('blip'); say('🗑 Removed · +' + back + ' ❄ back', 1.4); return; }
     if (k == 'role') { const m = mates.find(m2 => !m2.ko && m2.role == 'thrower') || mates[0]; if (!m) return say('Hire a teammate first'); const order = ['thrower', 'builder', 'medic']; m.role = order[(order.indexOf(m.role) + 1) % 3]; say(m.name + ' is now a ' + m.role, 1.6); return; }
@@ -585,8 +592,9 @@ A.register('snowball', { mount(host, api){
     if (k == 'repair') { if (!cost) return say('Your walls are fine!'); walls.forEach(W2 => { if (W2.mine) W2.hp = W2.max; }); }
     else if (k == 'cocoa') { if (me.hp >= me.max) return say('Your hearts are full!'); me.hp = Math.min(me.max, me.hp + 1); say('☕ Warm cocoa: +1 heart', 1.4); }
     else if (k == 'mate') { const role = ['thrower', 'builder', 'medic'][mates.length % 3]; addMate(role); say('Hired ' + mates[mates.length - 1].name + ' the ' + role + '!', 2); }
-    else { y = Math.max(MID + 30, Math.min(PY - 50, y)); x = Math.max(30, Math.min(570, x));
-      if (k == 'upgrade') { const W2 = walls.find(W3 => W3.mine && x > W3.x - 10 && x < W3.x + W3.w + 10 && Math.abs(y - (W3.y + W3.h/2)) < 40); if (!W2) return say('Tap one of your walls to upgrade it'); if (W2.kind == 'reinforced') return say('That wall is already reinforced!');
+    else { const x0 = x, y0 = y; y = Math.max(MID + 30, Math.min(PY - 50, y)); x = Math.max(30, Math.min(570, x));
+      if (CAPS[k] && capN(k) >= CAPS[k]) { A.sfx('bad'); return say('Max ' + CAPS[k] + ' ' + (k == 'wall' || k == 'fort' ? 'walls and forts' : k == 'turret' ? 'turrets' : k == 'pit' ? 'trap pits' : 'ice patches') + '! Upgrade or remove one to build more', 2.2); }
+      if (k == 'upgrade') { const W2 = pickWall(x0, y0); if (!W2) return say('Tap one of your walls to upgrade it'); if (W2.kind == 'reinforced') return say('That wall is already reinforced!');
         placed.push({ref:W2, cost, up:{kind:W2.kind, max:W2.max}}); W2.kind = W2.kind == 'snow' ? 'ice' : 'reinforced'; const m = wallHp(W2.kind); W2.max = W2.fort ? m*1.5 : m; W2.hp = W2.max; say('Upgraded to ' + (W2.kind == 'ice' ? 'an ice wall' : 'a reinforced wall') + '!', 1.6); }
       else if (k == 'wall') { walls.push({x:x - 40, y:y - 12, w:80, h:24, hp:wallHp('snow'), max:wallHp('snow'), mine:1, kind:'snow'}); placed.push({ref:walls[walls.length - 1], cost}); }
       else if (k == 'fort') { walls.push({x:x - 60, y:y - 14, w:120, h:28, hp:wallHp('snow')*1.5, max:wallHp('snow')*1.5, mine:1, kind:'snow', fort:1}); placed.push({ref:walls[walls.length - 1], cost}); }
@@ -611,7 +619,9 @@ A.register('snowball', { mount(host, api){
         const nx = Math.pow(clsLv(k), 2)*60; r.appendChild(el('div', {font:'600 11px '+A.font, color:'#9fe8ff'}, 'Class XP ' + clsXp(k) + (clsLv(k) < 30 ? ' / ' + nx + ' for the next level' : ' (max level)') + ' · ' + skFree(k) + ' skill point' + (skFree(k) == 1 ? '' : 's') + ' to spend'));
         const tr = el('div', {display:'flex', gap:'6px', flexWrap:'wrap'}); BRANCH[k].forEach((bn, bi) => { const rk = skR(k, bi), can = skFree(k) > 0 && rk < 3; const b = B(bn + ' ' + '●'.repeat(rk) + '○'.repeat(3 - rk), () => { if (!can) { A.sfx('bad'); return; } PERM.sk[k] = PERM.sk[k] || {}; PERM.sk[k][bi] = rk + 1; savePerm(); A.sfx('coin'); openPanel('class'); }, can ? '#3f8fd8' : 'rgba(255,255,255,.1)'); b.title = ['+8% snowball damage per rank', 'Ability comes back 10% sooner per rank', '+1 heart per rank'][bi]; tr.appendChild(b); }); r.appendChild(tr);
         r.appendChild(el('div', {font:'500 11px '+A.font, color:'#8fb9c9'}, 'Branches: ' + BRANCH[k][0] + ' +8% damage · ' + BRANCH[k][1] + ' −10% ability cooldown · ' + BRANCH[k][2] + ' +1 heart (each up to 3 ranks)')); }); }
-    if (tab == 'loadout') { const r0 = card(); r0.appendChild(el('div', {font:'800 15px '+A.font, color:'#D5F367'}, '❄ ' + PERM.frost + ' Frost Crystals · ' + PERM.bank + ' banked snowflakes (half of what you have left at the end of each game)'));
+    if (tab == 'loadout') { const r0 = card(); r0.appendChild(el('div', {font:'800 15px '+A.font, color:'#D5F367'}, '❄ ' + PERM.frost + ' Frost Crystals · ' + PERM.bank + ' banked snowflakes (half of what you have left at the end of each game) · 🧊 ' + PERM.cr + ' ice crystals'));
+      const cr0 = el('div', {display:'flex', gap:'6px', alignItems:'center', flexWrap:'wrap'}); const inp = el('input', {flex:'1', minWidth:'140px', padding:'7px 10px', borderRadius:'999px', border:'none', font:'700 13px '+A.font}); inp.placeholder = 'Have a reward code?'; inp.addEventListener('keydown', e => e.stopPropagation());
+      const cmsg = el('div', {font:'600 12px '+A.font, color:'#9fe8ff'}); cr0.appendChild(inp); cr0.appendChild(B('Redeem', () => redeem(inp.value, m => { cmsg.textContent = m; }), '#00B451')); r0.appendChild(cr0); r0.appendChild(cmsg);
       const rb = card(); rb.appendChild(el('div', {font:'800 15px '+A.font}, 'Special snowball')); const bw = el('div', {display:'flex', gap:'6px', flexWrap:'wrap'}); rb.appendChild(bw);
       Object.keys(BALLS).forEach(k => { const BL = BALLS[k], have = PERM.balls[k], on = PERM.ball == k; const b = B(BL.e + ' ' + BL.n + (have ? '' : ' · ❄ ' + BL.cost), () => { if (!have) { if (PERM.frost < BL.cost) { A.sfx('bad'); return; } PERM.frost -= BL.cost; PERM.balls[k] = 1; } PERM.ball = k; savePerm(); A.sfx('coin'); openPanel('loadout'); }, on ? '#D5F367' : have ? '#3f8fd8' : 'rgba(255,255,255,.12)', on ? '#14204a' : '#fff'); b.title = BL.d; bw.appendChild(b); });
       rb.appendChild(el('div', {font:'500 12px '+A.font, color:'#cfe3f5'}, (BALLS[PERM.ball] || BALLS.snow).d));
@@ -622,6 +632,10 @@ A.register('snowball', { mount(host, api){
           row.appendChild(B(on ? 'Equipped' : 'Equip', () => { PERM.eq[sl] = it.id; savePerm(); openPanel('loadout'); }, on ? '#D5F367' : '#00B451', on ? '#14204a' : '#fff'));
           const can = PERM.bank >= uc.flakes && PERM.frost >= uc.frost && it.lv < 10; row.appendChild(B(it.lv >= 10 ? 'MAX' : 'Upgrade · ' + uc.flakes + '❄ + ' + uc.frost + ' crystals', () => { if (!can) { A.sfx('bad'); return; } PERM.bank -= uc.flakes; PERM.frost -= uc.frost; it.lv++; savePerm(); A.sfx('coin'); openPanel('loadout'); }, can ? '#3f8fd8' : 'rgba(255,255,255,.1)'));
           if (!on) row.appendChild(B('Salvage +' + (it.rar + 1) + ' crystals', () => { PERM.gear = PERM.gear.filter(x => x !== it); PERM.frost += it.rar + 1; savePerm(); openPanel('loadout'); }, 'rgba(255,255,255,.1)')); r.appendChild(row); }); }); } };
+  const CODES = {'3ebf1e1837e7cc2aea800115abcc82b95d7f865f2a2cd342b1589a4b8ec4f93c':{cr:62, bank:226, n:'the wave 25 run that cashed out without its rewards'}};
+  const redeem = async (code, show) => { try { const hb = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(code).trim().toLowerCase())), hx = [...new Uint8Array(hb)].map(b2 => b2.toString(16).padStart(2, '0')).join(''), RW = CODES[hx];
+      PERM.codes = PERM.codes || {}; if (!RW) { A.sfx('bad'); return show('That code doesn’t work.'); } if (PERM.codes[hx]) { A.sfx('bad'); return show('You already used that code.'); }
+      PERM.codes[hx] = 1; PERM.cr += RW.cr || 0; PERM.bank += RW.bank || 0; PERM.frost += RW.frost || 0; savePerm(); A.sfx('win'); show('🎉 +' + (RW.cr || 0) + ' ice crystals, +' + (RW.bank || 0) + ' banked snowflakes for ' + RW.n + '!'); setTimeout(() => panelEl && openPanel('loadout'), 1800); } catch(e) { show('Could not check the code here. Try again.'); } };
   const inBar = q => q.y > BAR;
   const barBtn = q => { const cols = phase == 'build' ? 7 : 5, row = phase == 'build' ? Math.floor((q.y - BAR) / 50) : 0, col = Math.floor(q.x / (600/cols)); return row*cols + col; };
   const MENU = [['endless', '♾ Endless Waves'], ['rush', '👑 Boss Rush'], ['daily', '📅 Daily Challenge'], ['class', '🎽 Class & skills'], ['loadout', '🎒 Loadout & gear'], ['up', '🧊 Upgrades'], ['guide', '❓ How to play']];
@@ -721,7 +735,7 @@ A.register('snowball', { mount(host, api){
         for (const B2 of builds) { if (B2.k == 'turret' && target) { B2.cool -= dt; if (B2.cool <= 0) { B2.cool = 1.4 * (1 - .12*PU('turret')); lob(B2, target.x, target.y, {mine:1, sp:460, dmg:armM(), tur:1}); } }
           if (B2.k == 'fire' && Math.hypot(me.x - B2.x, (me.y - B2.y)*1.6) < 80) { B2.heal = (B2.heal || 0) + dt * (1 + .25*PU('mitts')); if (B2.heal >= 4) { B2.heal = 0; if (me.hp < me.max) { me.hp++; addNum(me.x, me.y - 40, '+♥', '#FF8A3C'); A.tone(700, .08, 'sine', .04); } } } }
         // ----- enemies -----
-        const AIc = 1 + wave*.04;
+        const AIc = Math.min(3, 1 + wave*.04);
         for (const f of foes) { const T = TYPES[f.k], spd2 = T.sp * (f.slow > 0 ? .4 : 1); f.slow = Math.max(0, f.slow - dt); f.kb = Math.max(0, f.kb - dt); f.rt -= dt; f.act -= dt;
           if (T.sled) { // rush down to your weakest wall and smash it (trap pits and ice patches stop them)
             const W2 = weakestWall(); const tx = W2 ? W2.x + W2.w/2 : me.x, ty = W2 ? W2.y - 14 : PY - 40; f.x += Math.max(-spd2*dt, Math.min(spd2*dt, tx - f.x)); if (!f.spin) f.y += Math.max(-spd2*dt, Math.min(spd2*dt, ty - f.y));
@@ -881,7 +895,7 @@ A.register('snowball', { mount(host, api){
     g.fillStyle = '#14204a'; g.fillRect(0, BAR, w, h - BAR);
     if (st == 'play' && phase == 'build') { const cols = 7; TOOLS.forEach((T2, i) => { const x = (i % cols)*w/cols, y = BAR + Math.floor(i/cols)*50, cost = toolCost(T2.k), can = ['go', 'role', 'undo', 'remove'].includes(T2.k) || flakes >= cost;
         g.fillStyle = tool == i ? '#D5F367' : can ? 'rgba(255,255,255,.18)' : 'rgba(255,255,255,.06)'; rr(g, x + 3, y + 4, w/cols - 6, 42, 9); g.fill(); g.fillStyle = tool == i ? '#14204a' : '#fff'; g.textAlign = 'center';
-        g.font = '15px '+A.font; g.fillText(T2.e, x + w/cols/2, y + 22); g.font = '700 10px '+A.font; g.fillText(T2.n + (['go', 'role', 'undo', 'remove'].includes(T2.k) ? '' : isFinite(cost) ? ' · ' + cost + '❄' : ' · full'), x + w/cols/2, y + 38); });
+        g.font = '15px '+A.font; g.fillText(T2.e, x + w/cols/2, y + 22); g.font = '700 10px '+A.font; g.fillText(T2.n + (['go', 'role', 'undo', 'remove'].includes(T2.k) ? '' : CAPS[T2.k] && capN(T2.k) >= CAPS[T2.k] ? ' · max' : isFinite(cost) ? ' · ' + cost + '❄' : ' · full'), x + w/cols/2, y + 38); });
       g.fillStyle = '#14204a'; g.font = '700 13px '+A.font; g.textAlign = 'center'; g.fillText(PLACE.includes(TOOLS[tool].k) ? (TOOLS[tool].k == 'remove' ? 'BUILD TIME · tap one of your walls or buildings to remove it (refund)' : 'BUILD TIME · tap your side to place ' + TOOLS[tool].e + ' ' + TOOLS[tool].n + ' · Z undoes') : 'BUILD TIME · pick something below, then ▶ Next wave', 300, MID + 40); }
     else if (st == 'play') { const L = [['◀', touch.l], ['▶', touch.r], ['🦆 Duck', touch.duck || me.duck], ['🤸 Roll', me.roll > 0], [me.ab > 0 ? '⭐ ' + Math.ceil(me.ab) + 's' : '⭐ ' + CL().ab, me.ab <= 0]]; L.forEach(([tx2, on], i) => { const x = i*w/5; g.fillStyle = on ? '#D5F367' : 'rgba(255,255,255,.16)'; rr(g, x + 5, BAR + 12, w/5 - 10, 76, 14); g.fill(); g.fillStyle = on ? '#14204a' : '#fff'; g.font = '800 18px '+A.font; g.textAlign = 'center'; g.fillText(tx2, x + w/10, BAR + 58); }); }
     if (msgT > 0 && st == 'play') { g.fillStyle = 'rgba(20,32,74,.85)'; rr(g, 30, MID - 22, w - 60, 40, 12); g.fill(); g.fillStyle = '#fff'; g.font = '700 14px '+A.font; g.textAlign = 'center'; g.fillText(msg, 300, MID + 3); }
@@ -917,7 +931,7 @@ A.register('snowball', { mount(host, api){
       else { startGame('endless'); score = R0.score || 0; wave = R0.wave || 1; flakes = R0.flakes || 20; arena = R0.arena || 0; phase = 'build'; foes = []; boss = null; if (R0.me) { me.hp = R0.me.hp; me.max = R0.me.max; } }
       me.ammo = me.ammo == null ? maxAmmo() : me.ammo; me.y = PY; balls = []; api.score(score); __skip = true; st = 'ready'; } catch(e) { console.error('[save] snowball resume failed', e); } } }
   A._dbg = A._dbg || {}; A._dbg.snow = () => ({PERM, useAbility, makeGear, openPanel, CLS_K, me, foes, boss, wave, phase, walls, builds, mates, flakes, st, mode, balls, PERM, set:o => { if (o.wave != null) wave = o.wave; if (o.flakes != null) flakes = o.flakes; }, nextWave, useTool, startGame, throwAt:(x, y, p) => { aim = {x, y}; packT = p || 0; mouseOn = true; throwMine(); }});
-  return () => { closePanelS(); offK(); offL(); K.off(); window.removeEventListener('keydown', dkd); window.removeEventListener('keyup', dku); window.removeEventListener('blur', dbl); if (A.admins) delete A.admins.snowball; };
+  return () => { closePanelS(); offK(); offL(); K.off(); window.removeEventListener('keydown', dkd); window.removeEventListener('keyup', dku); window.removeEventListener('blur', dbl); if (A.admins) delete A.admins.snowball; if (A.onCash) delete A.onCash.snowball; };
 }});
 
 // =====================================================================================================
