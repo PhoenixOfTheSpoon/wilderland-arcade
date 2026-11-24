@@ -53,7 +53,12 @@ const schedule = () => { if (!cur || !ctx) return; const {M, deg, mel} = cur, e 
 const audible = () => on && !muted && !document.hidden && started;
 const fade = (to, secs) => { if (!ctx) return; const t = ctx.currentTime; master.gain.cancelScheduledValues(t); master.gain.setValueAtTime(master.gain.value, t); master.gain.linearRampToValueAtTime(to, t + secs); };
 // Song files (loaded only when picked). Credits are shown under the arcade floor.
-const FILES = {monkeys: {src:'assets/music/monkeys-spinning-monkeys.mp3', n:'Monkeys Spinning Monkeys', s:'MONKEYS', credit:'“Monkeys Spinning Monkeys” Kevin MacLeod (incompetech.com) · Licensed under Creative Commons: By Attribution 4.0 · creativecommons.org/licenses/by/4.0/'}};
+const CC = ' · Licensed under Creative Commons: By Attribution 4.0 · creativecommons.org/licenses/by/4.0/';
+// need = rebirths needed to unlock the song (the arcade tells us the player's rebirths)
+const FILES = {monkeys: {src:'assets/music/monkeys-spinning-monkeys.mp3', n:'Monkeys Spinning Monkeys', s:'MONKEYS', need:0, credit:'“Monkeys Spinning Monkeys” Kevin MacLeod (incompetech.com)' + CC},
+  snitch: {src:'assets/music/sneaky-snitch.mp3', n:'Sneaky Snitch', s:'SNEAKY SNITCH', need:10, credit:'“Sneaky Snitch” Kevin MacLeod (incompetech.com)' + CC},
+  duck: {src:'assets/music/fluffing-a-duck.mp3', n:'Fluffing a Duck', s:'FLUFFING A DUCK', need:20, credit:'“Fluffing a Duck” Kevin MacLeod (incompetech.com)' + CC}};
+let rebirths = 0; const unlocked = k => !FILES[k] || rebirths >= (FILES[k].need || 0);
 let track = 'chip'; try { const t = localStorage.getItem(KEY+'-track'); if (t && (t == 'chip' || FILES[t])) track = t; } catch(e){}
 let audio = null, audioKey = '';
 const playFile = () => { const F = FILES[track]; if (!audio || audioKey !== track) { if (audio) audio.pause(); audio = new Audio(F.src); audio.loop = true; audio.volume = .35; audioKey = track; }
@@ -61,7 +66,7 @@ const playFile = () => { const F = FILES[track]; if (!audio || audioKey !== trac
 const pauseFile = () => { if (audio) audio.pause(); };
 const dramatic = () => flagsNow.danger || flagsNow.boss;
 const run = () => { if (!audible()) { stop(); return; }
-  if (FILES[track] && !dramatic()) { stopChip(); playFile(); return; } pauseFile(); if (!cur) return; if (!ensure()) return; if (ctx.state == 'suspended') ctx.resume();
+  if (FILES[track] && unlocked(track) && !dramatic()) { stopChip(); playFile(); return; } pauseFile(); if (!cur) return; if (!ensure()) return; if (ctx.state == 'suspended') ctx.resume();
   if (!timer) { nextT = ctx.currentTime + .1; timer = setInterval(schedule, 90); schedule(); } fade(.5, .8); };
 const stopChip = () => { if (!ctx) return; fade(0, .4); if (timer) { const tm = timer; timer = null; setTimeout(() => clearInterval(tm), 450); } };
 const stop = () => { stopChip(); pauseFile(); };
@@ -77,10 +82,12 @@ const WLMusic = {
   setOn(v){ on = !!v; try { localStorage.setItem(KEY, on ? 'on' : 'off'); } catch(e){} if (on) { started = true; if (!cur) cur = build(moodName); run(); } else stop(); },
   _state: () => ({ctx: ctx && ctx.state, playing: !!timer, mood: moodName, flags: flagsNow, file: !!(audio && !audio.paused)}),
   // MUSIC button: Chiptune → each song file → Off → Chiptune …
-  cycle(){ const order = ['chip', ...Object.keys(FILES), 'off'], curK = on ? track : 'off', nx = order[(order.indexOf(curK)+1) % order.length];
+  setRebirths(n){ const was = unlocked(track); rebirths = Number(n) || 0; if (was != unlocked(track) && on) { stop(); run(); } },
+  locked: () => Object.keys(FILES).filter(k => !unlocked(k)).map(k => FILES[k].n + ' unlocks at ' + FILES[k].need + ' rebirths'),
+  cycle(){ const order = ['chip', ...Object.keys(FILES).filter(unlocked), 'off'], curK = on ? track : 'off', nx = order[(order.indexOf(curK)+1) % order.length];
     if (nx == 'off') { this.setOn(false); return; } track = nx; try { localStorage.setItem(KEY+'-track', track); } catch(e){} if (!on) this.setOn(true); else { stop(); started = true; if (!cur) cur = build(moodName); run(); } },
-  label: () => !on ? 'MUSIC OFF' : FILES[track] ? FILES[track].s : 'CHIPTUNE',
-  credit: () => on && FILES[track] ? FILES[track].credit : '',
+  label: () => !on ? 'MUSIC OFF' : FILES[track] && unlocked(track) ? FILES[track].s : 'CHIPTUNE',
+  credit: () => on && FILES[track] && unlocked(track) ? FILES[track].credit : '',
   // every song file's credit, always (Creative Commons BY needs the credit shown)
   allCredits: () => Object.values(FILES).map(f => f.credit).join(' · '),
   on: () => on, setMuted(v){ muted = !!v; if (muted) stop(); else run(); }, moods: Object.keys(MOODS),
