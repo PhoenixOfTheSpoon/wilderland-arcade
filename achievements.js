@@ -69,6 +69,12 @@ A.init = ctx => { if (FAM.length) return; const G = ctx.games || [], NG = G.leng
   sp('snowWave','❄️','Snow Survivor', n => 'Survive wave '+n+' in Snowball Showdown', s => mx(s,'snowWave'), [5,10,20,35,50]);
   sp('snowBoss','👑','Boss Buster', n => 'Beat '+n+' Snowball Showdown boss'+(n==1?'':'es'), s => sm(s,'snowBoss'), [1,5,15,40,100]);
   sp('snowPerfect','✨','Not a Scratch', n => 'Clear '+n+' perfect wave'+(n==1?'':'s')+' (no hits) in Snowball Showdown', s => sm(s,'snowPerfect'), [1,5,15,40,100]);
+  sp('snowClass_slinger','🎯','Slinger Master', n => 'Reach level '+n+' as a Slinger in Snowball Showdown', s => mx(s,'snowClass_slinger'), [2,5,10,20,30]);
+  sp('snowClass_builder','🔨','Builder Master', n => 'Reach level '+n+' as a Builder in Snowball Showdown', s => mx(s,'snowClass_builder'), [2,5,10,20,30]);
+  sp('snowClass_medic','➕','Medic Master', n => 'Reach level '+n+' as a Medic in Snowball Showdown', s => mx(s,'snowClass_medic'), [2,5,10,20,30]);
+  sp('snowClass_tank','🛡','Tank Master', n => 'Reach level '+n+' as a Tank in Snowball Showdown', s => mx(s,'snowClass_tank'), [2,5,10,20,30]);
+  sp('snowClass_sniper','🔭','Sniper Master', n => 'Reach level '+n+' as a Sniper in Snowball Showdown', s => mx(s,'snowClass_sniper'), [2,5,10,20,30]);
+  sp('snowClass_trapper','🕳','Trapper Master', n => 'Reach level '+n+' as a Trapper in Snowball Showdown', s => mx(s,'snowClass_trapper'), [2,5,10,20,30]);
   sp('snowBuild','🏰','Fort Builder', n => 'Place '+n+' buildings in Snowball Showdown', s => sm(s,'snowBuild'), [10,50,150,400,1000]);
   sp('minerLevel','⛏️','Miner Boss', n => 'Merge a level '+n+' miner in The Mines', s => mx(s,'minerLevel'), [5,10,15,20,30]);
   // ---------- Learning ----------

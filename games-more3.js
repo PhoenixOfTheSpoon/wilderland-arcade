@@ -436,6 +436,37 @@ A.register('snowball', { mount(host, api){
     {k:'thermos', n:'Cocoa Thermos', d:'Heal 1 heart at the start of every wave', b:40, max:3}, {k:'shield', n:'Snow Shield', d:'Start every wave with a shield', b:60, max:1},
     {k:'mates', n:'Snow Friends', d:'Start with one more teammate', b:50, max:2}];
   const pcost = u => Math.ceil(u.b * Math.pow(1.6, PU(u.k)));
+  // ======== WINTER WAR: classes, skill trees, gear and special snowballs (all saved in PERM) ========
+  PERM.cls = PERM.cls || 'slinger'; PERM.cx = PERM.cx || {}; PERM.sk = PERM.sk || {}; PERM.gear = PERM.gear || []; PERM.eq = PERM.eq || {}; PERM.frost = PERM.frost || 0; PERM.bank = PERM.bank || 0; PERM.balls = PERM.balls || {snow:1, shard:1, slush:1}; PERM.ball = PERM.ball || 'snow'; PERM.gid = PERM.gid || 1;
+  const CLASSES = {
+    slinger: {n:'Slinger', e:'🎯', col:'#00B451', hat:'#F9BF01', d:'Fast throws and a bigger pouch', ab:'Flurry', abD:'Throws 5 snowballs at once', cd:12, hp:0, ammo:4, pack:1.4},
+    builder: {n:'Builder', e:'🔨', col:'#ff8a3c', hat:'#F9BF01', d:'Builds 30% cheaper, walls 50% stronger', ab:'Instant Fort', abD:'Drops a full snow fort in front of you', cd:30, hp:1},
+    medic:   {n:'Medic', e:'➕', col:'#ff9ad5', hat:'#ffffff', d:'Teammates heal and revive faster', ab:'Cocoa Break', abD:'Heals you +2 and every teammate nearby, and picks up knocked-out friends', cd:25, hp:1},
+    tank:    {n:'Tank', e:'🛡', col:'#5a6a80', hat:'#9ec4e8', d:'+3 hearts, a little slower', ab:'Snow Shield', abD:'Nothing can hurt you for 4 seconds', cd:20, hp:3, slow:.9},
+    sniper:  {n:'Sniper', e:'🔭', col:'#2f6a3a', hat:'#121313', d:'Packed throws hit 50% harder and fly faster', ab:'Eagle Eye', abD:'Reveals hidden enemies and clears whiteouts for 6 seconds', cd:18, hp:0, snipe:1.5},
+    trapper: {n:'Trapper', e:'🕳', col:'#8D5B1D', hat:'#7fe6ff', d:'A free ice patch and trap pit every break', ab:'Avalanche', abD:'Knocks every enemy back and stuns them', cd:22, hp:0}};
+  const CLS_K = Object.keys(CLASSES);
+  // 3 branches per class, 3 ranks each: power (+8% damage), focus (ability cooldown −10%), grit (+1 heart)
+  const BRANCH = {slinger:['Arm Power', 'Quick Flurry', 'Snow Grit'], builder:['Hammer Power', 'Fast Fort', 'Sturdy Boots'], medic:['Snowball Power', 'Hot Cocoa', 'Warm Heart'], tank:['Heavy Arm', 'Shield Wall', 'Iron Belly'], sniper:['Long Shot', 'Sharp Eye', 'Camo Coat'], trapper:['Trap Power', 'Rumble', 'Thick Fur']};
+  const clsXp = k => PERM.cx[k] || 0, clsLv = k => Math.min(30, 1 + Math.floor(Math.sqrt(clsXp(k) / 60)));
+  const skR = (k, b) => ((PERM.sk[k] || {})[b] || 0), skUsed = k => [0, 1, 2].reduce((a, b) => a + skR(k, b), 0), skFree = k => (clsLv(k) - 1) - skUsed(k);
+  const CL = () => CLASSES[PERM.cls] || CLASSES.slinger;
+  // gear: five slots, six rarities (prize counter colors), upgrade with banked snowflakes + Frost Crystals
+  const GRAR = [{n:'Common', c:'#c9ccd1'}, {n:'Uncommon', c:'#7fe08a'}, {n:'Rare', c:'#64CDF5'}, {n:'Epic', c:'#E9B9F7'}, {n:'Legendary', c:'#F9BF01'}, {n:'Mythic', c:'#ff6ad5'}];
+  const GSLOT = {gloves:{n:'Gloves', e:'🧤', base:['Mittens', 'Gloves', 'Grips', 'Snow Paws'], stat:'throws faster'}, boots:{n:'Boots', e:'🥾', base:['Boots', 'Snow Treads', 'Ice Skids', 'Trekkers'], stat:'moves faster, grips ice'},
+    hat:{n:'Hat', e:'🎩', base:['Beanie', 'Earmuffs', 'Bobble Hat', 'Helmet'], stat:'extra hearts'}, scarf:{n:'Scarf', e:'🧣', base:['Scarf', 'Neck Warmer', 'Wrap', 'Cowl'], stat:'resists freezing'}, pack:{n:'Backpack', e:'🎒', base:['Backpack', 'Satchel', 'Snow Sack', 'Rucksack'], stat:'carries more snowballs'}};
+  const GPRE = ['Frosty', 'Polar', 'Glacier', 'Blizzard', 'Aurora', 'Crystal', 'Northern', 'Snowdrift', 'Icicle', 'Tundra'], GSUF = ['of the Yeti King', 'of the Frost Dragon', 'of Queen Glacia', 'of the Snowplow', 'of the Blizzard Witch', 'of Winter', 'of the North Wind', 'of the Penguin Squire'];
+  const makeGear = (minR, slot0) => { const r0 = Math.random(), rar = Math.min(5, Math.max(minR || 0, r0 < .45 ? 0 : r0 < .72 ? 1 : r0 < .88 ? 2 : r0 < .96 ? 3 : r0 < .99 ? 4 : 5)); const slots = Object.keys(GSLOT), slot = slot0 || slots[Math.floor(Math.random()*slots.length)], S2 = GSLOT[slot];
+    const base = S2.base[Math.floor(Math.random()*S2.base.length)], name = rar >= 3 ? (S2.base[0] == base ? base : base) + ' ' + GSUF[Math.floor(Math.random()*GSUF.length)] : GPRE[Math.floor(Math.random()*GPRE.length)] + (rar >= 2 ? ' Pathfinder ' : ' ') + base;
+    const it = {id:PERM.gid++, slot, rar, lv:0, name}; PERM.gear.push(it); if (PERM.gear.length > 60) { const worst = PERM.gear.filter(x => !Object.values(PERM.eq).includes(x.id)).sort((a, b) => a.rar - b.rar || a.lv - b.lv)[0]; if (worst) PERM.gear = PERM.gear.filter(x => x !== worst); } if (!PERM.eq[slot]) PERM.eq[slot] = it.id; savePerm(); return it; };
+  const gpow = it => it ? (1 + it.rar*.5) * (1 + .15*it.lv) : 0;
+  const eqd = slot => PERM.gear.find(x => x.id == PERM.eq[slot]);
+  const gStat = slot => gpow(eqd(slot));
+  const gearTxt = it => { const v = gpow(it); return {gloves:'+' + Math.round(6*v) + '% throw & pack speed', boots:'+' + Math.round(5*v) + '% speed, better grip', hat:'+' + Math.max(1, Math.round(v*.8)) + ' heart' + (Math.round(v*.8) > 1 ? 's' : ''), scarf:'−' + Math.min(80, Math.round(12*v)) + '% freeze time', pack:'+' + Math.round(2*v) + ' snowballs'}[it.slot]; };
+  const gUpCost = it => ({flakes:Math.ceil(40*(it.lv + 1)*(1 + it.rar)), frost:(it.lv + 1)*(it.rar + 1)});
+  // special snowballs
+  const BALLS = {snow:{n:'Snowball', e:'⚪', d:'The classic', cost:0}, shard:{n:'Ice Shard', e:'🔷', d:'Flies straight and pierces through every enemy in its path', cost:0}, slush:{n:'Slushball', e:'💧', d:'Slows whatever it hits', cost:0},
+    sparkle:{n:'Sparkleball', e:'✨', d:'Big sparkly splash', cost:30}, boomer:{n:'Boomerball', e:'🪃', d:'Lands, then flies back and hits again', cost:50}, boulder:{n:'Mega Boulder', e:'🪨', d:'Huge damage, uses 3 snowballs', cost:120}};
   // ---------- seeded random (Daily Challenge uses the same seed for everyone) ----------
   let seed = 1; const R = () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let x = Math.imul(seed ^ seed >>> 15, 1 | seed); x = x + Math.imul(x ^ x >>> 7, 61 | x) ^ x; return ((x ^ x >>> 14) >>> 0) / 4294967296; };
   const today = () => { const d = new Date(); return d.getFullYear()*10000 + (d.getMonth()+1)*100 + d.getDate(); };
@@ -471,14 +502,14 @@ A.register('snowball', { mount(host, api){
   const D3 = a => A.D(a[0], a[1], a[2]);
   const say = (s2, d = 2.5) => { msg = s2; msgT = d; };
   const AR = () => ARENAS[arena % ARENAS.length];
-  const armM = () => (1 + .15*PU('arm'));
-  const maxAmmo = () => 10 + 2*PU('pockets');
+  const armM = () => (1 + .15*PU('arm')) * (1 + .08*skR(PERM.cls, 0));
+  const maxAmmo = () => 10 + 2*PU('pockets') + (CL().ammo || 0) + Math.round(2*gStat('pack'));
   const rollCD = () => 1.6 * (1 - .1*PU('rollcd'));
-  const wallHp = k => (k == 'reinforced' ? 16 : k == 'ice' ? 10 : 6) + 2*PU('walls');
+  const wallHp = k => ((k == 'reinforced' ? 16 : k == 'ice' ? 10 : 6) + 2*PU('walls')) * (PERM.cls == 'builder' ? 1.5 : 1);
   // ---------- setup ----------
   const startGame = m => { mode = m || mode; seed = mode == 'daily' ? today() : (Math.random()*1e9)|0;
-    const hp = A.lives(A.D(6,5,4) + A.U('life') + PU('coat'));
-    me = {x:300, y:PY, vx:0, hp, max:hp, inv:0, duck:false, roll:0, rollCd:0, rdir:1, freeze:0, ammo:maxAmmo(), throwT:0, hitT:0, face:1, scoop:0};
+    const hp = A.lives(A.D(6,5,4) + A.U('life') + PU('coat') + (CL().hp || 0) + skR(PERM.cls, 2) + (eqd('hat') ? Math.max(1, Math.round(gStat('hat')*.8)) : 0));
+    me = {x:300, y:PY, vx:0, hp, max:hp, inv:0, duck:false, roll:0, rollCd:0, rdir:1, freeze:0, ammo:maxAmmo(), throwT:0, hitT:0, face:1, scoop:0, ab:0, shieldT:0, eye:0, cls:PERM.cls};
     balls = []; drops = []; builds = []; mates = []; fx = []; nums = []; score = 0; wave = 0; flakes = 20 + 15*PU('stash'); arena = mode == 'daily' ? today() % 4 : 0; pw = {icy:0, mega:0, rapid:0, shield:0}; boss = null; bossesBeat = 0; builtN = 0; combo = 0;
     walls = [{x:150, y:476, w:80, h:24, hp:wallHp('snow'), max:wallHp('snow'), mine:1, kind:'snow'}, {x:370, y:476, w:80, h:24, hp:wallHp('snow'), max:wallHp('snow'), mine:1, kind:'snow'}];
     for (let i = 0; i < Math.min(4, A.U('mate') + PU('mates')); i++) addMate(['thrower', 'builder', 'medic'][i % 3]);
@@ -507,14 +538,27 @@ A.register('snowball', { mount(host, api){
   const nearestFoe = (x, y) => { let best = null, bd = 1e9; for (const f of foes) { const d = Math.hypot(f.x - x, f.y - y); if (d < bd) { bd = d; best = f; } } if (boss) { const d = Math.hypot(boss.x - x, boss.y - y); if (d < bd) best = boss; } return best; };
   const throwMine = () => { if (!me || me.ammo <= 0) { say('Out of snowballs! Stand on a ❄ snow pile or duck behind a wall to scoop more', 2); A.sfx('bad'); packing = false; packT = 0; return; }
     const p2 = Math.min(1, packT), small = packT < .12, nf = nearestFoe(me.x, me.y), tgt = mouseOn || aiming ? aim : nf ? {x:nf.x + Math.sign((nf.tx || nf.x) - nf.x)*20, y:nf.y} : {x:me.x, y:120};
-    const crit = Math.random() < .05*PU('crit'), dmg = (small ? 1 : 1 + 2*p2) * armM() * (pw.mega > 0 ? 2 : 1) * (crit ? 2 : 1), r = (small ? 5 : 5 + 5*p2) + (pw.mega > 0 ? 3 : 0), sp = small ? 760 : 640 - 220*p2;
-    lob(me, tgt.x, Math.min(MID - 4, tgt.y), {mine:1, dmg, r, sp:sp * (pw.rapid > 0 ? 1.3 : 1), big:p2 >= .6 || pw.mega > 0, kind:pw.mega > 0 ? 'mega' : pw.icy > 0 ? 'icy' : 'n'});
+    const bk = PERM.balls[PERM.ball] ? PERM.ball : 'snow'; if (bk == 'boulder' && me.ammo < 3) { say('The Mega Boulder needs 3 snowballs', 1.4); A.sfx('bad'); packing = false; packT = 0; return; }
+    const crit = Math.random() < .05*PU('crit'), snipeM = !small && CL().snipe ? CL().snipe : 1, ballM = {snow:1, shard:.85, slush:.85, sparkle:.75, boomer:.7, boulder:4}[bk];
+    const dmg = (small ? 1 : 1 + 2*p2) * armM() * (pw.mega > 0 ? 2 : 1) * (crit ? 2 : 1) * snipeM * ballM, r = (small ? 5 : 5 + 5*p2) + (pw.mega > 0 ? 3 : 0) + (bk == 'boulder' ? 8 : 0), sp = (small ? 760 : 640 - 220*p2) * (snipeM > 1 ? 1.3 : 1);
+    if (bk == 'shard') { straight(me, tgt.x, Math.min(MID - 4, tgt.y), {mine:1, dmg, r:5, sp:620}); balls[balls.length - 1].pierce = 1; balls[balls.length - 1].shard = 1; }
+    else lob(me, tgt.x, Math.min(MID - 4, tgt.y), {mine:1, dmg, r, sp:sp * (pw.rapid > 0 ? 1.3 : 1), big:p2 >= .6 || pw.mega > 0 || bk == 'boulder', kind:pw.mega > 0 || bk == 'sparkle' || bk == 'boulder' ? 'mega' : pw.icy > 0 || bk == 'slush' ? 'icy' : 'n'});
+    if (bk == 'boomer' && balls.length) balls[balls.length - 1].boomer = 1; if (bk == 'boulder') me.ammo -= 2;
     if (crit) addNum(me.x, me.y - 50, 'LUCKY ×2!', '#F9BF01'); me.ammo--; me.throwT = .22; me.duck = false; packing = false; packT = 0; A.tone(small ? 640 : 420, .05, 'triangle', .04); };
+  // ---------- class abilities (Q, F or the ⭐ button) ----------
+  const abCd = () => CL().cd * (1 - .1*skR(PERM.cls, 1));
+  const useAbility = () => { if (!me || st != 'play' || phase != 'fight' || me.ab > 0 || me.freeze > 0) return; const C2 = CL(); me.ab = abCd(); A.sfx('win'); say('⭐ ' + C2.ab + '!', 1.6); cheerT = .6;
+    if (PERM.cls == 'slinger') { const tg = mouseOn ? aim : (nearestFoe(me.x, me.y) || {x:300, y:120}); for (let k2 = -2; k2 <= 2; k2++) lob(me, tg.x + k2*40, Math.min(MID - 4, tg.y + Math.abs(k2)*10), {mine:1, dmg:1.5*armM(), r:7, sp:700, big:true}); }
+    else if (PERM.cls == 'builder') { const y = Math.max(MID + 40, me.y - 70); walls.push({x:Math.max(10, Math.min(470, me.x - 60)), y:y - 14, w:120, h:28, hp:wallHp('snow')*1.5, max:wallHp('snow')*1.5, mine:1, kind:'snow', fort:1}); splat(me.x, y, 20); stat(api, 'snowBuild', 1, 'add'); }
+    else if (PERM.cls == 'medic') { me.hp = Math.min(me.max, me.hp + 2); addNum(me.x, me.y - 40, '+2 ♥', '#00B451'); for (const m of mates) { if (Math.hypot(m.x - me.x, m.y - me.y) < 220) { if (m.ko) m.ko = false; m.hp = m.max; addNum(m.x, m.y - 30, '+♥', '#00B451'); } } }
+    else if (PERM.cls == 'tank') { me.shieldT = 4; }
+    else if (PERM.cls == 'sniper') { me.eye = 6; white = 0; }
+    else if (PERM.cls == 'trapper') { shake = .5; for (const f of foes) { f.y = Math.max(30, f.y - 120); f.ty = f.y; f.slow = 3; f.kb = .4; f.hp -= 1; if (f.hp <= 0) killFoe(f); } if (boss) hitBoss(3, boss.x, boss.y); splat(300, 200, 40); } };
   // ---------- hurting ----------
-  const hurtMe = (dmg, ice) => { if (!me || me.inv > 0 || me.roll > 0 || A.immortal) return; if (pw.shield > 0) { pw.shield = 0; me.inv = .6; A.tone(900,.1,'sine',.05); return; }
-    me.hp -= dmg; me.inv = .8; me.hitT = .3; waveHurt = true; shake = Math.max(shake, .15); A.sfx('bad'); if (ice) { me.freeze = 1; say('🥶 Frozen for a moment!', 1.2); }
+  const hurtMe = (dmg, ice) => { if (!me || me.inv > 0 || me.roll > 0 || me.shieldT > 0 || A.immortal) return; if (pw.shield > 0) { pw.shield = 0; me.inv = .6; A.tone(900,.1,'sine',.05); return; }
+    me.hp -= dmg; me.inv = .8; me.hitT = .3; waveHurt = true; shake = Math.max(shake, .15); A.sfx('bad'); if (ice) { me.freeze = 1 * (1 - Math.min(.8, .12*gStat('scarf'))); if (me.freeze > .25) say('🥶 Frozen for a moment!', 1.2); }
     if (me.hp <= 0) { quiz = learn2(host, api, 'SPLAT! ANSWER TO SHAKE OFF THE SNOW', () => { quiz = false; me.hp = Math.ceil(me.max/2); me.inv = 2; }, () => { quiz = false; gameOver(); }); } };
-  const gameOver = () => { st = 'over'; A.sfx('over'); stat(api,'snowWave',wave,'max'); const cr = Math.floor(wave*1.5 + bossesBeat*5); PERM.cr += cr; PERM.best = Math.max(PERM.best, wave); savePerm(); say('+' + cr + ' 🧊 ice crystals for permanent upgrades', 5); api.over(score); };
+  const gameOver = () => { st = 'over'; A.sfx('over'); stat(api,'snowWave',wave,'max'); const cr = Math.floor(wave*1.5 + bossesBeat*5); PERM.cr += cr; PERM.bank += Math.floor(flakes/2); PERM.best = Math.max(PERM.best, wave); savePerm(); say('+' + cr + ' 🧊 ice crystals for permanent upgrades', 5); api.over(score); };
   const addNum = (x, y, txt, col) => { if (nums.length < 40) nums.push({x, y, txt, col:col || '#14204a', t:1}); };
   const splat = (x, y, n, col) => { const k = low() ? Math.ceil(n/3) : n; for (let i = 0; i < k; i++) fx.push({x, y, vx:(Math.random() - .5)*160, vy:(Math.random() - .8)*140, t:.5 + Math.random()*.3, col:col || '#ffffff', r:1.5 + Math.random()*2.5}); };
   const killFoe = f => { if (f.dead) return; f.dead = 1; const T = TYPES[f.k]; score += T.pts + wave*10; flakes += 10; api.score(score); splat(f.x, f.y, 14);
@@ -523,13 +567,14 @@ A.register('snowball', { mount(host, api){
     else if (r < cocoa + .2) drops.push({x:Math.max(30, Math.min(570, f.x)), y:MID + 20, vy:60, k:['icy','mega','rapid','shield'][Math.floor(Math.random()*4)], life:12}); };
   const hitBoss = (dmg, x, y) => { if (!boss) return; boss.hp -= dmg; boss.kb = .15; addNum(x, y - 30, '-' + Math.round(dmg*10)/10, '#FF4539');
     const ph = boss.hp < boss.max/3 ? 3 : boss.hp < boss.max*2/3 ? 2 : 1; if (ph > boss.ph) { boss.ph = ph; say(boss.n + (ph == 2 ? ' gets angry!' : ' goes WILD!'), 2.5); shake = .4; A.sfx('bad'); }
-    if (boss.hp <= 0) { score += 1500 + wave*100; flakes += 80; bossesBeat++; PERM.bosses++; api.score(score); A.sfx('win'); stat(api,'snowBoss',1,'add'); say(boss.n + ' is defeated!', 3); shake = .5; splat(boss.x, boss.y, 40); boss = null; } };
+    if (boss.hp <= 0) { score += 1500 + wave*100; flakes += 80; bossesBeat++; PERM.bosses++; { const fr = 10 + Math.floor(wave/2); PERM.frost += fr; const it = makeGear(2); setTimeout(() => say('🎁 ' + GRAR[it.rar].n + ' gear: ' + it.name + ' · +' + fr + ' ❄ Frost Crystals', 3.5), 2600); PERM.cx[PERM.cls] = clsXp(PERM.cls) + 60; } api.score(score); A.sfx('win'); stat(api,'snowBoss',1,'add'); say(boss.n + ' is defeated!', 3); shake = .5; splat(boss.x, boss.y, 40); boss = null; } };
   // ---------- build menu ----------
   const TOOLS = [{k:'wall', n:'Wall', e:'🧱', cost:10}, {k:'upgrade', n:'Upgrade wall', e:'⬆', cost:15}, {k:'fort', n:'Snow fort', e:'🏰', cost:40}, {k:'turret', n:'Turret', e:'🎯', cost:35},
     {k:'pit', n:'Trap pit', e:'🕳', cost:20}, {k:'ice', n:'Ice patch', e:'🧊', cost:15}, {k:'fire', n:'Campfire', e:'🔥', cost:40}, {k:'repair', n:'Repair all', e:'🔧', cost:0},
     {k:'cocoa', n:'Warm Up +♥', e:'☕', cost:15}, {k:'mate', n:'Teammate', e:'🧒', cost:0}, {k:'role', n:'Mate role', e:'🔁', cost:0}, {k:'undo', n:'Undo (Z)', e:'↩', cost:0}, {k:'remove', n:'Remove', e:'🗑', cost:0}, {k:'go', n:'Next wave', e:'▶', cost:0}];
-  const PLACE = ['wall', 'fort', 'turret', 'pit', 'ice', 'fire', 'upgrade', 'remove']; let placed = [];   // what you built this break, newest last (for Undo)
-  const toolCost = k => k == 'repair' ? walls.filter(W2 => W2.mine).reduce((a, W2) => a + Math.ceil(W2.max - W2.hp), 0) * 2 : k == 'mate' ? (mates.length >= 4 ? Infinity : 40 + mates.length*40) : (TOOLS.find(T2 => T2.k == k) || {cost:0}).cost;
+  const PLACE = ['wall', 'fort', 'turret', 'pit', 'ice', 'fire', 'upgrade', 'remove']; let placed = [], freeTrap = {};   // what you built this break, newest last (for Undo); the Trapper's free pit + ice each break
+  const toolCost = k => (PERM.cls == 'builder' && ['wall', 'fort', 'turret', 'pit', 'ice', 'fire', 'upgrade'].includes(k) ? .7 : 1) * (PERM.cls == 'trapper' && freeTrap[k] ? 0 : 1) * toolCost0(k);
+  const toolCost0 = k => k == 'repair' ? walls.filter(W2 => W2.mine).reduce((a, W2) => a + Math.ceil(W2.max - W2.hp), 0) * 2 : k == 'mate' ? (mates.length >= 4 ? Infinity : 40 + mates.length*40) : (TOOLS.find(T2 => T2.k == k) || {cost:0}).cost;
   const useTool = (k, x, y) => { if (k == 'go') { placed = []; nextWave(); return; } const cost = toolCost(k);
     if (k == 'undo') { const last = placed.pop(); if (!last) return say('Nothing to undo'); if (last.up) { last.ref.kind = last.up.kind; last.ref.max = last.up.max; last.ref.hp = Math.min(last.ref.hp, last.ref.max); } else { walls = walls.filter(W2 => W2 !== last.ref); builds = builds.filter(B2 => B2 !== last.ref); } flakes += last.cost; A.sfx('blip'); say('↩ Undone · +' + last.cost + ' ❄ back', 1.4); return; }
     if (k == 'remove') { y = y == null ? me.y - 60 : y; x = x == null ? me.x : x; const W2 = walls.find(W3 => W3.mine && x > W3.x - 10 && x < W3.x + W3.w + 10 && Math.abs(y - (W3.y + W3.h/2)) < 40), B2 = !W2 && builds.slice().sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y)).find(B3 => Math.hypot(B3.x - x, B3.y - y) < 44);
@@ -546,19 +591,48 @@ A.register('snowball', { mount(host, api){
       else if (k == 'wall') { walls.push({x:x - 40, y:y - 12, w:80, h:24, hp:wallHp('snow'), max:wallHp('snow'), mine:1, kind:'snow'}); placed.push({ref:walls[walls.length - 1], cost}); }
       else if (k == 'fort') { walls.push({x:x - 60, y:y - 14, w:120, h:28, hp:wallHp('snow')*1.5, max:wallHp('snow')*1.5, mine:1, kind:'snow', fort:1}); placed.push({ref:walls[walls.length - 1], cost}); }
       else if (k == 'fire') { if (builds.some(b => b.k == 'fire')) return say('Only one campfire at a time · remove it to move it'); builds.push({k, x, y:Math.max(y, PY - 60), hp:4}); placed.push({ref:builds[builds.length - 1], cost}); }
-      else { builds.push({k, x, y, hp:k == 'turret' ? 5 : 3, cool:1, r:k == 'pit' ? 26 : 40}); placed.push({ref:builds[builds.length - 1], cost}); } builtN++; stat(api, 'snowBuild', 1, 'add'); }
+      else { builds.push({k, x, y, hp:k == 'turret' ? 5 : 3, cool:1, r:k == 'pit' ? 26 : 40}); placed.push({ref:builds[builds.length - 1], cost}); if (freeTrap[k]) freeTrap[k] = 0; } builtN++; stat(api, 'snowBuild', 1, 'add'); }
     flakes -= cost; A.sfx('coin'); };
   // ---------- input ----------
+  // ---------- Class & skills / Loadout & gear panels (HTML, scrollable) ----------
+  let panelEl = null;
+  const closePanelS = () => { if (panelEl) { panelEl.remove(); panelEl = null; } };
+  const openPanel = tab => { closePanelS(); const el = A.el; panelEl = el('div', {position:'absolute', left:'0', top:'0', width:'600px', height:'720px', background:'rgba(10,20,50,.97)', color:'#fff', zIndex:6, display:'flex', flexDirection:'column', padding:'14px', boxSizing:'border-box', font:'600 14px '+A.font});
+    panelEl.addEventListener('pointerdown', e => e.stopPropagation()); host.style.position = host.style.position || 'relative'; host.appendChild(panelEl);
+    const top = el('div', {display:'flex', gap:'6px', alignItems:'center', marginBottom:'8px'}); panelEl.appendChild(top);
+    const B = (txt, fn, bg, fg) => { const b = el('button', {background:bg || '#3f8fd8', color:fg || '#fff', border:'none', borderRadius:'999px', padding:'7px 12px', font:'800 13px '+A.font, cursor:'pointer'}, txt); b.onclick = e => { e.stopPropagation(); fn(); }; return b; };
+    [['class', '🎽 Class & skills'], ['loadout', '🎒 Loadout & gear']].forEach(([k, n]) => top.appendChild(B(n, () => openPanel(k), tab == k ? '#D5F367' : 'rgba(255,255,255,.14)', tab == k ? '#14204a' : '#fff')));
+    const x = B('✕ Done', closePanelS, '#ffffff', '#14204a'); x.style.marginLeft = 'auto'; top.appendChild(x);
+    const body = el('div', {overflowY:'auto', flex:'1', display:'flex', flexDirection:'column', gap:'8px'}); panelEl.appendChild(body);
+    const card = () => { const r = el('div', {background:'rgba(255,255,255,.07)', borderRadius:'12px', padding:'10px 12px', display:'flex', flexDirection:'column', gap:'6px'}); body.appendChild(r); return r; };
+    if (tab == 'class') { CLS_K.forEach(k => { const C2 = CLASSES[k], on = PERM.cls == k, r = card(); if (on) r.style.boxShadow = 'inset 0 0 0 2px #D5F367';
+        const h = el('div', {display:'flex', alignItems:'center', gap:'8px'}); h.appendChild(el('div', {font:'800 17px '+A.font, color:on ? '#D5F367' : '#fff', flex:'1'}, C2.e + ' ' + C2.n + ' · Lv ' + clsLv(k) + (on ? ' · playing' : ''))); if (!on) h.appendChild(B('Pick', () => { PERM.cls = k; savePerm(); openPanel('class'); }, '#00B451')); r.appendChild(h);
+        r.appendChild(el('div', {font:'500 12px '+A.font, color:'#cfe3f5'}, C2.d + ' · ⭐ ' + C2.ab + ': ' + C2.abD + ' (every ' + Math.round(C2.cd*(1 - .1*skR(k, 1))) + ' s)'));
+        const nx = Math.pow(clsLv(k), 2)*60; r.appendChild(el('div', {font:'600 11px '+A.font, color:'#9fe8ff'}, 'Class XP ' + clsXp(k) + (clsLv(k) < 30 ? ' / ' + nx + ' for the next level' : ' (max level)') + ' · ' + skFree(k) + ' skill point' + (skFree(k) == 1 ? '' : 's') + ' to spend'));
+        const tr = el('div', {display:'flex', gap:'6px', flexWrap:'wrap'}); BRANCH[k].forEach((bn, bi) => { const rk = skR(k, bi), can = skFree(k) > 0 && rk < 3; const b = B(bn + ' ' + '●'.repeat(rk) + '○'.repeat(3 - rk), () => { if (!can) { A.sfx('bad'); return; } PERM.sk[k] = PERM.sk[k] || {}; PERM.sk[k][bi] = rk + 1; savePerm(); A.sfx('coin'); openPanel('class'); }, can ? '#3f8fd8' : 'rgba(255,255,255,.1)'); b.title = ['+8% snowball damage per rank', 'Ability comes back 10% sooner per rank', '+1 heart per rank'][bi]; tr.appendChild(b); }); r.appendChild(tr);
+        r.appendChild(el('div', {font:'500 11px '+A.font, color:'#8fb9c9'}, 'Branches: ' + BRANCH[k][0] + ' +8% damage · ' + BRANCH[k][1] + ' −10% ability cooldown · ' + BRANCH[k][2] + ' +1 heart (each up to 3 ranks)')); }); }
+    if (tab == 'loadout') { const r0 = card(); r0.appendChild(el('div', {font:'800 15px '+A.font, color:'#D5F367'}, '❄ ' + PERM.frost + ' Frost Crystals · ' + PERM.bank + ' banked snowflakes (half of what you have left at the end of each game)'));
+      const rb = card(); rb.appendChild(el('div', {font:'800 15px '+A.font}, 'Special snowball')); const bw = el('div', {display:'flex', gap:'6px', flexWrap:'wrap'}); rb.appendChild(bw);
+      Object.keys(BALLS).forEach(k => { const BL = BALLS[k], have = PERM.balls[k], on = PERM.ball == k; const b = B(BL.e + ' ' + BL.n + (have ? '' : ' · ❄ ' + BL.cost), () => { if (!have) { if (PERM.frost < BL.cost) { A.sfx('bad'); return; } PERM.frost -= BL.cost; PERM.balls[k] = 1; } PERM.ball = k; savePerm(); A.sfx('coin'); openPanel('loadout'); }, on ? '#D5F367' : have ? '#3f8fd8' : 'rgba(255,255,255,.12)', on ? '#14204a' : '#fff'); b.title = BL.d; bw.appendChild(b); });
+      rb.appendChild(el('div', {font:'500 12px '+A.font, color:'#cfe3f5'}, (BALLS[PERM.ball] || BALLS.snow).d));
+      Object.keys(GSLOT).forEach(sl => { const S2 = GSLOT[sl], cur = eqd(sl), r = card(); r.appendChild(el('div', {font:'800 15px '+A.font}, S2.e + ' ' + S2.n + ' · ' + S2.stat));
+        const items = PERM.gear.filter(x => x.slot == sl).sort((a, b) => b.rar - a.rar || b.lv - a.lv); if (!items.length) r.appendChild(el('div', {font:'500 12px '+A.font, color:'#8fb9c9'}, 'No ' + S2.n.toLowerCase() + ' yet: gear drops from bosses and every few waves.'));
+        items.forEach(it => { const row = el('div', {display:'flex', alignItems:'center', gap:'8px', flexWrap:'wrap'}), on = cur && cur.id == it.id, uc = gUpCost(it);
+          const nm = el('div', {flex:'1', minWidth:'200px'}); nm.appendChild(el('div', {font:'800 13px '+A.font, color:GRAR[it.rar].c}, it.name + (it.lv ? ' +' + it.lv : ''))); nm.appendChild(el('div', {font:'500 11px '+A.font, color:'#cfe3f5'}, GRAR[it.rar].n + ' · ' + gearTxt(it))); row.appendChild(nm);
+          row.appendChild(B(on ? 'Equipped' : 'Equip', () => { PERM.eq[sl] = it.id; savePerm(); openPanel('loadout'); }, on ? '#D5F367' : '#00B451', on ? '#14204a' : '#fff'));
+          const can = PERM.bank >= uc.flakes && PERM.frost >= uc.frost && it.lv < 10; row.appendChild(B(it.lv >= 10 ? 'MAX' : 'Upgrade · ' + uc.flakes + '❄ + ' + uc.frost + ' crystals', () => { if (!can) { A.sfx('bad'); return; } PERM.bank -= uc.flakes; PERM.frost -= uc.frost; it.lv++; savePerm(); A.sfx('coin'); openPanel('loadout'); }, can ? '#3f8fd8' : 'rgba(255,255,255,.1)'));
+          if (!on) row.appendChild(B('Salvage +' + (it.rar + 1) + ' crystals', () => { PERM.gear = PERM.gear.filter(x => x !== it); PERM.frost += it.rar + 1; savePerm(); openPanel('loadout'); }, 'rgba(255,255,255,.1)')); r.appendChild(row); }); }); } };
   const inBar = q => q.y > BAR;
   const barBtn = q => { const cols = phase == 'build' ? 7 : 5, row = phase == 'build' ? Math.floor((q.y - BAR) / 50) : 0, col = Math.floor(q.x / (600/cols)); return row*cols + col; };
-  const MENU = [['endless', '♾ Endless Waves'], ['rush', '👑 Boss Rush'], ['daily', '📅 Daily Challenge'], ['up', '🧊 Upgrades'], ['guide', '❓ How to play']];
-  const menuHit = q => { for (let i = 0; i < MENU.length; i++) { const bx = 150, by = 250 + i*58; if (q.x > bx && q.x < bx + 300 && q.y > by && q.y < by + 48) return MENU[i][0]; } return null; };
+  const MENU = [['endless', '♾ Endless Waves'], ['rush', '👑 Boss Rush'], ['daily', '📅 Daily Challenge'], ['class', '🎽 Class & skills'], ['loadout', '🎒 Loadout & gear'], ['up', '🧊 Upgrades'], ['guide', '❓ How to play']];
+  const menuHit = q => { for (let i = 0; i < MENU.length; i++) { const bx = 150, by = 214 + i*56; if (q.x > bx && q.x < bx + 300 && q.y > by && q.y < by + 48) return MENU[i][0]; } return null; };
   const upBox = i => ({x:i < 9 ? 12 : 304, y:118 + (i % 9)*56}); const upHit = q => { for (let i = 0; i < PUPS.length; i++) { const B2 = upBox(i); if (q.x > B2.x && q.x < B2.x + 284 && q.y > B2.y && q.y < B2.y + 50) return PUPS[i]; } return q.y > 640 && q.y < 690 ? 'close' : null; };
-  const onMenu = k => { if (k == 'guide') { guide = true; return; } if (k == 'up') { upOpen = true; return; } if (k) startGame(k); };
+  const onMenu = k => { if (k == 'guide') { guide = true; return; } if (k == 'up') { upOpen = true; return; } if (k == 'class' || k == 'loadout') { openPanel(k); return; } if (k) startGame(k); };
   const offK = A.keys(e => { if (guide) { guide = false; return; } if (upOpen) { if (e.key == 'Escape' || e.key == 'Enter' || e.key == ' ') upOpen = false; return; }
     if ((e.key == ' ' || e.key == 'Enter') && st != 'play' && !quiz) { if (__skip) { __skip = false; st = 'play'; return; } startGame(mode); return; } if (st != 'play') return;
     if (e.key == 'h' || e.key == 'H' || e.key == '?') { guide = true; return; }
     if (phase == 'build') { if (e.key == 'z' || e.key == 'Z') { useTool('undo'); return; } const n = e.key == '0' ? 10 : +e.key; if (n >= 1 && n <= TOOLS.length) { tool = n - 1; if (!PLACE.includes(TOOLS[tool].k)) useTool(TOOLS[tool].k); } if (e.key == 'Enter') nextWave(); if (e.key == ' ' && PLACE.includes(TOOLS[tool].k)) useTool(TOOLS[tool].k, me.x, me.y - 70); return; }
+    if (['q', 'Q', 'f', 'F'].includes(e.key)) { useAbility(); return; }
     if ((e.key == 'e' || e.key == 'E') && me.rollCd <= 0 && !me.freeze) { me.roll = .3; me.rollCd = rollCD(); me.rdir = me.face; A.tone(300, .06, 'sine', .04); } });
   let lastTapX = -99, lastTapT = -9;
   c.addEventListener('pointerdown', e => { const q = pt(c, e, w, h); aim = q; mouseOn = true;
@@ -566,7 +640,7 @@ A.register('snowball', { mount(host, api){
     if (st != 'play') { if (quiz) return; if (__skip) { __skip = false; st = 'play'; return; } onMenu(menuHit(q) || (st == 'over' ? null : null)); return; }
     if (q.x > 548 && q.y < 44) { guide = true; return; }
     if (phase == 'build') { if (inBar(q)) { const i = barBtn(q); if (i < TOOLS.length) { tool = i; if (!PLACE.includes(TOOLS[i].k)) useTool(TOOLS[i].k); } return; } if (q.y > MID) useTool(TOOLS[tool].k, q.x, q.y); return; }
-    if (inBar(q)) { const i = barBtn(q); if (i == 0) touch.l = true; else if (i == 1) touch.r = true; else if (i == 2) touch.duck = true; else if (i == 3 && me.rollCd <= 0) { me.roll = .3; me.rollCd = rollCD(); me.rdir = me.face; } else if (i == 4) guide = true; return; }
+    if (inBar(q)) { const i = barBtn(q); if (i == 0) touch.l = true; else if (i == 1) touch.r = true; else if (i == 2) touch.duck = true; else if (i == 3 && me.rollCd <= 0) { me.roll = .3; me.rollCd = rollCD(); me.rdir = me.face; } else if (i == 4) useAbility(); return; }
     if (q.y < MID) { aiming = true; packing = true; packT = 0; return; }
     // tap your own side to walk there (double tap = dodge roll)
     if (t - lastTapT < .3 && Math.abs(q.x - lastTapX) < 60 && me.rollCd <= 0) { me.roll = .3; me.rollCd = rollCD(); me.rdir = q.x > me.x ? 1 : -1; } lastTapT = t; lastTapX = q.x; me.tx = q.x; me.ty = q.y; });
@@ -587,7 +661,7 @@ A.register('snowball', { mount(host, api){
     if (b.mine) { let hit = 0; const rad = (b.kind == 'mega' ? 56 : b.r + 22);
       const W2 = inWall(x, y, false); if (W2 && W2.hp != null) { W2.hp -= b.dmg; addNum(x, y - 10, '🧱', '#5a7a9a'); }
       for (const f of foes) { if (f.dead || Math.hypot(f.x - x, f.y - y) > rad + (TYPES[f.k].big ? 10 : 0)) continue;
-        if (f.duck && enemyCover(f) && !b.big) { const C2 = enemyCover(f); C2.hp -= b.dmg*.5; continue; }   // hiding behind their wall: only big snowballs get through
+        if (f.duck && enemyCover(f) && !b.big && !(me.eye > 0)) { const C2 = enemyCover(f); C2.hp -= b.dmg*.5; continue; }   // hiding behind their wall: only big snowballs get through
         f.hp -= b.dmg; f.kb = .25; f.kx = (f.x - x) * .3; hit++; addNum(f.x, f.y - 26, '-' + Math.round(b.dmg*10)/10, '#FF4539'); if (b.kind == 'icy' || b.ice) f.slow = 3; if (f.hp <= 0) killFoe(f); }
       if (boss && Math.hypot(boss.x - x, boss.y - y) < (boss.k == 'dragon' ? 85 : 62) + (b.kind == 'mega' ? 30 : 0)) { hitBoss(b.dmg, x, y); hit++; }
       for (const f of foes) if (f.k == 'medic' && f.dead) {}
@@ -609,14 +683,15 @@ A.register('snowball', { mount(host, api){
     if (st == 'play' && !quiz && !guide) {
       // ----- you -----
       const space = !!K.k[' ']; const duckKey = duckK.ShiftLeft || duckK.ShiftRight || duckK.KeyC || touch.duck;
+      me.ab = Math.max(0, (me.ab || 0) - dt); me.shieldT = Math.max(0, (me.shieldT || 0) - dt); me.eye = Math.max(0, (me.eye || 0) - dt); if (me.eye > 0) white = 0;
       me.inv = Math.max(0, me.inv - dt); me.throwT = Math.max(0, me.throwT - dt); me.hitT = Math.max(0, me.hitT - dt); me.rollCd = Math.max(0, me.rollCd - dt); me.freeze = Math.max(0, me.freeze - dt);
       for (const key in pw) pw[key] = Math.max(0, pw[key] - (key == 'shield' ? 0 : dt));
       const mx = (K.k.ArrowRight || K.k.d || K.k.D || touch.r ? 1 : 0) - (K.k.ArrowLeft || K.k.a || K.k.A || touch.l ? 1 : 0), my = (K.k.ArrowDown || K.k.s || K.k.S ? 1 : 0) - (K.k.ArrowUp || K.k.w || K.k.W ? 1 : 0);
       let want = 0, wantY = 0; if (mx || my) { want = mx; wantY = my; me.tx = null; me.ty = null; }
       else if (me.tx != null) { const d = me.tx - me.x, dy2 = (me.ty == null ? me.y : me.ty) - me.y, L2 = Math.hypot(d, dy2); if (L2 < 6) { me.tx = null; me.ty = null; } else { want = d / L2; wantY = dy2 / L2; } }
       if (Math.abs(want) > .2) me.face = Math.sign(want);
-      const spd = 220 * (1 + .05*A.U('boots')) * (1 + .08*PU('boots')) * (me.duck ? .35 : 1) * (me.freeze > 0 ? 0 : 1);
-      me.vy = me.vy || 0; if (me.roll > 0) { me.roll -= dt; me.vx = me.rdir * 420; me.vy = 0; } else { const k = AR().slip ? 3 : 14; me.vx += (want*spd - me.vx) * Math.min(1, k*dt); me.vy += (wantY*spd - me.vy) * Math.min(1, k*dt); }
+      const spd = 220 * (1 + .05*A.U('boots')) * (1 + .08*PU('boots')) * (1 + .05*gStat('boots')) * (CL().slow || 1) * (me.duck ? .35 : 1) * (me.freeze > 0 ? 0 : 1);
+      me.vy = me.vy || 0; if (me.roll > 0) { me.roll -= dt; me.vx = me.rdir * 420; me.vy = 0; } else { const k = AR().slip ? 3 + 1.2*gStat('boots') : 14; me.vx += (want*spd - me.vx) * Math.min(1, k*dt); me.vy += (wantY*spd - me.vy) * Math.min(1, k*dt); }
       // walk anywhere on your half, but not through your own walls (bump off the edges instead of sticking)
       const ox = me.x, oy = me.y, nx = Math.max(16, Math.min(584, me.x + me.vx*dt)), ny = Math.max(MID + 34, Math.min(PY + 14, me.y + me.vy*dt));
       const blocked = (x, y) => walls.some(W2 => W2.mine && W2.hp > 0 && x > W2.x - 10 && x < W2.x + W2.w + 10 && y > W2.y - 6 && y < W2.y + W2.h + 18);
@@ -632,14 +707,14 @@ A.register('snowball', { mount(host, api){
         // packing with Space (aim with the mouse, or the nearest enemy)
         if (space && !spaceWas && !me.duck && me.freeze <= 0) { packing = true; packT = 0; }
         if (!space && spaceWas && packing && !aiming) throwMine(); spaceWas = space;
-        if (packing && me.freeze <= 0) packT += dt / (.9 * Math.pow(.88, PU('pack')));
+        if (packing && me.freeze <= 0) packT += dt / (.9 * Math.pow(.88, PU('pack')) / (CL().pack || 1) / (1 + .06*gStat('gloves')));
         // ----- teammates -----
         const target = nearestFoe(300, 150);
-        for (const m of mates) { if (m.ko) { if (Math.hypot(me.x - m.x, me.y - m.y) < 40) { m.rev += dt; if (m.rev >= 1.5) { m.ko = false; m.hp = Math.ceil(m.max/2); say(m.name + ' is back up!', 1.5); A.sfx('coin'); } } else m.rev = Math.max(0, m.rev - dt*.5); continue; }
+        for (const m of mates) { if (m.ko) { if (Math.hypot(me.x - m.x, me.y - m.y) < 40) { m.rev += dt * (PERM.cls == 'medic' ? 2 : 1); if (m.rev >= 1.5) { m.ko = false; m.hp = Math.ceil(m.max/2); say(m.name + ' is back up!', 1.5); A.sfx('coin'); } } else m.rev = Math.max(0, m.rev - dt*.5); continue; }
           m.cool -= dt; m.job -= dt; const cov = covering(m.x, m.y); m.duck = !!cov && m.cool > .6;
           if (m.role == 'thrower' && target && m.cool <= 0) { m.cool = 1.8 / (1 + .2*(m.lv - 1)); lob(m, target.x + (Math.random() - .5)*30, target.y, {mine:1, sp:440, dmg:(.8 + .2*m.lv) * armM()}); }
           if (m.role == 'builder' && m.job <= 0) { m.job = 4 / m.lv; const W2 = weakestWall(); if (W2 && W2.hp < W2.max) { W2.hp = Math.min(W2.max, W2.hp + 1); addNum(W2.x + W2.w/2, W2.y - 8, '+🧱', '#2fa8e0'); } }
-          if (m.role == 'medic' && m.job <= 0) { m.job = 11 - m.lv; if (me.hp < me.max) { me.hp++; addNum(me.x, me.y - 40, '+♥', '#00B451'); } }
+          if (m.role == 'medic' && m.job <= 0) { m.job = (11 - m.lv) * (PERM.cls == 'medic' ? .5 : 1); if (me.hp < me.max) { me.hp++; addNum(me.x, me.y - 40, '+♥', '#00B451'); } }
           if (!m.tx || Math.random() < dt*.25) m.tx = 40 + Math.random()*520; m.x += Math.max(-60*dt, Math.min(60*dt, m.tx - m.x)); }
         // ----- your buildings -----
         for (const B2 of builds) { if (B2.k == 'turret' && target) { B2.cool -= dt; if (B2.cool <= 0) { B2.cool = 1.4 * (1 - .12*PU('turret')); lob(B2, target.x, target.y, {mine:1, sp:460, dmg:armM()}); } }
@@ -692,8 +767,9 @@ A.register('snowball', { mount(host, api){
               if (me.x >= x0 && me.x < x0 + 300 && !(me.duck && covering(me.x, me.y))) hurtMe(1); }
             haz = null; } }
         // ----- snowballs -----
-        for (const b of balls) { if (b.lob) { b.t += dt; const k2 = Math.min(1, b.t / b.T); b.x = b.x0 + (b.x1 - b.x0)*k2; b.y = b.y0 + (b.y1 - b.y0)*k2; b.z = Math.sin(k2*Math.PI) * Math.min(160, 40 + b.T*120); if (k2 >= 1) { b.life = 0; landHit(b, b.x1, b.y1); } continue; }
+        for (const b of balls) { if (b.lob) { b.t += dt; const k2 = Math.min(1, b.t / b.T); b.x = b.x0 + (b.x1 - b.x0)*k2; b.y = b.y0 + (b.y1 - b.y0)*k2; b.z = Math.sin(k2*Math.PI) * Math.min(160, 40 + b.T*120); if (k2 >= 1) { b.life = 0; landHit(b, b.x1, b.y1); if (b.boomer && !b.back) { lob({x:b.x1, y:b.y1 + 20}, (b.x0 + b.x1)/2, Math.min(MID - 4, (b.y0 + b.y1)/2), {mine:1, dmg:b.dmg, r:b.r, sp:520}); balls[balls.length - 1].back = 1; } } continue; }
           b.x += b.vx*dt; b.y += b.vy*dt; b.life -= dt; if (AR().wind) b.vx += Math.sin(t*.4)*30*dt;
+          if (b.shard) { for (const f of foes) { if (f.dead || (b.hitIds || (b.hitIds = new Set())).has(f) || Math.hypot(f.x - b.x, f.y - b.y) > 18) continue; b.hitIds.add(f); f.hp -= b.dmg; f.kb = .2; addNum(f.x, f.y - 26, '-' + Math.round(b.dmg*10)/10, '#7fe6ff'); if (f.hp <= 0) killFoe(f); } if (boss && Math.hypot(boss.x - b.x, boss.y - b.y) < 50 && !b.hitB) { b.hitB = 1; hitBoss(b.dmg, b.x, b.y); } if (b.y < 10) b.life = 0; continue; }
           const W2 = inWall(b.x, b.y, !b.mine); if (W2) { if (W2.hp != null) W2.hp -= b.dmg; b.life = 0; splat(b.x, b.y, 5); A.tone(150,.03,'square',.02); continue; }
           const tb = builds.find(B2 => (B2.k == 'turret' || B2.k == 'fire') && Math.hypot(B2.x - b.x, B2.y - b.y) < 16); if (tb) { tb.hp--; b.life = 0; splat(b.x, b.y, 5); continue; }
           const hm = mates.find(m => !m.ko && !m.duck && Math.hypot(m.x - b.x, m.y - 10 - b.y) < 16); if (hm) { b.life = 0; hurtMate(hm); continue; }
@@ -705,6 +781,10 @@ A.register('snowball', { mount(host, api){
             A.sfx('coin'); if (d.k != 'cocoa') say({icy:'❄ Icy snowballs: hits slow enemies!', mega:'💥 Mega snowballs: big splash!', rapid:'⚡ Rapid throws!', shield:'🛡 Shield: blocks the next hit'}[d.k], 1.6); } } drops = drops.filter(d => d.life > 0);
         if (!foes.length && !boss) { score += 200*wave; flakes += 15 + wave*2; if (!waveHurt) { score += 300; flakes += 10; stat(api, 'snowPerfect', 1, 'add'); say('✨ PERFECT wave ' + wave + '! No hits taken · +300', 3); } else say('Wave ' + wave + ' cleared! Build, heal and hire before the next one.', 3);
           api.score(score); A.sfx('win'); stat(api, 'snowWave', wave, 'max'); phase = 'build'; balls = []; cheerT = 2; tool = 0;
+          { const lv0 = clsLv(PERM.cls); PERM.cx[PERM.cls] = clsXp(PERM.cls) + 10 + wave*4; if (clsLv(PERM.cls) > lv0) setTimeout(() => say('⭐ ' + CL().n + ' reached level ' + clsLv(PERM.cls) + '! New skill point', 3), 1800);
+            if (wave % 3 == 0 && Math.random() < .4) { const it = makeGear(0); setTimeout(() => say('🎁 New gear: ' + it.name + ' (' + GRAR[it.rar].n + ')', 3), 3200); } stat(api, 'snowClass_' + PERM.cls, clsLv(PERM.cls), 'max'); savePerm(); }
+          if (PERM.cls == 'trapper') freeTrap = {pit:1, ice:1};
+          if (A.learnOn && A.learnOn()) setTimeout(() => { if (st == 'play' && phase == 'build' && !quiz) quiz = learn2(host, api, 'BONUS QUESTION · RIGHT = +25 ❄', () => { quiz = false; flakes += 25; say('+25 ❄ for the right answer!', 2); }, () => { quiz = false; }); }, 900);
           for (const m of mates) { m.xp++; if (m.xp >= 2 && m.lv < 5) { m.xp = 0; m.lv++; m.max++; m.hp = m.max; say(m.name + ' reached level ' + m.lv + '!', 2); } if (m.ko) { m.ko = false; m.hp = 1; } }
           if (mode == 'daily' && wave >= 15) { say('📅 Daily Challenge complete!', 4); gameOver(); } } } }
     // ======================= DRAW =======================
@@ -749,7 +829,7 @@ A.register('snowball', { mount(host, api){
       if (o.big) { g.fillStyle = '#121313'; g.beginPath(); g.arc(-4*s2, -17*s2, 2*s2, 0, TAU); g.arc(4*s2, -17*s2, 2*s2, 0, TAU); g.fill(); g.fillStyle = '#FF8A3C'; g.fillRect(-1*s2, -15*s2, 7*s2, 3*s2); }
       else { g.fillStyle = col; g.beginPath(); g.arc(0, -18*s2, 9*s2, Math.PI, 0); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(0, -27*s2, 3.5*s2, 0, TAU); g.fill(); g.fillStyle = '#121313'; g.beginPath(); g.arc(-3*s2, -14*s2, 1.4*s2, 0, TAU); g.arc(3*s2, -14*s2, 1.4*s2, 0, TAU); g.fill(); if (o.medic) { g.fillStyle = '#FF4539'; g.fillRect(-2*s2, -4*s2, 4*s2, 12*s2); g.fillRect(-6*s2, 0, 12*s2, 4*s2); } }
       g.restore(); };
-    const hidden = white > 0;
+    const hidden = white > 0 && !(me && me.eye > 0);
     for (const f of foes) { if (hidden && Math.random() < .9) continue; const T = TYPES[f.k];
       if (T.cat) { g.fillStyle = '#8D5B1D'; g.fillRect(f.x - 22, f.y + 4, 44, 8); g.strokeStyle = '#6b4a2b'; g.lineWidth = 4; g.beginPath(); g.moveTo(f.x, f.y + 6); g.lineTo(f.x + 18*Math.cos(-1 - (f.cool < .4 ? 1 : 0)), f.y + 6 + 18*Math.sin(-1 - (f.cool < .4 ? 1 : 0))); g.stroke(); }
       if (T.sled) { g.fillStyle = '#c84a2a'; rr(g, f.x - 16, f.y + 8, 32, 8, 4); g.fill(); }
@@ -766,7 +846,9 @@ A.register('snowball', { mount(host, api){
         if (m.rev > 0) { g.strokeStyle = '#00B451'; g.lineWidth = 3; g.beginPath(); g.arc(m.x, m.y, 20, -Math.PI/2, -Math.PI/2 + TAU*m.rev/1.5); g.stroke(); } }
       else kid(m.x, m.y, {thrower:'#2fa8e0', builder:'#64CDF5', medic:'#ff9ad5'}[m.role], {duck:m.duck, cheer:cheerT > 0, wind:m.cool < .35 && m.role == 'thrower'});
       g.fillStyle = '#14204a'; g.font = '700 10px '+A.font; g.textAlign = 'center'; g.fillText(m.name + ' · ' + {thrower:'🎯', builder:'🔨', medic:'➕'}[m.role] + ' Lv' + m.lv, m.x, m.y + 34); }
-    if (me && st != 'ready' && !(me.inv > 0 && Math.sin(t*25) > 0)) { kid(me.x, me.y, me.freeze > 0 ? '#7fe6ff' : '#00B451', {duck:me.duck, wind:packing && phase == 'fight', pack:packT, throwT:me.throwT, hit:me.hitT > 0, cheer:cheerT > 0, boots:'#14204a'});
+    if (me && st != 'ready' && !(me.inv > 0 && Math.sin(t*25) > 0)) { kid(me.x, me.y, me.freeze > 0 ? '#7fe6ff' : CL().col, {duck:me.duck, wind:packing && phase == 'fight', pack:packT, throwT:me.throwT, hit:me.hitT > 0, cheer:cheerT > 0, boots:'#14204a'});
+      if (me.shieldT > 0) { g.strokeStyle = 'rgba(255,233,120,' + (.5 + .4*Math.sin(t*12)) + ')'; g.lineWidth = 4; g.beginPath(); g.arc(me.x, me.y - 8, 34, 0, TAU); g.stroke(); }
+      if (me.eye > 0) { g.fillStyle = '#2f6a3a'; g.font = '700 11px '+A.font; g.textAlign = 'center'; g.fillText('🔭 Eagle Eye', me.x, me.y - 52); }
       if (me.roll > 0) { g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 3; g.beginPath(); g.arc(me.x, me.y - 6, 24, 0, TAU); g.stroke(); }
       if (pw.shield > 0) { g.strokeStyle = 'rgba(100,200,255,.8)'; g.lineWidth = 3; g.beginPath(); g.arc(me.x, me.y - 8, 28, 0, TAU); g.stroke(); }
       if (me.duck && covering(me.x, me.y)) { g.fillStyle = '#00B451'; g.font = '700 11px '+A.font; g.textAlign = 'center'; g.fillText('safe behind wall · scooping', me.x, me.y + 36); } }
@@ -800,12 +882,13 @@ A.register('snowball', { mount(host, api){
         g.fillStyle = tool == i ? '#D5F367' : can ? 'rgba(255,255,255,.18)' : 'rgba(255,255,255,.06)'; rr(g, x + 3, y + 4, w/cols - 6, 42, 9); g.fill(); g.fillStyle = tool == i ? '#14204a' : '#fff'; g.textAlign = 'center';
         g.font = '15px '+A.font; g.fillText(T2.e, x + w/cols/2, y + 22); g.font = '700 10px '+A.font; g.fillText(T2.n + (['go', 'role', 'undo', 'remove'].includes(T2.k) ? '' : isFinite(cost) ? ' · ' + cost + '❄' : ' · full'), x + w/cols/2, y + 38); });
       g.fillStyle = '#14204a'; g.font = '700 13px '+A.font; g.textAlign = 'center'; g.fillText(PLACE.includes(TOOLS[tool].k) ? (TOOLS[tool].k == 'remove' ? 'BUILD TIME · tap one of your walls or buildings to remove it (refund)' : 'BUILD TIME · tap your side to place ' + TOOLS[tool].e + ' ' + TOOLS[tool].n + ' · Z undoes') : 'BUILD TIME · pick something below, then ▶ Next wave', 300, MID + 40); }
-    else if (st == 'play') { const L = [['◀', touch.l], ['▶', touch.r], ['🦆 Duck', touch.duck || me.duck], ['🤸 Roll', me.roll > 0], ['❓ Help', false]]; L.forEach(([tx2, on], i) => { const x = i*w/5; g.fillStyle = on ? '#D5F367' : 'rgba(255,255,255,.16)'; rr(g, x + 5, BAR + 12, w/5 - 10, 76, 14); g.fill(); g.fillStyle = on ? '#14204a' : '#fff'; g.font = '800 18px '+A.font; g.textAlign = 'center'; g.fillText(tx2, x + w/10, BAR + 58); }); }
+    else if (st == 'play') { const L = [['◀', touch.l], ['▶', touch.r], ['🦆 Duck', touch.duck || me.duck], ['🤸 Roll', me.roll > 0], [me.ab > 0 ? '⭐ ' + Math.ceil(me.ab) + 's' : '⭐ ' + CL().ab, me.ab <= 0]]; L.forEach(([tx2, on], i) => { const x = i*w/5; g.fillStyle = on ? '#D5F367' : 'rgba(255,255,255,.16)'; rr(g, x + 5, BAR + 12, w/5 - 10, 76, 14); g.fill(); g.fillStyle = on ? '#14204a' : '#fff'; g.font = '800 18px '+A.font; g.textAlign = 'center'; g.fillText(tx2, x + w/10, BAR + 58); }); }
     if (msgT > 0 && st == 'play') { g.fillStyle = 'rgba(20,32,74,.85)'; rr(g, 30, MID - 22, w - 60, 40, 12); g.fill(); g.fillStyle = '#fff'; g.font = '700 14px '+A.font; g.textAlign = 'center'; g.fillText(msg, 300, MID + 3); }
     // ----- menus -----
     if (st != 'play') { g.fillStyle = 'rgba(20,32,74,.8)'; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; g.textAlign = 'center'; g.font = '900 34px '+A.font; g.fillText(st == 'over' ? 'SNOWED UNDER' : 'SNOWBALL SHOWDOWN', 300, 130);
       g.font = '600 15px '+A.font; g.fillStyle = '#cfe3f5'; g.fillText(st == 'over' ? A.fmt(score||0) + ' points · wave ' + wave + (msgT > 0 ? ' · ' + msg : '') : __skip ? 'Saved game · tap anywhere or press Space to keep going' : 'Best wave ' + PERM.best + ' · 🧊 ' + PERM.cr + ' ice crystals', 300, 170);
-      if (!__skip) MENU.forEach(([k, n], i) => { const by = 250 + i*58; g.fillStyle = k == mode && st == 'over' ? '#D5F367' : k == 'up' ? '#64CDF5' : k == 'guide' ? 'rgba(255,255,255,.2)' : '#ffffff'; rr(g, 150, by, 300, 48, 14); g.fill(); g.fillStyle = '#14204a'; g.font = '800 18px '+A.font; g.fillText(n, 300, by + 31); }); }
+      g.font = '700 14px '+A.font; g.fillStyle = '#D5F367'; if (!__skip) g.fillText(CL().e + ' ' + CL().n + ' · level ' + clsLv(PERM.cls) + ' · ' + (BALLS[PERM.ball] || BALLS.snow).e + ' ' + (BALLS[PERM.ball] || BALLS.snow).n + ' · ❄ ' + PERM.frost + ' Frost Crystals', 300, 196);
+      if (!__skip) MENU.forEach(([k, n], i) => { const by = 214 + i*56; g.fillStyle = k == mode && st == 'over' ? '#D5F367' : k == 'up' ? '#64CDF5' : k == 'class' || k == 'loadout' ? '#ffe9a0' : k == 'guide' ? 'rgba(255,255,255,.2)' : '#ffffff'; rr(g, 150, by, 300, 48, 14); g.fill(); g.fillStyle = '#14204a'; g.font = '800 18px '+A.font; g.fillText(n, 300, by + 31); }); }
     if (upOpen) { g.fillStyle = 'rgba(10,20,50,.95)'; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; g.textAlign = 'center'; g.font = '900 26px '+A.font; g.fillText('🧊 Permanent upgrades', 300, 70); g.font = '600 14px '+A.font; g.fillStyle = '#9fe8ff'; g.fillText('You have ' + PERM.cr + ' ice crystals · tap an upgrade to buy it · earn crystals every game', 300, 96);
       PUPS.forEach((u, i) => { const B2 = upBox(i), L = PU(u.k), mx2 = L >= u.max, cst = pcost(u), can = !mx2 && PERM.cr >= cst; g.fillStyle = can ? 'rgba(0,180,81,.22)' : 'rgba(255,255,255,.08)'; rr(g, B2.x, B2.y, 284, 50, 10); g.fill();
         g.textAlign = 'left'; g.fillStyle = '#fff'; g.font = '800 13px '+A.font; g.fillText(u.n + ' · ' + L + '/' + u.max, B2.x + 10, B2.y + 18); g.font = '500 11px '+A.font; g.fillStyle = '#cfe3f5'; g.fillText(u.d, B2.x + 10, B2.y + 36);
@@ -823,15 +906,17 @@ A.register('snowball', { mount(host, api){
     {label:'Add snowflakes', num:500, min:1, run:n => { flakes += Math.floor(n); }},
     {label:'Add hearts', num:5, min:1, max:20, run:n => { if (me) { me.max = A.lives(me.max + Math.floor(n)); me.hp = me.max; } }},
     {label:'Spawn boss', run:() => { if (st != 'play') startGame(mode); const k = ['yeti', 'plow', 'witch', 'dragon'][Math.floor(Math.random()*4)], B = BOSSES[k]; boss = {k, n:B.n, x:300, y:k == 'dragon' ? 80 : 100, hp:B.hp, max:B.hp, cool:2, vx:90, charge:0, col:B.col, ph:1, tp:0, kb:0}; phase = 'fight'; say(B.n + ' appears!', 2); }},
-    {label:'Add ice crystals', num:100, min:1, run:n => { PERM.cr += Math.floor(n); savePerm(); }}];
+    {label:'Add ice crystals', num:100, min:1, run:n => { PERM.cr += Math.floor(n); savePerm(); }},
+    {label:'Add Frost Crystals', num:100, min:1, run:n => { PERM.frost += Math.floor(n); savePerm(); }},
+    {label:'Give gear (rarity 0-5)', num:4, min:0, max:5, run:n => { makeGear(Math.floor(n)); }}];
   // ---- save & resume (old v2 saves still load) ----
   api.snap && api.snap(() => (st == 'play') ? {v:3, mode, seed, me, foes, walls, builds, mates, drops, score, wave, flakes, boss, phase, arena, pw, bossesBeat} : null);
   { const R0 = api.resume; if (R0 && (R0.v == 2 || R0.v == 3)) { try {
       if (R0.v == 3) ({mode, seed, me, foes, walls, builds, mates, drops, score, wave, flakes, boss, phase, arena, pw, bossesBeat} = R0);
       else { startGame('endless'); score = R0.score || 0; wave = R0.wave || 1; flakes = R0.flakes || 20; arena = R0.arena || 0; phase = 'build'; foes = []; boss = null; if (R0.me) { me.hp = R0.me.hp; me.max = R0.me.max; } }
       me.ammo = me.ammo == null ? maxAmmo() : me.ammo; me.y = PY; balls = []; api.score(score); __skip = true; st = 'ready'; } catch(e) { console.error('[save] snowball resume failed', e); } } }
-  A._dbg = A._dbg || {}; A._dbg.snow = () => ({me, foes, boss, wave, phase, walls, builds, mates, flakes, st, mode, balls, PERM, set:o => { if (o.wave != null) wave = o.wave; if (o.flakes != null) flakes = o.flakes; }, nextWave, useTool, startGame, throwAt:(x, y, p) => { aim = {x, y}; packT = p || 0; mouseOn = true; throwMine(); }});
-  return () => { offK(); offL(); K.off(); window.removeEventListener('keydown', dkd); window.removeEventListener('keyup', dku); window.removeEventListener('blur', dbl); if (A.admins) delete A.admins.snowball; };
+  A._dbg = A._dbg || {}; A._dbg.snow = () => ({PERM, useAbility, makeGear, openPanel, CLS_K, me, foes, boss, wave, phase, walls, builds, mates, flakes, st, mode, balls, PERM, set:o => { if (o.wave != null) wave = o.wave; if (o.flakes != null) flakes = o.flakes; }, nextWave, useTool, startGame, throwAt:(x, y, p) => { aim = {x, y}; packT = p || 0; mouseOn = true; throwMine(); }});
+  return () => { closePanelS(); offK(); offL(); K.off(); window.removeEventListener('keydown', dkd); window.removeEventListener('keyup', dku); window.removeEventListener('blur', dbl); if (A.admins) delete A.admins.snowball; };
 }});
 
 // =====================================================================================================
