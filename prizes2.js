@@ -707,25 +707,55 @@ W.mount = (root, api) => {
       E('span', {style:{fontSize:'11px', color:'#4a4a4a', minWidth:'70px', textAlign:'right'}}, 'best '+W.fmt(r.best)))));
     return box; };
 
-  // ----- Upgrades (the old Upgrade Workshop), with bulk buy -----
+  // ----- Upgrades (the old Upgrade Workshop): pick a machine, see only its upgrades side by side; arrange the machines your way -----
   const qN = () => qty === 'max' ? Infinity : qty;
-  const upg = () => { const box = E('div'), data = api.upgrades ? api.upgrades() : [], p = P();
-    box.appendChild(E('div', {cls:'wlp-box'}, E('div', {style:{fontWeight:800, fontSize:'18px', color:'#015640'}}, '🔧 Upgrades · '+data.reduce((a,g)=>a+g.ups.reduce((x,u)=>x+u.lv,0),0)+' levels owned'),
-      E('div', {cls:'wlp-small'}, 'Machine upgrades from the old Workshop — paid in tickets, they reset on Rebirth. Pick ×1 / ×10 / ×100 / Max to buy many levels at once.')));
+  const LSget = (k, d) => { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch(e) { return d; } }, LSset = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) {} };
+  let upgSort = LSget('wl-upg-sort', 'az'), upgOrder = LSget('wl-upg-order', []), dragId = null;
+  const upg = () => { const box = E('div'), data = api.upgrades ? api.upgrades() : [], p = P(), tix = p.tickets||0;
+    const info = g => { const open = g.ups.filter(u => u.lv < u.max); return {lv:g.ups.reduce((x, u) => x + u.lv, 0), can:open.filter(u => tix >= u.cost).length, cheap:open.length ? Math.min(...open.map(u => u.cost)) : Infinity}; };
+    box.appendChild(E('div', {cls:'wlp-box'}, E('div', {style:{fontWeight:800, fontSize:'18px', color:'#015640'}}, '🔧 Upgrades · '+W.fmt(data.reduce((a, g) => a + info(g).lv, 0))+' levels owned'),
+      E('div', {cls:'wlp-small'}, 'Tap a machine to see its upgrades. Paid in tickets, they reset on Rebirth. Pick ×1 / ×10 / ×100 / Max to buy many levels at once.')));
     box.appendChild(qtyRow('levels at once'));
-    const ch = E('div', {style:{display:'flex', gap:'5px', flexWrap:'wrap', margin:'8px 0'}});
-    [['all','All machines'], ...data.map(g=>[g.id, g.name])].forEach(([id,t]) => ch.appendChild(E('button', {cls:'wlp-chip'+(upgF==id?' on':''), onclick:()=>{ upgF = id; renderBody(); }}, t)));
-    ch.appendChild(E('button', {cls:'wlp-chip'+(affordOnly?' on':''), onclick:()=>{ affordOnly = !affordOnly; renderBody(); }}, 'Can afford'));
-    box.appendChild(ch); let shown = 0;
-    data.filter(g => upgF=='all' || g.id==upgF).forEach(g => { const ups = g.ups.filter(u => match(u.n, u.d, g.name) && (!affordOnly || (u.lv < u.max && (p.tickets||0) >= u.cost))); if (!ups.length) return;
+    // arrange the machines
+    const SORTS = [['az', 'A–Z'], ['lv', 'Most upgraded'], ['cheap', 'Cheapest next'], ['can', 'Most I can buy'], ['mine', '✋ My order']];
+    const ar = E('div', {style:{display:'flex', gap:'5px', flexWrap:'wrap', alignItems:'center', margin:'4px 0 8px'}}, E('span', {style:{fontSize:'12px', fontWeight:800, color:'#015640'}}, 'ARRANGE'));
+    SORTS.forEach(([k, t]) => ar.appendChild(E('button', {cls:'wlp-chip'+(upgSort == k ? ' on' : ''), onclick:() => { upgSort = k; LSset('wl-upg-sort', k); renderBody(); }}, t)));
+    ar.appendChild(E('button', {cls:'wlp-chip'+(affordOnly ? ' on' : ''), onclick:() => { affordOnly = !affordOnly; renderBody(); }}, 'Can afford'));
+    if (upgSort == 'mine') ar.appendChild(E('span', {cls:'wlp-small'}, 'Drag machines, or use ◀ ▶, to put them where you like.'));
+    box.appendChild(ar);
+    const pos = id => { const i = upgOrder.indexOf(id); return i < 0 ? 1e6 + data.findIndex(g => g.id == id) : i; };
+    const list = data.slice().sort({az:(a, b) => a.name.localeCompare(b.name), lv:(a, b) => info(b).lv - info(a).lv || a.name.localeCompare(b.name), cheap:(a, b) => info(a).cheap - info(b).cheap || a.name.localeCompare(b.name), can:(a, b) => info(b).can - info(a).can || a.name.localeCompare(b.name), mine:(a, b) => pos(a.id) - pos(b.id)}[upgSort] || ((a, b) => 0));
+    const saveOrder = ids => { upgOrder = ids; LSset('wl-upg-order', ids); renderBody(); };
+    const moveTo = (id, toId) => { const ids = list.map(g => g.id).filter(x => x != id), at = ids.indexOf(toId); ids.splice(at < 0 ? ids.length : at, 0, id); saveOrder(ids); };
+    const nudge = (id, d) => { const ids = list.map(g => g.id), i = ids.indexOf(id), j = i + d; if (j < 0 || j >= ids.length) return; [ids[i], ids[j]] = [ids[j], ids[i]]; saveOrder(ids); };
+    if (!q.trim() && (upgF == 'all' || !list.some(g => g.id == upgF))) upgF = (list.find(g => !affordOnly || info(g).can) || list[0] || {}).id;
+    // the machines, side by side
+    const slim = (window.innerWidth || 800) < 640;   // phones: one swipeable row of machines, so the upgrades stay right below
+    const mg = E('div', {style:slim ? {display:'grid', gridAutoFlow:'column', gridAutoColumns:'150px', gridTemplateRows:'auto auto', overflowX:'auto', gap:'6px', marginBottom:'12px', paddingBottom:'4px'} : {display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(150px,1fr))', gap:'6px', marginBottom:'12px'}});
+    list.forEach((g, i) => { const I = info(g), on = upgF == g.id && !q.trim(); if (affordOnly && !I.can && !on) return;
+      const tile = E('button', {style:{display:'flex', alignItems:'center', gap:'8px', textAlign:'left', border:on ? '3px solid #F9BF01' : '1.5px solid #cfc8b0', background:on ? '#015640' : '#ffffff', color:on ? '#ffffff' : '#015640', borderRadius:'12px', padding:'6px 8px', cursor:upgSort == 'mine' ? 'grab' : 'pointer', fontFamily:'inherit', minWidth:0, position:'relative'},
+        onclick:() => { upgF = g.id; if (q) { q = ''; try { const x = head.querySelector('input[type=search]'); if (x) x.value = ''; } catch(e) {} } renderBody(); }}, E('img', {src:g.icon, alt:'', style:{width:'30px', height:'30px', background:'#015640', borderRadius:'7px', flexShrink:0}}),
+        E('div', {style:{minWidth:0, flex:1}}, E('div', {style:{fontWeight:800, fontSize:'12px', lineHeight:1.15}}, g.name), E('div', {style:{fontSize:'10px', fontWeight:700, opacity:.8}}, 'Lv '+W.fmt(I.lv)+(I.can ? ' · '+I.can+' to buy' : ''))));
+      if (upgSort == 'mine') { tile.draggable = true; tile.ondragstart = e => { dragId = g.id; try { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', g.id); } catch(x) {} }; tile.ondragover = e => { e.preventDefault(); tile.style.outline = '3px dashed #EA55AB'; }; tile.ondragleave = () => { tile.style.outline = ''; };
+        tile.ondrop = e => { e.preventDefault(); tile.style.outline = ''; if (dragId && dragId != g.id) moveTo(dragId, g.id); dragId = null; };
+        const nb = (t, d) => E('span', {style:{fontSize:'11px', fontWeight:900, padding:'2px 5px', borderRadius:'6px', background:'rgba(0,0,0,.12)', cursor:'pointer'}, onclick:e => { e.stopPropagation(); nudge(g.id, d); }}, t);
+        tile.appendChild(E('div', {style:{display:'flex', flexDirection:'column', gap:'2px'}}, nb('◀', -1), nb('▶', 1))); }
+      mg.appendChild(tile); });
+    box.appendChild(mg); if (slim) setTimeout(() => { const sel = [...mg.children].find(c => c.style.border.startsWith('3px')); if (sel) sel.scrollIntoView({inline:'center', block:'nearest'}); }, 0);
+    // the chosen machine's upgrades, side by side (a search shows matches from every machine)
+    const show = q.trim() ? list : list.filter(g => g.id == upgF); let shown = 0;
+    show.forEach(g => { const ups = g.ups.filter(u => match(u.n, u.d, g.name) && (!affordOnly || (u.lv < u.max && tix >= u.cost))); if (!ups.length) return;
       box.appendChild(E('div', {cls:'wlp-h', style:{display:'flex', alignItems:'center', gap:'8px'}}, E('img', {src:g.icon, alt:'', style:{width:'24px', height:'24px', background:'#015640', borderRadius:'6px'}}), g.name.toUpperCase()+(g.tm > 1.001 ? ' · +'+W.fmt(Math.round((g.tm-1)*100))+'% TICKETS' : '')));
+      const ug = E('div', {style:{display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))', gap:'8px', marginBottom:'10px'}});
       ups.forEach(u => { shown++; const maxed = u.lv >= u.max, pl = api.upgPlan ? api.upgPlan(g.id, u.k, qN()) : {cnt:1, cost:u.cost}, n = Math.max(1, pl.cnt), cost = pl.cnt ? pl.cost : u.cost, can = !maxed && pl.cnt > 0;
-        const b = E('button', {cls:'wlp-buy', style:{width:'auto', minWidth:'120px'}, onclick:()=>{ if (api.admin()) return api.toast('ADMIN MODE · SHOPPING DISABLED'); const got = api.buyUpg(g.id, u.k, qN()); if (got) { api.sfx('coin'); } renderHead(); renderBody(); }},
+        const b = E('button', {cls:'wlp-buy', style:{marginTop:'auto'}, onclick:() => { if (api.admin()) return api.toast('ADMIN MODE · SHOPPING DISABLED'); const got = api.buyUpg(g.id, u.k, qN()); if (got) { api.sfx('coin'); } renderHead(); renderBody(); }},
           maxed ? (u.one ? 'OWNED' : 'MAXED') : (n > 1 ? '×'+n+' · ' : '')+W.fmt(cost)+' 🎟'); if (!can) b.disabled = true;
-        const pips = E('div', {style:{display:'flex', gap:'2px', marginTop:'4px'}}); if (u.cap || u.one) for (let i=0;i<Math.min(10, u.one ? 1 : u.cap);i++) pips.appendChild(E('div', {style:{width:'12px', height:'5px', borderRadius:'3px', background: i < Math.min(u.lv, u.cap||1) ? '#F9BF01' : '#d9d3bd'}}));
-        box.appendChild(E('div', {cls:'wlp-row', style:{marginBottom:'6px'}}, E('div', {style:{flex:1, minWidth:0}}, E('div', {style:{fontWeight:700, color:'#015640'}}, u.n+'  ', E('span', {style:{fontSize:'11px', color:'#8a8a8a'}}, u.one ? (u.lv ? 'unlocked' : 'locked') : 'level '+W.fmt(u.lv)+(u.max < 1e9 ? ' / '+u.max : ''))),
-          E('div', {cls:'wlp-small'}, u.d+(u.cap && u.lv >= u.cap ? ' · effect maxed, each level now +2% tickets' : '')), E('div', {style:{fontSize:'11px', color:'#4a4a4a'}}, 'Category: '+g.name+' · affects '+g.name+' only'), pips), b)); }); });
-    if (!shown) box.appendChild(E('div', {cls:'wlp-small'}, 'No upgrades match.'));
+        const pips = E('div', {style:{display:'flex', gap:'2px', marginTop:'2px'}}); if (u.cap || u.one) for (let i = 0; i < Math.min(10, u.one ? 1 : u.cap); i++) pips.appendChild(E('div', {style:{width:'12px', height:'5px', borderRadius:'3px', background: i < Math.min(u.lv, u.cap||1) ? '#F9BF01' : '#d9d3bd'}}));
+        ug.appendChild(E('div', {style:{background:can ? '#ffffff' : '#f6f3e8', border:can ? '2px solid #00B451' : '1.5px solid #e0d9c0', borderRadius:'12px', padding:'10px 12px', display:'flex', flexDirection:'column', gap:'4px', minHeight:'118px', boxSizing:'border-box'}},
+          E('div', {style:{fontWeight:800, color:'#015640', fontSize:'14px'}}, u.n, E('span', {style:{fontSize:'11px', color:'#8a8a8a', fontWeight:700}}, '  '+(u.one ? (u.lv ? 'unlocked' : 'locked') : 'level '+W.fmt(u.lv)+(u.max < 1e9 ? ' / '+u.max : '')))),
+          E('div', {cls:'wlp-small'}, u.d+(u.cap && u.lv >= u.cap ? ' · effect maxed, each level now +2% tickets' : '')), pips, b)); });
+      box.appendChild(ug); });
+    if (!shown) box.appendChild(E('div', {cls:'wlp-small'}, affordOnly ? 'Nothing you can afford here yet.' : 'No upgrades match.'));
     return box; };
   // ----- Avatar (the builder, inside the shop) -----
   const avatar = () => { const box = E('div'); if (!api.avatar) { box.appendChild(E('div', {cls:'wlp-small'}, 'Loading…')); return box; }

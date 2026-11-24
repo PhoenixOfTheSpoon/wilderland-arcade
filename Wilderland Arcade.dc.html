@@ -27,6 +27,9 @@ button:focus-visible{outline:3px solid #D5F367;outline-offset:2px;}
 @keyframes wlRise{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
 div[style*="position:fixed; inset:0"]{animation:wlIn .22s ease-out;}
 div[style*="position:fixed; inset:0"] > div[style*="border-radius:20px"]{animation:wlRise .28s cubic-bezier(.2,.9,.3,1.2);}
+/* every big panel (shop, prizes, leaderboard, achievements, pets, learning…) opens full screen */
+.wl-fullwrap{padding:0 !important; align-items:stretch !important; justify-content:stretch !important;}
+.wl-fullwrap > .wl-full{width:100% !important; max-width:none !important; min-height:100vh; border-radius:0 !important; padding-left:max(18px, env(safe-area-inset-left)) !important; padding-right:max(18px, env(safe-area-inset-right)) !important; box-shadow:none !important;}
 @keyframes wlBob{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-6px) rotate(4deg)}}
 .wl-bob{animation:wlBob 2.2s ease-in-out infinite;}
 @keyframes wlGold{0%,100%{box-shadow:0 0 0 0 rgba(249,191,1,.0), 0 8px 18px rgba(0,0,0,.35)}50%{box-shadow:0 0 26px 6px rgba(249,191,1,.55), 0 8px 18px rgba(0,0,0,.35)}}
@@ -500,8 +503,8 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
   </sc-if>
 
   <sc-if value="{{ adminOpen }}" hint-placeholder-val="{{ false }}">
-    <div style="position:fixed; inset:0; background:rgba(11,46,36,.9); display:flex; align-items:safe center; justify-content:center; z-index:58; overflow-y:auto; padding:16px; box-sizing:border-box;">
-      <div style="background:#EDE9D8; border-radius:20px; padding:22px; width:680px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:14px; color:#121313;">
+    <div class="wl-fullwrap" style="position:fixed; inset:0; background:rgba(11,46,36,.9); display:flex; align-items:safe center; justify-content:center; z-index:58; overflow-y:auto; padding:16px; box-sizing:border-box;">
+      <div class="wl-full" style="background:#EDE9D8; border-radius:20px; padding:22px; width:680px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:14px; color:#121313;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
           <div><div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#8a6100;">OPERATOR ACCESS · ADMIN ∞</div><div style="font-size:28px; font-weight:700; color:#015640;">Admin tools</div><div style="font-size:13px; font-weight:500; color:#3d3d3d;">Games played in admin mode never save, pay tickets or post scores.</div></div>
           <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;"><button onClick="{{ adminOff }}" style="background:#F9BF01; color:#121313; border:none; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;">Turn admin mode off · play normally</button><button onClick="{{ closeAdmin }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer;">Close</button></div>
@@ -692,8 +695,8 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
   </sc-if>
 
   <sc-if value="{{ achOpen }}" hint-placeholder-val="{{ false }}">
-    <div style="position:fixed; inset:0; background:rgba(11,46,36,.9); display:flex; align-items:safe center; justify-content:center; z-index:52; overflow-y:auto; padding:16px; box-sizing:border-box;">
-      <div style="background:#EDE9D8; border-radius:20px; padding:20px; width:960px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:14px; color:#121313;">
+    <div class="wl-fullwrap" style="position:fixed; inset:0; background:rgba(11,46,36,.9); display:flex; align-items:safe center; justify-content:center; z-index:52; overflow-y:auto; padding:16px; box-sizing:border-box;">
+      <div class="wl-full" style="background:#EDE9D8; border-radius:20px; padding:20px; width:960px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:14px; color:#121313;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
           <div>
             <div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#007a37;">TROPHY CASE · {{ achCount }} OF {{ achTotal }} TIERS</div>
@@ -708,8 +711,8 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
   </sc-if>
 
   <sc-if value="{{ prizesOpen }}" hint-placeholder-val="{{ false }}">
-    <div style="position:fixed; inset:0; background:rgba(11,46,36,.9); display:flex; align-items:flex-start; justify-content:center; z-index:50; overflow-y:auto; padding:16px 10px; box-sizing:border-box;">
-      <div style="background:#EDE9D8; border-radius:20px; padding:20px; width:980px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:10px; color:#121313;">
+    <div class="wl-fullwrap" style="position:fixed; inset:0; background:rgba(11,46,36,.9); display:flex; align-items:flex-start; justify-content:center; z-index:50; overflow-y:auto; padding:16px 10px; box-sizing:border-box;">
+      <div class="wl-full" style="background:#EDE9D8; border-radius:20px; padding:20px; width:980px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:10px; color:#121313;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:10px;">
           <div><div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#AB2372;">THE ARCADE SHOP</div><div style="font-size:28px; font-weight:700; color:#015640;">Upgrades, Prizes, Avatar &amp; Wilderland</div></div>
           <button onClick="{{ closePrizes }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;">Leave · Esc</button>
@@ -790,8 +793,8 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
   <sc-if value="{{ adminDownBanner }}" hint-placeholder-val="{{ false }}"><div style="position:fixed; left:50%; bottom:12px; transform:translateX(-50%); z-index:480; background:#B3001B; color:#fff; font-weight:700; font-size:13px; padding:8px 10px 8px 16px; border-radius:999px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; max-width:94vw; box-shadow:0 8px 24px rgba(0,0,0,.35);">CLOSED FOR PLAYERS · {{ downLeft }} LEFT · you’re in as admin<button onClick="{{ doReopen }}" style="background:#D5F367; color:#015640; border:none; border-radius:999px; padding:6px 14px; font-weight:800; font-size:13px; cursor:pointer;">Reopen arcade</button></div></sc-if>
 
   <sc-if value="{{ homeOpen }}" hint-placeholder-val="{{ false }}">
-    <div style="position:fixed; inset:0; background:rgba(11,46,36,.9); display:flex; align-items:flex-start; justify-content:center; z-index:50; overflow-y:auto; padding:16px 10px; box-sizing:border-box;">
-      <div style="background:#EDE9D8; border-radius:20px; padding:18px; width:980px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:10px; color:#121313;">
+    <div class="wl-fullwrap" style="position:fixed; inset:0; background:rgba(11,46,36,.9); display:flex; align-items:flex-start; justify-content:center; z-index:50; overflow-y:auto; padding:16px 10px; box-sizing:border-box;">
+      <div class="wl-full" style="background:#EDE9D8; border-radius:20px; padding:18px; width:980px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:10px; color:#121313;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
           <div><div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#AB2372;">PETS &amp; HOME</div><div style="font-size:26px; font-weight:700; color:#015640;">Your critters and your cabin</div></div>
           <button onClick="{{ closeHome }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;">Done · Esc</button>
@@ -801,8 +804,8 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
     </div>
   </sc-if>
   <sc-if value="{{ avOpen }}" hint-placeholder-val="{{ false }}">
-    <div style="position:fixed; inset:0; background:rgba(11,46,36,.9); display:flex; align-items:flex-start; justify-content:center; z-index:50; overflow-y:auto; padding:16px 10px; box-sizing:border-box;">
-      <div style="background:#EDE9D8; border-radius:20px; padding:18px; width:900px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:10px; color:#121313;">
+    <div class="wl-fullwrap" style="position:fixed; inset:0; background:rgba(11,46,36,.9); display:flex; align-items:flex-start; justify-content:center; z-index:50; overflow-y:auto; padding:16px 10px; box-sizing:border-box;">
+      <div class="wl-full" style="background:#EDE9D8; border-radius:20px; padding:18px; width:900px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:10px; color:#121313;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px;">
           <div><div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#AB2372;">AVATAR STUDIO &amp; SHOP</div><div style="font-size:26px; font-weight:700; color:#015640;">Make it yours</div></div>
           <button onClick="{{ closeAv }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;">Done · Esc</button>
@@ -838,8 +841,8 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
   </sc-if>
 
   <sc-if value="{{ shopOpen }}" hint-placeholder-val="{{ false }}">
-    <div style="position:fixed; inset:0; background:rgba(27,19,12,.9); display:flex; align-items:safe center; justify-content:center; z-index:50; overflow-y:auto; padding:16px; box-sizing:border-box;">
-      <div style="background:#EDE9D8; border-radius:20px; padding:22px; width:760px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:14px; color:#121313;">
+    <div class="wl-fullwrap" style="position:fixed; inset:0; background:rgba(27,19,12,.9); display:flex; align-items:safe center; justify-content:center; z-index:50; overflow-y:auto; padding:16px; box-sizing:border-box;">
+      <div class="wl-full" style="background:#EDE9D8; border-radius:20px; padding:22px; width:760px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:14px; color:#121313;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
           <div><div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#8D5B1D;">UPGRADE WORKSHOP</div><div style="font-size:28px; font-weight:700; color:#015640;">Make your games stronger</div><div style="font-size:13px; font-weight:500; color:#3d3d3d;">Permanent upgrades, paid in tickets, levels go on forever (∞). You have <b>{{ tickets }}</b> tickets · {{ shopOwned }} levels bought.</div></div>
           <button onClick="{{ closeShop }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer;">Close · Esc</button>
@@ -866,8 +869,8 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
   </sc-if>
 
   <sc-if value="{{ learnOpen }}" hint-placeholder-val="{{ false }}">
-    <div style="position:fixed; inset:0; background:rgba(11,46,36,.9); display:flex; align-items:safe center; justify-content:center; z-index:52; overflow-y:auto; padding:16px; box-sizing:border-box;">
-      <div style="background:#EDE9D8; border-radius:20px; padding:22px; width:720px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:14px; color:#121313;">
+    <div class="wl-fullwrap" style="position:fixed; inset:0; background:rgba(11,46,36,.9); display:flex; align-items:safe center; justify-content:center; z-index:52; overflow-y:auto; padding:16px; box-sizing:border-box;">
+      <div class="wl-full" style="background:#EDE9D8; border-radius:20px; padding:22px; width:720px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:14px; color:#121313;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
           <div><div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#014987;">LEARNING DESK · {{ learnWho }}</div><div style="font-size:28px; font-weight:700; color:#015640;">Learning report</div><div style="font-size:13px; font-weight:500; color:#3d3d3d;">Every game session is logged with whether Learn mode was on.</div></div>
           <button onClick="{{ closeLearn }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer;">Close · Esc</button>
@@ -951,8 +954,8 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
   </sc-if>
 
   <sc-if value="{{ lbOpen }}" hint-placeholder-val="{{ false }}">
-    <div style="position:fixed; inset:0; background:rgba(11,46,36,.9); display:flex; align-items:safe center; justify-content:center; z-index:52; overflow-y:auto; padding:16px; box-sizing:border-box;">
-      <div style="background:#EDE9D8; border-radius:20px; padding:22px; width:700px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:12px; color:#121313;">
+    <div class="wl-fullwrap" style="position:fixed; inset:0; background:rgba(11,46,36,.9); display:flex; align-items:safe center; justify-content:center; z-index:52; overflow-y:auto; padding:16px; box-sizing:border-box;">
+      <div class="wl-full" style="background:#EDE9D8; border-radius:20px; padding:22px; width:700px; max-width:100%; box-sizing:border-box; display:flex; flex-direction:column; gap:12px; color:#121313;">
         <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;">
           <div><div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#8a6100;">{{ lbScope }}</div><div style="font-size:28px; font-weight:700; color:#015640;">{{ lbTitle }}</div></div>
           <div style="display:flex; gap:8px;"><button onClick="{{ openUname }}" style="background:#F9BF01; color:#121313; border:none; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;">{{ unameLabel }}</button><button onClick="{{ closeLb }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer;">Close</button></div>
@@ -1840,7 +1843,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048').sort((a,b) => a.key0.localeCompare(b.key0, 'en', {numeric:true})); return GAMES.indexOf(DG[h % DG.length]); };   // same order as the old A–Z floor, so the daily game never jumps
-const BUILD = '2026-12-07d';
+const BUILD = '2026-12-07e';
 const SCRIPTS = ['arcade-core.js','music.js','prizes-more.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js','games-secrets.js','games-more.js','games-more2.js','games-more3.js','snow-world.js'];
 const fmt = n => fmtN(Math.round(n));
 
