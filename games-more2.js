@@ -369,7 +369,7 @@ A.register('fishing', { mount(host, api){
     {k:'drop', n:'Express Drop', d:L => 'Skip up to '+Math.min(80, 8*L)+'% → '+Math.min(80, 8*L+8)+'% of the line (choose how much with the ⏬ slider)', b:300, gr:1.9, max:10},
     {k:'chest', n:'Treasure Map', d:L => 'Chests '+(25*L)+'% → '+(25*L+25)+'% more common & richer', b:300, gr:1.5},
     {k:'buddy', n:'Fishing Buddy', d:L => 'Earns '+fmt(buddyRate(L))+' → '+fmt(buddyRate(L+1))+' coins/s for you', b:250, gr:1.42},
-    {k:'sonar', n:'Sonar', d:L => ['Rare fish get a colored ring','Shows each fish’s price','Rares +15% more often','Maxed!'][Math.min(3, L)], b:400, gr:6, max:3}];
+    {k:'sonar', n:'Sonar', d:L => ['Rare fish get a colored ring','Shows each fish’s price','Rares +15% more often','Fish missing from your Fish Book flash','Maxed!'][Math.min(4, L)], b:400, gr:6, max:4}];
   const GHOST = ['nothing', 'Old Boots & Common fish', 'Boots, Common & Uncommon fish', 'everything below Epic'];
   const ghostTier = () => { const mx = Math.min(3, UL('ghost')); return G.ghostSel == null ? mx : Math.max(0, Math.min(mx, G.ghostSel)); };
   const ghosty = o => { const tier = ghostTier(); return tier > 0 && !o.jelly && (o.f.junk || (!o.f.chest && !o.gold && o.f.i < tier)); };
@@ -541,6 +541,11 @@ A.register('fishing', { mount(host, api){
       if (f.special == 'dang') { g.fillStyle = '#fff'; g.font = '900 ' + Math.round(s*.5) + 'px ' + A.font; g.textAlign = 'center'; g.save(); g.scale(o.vx < 0 ? -1 : 1, 1); g.fillText('DANG!', 0, -s*1.05); g.restore(); } }
     if (f.r >= 4 && !low()) { g.fillStyle = '#fff'; for (let k = 0; k < 3; k++) { const a = t*2 + k*2.1 + o.ph; g.globalAlpha = .5 + .5*Math.sin(t*6 + k); g.fillRect(Math.cos(a)*s*1.2, Math.sin(a)*s*.8, 2, 2); } g.globalAlpha = 1; }
     g.restore();
+    // Sonar Lv 4: fish you haven't caught yet flash (3 times a second at most, so it's safe for eyes)
+    if (UL('sonar') >= 4 && !f.junk && !book()[f.k]) { const on = Math.floor(t*6) % 2 == 0, R2 = s*1.6 + 6;
+      g.save(); g.lineWidth = 4; g.strokeStyle = on ? '#ffff00' : '#ff2bd6'; g.shadowColor = g.strokeStyle; g.shadowBlur = low() ? 0 : 14; g.beginPath(); g.arc(x, y, R2, 0, TAU); g.stroke();
+      g.fillStyle = on ? 'rgba(255,255,0,.22)' : 'rgba(255,43,214,.18)'; g.fill(); g.shadowBlur = 0;
+      g.font = '900 12px ' + A.font; g.textAlign = 'center'; g.lineWidth = 3; g.strokeStyle = '#121313'; g.strokeText('NEW!', x, y - R2 - 4); g.fillStyle = on ? '#ffff00' : '#ff2bd6'; g.fillText('NEW!', x, y - R2 - 4); g.restore(); }
     if (UL('sonar') >= 1 && f.i >= 2) { g.strokeStyle = RC[f.r]; g.lineWidth = 2; g.globalAlpha = .7; g.beginPath(); g.arc(x, y, s + 7, 0, TAU); g.stroke(); g.globalAlpha = 1; } };
   const drawJelly = (o, x, y) => { const p = Math.sin(t*3 + o.ph); g.fillStyle = 'rgba(255,120,200,.55)'; g.beginPath(); g.ellipse(x, y, 13 + p*2, 10 - p*1.5, 0, Math.PI, TAU); g.fill();
     g.strokeStyle = 'rgba(255,150,210,.6)'; g.lineWidth = 2; for (let i = -2; i <= 2; i++) { g.beginPath(); g.moveTo(x + i*5, y); g.quadraticCurveTo(x + i*5 + Math.sin(t*4 + i)*4, y + 10, x + i*5, y + 20 + p*3); g.stroke(); } };
