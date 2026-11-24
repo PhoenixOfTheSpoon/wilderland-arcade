@@ -53,19 +53,19 @@ A.init = ctx => { if (FAM.length) return; const G = ctx.games || [], NG = G.leng
   sp('crossLevel','🐸','Crossing Guard', n => 'Reach level '+n+' in Critter Crossing', s => mx(s,'crossLevel'), [2,5,8,12,16]);
   sp('stackLines','🪵','Timber!', n => 'Clear '+n+' lines in one Timber Stack run', s => mx(s,'stackLines'), [10,20,40,80,150]);
   sp('stackMulti','🪓','Four Logs', n => 'Clear '+n+' lines at once in Timber Stack', s => mx(s,'stackMulti'), [2,3,4]);
-  sp('rootHeight','🌳','Canopy Builder', n => 'Stack a '+n+'-layer tower in Root Out', s => mx(s,'rootHeight'), [5,10,25,40,60]);
+  sp('rootHeight','🌳','Canopy Builder', n => 'Stack a '+n+'-layer tower in Root Out the Corruption', s => mx(s,'rootHeight'), [5,10,25,40,60]);
   sp('rootPulled','🧤','Root Remover', n => 'Root out '+n+' invasive species', s => sm(s,'rootPulled'), [10,50,200,500,1000]);
   sp('spaceWave','✦','Star Ranger', n => 'Reach wave '+n+' in Star Ranger', s => mx(s,'spaceWave'), [5,10,20,30,50], {titles:{3:'Star Ranger'}});
   sp('secretsFound','✨','Secret Seeker', n => 'Find '+n+' hidden secret'+(n==1?'':'s')+' in Secrets', s => mx(s,'secretsFound'), [1,4,8,12,15], {titles:{4:'Secret Keeper'}});
   sp('secretsChapters','🔍','Mystery Solver', n => 'Solve '+n+' puzzle'+(n==1?'':'s')+' in Secrets', s => mx(s,'secretsChapters'), [1,2,3,5,6]);
   sp('spaceBoss','🛸','Boss Blaster', n => 'Defeat '+n+' Star Ranger boss'+(n==1?'':'es'), s => sm(s,'spaceBoss'), [1,3,10,25,50]);
   sp('rootBoss','👑','King Uprooter', n => 'Defeat the Kudzu King '+n+' time'+(n==1?'':'s'), s => sm(s,'rootBoss'), [1,3,10,25,50]);
-  sp('mineGolem','🪨','Golem Crusher', n => 'Defeat '+n+' Cave Golem'+(n==1?'':'s')+' in The Mines', s => sm(s,'mineGolem'), [1,5,20,50,100]);
+  sp('mineGolem','🪨','Golem Crusher', n => 'Defeat '+n+' Cave Golem'+(n==1?'':'s')+' in Deep Mines', s => sm(s,'mineGolem'), [1,5,20,50,100]);
   sp('tdBoss','👻','Boss Hunter', n => 'Defeat '+n+' Trailhead Defense boss'+(n==1?'':'es'), s => sm(s,'tdBoss'), [1,5,15,40,100], {titles:{2:'Ghostbuster'}});
-  sp('mineDepth','🕳️','Deep Delver', n => 'Reach layer '+n+' of The Mines', s => mx(s,'mineDepth'), [10,50,100,200,300], {titles:{2:'Deep Delver',4:'Core Seeker'}});
+  sp('mineDepth','🕳️','Deep Delver', n => 'Reach layer '+n+' of Deep Mines', s => mx(s,'mineDepth'), [10,50,100,200,300], {titles:{2:'Deep Delver',4:'Core Seeker'}});
   sp('mineCore','☄️','Armageddon Survivor', n => 'Calm The Armageddon Core on Layer 100'+(n>1?' '+n+' times':''), s => sm(s,'mineCore'), [1], {titles:{0:'Core Breaker'}});
-  sp('mineChests','🧰','Treasure Hunter', n => 'Open '+n+' hidden treasure rooms in The Mines', s => sm(s,'mineChests'), [3,10,25,50,100]);
-  sp('mineGemTree','💎','Gem Gardener', n => 'Buy '+n+' Gem Tree upgrades in The Mines', s => mx(s,'mineGemTree'), [1,5,15,30,60]);
+  sp('mineChests','🧰','Treasure Hunter', n => 'Open '+n+' hidden treasure rooms in Deep Mines', s => sm(s,'mineChests'), [3,10,25,50,100]);
+  sp('mineGemTree','💎','Gem Gardener', n => 'Buy '+n+' Gem Tree upgrades in Deep Mines', s => mx(s,'mineGemTree'), [1,5,15,30,60]);
   sp('snowWave','❄️','Snow Survivor', n => 'Survive wave '+n+' in Snowball Showdown', s => mx(s,'snowWave'), [5,10,20,35,50]);
   sp('snowBoss','👑','Boss Buster', n => 'Beat '+n+' Snowball Showdown boss'+(n==1?'':'es'), s => sm(s,'snowBoss'), [1,5,15,40,100]);
   sp('snowPerfect','✨','Not a Scratch', n => 'Clear '+n+' perfect wave'+(n==1?'':'s')+' (no hits) in Snowball Showdown', s => sm(s,'snowPerfect'), [1,5,15,40,100]);
@@ -81,7 +81,7 @@ A.init = ctx => { if (FAM.length) return; const G = ctx.games || [], NG = G.leng
   sp('snowChest','🎁','Treasure Hunter', n => 'Open '+n+' Kingdom Quest treasure chests', s => sm(s,'snowChest'), [1,5,15,30,40]);
   sp('snowGuard','🌙','Guardian Breaker', n => 'Beat '+n+' Kingdom Quest bosses', s => sm(s,'snowGuard'), [1,3,5,10,25]);
   sp('snowBuild','🏰','Fort Builder', n => 'Place '+n+' buildings in Snowball Showdown', s => sm(s,'snowBuild'), [10,50,150,400,1000]);
-  sp('minerLevel','⛏️','Miner Boss', n => 'Merge a level '+n+' miner in The Mines', s => mx(s,'minerLevel'), [5,10,15,20,30]);
+  sp('minerLevel','⛏️','Miner Boss', n => 'Merge a level '+n+' miner in Deep Mines', s => mx(s,'minerLevel'), [5,10,15,20,30]);
   // ---------- Learning ----------
   const L = (id, e, name, desc, v, goals, x) => add(id, 'Learning', e, name, desc, v, goals, x);
   L('eduRight','📚','Smart Cookie', n => 'Answer '+fmt(n)+' Learn-mode questions correctly', s => sm(s,'eduRight'), [10,100,500,2000,10000], {titles:{1:'Bookworm',2:'Math Wizard',4:'Professor'}});

@@ -205,17 +205,17 @@ H.PETS = PETS;
 const byId = id => PETS.find(p => p.id === id);
 H.byId = byId;
 const PERK = {
-  mineTix: {n:'Mine Tickets', e:'⛏️', per:1, d:'more tickets from The Mines'},
+  mineTix: {n:'Mine Tickets', e:'⛏️', per:1, d:'more tickets from Deep Mines'},
   allTix:  {n:'All Tickets', e:'🎟', per:.25, d:'more tickets from every game'},
   learn:   {n:'Learn Mode', e:'📚', per:1, d:'bigger Learn-mode answer bonus'},
   critter: {n:'Golden Critters', e:'🦊', per:1, d:'golden critters appear more often'},
   buff:    {n:'Longer Boosts', e:'⚡', per:1, d:'critter boosts last longer'},
-  gems:    {n:'Gem Sense', e:'💎', per:.5, d:'chance for double gems in The Mines'},
+  gems:    {n:'Gem Sense', e:'💎', per:.5, d:'chance for double gems in Deep Mines'},
   combo:   {n:'Combo', e:'🔥', per:.5, d:'more tickets while your combo is going'},
   game:    {n:'Favourite Game', e:'🕹️', per:1.5, d:'more tickets from one cabinet'},
 };
 const RMUL = [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 50];
-const GNAME = g => { const W = window.WLP; return (W && W.gname && W.gname(g)) || ({crossing:'Critter Crossing', rootout:'Root Out', snake:'Snake', breakout:'Breakout', td:'Trailhead Defense', flappy:'Flapper', space:'Star Ranger', reaction:'Reaction Test'})[g] || g; };
+const GNAME = g => { const W = window.WLP; return (W && W.gname && W.gname(g)) || ({crossing:'Critter Crossing', rootout:'Root Out the Corruption', snake:'Snake', breakout:'Breakout', td:'Trailhead Defense', flappy:'Flapper', space:'Star Ranger', reaction:'Reaction Test'})[g] || g; };
 H.perkPct = (pet, lv) => Math.round(PERK[pet.perk.k].per * RMUL[pet.r] * (Math.min(60, lv) + Math.max(0, Math.min(lv, MAXLV) - 60)*.25) * 100) / 100;
 // THE ONE has EVERY perk at once (×50 strength): all tickets, every game, Mines tickets, Learn, combo, gems, plus critters/boosts (capped at +300%)
 const ONE_CAP = {critter:3, buff:3};
@@ -248,7 +248,7 @@ H.status = (P, pet) => { const s = pet.src, n = H.norm(P);
   if (s.star) return {buy:'star', price:s.star, how:'Golden Stars · '+s.star+' ⭐ (Wilderland pet)'};
   if (s.ach) { const [f, t] = s.ach.split(':'); const ok = ((P.at||{})[f]|0) > +t; const fam = window.WLA && window.WLA.fam ? window.WLA.fam(f) : null;
     return {can:ok, how:'Achievement: '+(fam ? fam.name : f)+' · '+['Bronze','Silver','Gold','Platinum','Diamond'][+t]}; }
-  if (s.mine) { if (s.mine.depth) { const d = st(P,'mineDepth'); return {can:d >= s.mine.depth, how:'Mine treasure: reach layer '+s.mine.depth+' of The Mines ('+d+'/'+s.mine.depth+')'}; }
+  if (s.mine) { if (s.mine.depth) { const d = st(P,'mineDepth'); return {can:d >= s.mine.depth, how:'Mine treasure: reach layer '+s.mine.depth+' of Deep Mines ('+d+'/'+s.mine.depth+')'}; }
     const c = st(P,'mineChests'); return {can:c >= s.mine.chests, how:'Mine treasure: open '+s.mine.chests+' treasure rooms ('+c+'/'+s.mine.chests+')'}; }
   if (s.boss) { const [k, v] = Object.entries(s.boss)[0], c = st(P,k), nm = {spaceBoss:'Star Ranger bosses', tdBoss:'Trailhead Defense bosses', mineGolem:'Cave Golems', rootBoss:'Kudzu Kings', mineCore:'the Armageddon Core'}[k] || k;
     return {can:c >= v, how:'Boss drop: defeat '+nm+' ('+Math.min(c,v)+'/'+v+')'}; }
@@ -462,7 +462,7 @@ const EMOTES = [
 H.EMOTES = EMOTES;
 const MOUNTS = [
   {k:'snail', n:'Giant Snail', sp:1.12, how:'Pet Shop', price:P=>nice(Math.max(3000, need(P)*.01)), c:['#e9b9f7','#a64be0','#c9ccd1']},
-  {k:'cart', n:'Minecart', sp:1.3, how:'Reach layer 25 of The Mines', ok:P=>st(P,'mineDepth') >= 25},
+  {k:'cart', n:'Minecart', sp:1.3, how:'Reach layer 25 of Deep Mines', ok:P=>st(P,'mineDepth') >= 25},
   {k:'cloud', n:'Cloud', sp:1.45, how:'Prestige 1', ok:P=>prestige(P) >= 1},
   {k:'drake', n:'Baby Dragon', sp:1.6, how:'6 Golden Stars (Wilderland mount)', star:6},
   {k:'theone', n:'THE ONE', sp:2.5, how:'Comes with the pet THE ONE', ok:()=>false, pet:'theone'},

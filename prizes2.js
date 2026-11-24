@@ -204,7 +204,7 @@ W.megaStatus = P => { const d = P.colDone||{}; return MEGA.map(M => { const have
 // The original 16 prizes keep their ids, so old saves show up in the new Trophy Room.
 const CLASSICS = [['sticker','Sticker Pack','common','Stick it on everything.'],['bracelet','Glow Bracelet','common','Glows at the arcade after dark.'],['ball','Bouncy Ball','common','Bounces higher than you think.'],['snake','Rubber Snake','common','Not a real snake. Probably.'],
   ['pin','Mountain Pin','rare','A badge for every trail.'],['moose','Plush Moose','rare','Extremely huggable.'],['lamp','Lava Lamp','rare','Blobs go up, blobs come down.'],['robot','Pinecone Robot','rare','Built from the forest floor.'],
-  ['geode','Crystal Geode','epic','Crack it open for sparkles.'],['fox','Neon Fox','epic','Glows in the dark.'],['pickaxe','Golden Pickaxe','epic','Straight from The Mines.'],['globe','Aurora Globe','epic','Northern lights in a jar.'],
+  ['geode','Crystal Geode','epic','Crack it open for sparkles.'],['fox','Neon Fox','epic','Glows in the dark.'],['pickaxe','Golden Pickaxe','epic','Straight from Deep Mines.'],['globe','Aurora Globe','epic','Northern lights in a jar.'],
   ['trophy','Golden Trophy','legendary','The classic prize.'],['egg','Dragon Egg','legendary','Warm to the touch.'],['moon','Moon Rock','legendary','From way up there.'],['crown','Crown of Wilderland','legendary','For the ruler of the arcade.']];
 const CLASSIC_EMOJI = {sticker:'🏷️',bracelet:'📿',ball:'🔴',snake:'🐍',pin:'📍',moose:'🫎',lamp:'🪔',robot:'🤖',geode:'🪨',fox:'🦊',pickaxe:'⛏️',globe:'🔮',trophy:'🏆',egg:'🥚',moon:'🌕',crown:'👑'};
 
@@ -231,7 +231,7 @@ W.catalog = build;
 
 // ---------------- Golden Star perks: every Star prize gives permanent power that survives every Rebirth ----------------
 const PERK_GAMES = ['snake','breakout','flappy','pong','memory','whack','tictactoe','reaction','typing','simon','mines','connect4','td','crossing','stack','rootout','trace','idle'];
-const GNAME = {snake:'Snake',breakout:'Breakout',flappy:'Flapper',pong:'Pong',memory:'Memory Match',whack:'Whack-a-Gopher',tictactoe:'Tic-Tac-Toe',reaction:'Reaction Test',typing:'Typing Race',simon:'Simon Says',mines:'Minesweeper',connect4:'Connect 4',td:'Trailhead Defense',crossing:'Critter Crossing',stack:'Timber Stack',rootout:'Root Out',trace:'Trace & Write',idle:'The Mines'};
+const GNAME = {snake:'Snake',breakout:'Breakout',flappy:'Flapper',pong:'Pong',memory:'Memory Match',whack:'Whack-a-Gopher',tictactoe:'Tic-Tac-Toe',reaction:'Reaction Test',typing:'Typing Race',simon:'Simon Says',mines:'Minesweeper',connect4:'Connect 4',td:'Trailhead Defense',crossing:'Critter Crossing',stack:'Timber Stack',rootout:'Root Out the Corruption',trace:'Trace & Write',idle:'Deep Mines'};
 const HEAD_EXP = [['claw','Claw Machine'],['booth','Prize Booth'],['snack','Snack Bar'],['row','Cabinet Row']];
 const PERK_KINDS = ['all','game','learn','jack','workshop','combo','critter','buff','game','all'];
 const r2 = x => Math.round(x*100)/100;
@@ -372,7 +372,7 @@ W.lifetimeStars = P => Math.floor(Math.cbrt(Math.max(0, P.earned||0) / 1e6));
 // (plus a little more for every Rebirth), so a Rebirth always feels worth it — even for huge accounts.
 W.rebirthStars = P => { const need = W.rebirthNeed(P); if ((P.tickets||0) < need) return 0; const have = P.stars||0, rb = P.rebirths||0;
   return Math.min(1e300, Math.max(W.lifetimeStars(P) - have, Math.ceil(have*.25), 2 + rb)); };
-// Rebirth: tickets, Multiplier upgrades, The Mines (miners, ore, mine upgrades — depth, gems and the Gem Tree stay) and the Mines Workshop upgrades reset;
+// Rebirth: tickets, Multiplier upgrades, Deep Mines (miners, ore, mine upgrades — depth, gems and the Gem Tree stay) and the Mines Workshop upgrades reset;
 // every saved game restarts. Returns the profile patch plus how many Golden Stars were earned.
 W.doRebirth = P => { const stars = W.rebirthStars(P); if (!stars) return null;
   const idle = P.idle && typeof P.idle=='object' ? {...P.idle, grid:[1,0,0,0,0,0,0,0,0,0,0,0], up:{}, ore:0, hires:1, last:Date.now()} : P.idle;
@@ -681,7 +681,7 @@ W.mount = (root, api) => {
   const rebirth = () => { const p = P(), box = E('div'), need = W.rebirthNeed(p), stars = W.rebirthStars(p), pct = Math.min(100, (p.tickets||0)/need*100);
     box.appendChild(E('div', {cls:'wlp-box', style:{border:'3px solid #F9BF01'}},
       E('div', {style:{fontWeight:800, fontSize:'20px', color:'#015640'}}, '⭐ Rebirth'),
-      E('div', {cls:'wlp-small'}, 'When you reach the milestone you Rebirth automatically: your tickets and Multiplier upgrades reset, every game’s saved run restarts, the whole Upgrade Workshop resets, and The Mines clears its miners, ore and mine upgrades (you keep the depth you reached). In return you get Golden Stars: they boost every ticket forever (×'+W.fmt(starMult(p))+' right now), buy Star prizes with permanent powers and unlock Golden Hall prizes and cabinet skins — and The Mines’ max miner level grows 15% (now '+W.fmt((function(){ let m = 30; for (let i=0;i<(p.rebirths||0) && m < 1000;i++) m = Math.floor(m*1.15); return Math.min(1000, m); })())+'). You keep high scores, prizes, collections and achievements.'),
+      E('div', {cls:'wlp-small'}, 'When you reach the milestone you Rebirth automatically: your tickets and Multiplier upgrades reset, every game’s saved run restarts, the whole Upgrade Workshop resets, and Deep Mines clears its miners, ore and mine upgrades (you keep the depth you reached). In return you get Golden Stars: they boost every ticket forever (×'+W.fmt(starMult(p))+' right now), buy Star prizes with permanent powers and unlock Golden Hall prizes and cabinet skins — and Deep Mines’ max miner level grows 15% (now '+W.fmt((function(){ let m = 30; for (let i=0;i<(p.rebirths||0) && m < 1000;i++) m = Math.floor(m*1.15); return Math.min(1000, m); })())+'). You keep high scores, prizes, collections and achievements.'),
       E('div', {style:{marginTop:'10px', fontWeight:700}}, 'Rebirths: '+(p.rebirths||0)+' · Prestige '+(window.WLE?window.WLE.prestige(p):0)+' ('+(window.WLE?window.WLE.diaFree(p):0)+' 💎 to spend · Rebirth '+((p.rebirths||0)%10)+' / 10 to next Diamond Star) · Golden Stars earned: '+W.fmt(p.stars||0)+' ('+W.fmt(freeStars(p))+' to spend) · star bonus ×'+W.fmt(starMult(p))),
       E('div', {style:{marginTop:'6px', fontSize:'13px'}}, 'Next milestone: '+W.fmt(need)+' tickets'),
       E('div', {cls:'wlp-small'}, 'Milestones: '+[0,1,2,3,4,5].map(i=>W.fmt(1e7*Math.pow(1000,(p.rebirths||0)+i))).join(' → ')+' → …'),

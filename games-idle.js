@@ -1,4 +1,4 @@
-// Wilderland Arcade · THE MINES — a merge-and-dig mine, 300 layers deep.
+// Wilderland Arcade · DEEP MINES — a merge-and-dig mine, 300 layers deep.
 // Hire miners, drag two of the same level together to merge them, and dig. When the bar at the top fills you break
 // through to the next layer. 21 biomes, each with its own thing to tap (worms, boulders, chiming crystals, a sleeping
 // dragon, glyph puzzles, notes …), every layer with its own twist, and Dot the Mole's story down to Layer 300:
@@ -361,7 +361,7 @@ A.register('idle', { mount(host, api){
       rushT = 120; say('THE ARMAGEDDON CORE IS CALM!', '+'+fmt(n)+' ore · all 300 layers cleared · GOLD RUSH ×3 for 2 minutes', C.gold); core = null; shake = .6; for (let k=0;k<4;k++) burst(W/2 + (k-1.5)*80, VIEW.y+VIEW.h/2, ['#ff3a1a','#F9BF01','#fff','#ff9f3a'][k], 30); story('calm', STORY.calm); persist(); return; }
     const n = Math.max(500, rate()*150 + tapAmt()*250) * (1+.5*GL2('boss')); give(n); addGems(5); S.golems = (S.golems||0)+1; stat(api,'mineGolem',1,'add'); A.sfx('win');
     rushT = 30; say('CAVE GOLEM DEFEATED!', '+'+fmt(n)+' ore · +5 💎 · GOLD RUSH: all ore ×3 for 30 s', C.gold); golem = null; golemT = 140 + Math.random()*80; };
-  // What a cash-out pays right now. The Mines ticket counter holds at most 5% of a Rebirth and refills over time
+  // What a cash-out pays right now. Deep Mines ticket counter holds at most 5% of a Rebirth and refills over time
   // (so ore can't jump you straight to a Rebirth). Cashing out always sells ALL your ore and pays what the counter allows.
   const cashQuote = () => { const can = tixFor(S.ore), mk = 1+.1*GL2('market'), mul = (api.tixMul ? api.tixMul() : 1) * mk;
     const cap = api.tixCap ? Math.floor(api.tixCap() / mk) : Infinity, n = Math.max(0, Math.min(can, cap)), full = api.tixCap ? api.tixCap() : 0, max = api.tixMax ? api.tixMax() : 0;
@@ -370,7 +370,7 @@ A.register('idle', { mount(host, api){
     const q = cashQuote();
     if (q.can < 1) { say('NOT ENOUGH ORE','9 ore = 1 ticket · it grows from there', '#ffb3ab'); A.sfx('bad'); return; }
     if (q.n < 1) { const w = api.tixWait ? api.tixWait() : 60; say('TICKET COUNTER IS EMPTY', 'It refills in about '+w+' s · your ore is safe and keeps piling up', '#ffb3ab'); A.sfx('bad'); return; }
-    let got = q.n; try { got = api.tix ? api.tix(Math.floor(q.n*(1+.1*GL2('market'))), score(), 'THE MINES') : 0; } catch(e) { got = 0; }
+    let got = q.n; try { got = api.tix ? api.tix(Math.floor(q.n*(1+.1*GL2('market'))), score(), 'DEEP MINES') : 0; } catch(e) { got = 0; }
     const used = S.ore; S.ore = 0; const td = new Date().toISOString().slice(0,10); if (S.tix.d != td) S.tix = {d:td, n:0}; S.tix.n += q.n;
     say(got ? '+'+fmt(got)+' TICKETS' : 'NO TICKETS IN ADMIN MODE', 'Sold '+fmt(used)+' ore'+(q.capped ? ' · the Mines ticket counter pays up to 5% of a Rebirth at a time' : ''), C.gold); A.sfx(got?'win':'blip'); persist(); paintBar(); };
   // gems: Gem Sense makes them come sooner, last longer, glow wider and sometimes be rare
@@ -460,7 +460,7 @@ A.register('idle', { mount(host, api){
     head.append(close); gemO.append(head);
     const bank = el('div',{fontSize:'14px',color:'#dff6ff',lineHeight:1.45}); const list = el('div',{display:'flex',flexDirection:'column',gap:'8px'}); const gq = el('div'); gemQ = () => { gq.innerHTML = ''; const r = el('div',{display:'flex',gap:'5px',alignItems:'center',flexWrap:'wrap'}); r.append(el('span',{fontSize:'12px',fontWeight:700,color:'#bff0ff'},'BUY'));
       [1,10,100,'max'].forEach(v => { const x = el('button',{fontFamily:A.font,fontWeight:700,fontSize:'12px',border:'1.5px solid #64CDF5',borderRadius:'999px',padding:'4px 10px',cursor:'pointer',background:getQ()===v?'#64CDF5':'transparent',color:getQ()===v?'#06324a':'#bff0ff'}, v==='max'?'Max':'×'+v); x.onclick = () => { setQ(v); A.sfx('blip'); rerenderAll(); }; r.append(x); }); gq.append(r); }; gemQ(); gemO.append(bank, gq, list);
-    const render = () => { bank.innerHTML = '<b style="font-size:18px">💎 '+fmt(S.gemBank||0)+' gems</b><br>Permanent upgrades for The Mines — they <b>never reset</b>, not even when you Rebirth. Earn gems by grabbing gems in the rock (rare ones give more), opening treasure rooms (+3), beating Cave Golems (+5) and the Armageddon Core (+100).'; list.innerHTML = '';
+    const render = () => { bank.innerHTML = '<b style="font-size:18px">💎 '+fmt(S.gemBank||0)+' gems</b><br>Permanent upgrades for Deep Mines — they <b>never reset</b>, not even when you Rebirth. Earn gems by grabbing gems in the rock (rare ones give more), opening treasure rooms (+3), beating Cave Golems (+5) and the Armageddon Core (+100).'; list.innerHTML = '';
       GT.forEach(n => { const l = GL2(n.k), maxed = l >= n.max, pl = plan(n.cost, l, n.max, S.gemBank||0), cost = pl.n ? pl.tot : Math.ceil(n.cost(l)), can = !maxed && pl.n > 0;
         const row = el('div',{display:'flex',alignItems:'center',gap:'10px',background:'rgba(191,240,255,.08)',border:'1px solid rgba(191,240,255,.18)',borderRadius:'12px',padding:'10px 12px'});
         const txt = el('div',{flex:'1',minWidth:0}); txt.append(el('div',{fontWeight:700,fontSize:'15px'},n.e+' '+n.n), el('div',{fontSize:'12px',color:'#b9d6e6',lineHeight:1.35},n.d+' · level '+l+(isFinite(n.max) ? '/'+n.max : '')), el('div',{fontSize:'12px',fontWeight:700,color:'#bff0ff'},'Now: '+n.fx(l)+(maxed?' · MAXED':' → next: '+n.fx(l+1))));
@@ -797,7 +797,7 @@ A.register('idle', { mount(host, api){
   const away = Math.max(0, (Date.now() - (S.last||Date.now()))/1000), cap = (2 + 2*U('night'))*3600, secs = Math.min(away, cap), earned = rate()*secs*(GL2('owl') ? .75 : .5);
   if (api.stored && secs > 60 && earned >= 1) { give(earned); lastDepth = depthIdx(); const hh = Math.floor(secs/3600), mm = Math.floor(secs%3600/60);
     say('WHILE YOU WERE AWAY: +'+fmt(earned)+' ORE', 'Your miners dug for '+(hh?hh+'h ':'')+mm+'m'+(away>cap?' (Night Shift raises the limit)':''), C.gold); A.sfx('win'); }
-  else if (!api.stored) say('WELCOME TO THE MINES', learn ? 'Crack math geodes for big ore · merge matching miners' : 'Tap the rock to dig · merge matching miners', C.lime);
+  else if (!api.stored) say('WELCOME TO DEEP MINES', learn ? 'Crack math geodes for big ore · merge matching miners' : 'Tap the rock to dig · merge matching miners', C.lime);
   if (!minerCount()) setTimeout(() => say('NO MINERS LEFT', 'Hire one with ore — or open Upgrades and use the code MINERRESCUE', '#ffb3ab'), 2600);
   story('intro', STORY.intro); { const B = DEPTHS[depthIdx()].b; if (B.id != 'soil') story(B.id, STORY[B.id]); }
   stat(api,'minerLevel',S.best||1); stat(api,'mineDepth',depthIdx()+1);
