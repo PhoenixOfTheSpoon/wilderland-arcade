@@ -46,8 +46,15 @@ const WLCloud = {
   // (the existing rules let each player update the name they own). This replaced a row-per-game board that filled up
   // with one player's old rows and stopped showing everyone else.
   setTix(uid, row) { if (!row || !row.u) return Promise.resolve(); const key = String(row.u).toLowerCase();
-    return setDoc(doc(db, 'usernames', key), { uid, name: row.u, s: Math.min(Number(row.s) || 0, 9.99e299), av: row.av || '', al: row.al || 0, d: row.d || '', rb: row.rb || 0, ss: SEASON, at: Date.now() }, { merge: true }); },
-  async top(game, n = 100) { const hs = new Set(C.hiddenScores || []);
+    return setDoc(doc(db, 'usernames', key), { uid, name: row.u, s: Math.min(Number(row.s) || 0, 9.99e299), av: row.av || '', al: row.al || 0, d: row.d || '', rb: row.rb || 0, db: row.db || 0, ov: Math.min(Number(row.ov) || 0, 9.99e299), ss: SEASON, at: Date.now() }, { merge: true }); },
+  // Every player's progress row (rebirths, prestige, achievements) for the Overall / Rebirths / Diamond Stars / Achievements boards.
+  // One shared fetch (cached a minute) feeds all of them, to keep reads low.
+  async players() { if (C._plAt && Date.now() - C._plAt < 60000 && C._pl) return C._pl;
+    const hs = new Set(C.hiddenScores || []), ht = C.hiddenTix || {}, hid = x => (hs.has(x.id) && !x.at) || (ht[x.id] && (x.at || 0) < ht[x.id]);
+    const qs = await Promise.allSettled(['ov', 'rb', 'al'].map(f => getDocs(query(collection(db, 'usernames'), orderBy(f, 'desc'), limit(100)))));
+    const by = {}; qs.forEach(q => { if (q.status == 'fulfilled') q.value.docs.forEach(d => { by[d.id] = { ...d.data(), id: d.id, u: d.data().name }; }); });
+    C._pl = Object.values(by).filter(x => x.uid && x.ss === SEASON && !hid(x) && x.id !== '~admin'); C._plAt = Date.now(); return C._pl; },
+  async top(game, n = 100) { if (game == '_pl') return C.players(); const hs = new Set(C.hiddenScores || []);
     if (game == '_tix') { const r = await getDocs(query(collection(db, 'usernames'), orderBy('s', 'desc'), limit(150))); const ht = C.hiddenTix || {};
       // old-style hides (no time) only count until the player posts again with the newer page
       const hid = x => (hs.has(x.id) && !x.at) || (ht[x.id] && (x.at || 0) < ht[x.id]);

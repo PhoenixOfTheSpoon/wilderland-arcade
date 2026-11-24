@@ -1076,6 +1076,15 @@ const chatClean = t => { let o = String(t||'').replace(/\s+/g,' ').trim().slice(
 const chatPrivate = t => /(https?:|www\.|\.(com|net|org|io|gg|co|me|tv|xyz)\b)/i.test(t) || /[\w.+-]+@[\w-]+\.\w+/.test(t) || /(\d[\s().-]*){7,}/.test(t) || /\b(my (address|phone|number|house|school is)|i live (at|on|in))\b/i.test(t) || /(snap|insta|discord|tiktok|whatsapp)\s*[:@]/i.test(t);
 const fmtDur2 = sec => { sec = Math.ceil(sec); const h = Math.floor(sec/3600), m = Math.floor(sec%3600/60), ss = sec%60; return (h ? h+':'+String(m).padStart(2,'0') : m)+':'+String(ss).padStart(2,'0'); };
 // Safe numbers: no game score can be more than this (stops glitched/hacked scores like 5.9e38).
+// Player boards made from each player's progress. Tickets count for nothing on Overall; rebirths, prestige, extra Diamond Stars and achievements do.
+const ovScore = x => (x.rb||0)*100 + Math.floor((x.rb||0)/10)*1000 + (x.db||0)*500 + (x.al||0)*10;
+const VBOARDS = {
+  _ov:{t:'🏆 Overall', title:'Overall · tickets don’t count', f:ovScore},
+  _rb:{t:'🔁 Rebirths', title:'Most rebirths', f:x=>x.rb||0},
+  _dia:{t:'💎 Diamond Stars', title:'Most Diamond Stars (1 per prestige, plus bonus stars)', f:x=>Math.floor((x.rb||0)/10)+(x.db||0)},
+  _ach:{t:'⭐ Achievements', title:'Most achievements', f:x=>x.al||0},
+};
+const vbDetail = x => (x.rb||0)+' rebirth'+((x.rb||0)==1?'':'s')+' · Prestige '+Math.floor((x.rb||0)/10)+' · '+(x.al||0)+' achievement'+((x.al||0)==1?'':'s');
 const scoreCap = id => { const g = GAMES.find(x=>x.id==id); return id=='idle' ? 99999999 : Math.max(1e6, ((g&&g.target)||1000) * 2000); };
 const safeScore = (id, n) => { n = Number(n); if (!isFinite(n) || n < 0) return 0; return Math.min(Math.floor(n), scoreCap(id)); };
 // Big numbers: 12,345 then 12.3K, 4.5M, 6.7B, T, Qa, Qi, Sx … then 1.2e45 style.
@@ -1688,7 +1697,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-12-05f';
+const BUILD = '2026-12-05g';
 const SCRIPTS = ['arcade-core.js','music.js','prizes-more.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js','games-secrets.js','games-more.js','games-more2.js','games-more3.js'];
 const fmt = n => fmtN(Math.round(n));
 
@@ -1699,7 +1708,7 @@ class Component extends DCLogic {
     if (acct && !getAccts()[acct]) acct = null;
     this.acct = acct; this.P = loadP(this.profKey()); { const b = pickBest([this.P, getJSON(BK+this.profKey(), null)]); if (b && b !== this.P) this.P = normP(b); }
     this.state = Object.assign({}, this.P, {account:acct,
-      calOpen:(typeof location!='undefined' && location.hash=='#calendar'),immortal:false,autoHint:true,codeOpen:false,codeVal:'',codeMsg:'',admin:false,px:760,py:905+EY,vw:(typeof window!='undefined'?window.innerWidth:1200),gameH:480,padOn:(()=>{ try { const v = localStorage.getItem('wl-pad'); if (v) return v == '1'; } catch(e){} return typeof window!='undefined'&&(('ontouchstart' in window)||(window.matchMedia&&window.matchMedia('(pointer: coarse)').matches)); })(),learnOpen:false,pinIn:'',pinNew:'',pinNew2:'',pinMsg:'',pinAsk:'',pinFails:0,pinLock:0,pinMode:'',lbOpen:false,lbGame:'_tix',lbMode:'all',uOpen:false,uVal:'',uMsg:'',clearArm:false,dir:[0,1],game:null,liveScore:0,payout:'',prizesOpen:false,toasts:[],scale:1,muted:false,
+      calOpen:(typeof location!='undefined' && location.hash=='#calendar'),immortal:false,autoHint:true,codeOpen:false,codeVal:'',codeMsg:'',admin:false,px:760,py:905+EY,vw:(typeof window!='undefined'?window.innerWidth:1200),gameH:480,padOn:(()=>{ try { const v = localStorage.getItem('wl-pad'); if (v) return v == '1'; } catch(e){} return typeof window!='undefined'&&(('ontouchstart' in window)||(window.matchMedia&&window.matchMedia('(pointer: coarse)').matches)); })(),learnOpen:false,pinIn:'',pinNew:'',pinNew2:'',pinMsg:'',pinAsk:'',pinFails:0,pinLock:0,pinMode:'',lbOpen:false,lbGame:'_ov',lbMode:'all',uOpen:false,uVal:'',uMsg:'',clearArm:false,dir:[0,1],game:null,liveScore:0,payout:'',prizesOpen:false,toasts:[],scale:1,muted:false,
       authOpen:false,authMode:'signup',aEmail:'',aPass:'',aPass2:'',aName:'',aShow:false,aRemember:true,aBring:true,aMsg:'',aBusy:false,aFails:0,aLock:0,aTouched:false,
       achOpen:false,achFilter:'All'});
     this.keys = {}; this.gameRef = React.createRef(); this.pzRef = React.createRef(); this.achRef = React.createRef(); this.avRef = React.createRef(); this.homeRef = React.createRef(); this.calRef = React.createRef();
@@ -1740,10 +1749,10 @@ class Component extends DCLogic {
     this.setP({edu:{...this.P.edu, ...patch}}); window.Arcade && window.Arcade.sfx('blip'); if (remount) this.setState({liveScore:0, payout:''}); }
   addScore(g, s, edu){ if (!this.P.username || (g!='_none' && !(s>0))) return;
     if (this.state.cloud) { const C = window.WLCloud; if (!this.cloudUid || !C) return; const row = {uid:this.cloudUid, u:this.P.username, s:Math.max(0,Math.round(s)), edu:!!edu, d:today(), av:avFull(this.P), al:(this.P.ach||[]).length};
-      if (g!='_none') C.postScore(g, row).catch(()=>{}); C.setTix(this.cloudUid, {...row, s:Math.max(0,Math.round(this.P.earned)), rb:this.P.rebirths||0}).catch(()=>{});
+      if (g!='_none') C.postScore(g, row).catch(()=>{}); C.setTix(this.cloudUid, {...row, s:Math.max(0,Math.round(this.P.earned)), rb:this.P.rebirths||0, db:this.P.diaBonus||0, ov:ovScore({rb:this.P.rebirths, db:this.P.diaBonus, al:(this.P.ach||[]).length})}).catch(()=>{});
       this._bAt = {}; return; } const B = getJSON(BOARD_KEY,{e:[]}), k = this.profKey(), u = this.P.username;
     const av = avEnc(this.P.avatar), al = (this.P.ach||[]).length; if (g!='_none') { B.e.push({u, k, g, s, edu:!!edu, d:today(), av, al}); const mine = B.e.filter(x=>x.g==g).sort((a,b)=>b.s-a.s).slice(0,60); B.e = B.e.filter(x=>x.g!=g).concat(mine); }
-    B.e = B.e.filter(x=>!(x.g=='_tix' && x.k==k)); B.e.push({u, k, g:'_tix', s:this.P.earned, edu:false, d:today(), av, al}); putJSON(BOARD_KEY, B); }
+    B.e = B.e.filter(x=>!(x.g=='_tix' && x.k==k)); B.e.push({u, k, g:'_tix', s:this.P.earned, edu:false, d:today(), av, al, rb:this.P.rebirths||0, db:this.P.diaBonus||0}); putJSON(BOARD_KEY, B); }
   async saveUsername(){ if (this.state.cloud) { const v = (this.state.uVal||'').trim(), C = window.WLCloud;
       if (!this.cloudUid) { this.setState({uMsg:'Sign up or log in first — leaderboard names need an online account.'}); return; }
       const bad = unameRules(v, false).find(r=>!r[1]); if (bad) { this.setState({uMsg:'Username check failed: '+bad[0].toLowerCase()+'.'}); window.Arcade && window.Arcade.sfx('bad'); return; }
@@ -1796,10 +1805,10 @@ class Component extends DCLogic {
   async forgotPw(){ const email = (this.state.aEmail||'').trim().toLowerCase(); if (!EMAIL_RE.test(email)) return this.setState({aMsg:'Type your email address above first.', aInfo:''});
     try { await window.WLCloud.reset(email); this.setState({aInfo:'If that email has an account, a reset link is on its way. Check your inbox and spam folder.', aMsg:''}); } catch(e) { this.setState({aMsg:fbErr(e), aInfo:''}); } }
   postTix(){ const C = window.WLCloud; if (!this.state.cloud || !C || !this.cloudUid || !this.P.username || this.state.admin) return;
-    C.setTix(this.cloudUid, {uid:this.cloudUid, u:this.P.username, s:Math.max(0,Math.round(this.P.earned||0)), d:today(), av:avFull(this.P), al:(this.P.ach||[]).length, rb:this.P.rebirths||0}).then(()=>{ this._bAt = {}; }).catch(()=>{}); }
+    C.setTix(this.cloudUid, {uid:this.cloudUid, u:this.P.username, s:Math.max(0,Math.round(this.P.earned||0)), d:today(), av:avFull(this.P), al:(this.P.ach||[]).length, rb:this.P.rebirths||0, db:this.P.diaBonus||0, ov:ovScore({rb:this.P.rebirths, db:this.P.diaBonus, al:(this.P.ach||[]).length})}).then(()=>{ this._bAt = {}; }).catch(()=>{}); }
   needBoard(g){ if (!this.state.cloud || !window.WLCloud) return; this.cloudBoard = this.cloudBoard || {}; this._bAt = this._bAt || {}; this._bBusy = this._bBusy || {};
     if (this._bBusy[g] || (this._bAt[g] && Date.now()-this._bAt[g] < 90000)) return; this._bBusy[g] = true;
-    window.WLCloud.top(g, 100).then(rows=>{ this.cloudBoard[g] = rows.map(r=>({u:r.u, k:r.uid, id:r.id, g, s:r.s, edu:!!r.edu, d:r.d, av:r.av||'', al:r.al||0})); this._bAt[g] = Date.now(); this._bBusy[g] = false; this.setState({lbTick:Date.now()}); })
+    window.WLCloud.top(g, 100).then(rows=>{ this.cloudBoard[g] = rows.map(r=>({u:r.u, k:r.uid, id:r.id, g, s:r.s, edu:!!r.edu, d:r.d, av:r.av||'', al:r.al||0, rb:r.rb||0, db:r.db||0})); this._bAt[g] = Date.now(); this._bBusy[g] = false; this.setState({lbTick:Date.now()}); })
       .catch(()=>{ this._bBusy[g] = false; this._bAt[g] = Date.now(); }); }
   // Achievements 2.0: tiers come from saved stats. Each new tier pays tickets (shown before you unlock it);
   // titles, avatar items and Platinum/Diamond bonuses follow from the tiers you hold.
@@ -2329,8 +2338,8 @@ class Component extends DCLogic {
     const topicName = t => ({add:'Addition',sub:'Subtraction',mult:'Multiplication',div:'Division',skip:'Skip counting',spell:'Spelling',multi:'Two-step math',mixed:'Mixed',words:'Sight words',handwriting:'Handwriting',species:'Invasive species'}[t] || '—');
     // leaderboard
     const B = s.cloud ? {e:[]} : (s.lbOpen || !s.game) ? getJSON(BOARD_KEY,{e:[]}) : {e:[]}, myK = this.cloudUid || this.profKey();
-    const lbRows = (g, mode, n) => { if (s.cloud && (s.lbOpen || !s.game)) this.needBoard(g); let e = s.cloud ? ((this.cloudBoard||{})[g]||[]).slice() : B.e.filter(x=>x.g==g); if (mode=='edu') e = e.filter(x=>x.edu); if (mode=='reg') e = e.filter(x=>!x.edu);
-      return e.filter(x=>x.g=='_tix' || x.s <= scoreCap(x.g||g)).sort((a,b)=>b.s-a.s).slice(0,n).map((x,i)=>({rank:i+1, avImg: avSVG(avDec(x.av), x.al||0, {npet:petOf(x.av)}), name:x.u, score:fmtN(x.s), badge: x.edu?'LEARN':'', hasBadge:!!x.edu, date:x.d||'', bg: x.k==myK ? '#D5F367' : (i%2?'#ffffff':'#f6f3e6'), weight: x.k==myK ? 700 : 500, medal: ['#F9BF01','#B9C4BF','#DD8B03'][i]||'transparent', rankFg: i<3 ? '#121313' : '#ffffff', rankFgDark: '#121313'})); };
+    const lbRows = (g, mode, n) => { const V = VBOARDS[g], src = V ? '_pl' : g; if (s.cloud && (s.lbOpen || !s.game)) this.needBoard(src); let e = s.cloud ? ((this.cloudBoard||{})[src]||[]).slice() : B.e.filter(x=>x.g==(V ? '_tix' : g)); if (V) e = e.map(x=>({...x, s:V.f(x), d:vbDetail(x)})).filter(x=>x.s>0); if (mode=='edu') e = e.filter(x=>x.edu); if (mode=='reg') e = e.filter(x=>!x.edu);
+      return e.filter(x=>V || x.g=='_tix' || x.s <= scoreCap(x.g||g)).sort((a,b)=>b.s-a.s).slice(0,n).map((x,i)=>({rank:i+1, avImg: avSVG(avDec(x.av), x.al||0, {npet:petOf(x.av)}), name:x.u, score:fmtN(x.s), badge: x.edu?'LEARN':'', hasBadge:!!x.edu, date:x.d||'', bg: x.k==myK ? '#D5F367' : (i%2?'#ffffff':'#f6f3e6'), weight: x.k==myK ? 700 : 500, medal: ['#F9BF01','#B9C4BF','#DD8B03'][i]||'transparent', rankFg: i<3 ? '#121313' : '#ffffff', rankFgDark: '#121313'})); };
     const uv = (s.uVal||'').trim(), ureg = s.uOpen ? getJSON(UNAME_KEY,{}) : {}, uOwner = ureg[uv.toLowerCase()];
     const pad = s.game && PADS[s.game];
     const mkPad = key => ({down: e=>{ if (e && e.preventDefault) e.preventDefault(); this.padHeld[key] = 1; fireKey(key,'keydown'); }, up: ()=>{ if (this.padHeld[key]) { this.padHeld[key] = 0; fireKey(key,'keyup'); } }});
@@ -2375,18 +2384,18 @@ class Component extends DCLogic {
       // leaderboard
       lbScope: s.cloud ? 'GLOBAL LEADERBOARD · EVERY PLAYER, EVERY DEVICE' : 'LEADERBOARD · EVERY PLAYER ON THIS DEVICE',
       lbOpen: s.lbOpen, openLb: ()=>{ this.keys = {}; this.setState({lbOpen:true}); }, closeLb: ()=>this.setState({lbOpen:false}),
-      lbGames: [{id:'_tix',title:'Overall'}, ...GAMES].map(x=>({label:x.id=='_tix'?'Overall · tickets':x.title, bg: s.lbGame==x.id ? '#015640' : '#ffffff', fg: s.lbGame==x.id ? '#ffffff' : '#015640', pick: ()=>this.setState({lbGame:x.id})})),
+      lbGames: [{id:'_ov',title:VBOARDS._ov.t}, {id:'_tix',title:'🎟 Tickets'}, ...['_rb','_dia','_ach'].map(id=>({id, title:VBOARDS[id].t})), ...GAMES].map(x=>({label:x.title, bg: s.lbGame==x.id ? '#015640' : '#ffffff', fg: s.lbGame==x.id ? '#ffffff' : '#015640', pick: ()=>this.setState({lbGame:x.id})})),
       lbModes: [['all','Everyone'],['edu','Learn mode only'],['reg','Regular only']].map(([id,label])=>({label, bg: s.lbMode==id ? '#015640' : 'transparent', fg: s.lbMode==id ? '#ffffff' : '#015640', pick: ()=>this.setState({lbMode:id})})),
-      lbTitle: s.lbGame=='_tix' ? 'Tickets earned' : gname(s.lbGame), lbList: lbRows(s.lbGame, s.lbGame=='_tix'?'all':s.lbMode, 25), lbEmpty: lbRows(s.lbGame, s.lbGame=='_tix'?'all':s.lbMode, 1).length==0, lbShowModes: s.lbGame!='_tix',
+      lbTitle: VBOARDS[s.lbGame] ? VBOARDS[s.lbGame].title : s.lbGame=='_tix' ? 'Tickets earned' : gname(s.lbGame), lbList: lbRows(s.lbGame, s.lbGame[0]=='_'?'all':s.lbMode, 25), lbEmpty: lbRows(s.lbGame, s.lbGame[0]=='_'?'all':s.lbMode, 1).length==0, lbShowModes: s.lbGame[0]!='_',
       lbEmptyText: s.cloud && !this.cloudUid ? 'Sign up or log in, create a username, and your finished games post here automatically.' : 'No scores here yet. Create a username and every finished game posts automatically.',
-      lbTop: lbRows('_tix','all',5), lbTopEmpty: lbRows('_tix','all',1).length==0,
+      lbTop: lbRows('_ov','all',5), lbTopEmpty: lbRows('_ov','all',1).length==0,
       username: P.username, hasUsername: !!P.username, noUsername: !P.username, unameLabel: P.username ? '@'+P.username : 'CREATE USERNAME',
       openUname: ()=>{ this.keys = {}; this.setState({uOpen:true, uVal:P.username||'', uMsg:''}); }, closeUname: ()=>this.setState({uOpen:false}),
       uOpen: s.uOpen, uVal: s.uVal, uMsg: s.uMsg, inUname: e=>this.setState({uVal:e.target.value.replace(/\s/g,''), uMsg:''}), unameKey: e=>{ if (e.key=='Enter') { e.preventDefault(); this.saveUsername(); } },
       saveUname: ()=>this.saveUsername(), uTitle: P.username ? 'Change your username' : 'Create a username',
       uRules: unameRules(uv, !!uOwner && uOwner!==myK).map(([label,ok])=>({label, color: ok?'#015640':'#4a4a4a', dot: ok?'#00B451':'#b0ab95', mark: ok?'✓':'·'})),
       boardShadow: ni===NG+2?glow:base, learnShadow: ni===NG+3?glow:base, boardIcon: KIOSK_ICONS.board, learnIcon: KIOSK_ICONS.learn,
-      lbLeader: (lbRows('_tix','all',1)[0]||{}).name || 'Nobody yet',
+      lbLeader: (lbRows('_ov','all',1)[0]||{}).name || 'Nobody yet',
       tickets: fmtN(P.tickets), multLabelHead: '×'+(window.WLP ? window.WLP.fmt(window.WLP.totalMult(P)) : '1')+' total'+((P.stars||0) ? ' · ⭐'+fmtN(P.stars) : '')+(window.WLE && window.WLE.diamonds(P) ? ' · 💎'+fmtN(window.WLE.diaFree(P)) : ''), soundLabel: s.muted ? 'SOUND OFF' : 'SOUND ON', musicLabel: '🎵 '+(window.WLMusic ? window.WLMusic.label() : 'MUSIC'), musicCredit: window.WLMusic ? window.WLMusic.credit() : '', toggleMusic: ()=>{ if (window.WLMusic) { window.WLMusic.cycle(); this.setState({musicTick:Date.now()}); } },
       showCash: !!s.game && s.game!='idle' && s.game!='secrets', cashOutGame: ()=>this.cashOutGame(), cashLabel: s.admin ? 'Cash out · (admin)' : 'Cash out · '+fmtN(s.liveScore||0),
       expFloor: window.WLE ? window.WLE.EXP.filter(x=>(P.exp||{})[x.k]).map(x=>({key:x.k+'-'+P.exp[x.k], e:x.e, n:x.n, lv:P.exp[x.k]})) : [], expEmpty: !window.WLE || !window.WLE.EXP.some(x=>(P.exp||{})[x.k]),
@@ -2544,7 +2553,7 @@ class Component extends DCLogic {
       avImg: avSVG(P.avatar, (P.ach||[]).length, {npet:petOf(petTag(P))}), avLevel: (P.ach||[]).length, avFrameName: (avFrame((P.ach||[]).length)||{n:'No'}).n+' frame',
       acctTitle: window.WLA ? window.WLA.title(P) : '', hasTitle: !!(window.WLA && window.WLA.title(P)), acctPins: window.WLA ? window.WLA.pins(P).map(x=>({key:x.id, e:x.e, g:x.g, name:x.name})) : [],
       avOpen: !!s.avOpen, openAv: ()=>{ this.keys = {}; this.setState({avOpen:true, avTab:s.avTab||'hat'}); }, closeAv: ()=>this.closeAll(),
-      hallPlayers: lbRows('_tix','all',6), hallEmpty: lbRows('_tix','all',1).length==0,
+      hallPlayers: lbRows('_ov','all',6), hallEmpty: lbRows('_ov','all',1).length==0,
       toasts: s.toasts,
     };
     // ☰ Menu: everything that used to crowd the header, grouped with icons

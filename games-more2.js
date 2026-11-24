@@ -394,6 +394,7 @@ A.register('fishing', { mount(host, api){
     {k:'winch', n:'Turbo Winch', d:L => 'Reel ×' + fmt(Math.pow(2, L)) + ' → ×' + fmt(Math.pow(2, L+1)) + ' faster', b:1e4, gr:20},
     {k:'deepmap', n:'Deep Map', d:L => UL('drop') < 10 ? 'Needs Express Drop maxed first' : 'Express Drop can skip up to ' + (80 + 5*L) + '% → ' + (80 + 5*L + 5) + '%', b:5e5, gr:30, max:3},
     {k:'buddy', n:'Fishing Buddy', d:L => 'Earns '+fmt(buddyRate(L))+' → '+fmt(buddyRate(L+1))+' coins/s for you', b:250, gr:1.42},
+    {k:'lines', n:'Extra Lines', d:L => L >= 4 ? 'Fishing with 5 hooks side by side (max)' : 'Fish with ' + (1+L) + ' → ' + (2+L) + ' hooks side by side (every hook catches fish; they share your hook space)', b:5000, gr:12, max:4},
     {k:'newbait', n:'Fresh Bait', d:L => 'Fish missing from your Fish Book show up ×' + (1 + .4*L).toFixed(1) + ' → ×' + (1 + .4*(L+1)).toFixed(1) + ' as often', b:120, gr:1.5, max:20},
     {k:'lamp', n:'Deep Lamp', d:L => 'Your light reaches ' + (70 + 45*L) + ' → ' + (115 + 45*L) + ' px in dark water', b:150, gr:1.6, max:10},
     {k:'clear', n:'Clear Water', d:L => 'Deep water is ' + (7*L) + '% → ' + (7*L + 7) + '% brighter', b:200, gr:1.65, max:10},
@@ -414,6 +415,9 @@ A.register('fishing', { mount(host, api){
   let bookC = null; const book = () => { if (bookC) return bookC; let loc = {}; try { loc = JSON.parse(localStorage.getItem('wl-fishbook') || '{}'); } catch(e){} const sv = (api.gdata && api.gdata().book) || {}; bookC = {...loc}; for (const k in sv) bookC[k] = Math.max(bookC[k]||0, sv[k]); return bookC; };
   const G = Object.assign({coins:0, upg:{}, loc:'lake', locs:{lake:1}, best:0, deepest:0, pearls:0, run:0, tot:0, dives:0, caught:0}, (api.gdata && api.gdata().fg) || {});
   const UL = k => G.upg[k] || 0;
+  // 🎣 Extra Lines: more hooks beside your main one, 90 px apart
+  const hooksX = () => { const n = Math.min(4, UL('lines')), xs = [hx]; for (let i = 0; i < n; i++) xs.push(Math.max(14, Math.min(W - 14, hx + (i % 2 ? 1 : -1) * 90 * (1 + (i >> 1))))); return xs; };
+  const nearHook = (x, r) => hooksX().some(h => Math.abs(x - h) < r);
   const spd = k => Math.max(10, Math.min(100, G[k] == null ? 100 : G[k])) / 100;   // speed sliders: 10–100% of your upgraded speed
   // 📏 Depth slider: let out only part of your line (from 25 m up to the whole line) so shallow fish are reachable again
   // a short line never moves so fast you can't fish it: each way takes at least ~3 s
@@ -778,6 +782,8 @@ A.register('fishing', { mount(host, api){
       if (UL('sonar') >= 2 && !o.jelly && !o.pred && Math.abs(y - sy(hd)) < 140) { g.fillStyle = 'rgba(255,255,255,.85)'; g.font = '700 11px '+A.font; g.textAlign = 'center'; g.fillText('🪙' + fmt(fishVal(o.f, AB(o.d)) * (o.gold ? 5 : 1) * coinMult()), o.x, y - o.f.s - 6); } }
     if (base + dBot > maxD && phase != 'surface') { const yb = sy(maxD - base + 3); g.strokeStyle = 'rgba(255,69,57,.6)'; g.setLineDash([6, 6]); g.beginPath(); g.moveTo(0, yb); g.lineTo(W, yb); g.stroke(); g.setLineDash([]); }
     const hy = sy(hd); g.strokeStyle = 'rgba(255,255,255,.75)'; g.lineWidth = 1.3; g.beginPath(); g.moveTo(tip.x, Math.max(-10, tip.y)); g.quadraticCurveTo((tip.x + hx)/2, Math.max(-10, tip.y) + 20, hx, hy - 10); g.stroke();
+    hooksX().slice(1).forEach(x2 => { g.strokeStyle = 'rgba(255,255,255,.5)'; g.lineWidth = 1; g.beginPath(); g.moveTo(tip.x, Math.max(-10, tip.y)); g.quadraticCurveTo((tip.x + x2)/2, Math.max(-10, tip.y) + 20, x2, hy - 8); g.stroke();
+      g.strokeStyle = '#c3c9d0'; g.lineWidth = 2.4; g.beginPath(); g.moveTo(x2, hy - 8); g.lineTo(x2, hy + 3); g.arc(x2 - 5, hy + 3, 5, 0, Math.PI); g.stroke(); g.fillStyle = '#FFB000'; g.beginPath(); g.arc(x2, hy - 12, 3, 0, TAU); g.fill(); });
     caught.slice(-8).forEach((x, i) => { g.save(); g.translate(hx + Math.sin(t*3 + i)*6, hy + 16 + i*9); g.rotate(Math.PI/2 + Math.sin(t*4 + i)*.3); if (x.f.junk || x.f.chest) { g.fillStyle = x.f.col; g.fillRect(-6, -5, 12, 10); } else drawLook(x.f, 8, i, x.gold, true); g.restore(); });
     // lantern bobber glow in the dark
     const dk = dark(Math.max(0, AB(hd))); if (dk > .35 && !low()) { g.fillStyle = 'rgba(255,240,170,' + (.18 + .1*Math.sin(t*4)) + ')'; g.beginPath(); g.arc(hx, hy - 16, 16, 0, TAU); g.fill(); }
@@ -830,13 +836,13 @@ A.register('fishing', { mount(host, api){
       if (phase == 'drop') { visBoost = 1; const pD = move(sinkEff() * slowF(), 1); gen(hd + 160); const hA = AB(hd);
         const z = zoneOf(hA); if (z != lastZone) { if (lastZone >= 0 || z > 0) { zoneShow = zoneName(hA) + ' · ' + fmt(hA >= 2000 ? LAYERS[layerIdx(hA)].d : ZONES[z].d) + ' m'; zoneT = 2; } lastZone = z; }
         if (hA >= 2000 && layerIdx(hA) != layerIdx(prevA) && t - layerT > 1.5) { layerT = t; zoneShow = '⬇ ' + zoneName(hA) + ' · ' + fmt(LAYERS[layerIdx(hA)].d) + ' m'; zoneT = 2.5; A.sfx('blip'); }
-        for (const o of fish) { if (o.dead || o.jelly || o.pred || o.passed || o.f.special == 'ohdang' || o.f.special == 'fishmax') continue; if (o.d < pD - 3 || o.d > hd + 3) continue; if (Math.abs(o.x - hx) < o.f.s + 11) {
+        for (const o of fish) { if (o.dead || o.jelly || o.pred || o.passed || o.f.special == 'ohdang' || o.f.special == 'fishmax') continue; if (o.d < pD - 3 || o.d > hd + 3) continue; if (nearHook(o.x, o.f.s + 11)) {
             if (ghosty(o)) { o.passed = true; continue; }
             o.passed = true; if (caught.length < capN()) { catchIt(o); say('Hooked ' + (/^[AEIOU]/i.test(o.f.n) ? 'an ' : 'a ') + o.f.n + ' on the way down' + (caught.length >= capN() ? ' · hook full!' : ''), 1.2); } } }
         if (phase == 'drop' && AB(hd) >= maxD * (1 - 1e-12)) { hd = maxD - base; startReel('End of the line! Reel up and grab fish'); } }
       else if (phase == 'reel') { const full = caught.length >= capN(), turbo = full || AB(hd) < skipD ? 4 : 1; visBoost = full ? 4 : 1; const pD = move(reelEff() * turbo * slowF(), -1); if (base !== 0 && genUp < 0) genUp = hd - 60; if (genUp >= 0) genAbove(hd - 160);
         if (!full) for (const o of fish) { if (o.dead) continue; if (o.d > pD + 4 || o.d < hd - 4) continue; const rad = o.jelly ? 20 : o.pred ? 26 : o.f.s + 14 + 3*UL('magnet');
-          if (Math.abs(o.x - hx) < rad && Math.abs(o.d*PXM - hd*PXM) < rad + Math.abs(pD - hd)*PXM) {
+          if ((o.jelly || o.pred ? Math.abs(o.x - hx) < rad : nearHook(o.x, rad)) && Math.abs(o.d*PXM - hd*PXM) < rad + Math.abs(pD - hd)*PXM) {
             if (o.jelly || o.pred) { const who = o.pred ? 'barracuda' : 'jellyfish'; if (o.pred) o.vx *= -1.4; else o.dead = true; if (o.pred && t - (o.hitT || -9) < 1.2) continue; o.hitT = t; if (shieldN > 0) { shieldN--; A.tone(900, .06, 'sine', .04); say(o.pred ? 'Jelly Guard scared off the barracuda!' : 'Jelly Guard blocked a sting!', 1.2); continue; } if (!caught.length) { A.sfx('bad'); continue; }
               // jellyfish never take a fish that's new for your Fish Book — only one you already have (or a second copy)
               let li = -1; for (let q = caught.length - 1; q >= 0; q--) { const kk = caught[q].f.k; if (book()[kk] || caught.findIndex(c2 => c2.f.k == kk) < q) { li = q; break; } }
@@ -850,7 +856,7 @@ A.register('fishing', { mount(host, api){
         ohT += dt; if (ohT >= 10) { ohT -= 10; if (Math.random() < ohChance(AB(hd))) { const f = SPEC[G.loc][2]; fish.push({f, x:80 + Math.random()*(W-160), d:Math.max(1, hd + (phase == 'drop' ? 22 : -22)), vx:(Math.random() < .5 ? -1 : 1)*14, ph:0, gold:false});
           say('🌈 OH DANG!!!! Something ENORMOUS is right next to you!', 4); flash = .7; A.sfx('win'); stat(api,'ohDangSeen',1,'add'); } }
         // it can always be hooked, even with a full hook
-        for (const o of fish) { if (o.dead || o.jelly || o.pred || !o.f || (o.f.special != 'ohdang' && o.f.special != 'fishmax')) continue; if (Math.abs(o.x - hx) < o.f.s*(o.f.special == 'fishmax' ? .9 : 1) + 12 && Math.abs(o.d - hd)*PXM < o.f.s*.6 + 12) { if (o.f.special == 'fishmax') { catchFISH(o); continue; } catchIt(o); say('🌈🌈 YOU CAUGHT ' + o.f.n.toUpperCase() + '!!! 🌈🌈', 5); flash = 1; } }
+        for (const o of fish) { if (o.dead || o.jelly || o.pred || !o.f || (o.f.special != 'ohdang' && o.f.special != 'fishmax')) continue; if (nearHook(o.x, o.f.s*(o.f.special == 'fishmax' ? .9 : 1) + 12) && Math.abs(o.d - hd)*PXM < o.f.s*.6 + 12) { if (o.f.special == 'fishmax') { catchFISH(o); continue; } catchIt(o); say('🌈🌈 YOU CAUGHT ' + o.f.n.toUpperCase() + '!!! 🌈🌈', 5); flash = 1; } }
         const hA2 = AB(hd); if (hA2 > G.best) G.best = hA2; if (hA2 > (G.deepest||0)) { G.deepest = hA2; stat(api,'fishDepth',Math.floor(hA2),'max'); }
         if (base !== 0 && (hd > 1e7 || hd < 500)) rebase(); }
       if (combo && t - lastCatch > 1.6) combo = 0; }
