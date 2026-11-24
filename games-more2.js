@@ -188,7 +188,7 @@ A.register('fishing', { mount(host, api){
       'Star Minnow|Moon Guppy|Comet Perch|Nebula Trout', 'Meteor Eel|Galaxy Ray|Orbit Fish|Saturn Bass', 'Quasar Pike|Cosmic Salmon|Rocket Swordfish|Planet Sturgeon',
       'Void Lantern|Wormhole Eel|Pulsar Squid|Supernova Koi', 'Black Hole Gulper|Eclipse Shark|Starlight Serpent|Celestial Narwhal', 'Dark Matter Fish|Time Trout|Gravity Ray|Cosmic Dragon',
       'Quantum Kraken|Infinity Eel|Big Bang Bass|Galaxy Whale', 'Dream Fish|The Starfish King|Universe Koi|The First Fish']}];
-  const RN = ['Common','Uncommon','Rare','Epic','Legendary','Mythic'], RC = ['#c9ccd1','#7fe08a','#64CDF5','#E9B9F7','#F9BF01','#ff6ad5'];
+  const RN = ['Common','Uncommon','Rare','Epic','Legendary','Mythic','Godly','DANG'], RC = ['#c9ccd1','#7fe08a','#64CDF5','#E9B9F7','#F9BF01','#ff6ad5','#7df9ff','#ff3b3b'];
   const hue = s => { let h = 7; for (const ch of s) h = (h*31 + ch.charCodeAt(0)) % 360; return h; };
   // ---------- fish art: every species gets a body shape from what it is (eel, ray, shark, squid, puffer, whale, anglerfish,
   // crab, seahorse, turtle, dragon …), its own colors and a pattern. Real fish use their real colors. ----------
@@ -205,7 +205,7 @@ A.register('fishing', { mount(host, api){
   const mkLook = (n, z, i) => { const N = n.toLowerCase(), has = (...w) => w.some(x => N.includes(x)), R = REAL[n];
     let shape = 'fish';
     if (has('dragon', 'serpent', 'wyrm', 'leviathan')) shape = 'dragon'; else if (has('eel')) shape = 'eel';
-    else if (/(^| )ray$/.test(N) || has(' ray ')) shape = 'ray'; else if (has('shark', 'megamouth')) shape = 'shark';
+    else if (/(^| )ray$/.test(N) || has(' ray ')) shape = 'ray'; else if (has('shark', 'megamouth', 'megalodon')) shape = 'shark';
     else if (has('squid', 'kraken')) shape = 'squid'; else if (has('octopus')) shape = 'octo'; else if (has('puffer')) shape = 'puffer';
     else if (has('seahorse')) shape = 'seahorse'; else if (has('turtle')) shape = 'turtle'; else if (has('whale', 'narwhal')) shape = 'whale';
     else if (has('angler', 'viperfish', 'gulper', 'hatchet', 'snailfish', 'barreleye', 'lantern')) shape = 'angler';
@@ -221,7 +221,7 @@ A.register('fishing', { mount(host, api){
     const pat = R ? R[3] : ['plain', 'stripes', 'spots', 'lines', 'belly', 'dots', 'bands'][Math.floor(rnd(n, 'p')*7)];
     return {shape, pat, col:'hsl(' + h + ',' + sat + '%,' + li + '%)', dark:'hsl(' + h + ',' + sat + '%,' + Math.max(12, li - 22) + '%)', belly:'hsl(' + h + ',' + Math.max(10, sat - 25) + '%,' + Math.min(92, li + 25) + '%)',
       acc:'hsl(' + h2 + ',' + Math.min(100, sat + 15) + '%,' + (R ? 50 : 58) + '%)', tail:['fork', 'round', 'moon', 'fan'][shape == 'koi' ? 3 : Math.floor(rnd(n, 't')*3)],
-      asp:.42 + rnd(n, 'a')*.2, glow:z >= 3, tusk:has('narwhal', 'sword', 'unicorn'), whisk:has('catfish', 'sturgeon', 'dragon', 'coelacanth'), crown:has('king', 'queen'), spikes:has('lion', 'puffer', 'hailstone', 'dragon', 'wyrm') }; };
+      asp:.42 + rnd(n, 'a')*.2, glow:z >= 3, tusk:has('narwhal', 'sword', 'unicorn'), whisk:has('catfish', 'sturgeon', 'dragon', 'coelacanth'), crown:has('king', 'queen', 'crown', 'god', 'guardian'), spikes:has('lion', 'puffer', 'hailstone', 'dragon', 'wyrm') }; };
   const golden = {col:'#FFD700', dark:'#b8860b', belly:'#fff3a0', acc:'#fff8d0'};
   // body path for fish-like shapes (nose at +s, tail base at -0.8s)
   const bodyPath = (s, H) => { g.beginPath(); g.moveTo(s, 0); g.bezierCurveTo(s*.6, -H*1.3, -s*.45, -H*1.1, -s*.82, -H*.2); g.lineTo(-s*.82, H*.2); g.bezierCurveTo(-s*.45, H*1.1, s*.6, H*1.3, s, 0); g.closePath(); };
@@ -345,7 +345,12 @@ A.register('fishing', { mount(host, api){
     return {k, n, z, i, loc:L.k, r:Math.min(5, i + (z >= 4 ? 1 : 0) + (z >= 7 ? 1 : 0)), look:mkLook(n, z, i), get col(){ return this.look.col; }, s:0}; })); });
   Object.values(FISH).forEach(rows => rows.forEach(row => row.forEach(f => { f.s = (9 + f.i*2.5 + f.z*1.2) * ({whale:1.6, shark:1.35, dragon:1.1, squid:1.15, sword:1.2, ray:1.2, crab:.85, shrimp:.75, seahorse:.9, puffer:.9, star:.85, eel:.95}[f.look.shape] || 1); })));
   const BOOT = {k:'boot', n:'Old Boot', z:0, i:-1, r:0, col:'#5a3a1a', s:11, junk:true}, CHEST = {k:'chest', n:'Treasure Chest', z:2, i:-2, r:4, col:'#c8964a', s:13, chest:true};
-  const ALL = [].concat(...LOCS.map(L => [].concat(...FISH[L.k]))).concat([BOOT, CHEST]);
+  // Godly (from 60 m) and DANG (from 250 m) fish: one of each per spot, worth a fortune, very rare unless you aim your bait mix at them
+  const SPECIAL = {lake:['Crown Sturgeon', 'DANG Catfish'], isle:['Glacier God Narwhal', 'DANG Yeti Fish'], coast:['Poseidon Ray', 'DANG Megalodon'], vent:['Volcano God Koi', 'DANG Lava Kraken'], star:['Galaxy Guardian', 'DANG Cosmic Whale']};
+  const SPEC = {}; Object.entries(SPECIAL).forEach(([lk, [gn, dn]]) => { SPEC[lk] = [gn, dn].map((n, j) => { const lo = mkLook(n, 6, 3);
+      if (j) { lo.col = 'hsl(0,85%,48%)'; lo.dark = 'hsl(0,80%,22%)'; lo.belly = 'hsl(20,90%,70%)'; lo.acc = '#121313'; } else { lo.col = 'hsl(48,100%,62%)'; lo.dark = 'hsl(40,90%,36%)'; lo.belly = '#fffbe6'; lo.acc = '#7df9ff'; }
+      lo.glow = true; return {k:lk + '-' + (j ? 'dang' : 'godly'), n, z:6, i:4 + j, r:6 + j, loc:lk, look:lo, get col(){ return this.look.col; }, s:(j ? 30 : 26) * (lo.shape == 'whale' ? 1.2 : 1), special:j ? 'dang' : 'godly', minD:j ? 250 : 60}; }); });
+  const ALL = [].concat(...LOCS.map(L => [].concat(...FISH[L.k]).concat(SPEC[L.k]))).concat([BOOT, CHEST]);
 
   // ---------- upgrades (bought with coins; levels never reset except by a Pearl Dive) ----------
   const UP = [
@@ -386,21 +391,32 @@ A.register('fishing', { mount(host, api){
   const capN = () => 3 + UL('hook') + A.U('bait');
   const luck = () => 1 + .12*UL('luck') + .15*A.U('lure') + (UL('sonar') >= 3 ? .15 : 0);
   function buddyRate(L) { const z = zoneOf(G.best||0); return L ? L * .35 * 4 * Math.pow(2.3, z) * LOC().mult * coinMult() : 0; }
-  const fishVal = (f, d) => f.chest ? 60 * Math.pow(2.3, zoneOf(d)) * LOC().mult * Math.pow(2, layerOf(d)) * (1 + .2*UL('chest')) : f.junk ? 1 : 4 * Math.pow(2.3, f.z) * [1, 2, 4, 9][f.i] * LOC().mult * Math.pow(2, layerOf(d));
-  const fishPts = (f, d) => f.junk ? 2 : f.chest ? 150 + 20*zoneOf(d) : Math.round((10 + 14*f.z) * [1, 1.6, 2.6, 4.5][f.i] + 25*layerOf(d));
+  const fishVal = (f, d) => f.special ? 4 * Math.pow(2.3, zoneOf(d)) * (f.special == 'dang' ? 500 : 60) * LOC().mult * Math.pow(2, layerOf(d)) : f.chest ? 60 * Math.pow(2.3, zoneOf(d)) * LOC().mult * Math.pow(2, layerOf(d)) * (1 + .2*UL('chest')) : f.junk ? 1 : 4 * Math.pow(2.3, f.z) * [1, 2, 4, 9][f.i] * LOC().mult * Math.pow(2, layerOf(d));
+  const fishPts = (f, d) => f.special ? (f.special == 'dang' ? 1500 + 80*zoneOf(d) : 400 + 30*zoneOf(d)) + 25*layerOf(d) : f.junk ? 2 : f.chest ? 150 + 20*zoneOf(d) : Math.round((10 + 14*f.z) * [1, 1.6, 2.6, 4.5][f.i] + 25*layerOf(d));
 
   // ---------- one dive ----------
   let st = 'ready', phase = 'surface', score = 0, t = 0, hx = W/2, tx = null, hd = 0, camD = 0, maxD = 0, skipD = 0, caught = [], fish = [], genTo = 0, ghostN = 0, shieldN = 0,
     combo = 0, lastCatch = -9, msg = '', msgT = 0, quiz = false, tally = null, zoneShow = '', zoneT = 0, lastZone = -1, ptrDown = false, panel = null, panelTab = 'up', armPearl = false, flash = 0, buddyAcc = 0;
   const K = {}; const kd = e => { K[e.key] = true; }, ku = e => { K[e.key] = false; }; window.addEventListener('keydown', kd); window.addEventListener('keyup', ku);
   const say = (s, d) => { msg = s; msgT = d || 1.6; };
-  const pick = d => { const z = zoneOf(d), L = LOC(), u = Math.random();
-    if (z <= 2 && u < .07) return BOOT;
+  // ---- bait mix: the player picks how much of each rarity they want; aiming at rarer fish means fewer fish ----
+  const MIXN = 8, COST = [1, 1.6, 2.6, 4.5, 7, 11, 22, 120];   // "how hard to attract" per rarity: rarer mix = emptier water
+  const mixOn = () => Array.isArray(G.mix) && G.mix.length == MIXN && G.mix.some(v => v > 0);
+  const poolAt = d => { const z = zoneOf(d), L = LOC(), lk = luck(), w8 = [10, 5, 2.2*lk, .7*lk], out = [];
+    FISH[L.k][z].forEach((f, i) => out.push({f, w:w8[i]*(z ? .8 : 1)})); if (z > 0) FISH[L.k][z-1].forEach((f, i) => out.push({f, w:w8[i]*.2}));
+    const [gd, dg] = SPEC[L.k]; if (d >= gd.minD) out.push({f:gd, w:.05*lk}); if (d >= dg.minD) out.push({f:dg, w:.008*lk}); return out; };
+  const mixed = pool => { if (!mixOn()) return pool; const nat = new Array(MIXN).fill(0); let T = 0; pool.forEach(p2 => { nat[p2.f.r] += p2.w; T += p2.w; });
+    const want = G.mix.map((v, r) => nat[r] > 0 ? Math.max(0, v) : 0), W8 = want.reduce((a, b) => a + b, 0); if (!(W8 > 0)) return pool;
+    return pool.map(p2 => ({f:p2.f, w:p2.w / nat[p2.f.r] * want[p2.f.r] / W8 * T})); };
+  const densCache = {}; const density = d => { const key = zoneOf(d) + '|' + (d >= 250 ? 2 : d >= 60 ? 1 : 0) + '|' + G.loc + '|' + (mixOn() ? G.mix.join(',') : 'n'); if (densCache[key] != null) return densCache[key];
+    const nat = poolAt(d), mx = mixed(nat), ec = p2 => { let a = 0, b = 0; p2.forEach(q => { a += q.w*COST[q.f.r]; b += q.w; }); return a / b; };
+    return (densCache[key] = Math.max(.008, Math.min(1.35, ec(nat) / ec(mx)))); };
+  const pick = d => { const z = zoneOf(d), u = Math.random();
+    if (z <= 2 && u < .07*(mixOn() ? (G.mix[0]||0) / Math.max(1, G.mix.reduce((a, b) => a + b, 0)) * 3 : 1)) return BOOT;
     if (z >= 2 && u < .012 * (1 + .25*UL('chest'))) return CHEST;
-    const zz = Math.random() < .8 || z == 0 ? z : z - 1, row = FISH[L.k][zz], lk = luck(), w8 = [10, 5, 2.2*lk, .7*lk];
-    let s = w8.reduce((a, b) => a + b, 0), x = Math.random()*s; for (let i = 0; i < 4; i++) { x -= w8[i]; if (x <= 0) return row[i]; } return row[0]; };
+    const pool = mixed(poolAt(d)); let S = pool.reduce((a, b) => a + b.w, 0), x = Math.random()*S; for (const p2 of pool) { x -= p2.w; if (x <= 0) return p2.f; } return pool[0].f; };
   const gen = upTo => { const df = A.D(.8, 1, 1.25); while (genTo < upTo) { const b0 = genTo, z = zoneOf(b0); genTo += 12;
-      const n = (Math.random() < .9 ? 1 : 0) + (Math.random() < .35 ? 1 : 0) + (z >= 4 && Math.random() < .25 ? 1 : 0);
+      const dn = density(b0), n = (Math.random() < .9*dn ? 1 : 0) + (Math.random() < .35*dn ? 1 : 0) + (z >= 4 && Math.random() < .25*dn ? 1 : 0);
       for (let i = 0; i < n; i++) { const f = pick(b0), dir = Math.random() < .5 ? 1 : -1;
         fish.push({f, x:20 + Math.random()*(W-40), d:b0 + Math.random()*12, vx:f.chest ? 0 : dir * (25 + Math.random()*45 + z*6) * df, ph:Math.random()*TAU, gold:!f.junk && !f.chest && Math.random()*100 < goldP(UL('gold'))}); }
       if (z >= 1 && Math.random() < Math.min(.5, (.12 + .04*z) * df)) fish.push({jelly:true, x:20 + Math.random()*(W-40), d:b0 + Math.random()*12, vx:(Math.random()-.5)*30, ph:Math.random()*TAU}); } };
@@ -430,8 +446,8 @@ A.register('fishing', { mount(host, api){
   // ---------- buttons + panels (shop, spots, book, pearls) ----------
   const bar = el('div', {display:'flex', gap:'6px', padding:'6px 0 0', flexWrap:'wrap', justifyContent:'center'}); wrap.appendChild(bar);
   const mk = (txt, fn, bg, fg) => { const b = el('button', {background:bg||'#015640', color:fg||'#fff', border:'none', borderRadius:'999px', padding:'8px 12px', font:'700 13px '+A.font, cursor:'pointer'}, txt); b.tabIndex = -1; b.onclick = e => { e.stopPropagation(); b.blur(); fn(); }; return b; };
-  const bUp = mk('🛒 Upgrades', () => openPanel('up')), bSpot = mk('🗺 Spots', () => openPanel('spot')), bBook = mk('📖 Fish Book', () => openPanel('book')), bPearl = mk('🦪 Pearls', () => openPanel('pearl')), bReel = mk('⏫ Come up now · Q', () => startReel('Coming up!'), '#FF4539');
-  [bUp, bSpot, bBook, bPearl, bReel].forEach(b => bar.appendChild(b));
+  const bUp = mk('🛒 Upgrades', () => openPanel('up')), bSpot = mk('🗺 Spots', () => openPanel('spot')), bBook = mk('📖 Fish Book', () => openPanel('book')), bPearl = mk('🦪 Pearls', () => openPanel('pearl')), bMix = mk('🎯 Bait mix', () => openPanel('mix')), bReel = mk('⏫ Come up now · Q', () => startReel('Coming up!'), '#FF4539');
+  [bUp, bSpot, bMix, bBook, bPearl, bReel].forEach(b => bar.appendChild(b));
   // Express Drop: choose how much of the line to skip (0% up to what your upgrade allows)
   const skipBox = el('label', {display:'none', alignItems:'center', gap:'6px', background:'rgba(1,86,64,.12)', borderRadius:'999px', padding:'4px 12px', font:'700 13px '+A.font, color:'#015640'});
   const skipIn = el('input', {width:'120px', accentColor:'#00B451'}); skipIn.type = 'range'; skipIn.min = 0; skipIn.step = 1; skipIn.tabIndex = -1;
@@ -452,7 +468,7 @@ A.register('fishing', { mount(host, api){
   bar.appendChild(ghostBox);
   const drawGhost = () => { ghostBox.innerHTML = ''; ghostBox.appendChild(el('span', {padding:'0 4px'}, '👻 Ignore')); const mx = Math.min(3, UL('ghost')), cur = ghostTier();
     ['Off', 'Common', '≤ Uncommon', '≤ Rare'].slice(0, mx + 1).forEach((n, k) => { const b = mk(n, () => { G.ghostSel = k; save(); drawGhost(); }, cur == k ? '#015640' : 'transparent', cur == k ? '#fff' : '#015640'); b.style.padding = '4px 9px'; b.style.fontSize = '12px'; if (cur != k) b.style.border = '1.5px solid rgba(1,86,64,.35)'; ghostBox.appendChild(b); }); };
-  function refreshBar(){ const dive = st == 'play' && (phase == 'drop' || phase == 'reel'); [bUp, bSpot, bPearl].forEach(b => b.style.display = dive ? 'none' : ''); bReel.style.display = st == 'play' && phase == 'drop' ? '' : 'none';
+  function refreshBar(){ const dive = st == 'play' && (phase == 'drop' || phase == 'reel'); [bUp, bSpot, bPearl, bMix].forEach(b => b.style.display = dive ? 'none' : ''); bReel.style.display = st == 'play' && phase == 'drop' ? '' : 'none';
     [sinkSl, reelSl].forEach(o => { o.box.style.display = dive ? 'none' : 'flex'; o.show(); });
     ghostBox.style.display = UL('ghost') > 0 && !dive ? 'flex' : 'none'; if (UL('ghost') > 0) drawGhost();
     const sm = skipMax(); skipBox.style.display = sm > 0 && !dive ? 'flex' : 'none'; if (sm > 0) { skipIn.max = sm; skipIn.value = skipPct(); skipTx.textContent = skipPct() + '% · ' + fmt(Math.floor(lineM(UL('line')) * skipPct() / 100)) + ' m'; } }
@@ -462,7 +478,7 @@ A.register('fishing', { mount(host, api){
     panel.addEventListener('pointerdown', e => e.stopPropagation()); wrap.appendChild(panel); drawPanel(); }
   function drawPanel(){ if (!panel) return; const keep = panel.querySelector('.fl-body'), sc = keep ? keep.scrollTop : 0; panel.innerHTML = '';
     const top = el('div', {display:'flex', gap:'6px', alignItems:'center', marginBottom:'8px', flexWrap:'wrap'}); panel.appendChild(top);
-    [['up','🛒 Upgrades'],['spot','🗺 Spots'],['book','📖 Book'],['pearl','🦪 Pearls']].forEach(([k, n]) => { const b = mk(n, () => { panelTab = k; armPearl = false; drawPanel(); }, panelTab == k ? '#D5F367' : 'rgba(255,255,255,.12)', panelTab == k ? '#015640' : '#fff'); b.style.padding = '6px 10px'; top.appendChild(b); });
+    [['up','🛒 Upgrades'],['spot','🗺 Spots'],['mix','🎯 Mix'],['book','📖 Book'],['pearl','🦪 Pearls']].forEach(([k, n]) => { const b = mk(n, () => { panelTab = k; armPearl = false; drawPanel(); }, panelTab == k ? '#D5F367' : 'rgba(255,255,255,.12)', panelTab == k ? '#015640' : '#fff'); b.style.padding = '6px 10px'; top.appendChild(b); });
     const x = mk('✕', closePanel, 'rgba(255,255,255,.15)'); x.style.marginLeft = 'auto'; top.appendChild(x);
     panel.appendChild(el('div', {font:'800 18px '+A.font, color:'#F9BF01', margin:'2px 0 8px'}, '🪙 ' + fmt(G.coins) + ' coins'));
     const body = el('div', {overflowY:'auto', flex:'1', display:'flex', flexDirection:'column', gap:'6px'}); body.className = 'fl-body'; panel.appendChild(body);
@@ -479,9 +495,26 @@ A.register('fishing', { mount(host, api){
     if (panelTab == 'book') { const b = book(), found = ALL.filter(f => b[f.k]).length;
       body.appendChild(el('div', {font:'600 13px '+A.font, color:'#D5F367'}, found + ' of ' + ALL.length + ' found · Book bonus ×' + bookBonus().toFixed(2) + ' coins (+3% per full zone, +25% per full spot)'));
       LOCS.forEach(L => { body.appendChild(el('div', {font:'800 15px '+A.font, marginTop:'6px'}, L.n + (G.locs[L.k] ? '' : ' 🔒')));
-        FISH[L.k].forEach((zr, z) => { const r = row(); r.style.flexWrap = 'wrap'; r.style.gap = '4px'; r.appendChild(el('div', {width:'100%', font:'600 11px '+A.font, color:'#8fb9c9'}, ZONES[z].n + ' · ' + ZONES[z].d + ' m+'));
+        FISH[L.k].concat([SPEC[L.k]]).forEach((zr, z) => { const r = row(); r.style.flexWrap = 'wrap'; r.style.gap = '4px'; r.appendChild(el('div', {width:'100%', font:'600 11px '+A.font, color:z < 8 ? '#8fb9c9' : '#ff9b9b'}, z < 8 ? ZONES[z].n + ' · ' + ZONES[z].d + ' m+' : '✨ Godly (60 m+) & 🔥 DANG (250 m+)'));
           zr.forEach(f => { const n = b[f.k] || 0, cell = el('div', {flex:'1 1 45%', display:'flex', alignItems:'center', gap:'6px', font:'600 12px '+A.font, color:n ? RC[f.r] : '#5d7d8a'}); if (n) { const im = el('img', {width:'46px', height:'30px', flexShrink:0}); im.src = fishIcon(f); cell.appendChild(im); } else cell.appendChild(el('div', {width:'46px', height:'30px', flexShrink:0, borderRadius:'8px', background:'rgba(255,255,255,.06)', textAlign:'center', lineHeight:'30px'}, '?')); cell.appendChild(el('span', {}, n ? f.n + ' ×' + n : '??? (' + RN[f.r] + ')')); r.appendChild(cell); }); }); });
       const r = row(); [BOOT, CHEST].forEach(f => { const cell = el('div', {flex:'1', display:'flex', alignItems:'center', gap:'6px', font:'600 12px '+A.font, color:b[f.k] ? RC[f.r] : '#5d7d8a'}); if (b[f.k]) { const im = el('img', {width:'46px', height:'30px'}); im.src = fishIcon(f); cell.appendChild(im); } cell.appendChild(el('span', {}, b[f.k] ? f.n + ' ×' + b[f.k] : '??? (' + RN[f.r] + ')')); r.appendChild(cell); }); }
+    if (panelTab == 'mix') { const deep = Math.max(30, lineM(UL('line'))), WH = ['up to 250 m', 'up to 2,000 m', 'everywhere', 'everywhere', '250 m+', '2,000 m+', '60 m+', '250 m+'];
+      const cur = mixOn() ? G.mix.slice() : null, vals = cur || [60, 30, 12, 5, 2, 1, 0, 0];
+      body.appendChild(el('div', {font:'600 13px '+A.font, lineHeight:1.4, color:'#cfe3ec'}, 'Choose what your bait attracts. Higher numbers = more of that rarity. Aiming for rarer fish means fewer fish in the water, so pick your mix to fit your hook.'));
+      const info = el('div', {font:'800 14px '+A.font, color:'#D5F367'}); body.appendChild(info);
+      const shareTx = [];
+      const upd = () => { const v = mixOn() ? G.mix : null, tot = v ? v.reduce((a, b) => a + b, 0) : 0; shareTx.forEach((tx, r) => { tx.textContent = v ? Math.round(100 * v[r] / Math.max(1, tot)) + '%' : 'natural'; });
+        info.textContent = (mixOn() ? '🎯 Your mix' : '🌊 Natural mix') + ' · fish in the water at ' + fmt(deep) + ' m: ' + Math.round(density(deep) * 100) + '% of normal'; };
+      for (let r = 0; r < MIXN; r++) { const rw = row(); rw.style.gap = '10px';
+        const lab = el('div', {width:'92px', font:'800 13px '+A.font, color:RC[r]}, RN[r]); lab.appendChild(el('div', {font:'500 10px '+A.font, color:'#8fb9c9'}, WH[r]));
+        const sl = el('input', {flex:'1', accentColor:RC[r]}); sl.type = 'range'; sl.min = 0; sl.max = 100; sl.step = 1; sl.value = vals[r];
+        const tx = el('div', {width:'52px', textAlign:'right', font:'800 13px '+A.font}); shareTx[r] = tx;
+        sl.addEventListener('input', () => { if (!mixOn()) G.mix = vals.slice(); G.mix[r] = +sl.value; upd(); }); sl.addEventListener('change', () => save());
+        rw.appendChild(lab); rw.appendChild(sl); rw.appendChild(tx); }
+      const pr = el('div', {display:'flex', gap:'6px', flexWrap:'wrap', marginTop:'4px'}); body.appendChild(pr);
+      [['🌊 Natural', null], ['🐟 Lots of fish', [100, 50, 10, 2, 0, 0, 0, 0]], ['💎 Rare hunter', [0, 5, 30, 40, 30, 20, 10, 5]], ['✨ Godly hunt', [0, 0, 0, 10, 20, 20, 100, 20]], ['🔥 DANG or bust', [0, 0, 0, 0, 0, 0, 0, 100]]].forEach(([n, v]) => pr.appendChild(mk(n, () => { G.mix = v ? v.slice() : null; save(); drawPanel(); }, 'rgba(255,255,255,.12)')));
+      body.appendChild(el('div', {font:'500 11px '+A.font, color:'#8fb9c9', marginTop:'6px'}, 'Only rarities that live at your depth can show up — if none of your picks live there, you get the natural mix. Treasure chests and golden fish are not affected.'));
+      upd(); }
     if (panelTab == 'pearl') { const n = pearlsFor(), ok = n >= 1 && (G.best||0) >= 250;
       body.appendChild(el('div', {font:'600 14px '+A.font, lineHeight:1.4}, '🦪 You have ' + G.pearls + ' pearl' + (G.pearls == 1 ? '' : 's') + '. Each pearl makes every fish worth +10% forever (now ×' + (1 + .1*G.pearls).toFixed(1) + ').'));
       body.appendChild(el('div', {font:'500 13px '+A.font, color:'#b9d9e6', lineHeight:1.4}, 'A Pearl Dive starts your fishing over: coins, upgrades and spots go back to the start. You keep your pearls, your Fish Book, your tickets and Workshop upgrades. Pearls come from coins earned since your last Pearl Dive, and you must have reached 250 m.'));
@@ -504,6 +537,8 @@ A.register('fishing', { mount(host, api){
     if (f.chest) { g.fillStyle = '#8D5B1D'; rr(g, -14, -9, 28, 18, 3); g.fill(); g.fillStyle = '#F9BF01'; g.fillRect(-14, -2, 28, 3); g.fillRect(-2, -4, 4, 7); if (!low()) { g.fillStyle = 'rgba(255,233,120,' + (.4 + .3*Math.sin(t*4 + o.ph)) + ')'; g.beginPath(); g.arc(0, 0, 20, 0, TAU); g.fill(); } g.restore(); return; }
     if ((f.r >= 3 || o.gold) && !low()) { g.shadowColor = o.gold ? '#FFD700' : f.look.acc; g.shadowBlur = f.r >= 4 ? 16 : 10; }
     drawLook(f, s, o.ph, o.gold, low()); g.shadowBlur = 0;
+    if (f.special && !low()) { const pu = .5 + .5*Math.sin(t*5 + o.ph); g.strokeStyle = f.special == 'dang' ? 'rgba(255,40,40,' + (.4 + .5*pu) + ')' : 'rgba(125,249,255,' + (.35 + .4*pu) + ')'; g.lineWidth = 3; g.beginPath(); g.ellipse(0, 0, s*1.5 + pu*4, s*.95 + pu*3, 0, 0, TAU); g.stroke();
+      if (f.special == 'dang') { g.fillStyle = '#fff'; g.font = '900 ' + Math.round(s*.5) + 'px ' + A.font; g.textAlign = 'center'; g.save(); g.scale(o.vx < 0 ? -1 : 1, 1); g.fillText('DANG!', 0, -s*1.05); g.restore(); } }
     if (f.r >= 4 && !low()) { g.fillStyle = '#fff'; for (let k = 0; k < 3; k++) { const a = t*2 + k*2.1 + o.ph; g.globalAlpha = .5 + .5*Math.sin(t*6 + k); g.fillRect(Math.cos(a)*s*1.2, Math.sin(a)*s*.8, 2, 2); } g.globalAlpha = 1; }
     g.restore();
     if (UL('sonar') >= 1 && f.i >= 2) { g.strokeStyle = RC[f.r]; g.lineWidth = 2; g.globalAlpha = .7; g.beginPath(); g.arc(x, y, s + 7, 0, TAU); g.stroke(); g.globalAlpha = 1; } };
@@ -577,7 +612,7 @@ A.register('fishing', { mount(host, api){
     camD += (Math.max(0, want) - camD) * Math.min(1, dt * (phase == 'surface' || phase == 'tally' ? 3 : 8)); if (phase == 'drop' && hd - camD > (H - SURF - 60)/PXM) camD = hd - (H - SURF - 60)/PXM;
     draw(); });
   refreshBar();
-  A._dbg = A._dbg || {}; A._dbg.fish = { G, s: () => ({st, phase, hd, maxD, caught:caught.length, score, fish:fish.length, camD}), press, setX: x => { tx = x; }, fishes: () => fish.filter(o => !o.dead).map(o => ({x:o.x, d:o.d, j:!!o.jelly})), hx: () => hx, gallery: () => ALL.map(f => ({n:f.n, sh:f.look ? f.look.shape : '', src:fishIcon(f)})) };
+  A._dbg = A._dbg || {}; A._dbg.fish = { G, s: () => ({st, phase, hd, maxD, caught:caught.length, score, fish:fish.length, camD}), press, setX: x => { tx = x; }, fishes: () => fish.filter(o => !o.dead).map(o => ({x:o.x, d:o.d, j:!!o.jelly})), hx: () => hx, rarTest: (d, n) => { const c = {}; for (let k = 0; k < n; k++) { const f = pick(d); const nm = f.junk ? 'boot' : f.chest ? 'chest' : RN[f.r]; c[nm] = (c[nm]||0) + 1; } return {c, dens: +density(d).toFixed(2)}; }, gallery: () => ALL.map(f => ({n:f.n, sh:f.look ? f.look.shape : '', src:fishIcon(f)})) };
   // ---- save & resume (Save & leave, reloads, closing the browser): coins & upgrades live in the game data; the trip's points here ----
   api.snap && api.snap(() => (st == 'play' && score > 0) ? {v:2, score} : null);
   { const R0 = api.resume; if (R0 && (R0.v == 1 || R0.v == 2)) { try { score = Math.max(0, fin(R0.score)); api.score(score); __skip = true; st = 'ready'; } catch(e) { console.error('[save] fishing resume failed', e); } } }
