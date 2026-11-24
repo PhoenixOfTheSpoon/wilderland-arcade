@@ -525,7 +525,7 @@ A.register('snowball', { mount(host, api){
     const nW = 1 + Math.min(3, Math.floor(wave/3)); for (let i = 0; i < nW; i++) walls.push({x:40 + R()*440, y:170 + R()*70, w:70, h:20, hp:4 + Math.floor(wave/4), max:4 + Math.floor(wave/4), mine:0, kind:'snow'});
     const isBoss = mode == 'rush' || wave % 5 == 0;
     if (isBoss) { const k = bossFor(wave), B = BOSSES[k], sc = (1 + (wave/5 - 1)*.45) * A.D(.8, 1, 1.25) * (mode == 'rush' ? .7 + wave*.15 : 1);
-      boss = {k, n:B.n, x:300, y:k == 'dragon' ? 80 : 100, hp:B.hp*sc, max:B.hp*sc, cool:2, vx:90, charge:0, col:B.col, ph:1, tp:0, kb:0}; say(B.n + ' appears!', 3); A.sfx('bad');
+      boss = {k, n:B.n, x:300, y:k == 'dragon' ? 118 : 100, hp:B.hp*sc, max:B.hp*sc, cool:2, vx:90, charge:0, col:B.col, ph:1, tp:0, kb:0}; say(B.n + ' appears!', 3); A.sfx('bad');
       for (let i = 0; i < 1 + Math.floor(wave/10); i++) spawn('thrower'); return; }
     const n = Math.min(12, 2 + Math.floor(wave*.8)), pool = ['thrower', 'thrower'];
     if (wave >= 2) pool.push('fast'); if (wave >= 3) pool.push('builder', 'sniper'); if (wave >= 4) pool.push('golem', 'flanker', 'sledder'); if (wave >= 6) pool.push('medic', 'iceman'); if (wave >= 8) pool.push('catapult', 'fast', 'flanker', 'golem'); if (wave >= 12) pool.push('catapult', 'sniper', 'iceman');
@@ -534,7 +534,7 @@ A.register('snowball', { mount(host, api){
   // straight throw (enemies) and lob (you, teammates, turrets, catapults: flies over walls and lands on the target)
   const straight = (from, tx, ty, o) => { const d = Math.hypot(tx - from.x, ty - from.y) || 1, sp = o.sp || 300; balls.push({x:from.x, y:from.y, vx:(tx - from.x)/d*sp, vy:(ty - from.y)/d*sp, mine:o.mine, dmg:o.dmg || 1, r:o.r || 5, ice:o.ice, life:3}); };
   const lob = (from, tx, ty, o) => { const d = Math.hypot(tx - from.x, ty - from.y), sp = o.sp || 480, wind = AR().wind ? Math.sin(t*.4)*60 : 0;
-    balls.push({lob:1, x0:from.x, y0:from.y - 20, x1:tx + (o.mine ? wind*d/600 : 0), y1:ty, t:0, T:Math.max(.35, d/sp), mine:o.mine, dmg:o.dmg || 1, r:o.r || 5, big:o.big, kind:o.kind || 'n', ice:o.ice, x:from.x, y:from.y, z:0, life:9}); };
+    balls.push({lob:1, x0:from.x, y0:from.y - 20, x1:tx + (o.mine ? wind*d/600 : 0), y1:ty, t:0, T:Math.max(.35, d/sp), mine:o.mine, dmg:o.dmg || 1, r:o.r || 5, big:o.big, kind:o.kind || 'n', ice:o.ice, tur:o.tur, x:from.x, y:from.y, z:0, life:9}); };
   const nearestFoe = (x, y) => { let best = null, bd = 1e9; for (const f of foes) { const d = Math.hypot(f.x - x, f.y - y); if (d < bd) { bd = d; best = f; } } if (boss) { const d = Math.hypot(boss.x - x, boss.y - y); if (d < bd) best = boss; } return best; };
   const throwMine = () => { if (!me || me.ammo <= 0) { say('Out of snowballs! Stand on a ❄ snow pile or duck behind a wall to scoop more', 2); A.sfx('bad'); packing = false; packT = 0; return; }
     const p2 = Math.min(1, packT), small = packT < .12, nf = nearestFoe(me.x, me.y), tgt = mouseOn || aiming ? aim : nf ? {x:nf.x + Math.sign((nf.tx || nf.x) - nf.x)*20, y:nf.y} : {x:me.x, y:120};
@@ -565,7 +565,7 @@ A.register('snowball', { mount(host, api){
     const r = Math.random(), cocoa = .2 + .04*PU('mitts');
     if (r < cocoa) drops.push({x:Math.max(30, Math.min(570, f.x)), y:MID + 20, vy:60, k:'cocoa', life:14});
     else if (r < cocoa + .2) drops.push({x:Math.max(30, Math.min(570, f.x)), y:MID + 20, vy:60, k:['icy','mega','rapid','shield'][Math.floor(Math.random()*4)], life:12}); };
-  const hitBoss = (dmg, x, y) => { if (!boss) return; boss.hp -= dmg; boss.kb = .15; addNum(x, y - 30, '-' + Math.round(dmg*10)/10, '#FF4539');
+  const hitBoss = (dmg, x, y, quiet) => { if (!boss) return; boss.hp -= dmg; boss.kb = .15; if (!quiet) addNum(x, y - 30, '-' + Math.round(dmg*10)/10, '#FF4539');
     const ph = boss.hp < boss.max/3 ? 3 : boss.hp < boss.max*2/3 ? 2 : 1; if (ph > boss.ph) { boss.ph = ph; say(boss.n + (ph == 2 ? ' gets angry!' : ' goes WILD!'), 2.5); shake = .4; A.sfx('bad'); }
     if (boss.hp <= 0) { score += 1500 + wave*100; flakes += 80; bossesBeat++; PERM.bosses++; { const fr = 10 + Math.floor(wave/2); PERM.frost += fr; const it = makeGear(2); setTimeout(() => say('🎁 ' + GRAR[it.rar].n + ' gear: ' + it.name + ' · +' + fr + ' ❄ Frost Crystals', 3.5), 2600); PERM.cx[PERM.cls] = clsXp(PERM.cls) + 60; } api.score(score); A.sfx('win'); stat(api,'snowBoss',1,'add'); say(boss.n + ' is defeated!', 3); shake = .5; splat(boss.x, boss.y, 40); boss = null; } };
   // ---------- build menu ----------
@@ -662,11 +662,12 @@ A.register('snowball', { mount(host, api){
       const W2 = inWall(x, y, false); if (W2 && W2.hp != null) { W2.hp -= b.dmg; addNum(x, y - 10, '🧱', '#5a7a9a'); }
       for (const f of foes) { if (f.dead || Math.hypot(f.x - x, f.y - y) > rad + (TYPES[f.k].big ? 10 : 0)) continue;
         if (f.duck && enemyCover(f) && !b.big && !(me.eye > 0)) { const C2 = enemyCover(f); C2.hp -= b.dmg*.5; continue; }   // hiding behind their wall: only big snowballs get through
-        f.hp -= b.dmg; f.kb = .25; f.kx = (f.x - x) * .3; hit++; addNum(f.x, f.y - 26, '-' + Math.round(b.dmg*10)/10, '#FF4539'); if (b.kind == 'icy' || b.ice) f.slow = 3; if (f.hp <= 0) killFoe(f); }
-      if (boss && Math.hypot(boss.x - x, boss.y - y) < (boss.k == 'dragon' ? 85 : 62) + (b.kind == 'mega' ? 30 : 0)) { hitBoss(b.dmg, x, y); hit++; }
+        f.hp -= b.dmg; f.kb = .25; f.kx = (f.x - x) * .3; hit++; if (!b.tur) addNum(f.x, f.y - 26, '-' + Math.round(b.dmg*10)/10, '#FF4539'); if (b.kind == 'icy' || b.ice) f.slow = 3; if (f.hp <= 0) killFoe(f); }
+      if (boss && Math.hypot(boss.x - x, boss.y - y) < (boss.k == 'dragon' ? 85 : 62) + (b.kind == 'mega' ? 30 : 0)) { hitBoss(b.dmg, x, y, b.tur); hit++; }
       for (const f of foes) if (f.k == 'medic' && f.dead) {}
-      if (hit) { combo = t - comboT < 2.5 ? combo + 1 : 1; comboT = t; flakes += 1 + Math.min(5, Math.floor(combo/3)); if (combo >= 3) addNum(x, y - 44, 'COMBO ×' + combo, '#b48cff'); A.sfx('hit'); if (b.big) shake = Math.max(shake, .2); }
-      splat(x, y, b.big ? 14 : 7); return; }
+      if (hit && b.tur) { flakes += 1; splat(x, y, 3); return; }   // turret hits: a flake each, but no combo (combos are for your own throws)
+      if (hit) { combo = t - comboT < 2.5 ? combo + 1 : 1; comboT = t; flakes += 1 + Math.min(5, Math.floor(combo/3)); A.sfx('hit'); if (b.big) shake = Math.max(shake, .2); }
+      splat(x, y, b.tur ? 3 : b.big ? 14 : 7); return; }
     // enemy lob (catapults, bosses)
     splat(x, y, 10, '#e8f4ff'); if (underRoof(x) && y > MID + 60) { const W2 = underRoof(x); W2.hp -= b.dmg*.5; return; }
     if (Math.abs(me.x - x) < 26 + b.r && Math.abs(me.y - y) < 40) hurtMe(b.dmg, b.ice);
@@ -717,7 +718,7 @@ A.register('snowball', { mount(host, api){
           if (m.role == 'medic' && m.job <= 0) { m.job = (11 - m.lv) * (PERM.cls == 'medic' ? .5 : 1); if (me.hp < me.max) { me.hp++; addNum(me.x, me.y - 40, '+♥', '#00B451'); } }
           if (!m.tx || Math.random() < dt*.25) m.tx = 40 + Math.random()*520; m.x += Math.max(-60*dt, Math.min(60*dt, m.tx - m.x)); }
         // ----- your buildings -----
-        for (const B2 of builds) { if (B2.k == 'turret' && target) { B2.cool -= dt; if (B2.cool <= 0) { B2.cool = 1.4 * (1 - .12*PU('turret')); lob(B2, target.x, target.y, {mine:1, sp:460, dmg:armM()}); } }
+        for (const B2 of builds) { if (B2.k == 'turret' && target) { B2.cool -= dt; if (B2.cool <= 0) { B2.cool = 1.4 * (1 - .12*PU('turret')); lob(B2, target.x, target.y, {mine:1, sp:460, dmg:armM(), tur:1}); } }
           if (B2.k == 'fire' && Math.hypot(me.x - B2.x, (me.y - B2.y)*1.6) < 80) { B2.heal = (B2.heal || 0) + dt * (1 + .25*PU('mitts')); if (B2.heal >= 4) { B2.heal = 0; if (me.hp < me.max) { me.hp++; addNum(me.x, me.y - 40, '+♥', '#FF8A3C'); A.tone(700, .08, 'sine', .04); } } } }
         // ----- enemies -----
         const AIc = 1 + wave*.04;
@@ -752,7 +753,7 @@ A.register('snowball', { mount(host, api){
           else if (B.k == 'witch') { B.tp -= dt; if (B.tp <= 0) { B.tp = 5 - ph; B.x = 80 + Math.random()*440; B.y = 60 + Math.random()*120; splat(B.x, B.y, 12, '#b48cff'); }
             if (B.cool <= 0) { B.cool = A.D(2.2, 1.8, 1.4) / (1 + .2*(ph - 1)); for (let k2 = -1; k2 <= 1; k2++) straight(B, me.x + k2*50, me.y, {sp:280, r:6, ice:k2 == 0});
               if (Math.random() < .25 + .1*ph) { white = 3; say('❄ WHITEOUT! The Blizzard Witch hides her helpers', 2); } if (ph >= 2 && foes.length < 6 && Math.random() < .3) { spawn('thrower', B.x, B.y + 40); spawn('iceman', B.x + 30, B.y + 40); } } }
-          else if (B.k == 'dragon') { B.x = 300 + Math.sin(t*.32*(1 + .15*ph))*210; B.y = 80 + Math.sin(t*1.3)*20;
+          else if (B.k == 'dragon') { B.x = 300 + Math.sin(t*.32*(1 + .15*ph))*210; B.y = 118 + Math.sin(t*1.3)*16;
             if (B.cool <= 0) { B.cool = A.D(3, 2.5, 2) / (1 + .25*(ph - 1)); const sweep = Math.random() < .5 ? 1 : -1; for (let k2 = 0; k2 < 7; k2++) setTimeout(() => { if (boss === B && st == 'play') straight(B, 300 + sweep*(k2 - 3)*80, PY, {sp:340, r:7, ice:true}); }, k2*110);
               if (ph >= 2) for (let k2 = 0; k2 < ph; k2++) lob(B, 80 + Math.random()*440, PY - Math.random()*60, {mine:0, sp:250, dmg:2, r:10}); } }
           else { B.x += Math.sin(t*.7)*80*dt*(ph == 3 ? 1.6 : 1); if (B.cool <= 0) { B.cool = A.D(2.2, 1.8, 1.4) / (1 + .2*(ph - 1)); const fan = ph >= 2 ? 3 : 2; for (let k2 = -fan; k2 <= fan; k2++) straight(B, me.x + k2*50, me.y, {sp:260, r:8, dmg:k2 == 0 ? 2 : 1});
@@ -872,7 +873,7 @@ A.register('snowball', { mount(host, api){
     if (st != 'ready') { g.fillStyle = '#14204a'; g.font = '700 15px '+A.font; g.textAlign = 'left'; g.fillText('Wave ' + (wave||0) + ' · ' + AR().n + (mode == 'rush' ? ' · Boss Rush' : mode == 'daily' ? ' · Daily' : ''), 10, boss ? 58 : 22); g.fillText(A.fmt(score||0) + ' pts', 10, boss ? 78 : 42);
       g.textAlign = 'right'; g.fillText('❄ ' + (flakes||0) + '   ♥ ' + (me ? Math.max(0, me.hp) : 0) + '/' + (me ? me.max : 0), 540, boss ? 58 : 22);
       if (me) { g.fillText('⚪ ' + me.ammo + '/' + maxAmmo() + (me.rollCd > 0 ? '   🤸 ' + me.rollCd.toFixed(1) : '   🤸 ready'), 540, boss ? 78 : 42); }
-      if (combo >= 3 && t - comboT < 2.5) { g.fillStyle = '#b48cff'; g.font = '800 18px '+A.font; g.textAlign = 'center'; g.fillText('COMBO ×' + combo, 300, MID - 14); }
+      if (combo >= 3 && t - comboT < 2.5) { g.fillStyle = '#b48cff'; g.font = '800 18px '+A.font; g.textAlign = 'center'; g.fillText('COMBO ×' + combo, 300, MID - 34); }
       const act = Object.keys(pw).filter(k2 => pw[k2] > 0).map(k2 => ({icy:'❄', mega:'💥', rapid:'⚡', shield:'🛡'}[k2] + (k2 == 'shield' ? '' : Math.ceil(pw[k2])))).join('  '); if (act) { g.textAlign = 'left'; g.font = '700 14px '+A.font; g.fillText(act, 10, FIELD - 10); }
       if (packing && phase == 'fight') { g.fillStyle = 'rgba(0,0,0,.25)'; rr(g, me.x - 30, me.y + 40, 60, 7, 3); g.fill(); g.fillStyle = packT >= .6 ? '#FF4539' : '#64CDF5'; rr(g, me.x - 30, me.y + 40, 60*Math.min(1, packT), 7, 3); g.fill(); } }
     g.fillStyle = '#14204a'; g.beginPath(); g.arc(574, 22, 15, 0, TAU); g.fill(); g.fillStyle = '#fff'; g.font = '800 16px '+A.font; g.textAlign = 'center'; g.fillText('?', 574, 28);
@@ -905,7 +906,7 @@ A.register('snowball', { mount(host, api){
     {label:'Go to wave', num:10, min:1, run:n => { if (st != 'play') startGame(mode); wave = Math.floor(n) - 1; boss = null; foes = []; nextWave(); }},
     {label:'Add snowflakes', num:500, min:1, run:n => { flakes += Math.floor(n); }},
     {label:'Add hearts', num:5, min:1, max:20, run:n => { if (me) { me.max = A.lives(me.max + Math.floor(n)); me.hp = me.max; } }},
-    {label:'Spawn boss', run:() => { if (st != 'play') startGame(mode); const k = ['yeti', 'plow', 'witch', 'dragon'][Math.floor(Math.random()*4)], B = BOSSES[k]; boss = {k, n:B.n, x:300, y:k == 'dragon' ? 80 : 100, hp:B.hp, max:B.hp, cool:2, vx:90, charge:0, col:B.col, ph:1, tp:0, kb:0}; phase = 'fight'; say(B.n + ' appears!', 2); }},
+    {label:'Spawn boss', run:() => { if (st != 'play') startGame(mode); const k = ['yeti', 'plow', 'witch', 'dragon'][Math.floor(Math.random()*4)], B = BOSSES[k]; boss = {k, n:B.n, x:300, y:k == 'dragon' ? 118 : 100, hp:B.hp, max:B.hp, cool:2, vx:90, charge:0, col:B.col, ph:1, tp:0, kb:0}; phase = 'fight'; say(B.n + ' appears!', 2); }},
     {label:'Add ice crystals', num:100, min:1, run:n => { PERM.cr += Math.floor(n); savePerm(); }},
     {label:'Add Frost Crystals', num:100, min:1, run:n => { PERM.frost += Math.floor(n); savePerm(); }},
     {label:'Give gear (rarity 0-5)', num:4, min:0, max:5, run:n => { makeGear(Math.floor(n)); }}];
