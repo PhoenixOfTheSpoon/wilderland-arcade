@@ -164,8 +164,7 @@ A.register('fishing', { mount(host, api){
   // ---------- the water ----------
   const ZONES = [{d:0,n:'Sunny Shallows'},{d:25,n:'Reed Beds'},{d:60,n:'Deep Water'},{d:120,n:'Twilight Zone'},{d:250,n:'Midnight Zone'},{d:500,n:'The Abyss'},{d:1000,n:'The Trench'},{d:2000,n:'The Unknown'}];
   const zoneOf = d => { let z = 0; for (let i = 0; i < ZONES.length; i++) if (d >= ZONES[i].d) z = i; return z; };
-  const layerOf = d => d >= 2000 ? Math.floor((d - 2000) / 1000) : 0;   // every 1,000 m past 2,000 m doubles fish value
-  // 15 deep layers below 2,000 m, each with its own water, scenery and a guardian fish (all spots share them)
+  // 45 deep layers below 2,000 m, each with its own water, scenery and a guardian fish (all spots share them)
   const LAYERS = [
     {d:2e3, n:'The Unknown', c:'#14223e', dec:'none', fish:'The Unknown Thing'}, {d:5e3, n:'Glowing Gardens', c:'#0b3a2c', dec:'glow', fish:'Gardener Glowfish'},
     {d:1e4, n:'Crystal Depths', c:'#16305a', dec:'crystal', fish:'Prism Pike'}, {d:2.5e4, n:'The Bone Yard', c:'#2a2822', dec:'bone', fish:'Bone King Fish'},
@@ -174,8 +173,23 @@ A.register('fishing', { mount(host, api){
     {d:1e6, n:'Star Sea', c:'#05061c', dec:'stars', fish:'Star Swallower'}, {d:1e7, n:'Cosmic Trench', c:'#160328', dec:'nebula', fish:'Nebula Narwhal'},
     {d:1e8, n:'Rainbow Abyss', c:'#1a0d30', dec:'rainbow', fish:'Rainbow Serpent'}, {d:1e9, n:'The Ancient Deep', c:'#0e1c12', dec:'ruins', fish:'Ancient Coelacanth'},
     {d:1e10, n:'Infinite Ocean', c:'#000a18', dec:'stars', fish:'Infinity Koi'}, {d:1e11, n:'The Bottom of Everything', c:'#1c1a18', dec:'bone', fish:'Bottom Feeder Titan'},
-    {d:1e12, n:'The Edge of the World', c:'#20123a', dec:'rainbow', fish:'Edge of the World Leviathan'}];
+    {d:1e12, n:'The Edge of the World', c:'#20123a', dec:'rainbow', fish:'Edge of the World Leviathan'},
+    ...[['The Moon Pool','#101a3a','stars','Moonlight Manta'], ['Candy Current','#3a1030','dream','Gummy Grouper'], ['Thunder Trench','#0c1430','void','Thunder Eel'],
+      ['Mirror Lagoon','#1a2e40','crystal','Mirror Marlin'], ['Kelp Kingdom','#0b3020','glow','Kelp King Crab'], ['Dragon Hoard','#3a2008','lava','Treasure Dragon'],
+      ['Frozen Time','#14304a','clock','Frostclock Cod'], ['Bubble Galaxy','#120a38','nebula','Bubble Whale'], ['Robot Reef','#1a2228','ruins','Robo Shark'],
+      ['The Jungle Below','#0e2a12','glow','Jungle Jaguarfish'], ['The Upside-Down Sea','#2a1030','void','Flipped Flounder'], ['Cloud Ocean','#2a3a5a','dream','Cloud Carp'],
+      ['Pirate Graveyard','#1e1a14','bone','Ghost Pirate Pike'], ['Gem Mines','#1a1440','crystal','Diamond Dorado'], ['Sunken Castle','#202838','ruins','Knight Fish'],
+      ['Volcano Heart','#400c04','lava','Phoenix Fish'], ['Rainbow Falls','#241040','rainbow','Prism Dolphin'], ['Clockwork City','#1a2a2a','clock','Gearfin Tuna'],
+      ['Dino Deep','#1e2a10','bone','Sea Rex'], ['Aurora Waters','#0a2a30','nebula','Aurora Angelfish'], ['The Echo Chamber','#14142a','void','Echo Orca'],
+      ['Starfish Galaxy','#06061e','stars','Galaxy Starfish'], ['Glass Ocean','#18384a','crystal','Glass Gar'], ['Garden of Giants','#0a3018','glow','Giant Lily Ray'],
+      ['Shadow Realm','#0a0610','void','Shadow Leviathan'], ['Golden Kingdom','#3a2e08','rainbow','Golden Emperor Fish'], ['Dreamer’s Deep','#2a0a3a','dream','Sleepy Sunfish'],
+      ['The Big Bang','#1a0420','nebula','Big Bang Barracuda'], ['Ocean of Everything','#101010','stars','Everything Eel'], ['The True Bottom','#2a1a10','rainbow','The Final Fish']]
+      .map(([n, c, dec, fish], i) => ({d:Math.pow(10, 15 + 10*i), n, c, dec, fish}))];
   const layerIdx = d => { let k = -1; for (let i = 0; i < LAYERS.length; i++) if (d >= LAYERS[i].d) k = i; return k; };
+  // where you are in the deep layers as a smooth number: 0 above 2,000 m, then 1, 2, 3 … (45.3 at the very bottom)
+  const layerLg = j => j < LAYERS.length ? Math.log10(LAYERS[j].d) : Math.log10(LAYERS[LAYERS.length - 1].d) + 10*(j - LAYERS.length + 1);   // log10 of each layer's top (past the last one: every ×1e10)
+  const layerPos = d => { if (!(d >= 2000)) return 0; const i = layerIdx(d), a = layerLg(i), b = layerLg(i + 1); return 1 + i + Math.max(0, Math.min(1, (Math.log10(Math.min(d, Number.MAX_VALUE)) - a) / (b - a))); };
+  const layerOf = d => Math.floor(layerPos(d));
   const zoneName = d => d >= 2000 ? LAYERS[layerIdx(d)].n : ZONES[zoneOf(d)].n;
   const LOCS = [
     {k:'lake', n:'Wilder Lake', cost:0, mult:1, sky:['#ffd9a0','#ffb380'], sea:'#3aa0c8', land:'#5a8a3a', fish:[
@@ -376,7 +390,7 @@ A.register('fishing', { mount(host, api){
   const UP = [
     {k:'line', n:'Longer Line', d:L => 'Line reaches '+fmt(lineM(L))+' m → '+fmt(lineM(L+1))+' m', b:10, gr:1.34},
     {k:'hook', n:'Bigger Hook', d:L => 'Hold '+(5+L)+' → '+(6+L)+' fish per dive', b:25, gr:1.45},
-    {k:'value', n:'Fish Market', d:L => 'Fish sell for ×'+fmt(Math.pow(1.12, L))+' → ×'+fmt(Math.pow(1.12, L+1)), b:40, gr:1.45},
+    {k:'value', n:'Fish Market', d:L => 'Fish sell for ×'+fmt(marketM(L))+' → ×'+fmt(marketM(L+1)), b:40, gr:1.45},
     {k:'sink', n:'Heavy Sinker', d:L => 'Sink '+fmt(sinkV(L))+' → '+fmt(sinkV(L+1))+' m/s', b:20, gr:1.32},
     {k:'reel', n:'Fast Reel', d:L => 'Reel '+fmt(reelV(L))+' → '+fmt(reelV(L+1))+' m/s', b:20, gr:1.32},
     {k:'steer', n:'Quick Steer', d:L => 'Hook moves '+(100+10*L)+'% → '+(110+10*L)+'% as fast', b:25, gr:1.32, max:20},
@@ -389,9 +403,9 @@ A.register('fishing', { mount(host, api){
     {k:'drop', n:'Express Drop', d:L => 'Skip up to '+Math.min(80, 8*L)+'% → '+Math.min(80, 8*L+8)+'% of the line (choose how much with the ⏬ slider)', b:300, gr:1.9, max:10},
     {k:'chest', n:'Treasure Map', d:L => 'Chests '+Math.min(233, 25*L)+'% → '+Math.min(233, 25*L+25)+'% more common (max) and '+(20*L)+'% → '+(20*L+20)+'% richer', b:300, gr:1.5},
     {k:'haggle', n:'Haggler', d:L => 'Every other upgrade costs ' + Math.round(100 - 100*Math.pow(.95, L)) + '% → ' + Math.round(100 - 100*Math.pow(.95, L+1)) + '% less', b:500, gr:1.8, max:30},
-    {k:'spool', n:'Mega Spool', d:L => 'Line ×' + fmt(Math.pow(2, L)) + ' → ×' + fmt(Math.pow(2, L+1)) + ' as long', b:2e4, gr:25},
-    {k:'drill', n:'Anchor Drill', d:L => 'Sink ×' + fmt(Math.pow(2, L)) + ' → ×' + fmt(Math.pow(2, L+1)) + ' faster', b:1e4, gr:20},
-    {k:'winch', n:'Turbo Winch', d:L => 'Reel ×' + fmt(Math.pow(2, L)) + ' → ×' + fmt(Math.pow(2, L+1)) + ' faster', b:1e4, gr:20},
+    {k:'spool', n:'Mega Spool', d:L => 'Line ×' + fmt(spoolMult(L)) + ' → ×' + fmt(spoolMult(L+1)) + ' as long (about 1 new deep layer every 4 levels)', b:2e4, gr:1.4, max:180},
+    {k:'drill', n:'Anchor Drill', d:L => 'Sink ×' + fmt(Math.pow(2, L)) + ' → ×' + fmt(Math.pow(2, L+1)) + ' faster', b:1e4, gr:4, max:40},
+    {k:'winch', n:'Turbo Winch', d:L => 'Reel ×' + fmt(Math.pow(2, L)) + ' → ×' + fmt(Math.pow(2, L+1)) + ' faster', b:1e4, gr:4, max:40},
     {k:'deepmap', n:'Deep Map', d:L => UL('drop') < 10 ? 'Needs Express Drop maxed first' : 'Express Drop can skip up to ' + (80 + 5*L) + '% → ' + (80 + 5*L + 5) + '%', b:5e5, gr:30, max:3},
     {k:'buddy', n:'Fishing Buddy', d:L => 'Earns '+fmt(buddyRate(L))+' → '+fmt(buddyRate(L+1))+' coins/s for you', b:250, gr:1.42},
     {k:'lines', n:'Extra Lines', d:L => L >= 4 ? 'Fishing with 5 hooks side by side (max)' : 'Fish with ' + (1+L) + ' → ' + (2+L) + ' hooks side by side (every hook catches fish; they share your hook space)', b:5000, gr:12, max:4},
@@ -404,10 +418,15 @@ A.register('fishing', { mount(host, api){
   const ghostTier = () => { const mx = Math.min(3, UL('ghost')); return G.ghostSel == null ? mx : Math.max(0, Math.min(mx, G.ghostSel)); };
   const ghosty = o => { const tier = ghostTier(); return tier > 0 && !o.jelly && !o.pred && (o.f.junk || (!o.f.chest && !o.gold && o.f.i < tier)); };
   // the bottom is 1.7976931348623157e308 m down, the biggest number a computer can hold (deep dives use a moving origin, so the hook never freezes)
-  const FLOOR = Number.MAX_VALUE; const lineM = L => Math.min(FLOOR, Math.round((30 + 12*L + .6*L*L) * Math.pow(2, UL('spool')) * (1 + .1*G.pearls)));
-  const sinkV = L => 20 * (1 + .15*L) * Math.pow(2, UL('drill')), reelV = L => 24 * (1 + .15*L) * (1 + .1*A.U('reel')) * Math.pow(2, UL('winch'));
-  // value doubles every 1,000 m past 2,000 m, then (after 200 doublings) keeps growing more gently so it never becomes Infinity
-  const depthMult = d => { const l = layerOf(d); return l <= 200 ? Math.pow(2, l) : Math.pow(2, 200) * Math.pow(l / 200, 4); };
+  const FLOOR = Number.MAX_VALUE; const lineM = L => Math.min(FLOOR, Math.round((30 + 12*L + .6*L*L) * spoolMult(UL('spool')) * pearlM()));
+  // 🧵 Mega Spool: every 4 levels reaches about one more deep layer (so each new layer takes about the same effort)
+  const spoolMult = k => { if (!(k > 0)) return 1; const x = Math.min(k / 4, 46), i = Math.floor(x), f = x - i, a = layerLg(i), b = layerLg(i + 1); return Math.pow(10, Math.min(308, a + f*(b - a))) / 2000; };
+  // pearls: +10% each up to 100, then they keep helping more gently
+  const pearlM = () => { const p = G.pearls || 0; return p <= 100 ? 1 + .1*p : 11 + 5*Math.log10(p / 100); };
+  const marketM = L => Math.pow(1.12, Math.min(L, 100)) * (1 + .03*Math.max(0, L - 100));
+  const sinkV = L => 20 * (1 + .15*L) * Math.pow(2, Math.min(40, UL('drill'))), reelV = L => 24 * (1 + .15*L) * (1 + .1*A.U('reel')) * Math.pow(2, Math.min(40, UL('winch')));
+  // fish are worth ×3 more for every deep layer (smoothly, as you go down) — about ×3e21 at the very bottom, never Infinity
+  const depthMult = d => Math.pow(3, layerPos(d));
   const goldP = L => 1 + .6*L;
   const cost = (u, L) => Math.ceil(Math.min(1e300, u.b * Math.pow(u.gr, L) * (u.k == 'haggle' ? 1 : Math.pow(.95, UL('haggle')))));
 
@@ -433,10 +452,10 @@ A.register('fishing', { mount(host, api){
   const save = () => { try { api.setGdata && api.setGdata({book:book(), fg:G}); } catch(e){} try { localStorage.setItem('wl-fishbook', JSON.stringify(book())); } catch(e){} };
   const LOC = () => LOCS.find(L => L.k == G.loc) || LOCS[0];
   const bookBonus = () => { const b = book(); let m = 1; LOCS.forEach(L => { let all = true; FISH[L.k].forEach(z => { const done = z.every(f => b[f.k]); if (done) m += .03; else all = false; }); if (all) m += .25; }); return m; };
-  const coinMult = () => Math.pow(1.12, UL('value')) * (1 + .1*G.pearls) * bookBonus();
+  const coinMult = () => marketM(UL('value')) * pearlM() * bookBonus();
   const capN = () => 5 + UL('hook') + A.U('bait');
   const luck = () => 1 + .12*UL('luck') + .15*A.U('lure') + (UL('sonar') >= 3 ? .15 : 0) + (isNight() ? .3 : 0);
-  function buddyRate(L) { const z = zoneOf(G.best||0); return L ? L * .35 * 4 * Math.pow(2.3, z) * LOC().mult * coinMult() : 0; }
+  function buddyRate(L) { const z = zoneOf(G.best||0); return L ? fin(L * .35 * 4 * Math.pow(2.3, z) * Math.sqrt(depthMult(Math.min(G.best||0, lineUse()))) * LOC().mult * coinMult()) : 0; }
   const fishVal = (f, d) => fin(fishVal0(f, d)), fishPts = (f, d) => fin(fishPts0(f, d));   // never ∞, however deep
   const fishVal0 = (f, d) => f.guard != null ? 4 * Math.pow(2.3, 7) * 30 * LOC().mult * depthMult(d) : f.special ? 4 * Math.pow(2.3, zoneOf(d)) * ({dang:500, godly:60, ohdang:1e6, fishmax:1e9})[f.special] * LOC().mult * depthMult(d) : f.chest ? 60 * Math.pow(2.3, zoneOf(d)) * LOC().mult * depthMult(d) * (1 + .2*UL('chest')) : f.junk ? 1 : 4 * Math.pow(2.3, f.z) * [1, 2, 4, 9][f.i] * LOC().mult * depthMult(d);
   const fishPts0 = (f, d) => f.guard != null ? 900 + 60*f.guard + 25*layerOf(d) : f.special ? (f.special == 'fishmax' ? 9e15 : f.special == 'ohdang' ? 100000 + 1000*zoneOf(d) : f.special == 'dang' ? 1500 + 80*zoneOf(d) : 400 + 30*zoneOf(d)) + 25*layerOf(d) : f.junk ? 2 : f.chest ? 150 + 20*zoneOf(d) : Math.round((10 + 14*f.z) * [1, 1.6, 2.6, 4.5][f.i] + 25*layerOf(d));
@@ -519,7 +538,9 @@ A.register('fishing', { mount(host, api){
     G.coins = fin(G.coins + coins); G.run = fin(G.run + coins); G.tot = fin(G.tot + coins); G.dives++; G.caught += caught.length;
     score = fin(score + pts); api.score(score); tally = {coins, pts, n:caught.length, news, list:caught.slice(0, 40), bounty:bonus, at:t}; save(); refreshBar();
     A.sfx(caught.length ? 'win' : 'blip'); if (news.length) setTimeout(() => A.sfx('coin'), 300); };
-  const preview = () => { caught = []; genUp = -1; fish = fish.filter(o => !o.dead && !o.pred && o.d >= 0 && o.d < 150); if (fish.length < 8) { genTo = 1; gen(140); } else genTo = Math.max(genTo, 150); };   // fish swimming under the boat while you get ready
+  const preview = () => { caught = []; genUp = -1; base = 0; fish = fish.filter(o => !o.dead && !o.pred && o.d >= 0 && o.d < 150);
+    // keep the fish that are still swimming under the boat, fill in any empty stretches, and make fresh fish everywhere below 150 m on the next dive
+    for (let b0 = 1; b0 < 150; b0 += 12) if (!fish.some(o => o.d >= b0 - 3 && o.d < b0 + 15)) spawnBand(b0, 12); genTo = 150; };   // fish swimming under the boat while you get ready
   const toSurface = () => { fish = fish.filter(o => !o.dead && o.d >= 1); phase = 'surface'; tally = null; rollWeather(); preview(); refreshBar(); };
   const press = () => { if (quiz) return; if (st != 'play') { reset(); st = 'play'; refreshBar(); return; }
     if (phase == 'surface') startDive(); else if (phase == 'tally') toSurface(); };
@@ -624,7 +645,7 @@ A.register('fishing', { mount(host, api){
       body.appendChild(el('div', {font:'500 11px '+A.font, color:'#8fb9c9', marginTop:'6px'}, 'Only rarities that live at your depth can show up — if none of your picks live there, you get the natural mix. Treasure chests and golden fish are not affected.'));
       upd(); }
     if (panelTab == 'pearl') { const n = pearlsFor(), ok = n >= 1 && (G.best||0) >= 250;
-      body.appendChild(el('div', {font:'600 14px '+A.font, lineHeight:1.4}, '🦪 You have ' + G.pearls + ' pearl' + (G.pearls == 1 ? '' : 's') + '. Each pearl makes every fish worth +10% and your line 10% longer, forever (now ×' + (1 + .1*G.pearls).toFixed(1) + ').'));
+      body.appendChild(el('div', {font:'600 14px '+A.font, lineHeight:1.4}, '🦪 You have ' + G.pearls + ' pearl' + (G.pearls == 1 ? '' : 's') + '. Each pearl makes every fish worth +10% and your line 10% longer, forever (now ×' + pearlM().toFixed(1) + ').'));
       body.appendChild(el('div', {font:'500 13px '+A.font, color:'#b9d9e6', lineHeight:1.4}, 'A Pearl Dive starts your fishing over: coins, upgrades and spots go back to the start. You keep your pearls, your Fish Book, your tickets and Workshop upgrades. Pearls come from coins earned since your last Pearl Dive, and you must have reached 250 m.'));
       body.appendChild(el('div', {font:'700 14px '+A.font, color:'#D5F367'}, 'Coins this run: ' + fmt(G.run) + ' · deepest this run: ' + fmt(G.best||0) + ' m → ' + n + ' pearl' + (n == 1 ? '' : 's')));
       if (ok) body.appendChild(mk(armPearl ? 'YES · Pearl Dive for ' + n + ' 🦪' : 'Pearl Dive for ' + n + ' 🦪', () => { if (!armPearl) { armPearl = true; drawPanel(); return; } pearlDive(); }, armPearl ? '#FF4539' : '#E9B9F7', '#121313'));
@@ -635,8 +656,8 @@ A.register('fishing', { mount(host, api){
     if (nb && panelTab == 'book' && bookJump) { bookJump = false; const hdr = nb.querySelector('[data-loc="' + G.loc + '"]'); if (hdr) nb.scrollTop = hdr.offsetTop - nb.offsetTop - 8; } }
   const buy = (u, n) => { let k = 0; while (k < n && (u.max == null || UL(u.k) < u.max) && G.coins >= cost(u, UL(u.k))) { G.coins -= cost(u, UL(u.k)); G.upg[u.k] = UL(u.k) + 1; k++; }
     if (k) { A.sfx('coin'); save(); refreshBar(); } else A.sfx('bad'); drawPanel(); };
-  const pearlsFor = () => Math.floor(Math.sqrt(G.run / 1e5));
-  const pearlDive = () => { const n = pearlsFor(); if (n < 1) return; G.pearls += n; G.coins = 0; G.upg = {}; G.locs = {lake:1}; G.loc = 'lake'; G.run = 0; G.best = 0; save(); A.sfx('win'); closePanel(); say('+' + n + ' pearl' + (n == 1 ? '' : 's') + '! Fish are worth ×' + (1 + .1*G.pearls).toFixed(1) + ' now', 3); stat(api,'fishPearls',G.pearls,'max'); };
+  const pearlsFor = () => G.run < 1e5 ? 0 : Math.floor(Math.sqrt(Math.min(G.run, 1e9) / 1e5)) + Math.floor(4*Math.log10(Math.max(1, G.run / 1e9)));
+  const pearlDive = () => { const n = pearlsFor(); if (n < 1) return; G.pearls += n; G.coins = 0; G.upg = {}; G.locs = {lake:1}; G.loc = 'lake'; G.run = 0; G.best = 0; save(); A.sfx('win'); closePanel(); say('+' + n + ' pearl' + (n == 1 ? '' : 's') + '! Fish are worth ×' + pearlM().toFixed(1) + ' now', 3); stat(api,'fishPearls',G.pearls,'max'); };
 
   // ---------- drawing ----------
   const mixHex = (a, b, k) => { const p = s => s[0] == '#' ? [1,3,5].map(i => parseInt(s.slice(i, i+2), 16)) : (s.match(/\d+/g) || [0,0,0]).slice(0, 3).map(Number); const A1 = p(a), B1 = p(b); return 'rgb(' + A1.map((v, i) => Math.round(v + (B1[i]-v)*k)).join(',') + ')'; };
@@ -865,8 +886,15 @@ A.register('fishing', { mount(host, api){
     if (phase == 'tally' && tally && !panel && t - (tally.at || 0) > 5) toSurface();
     camD += (Math.max(0, want) - camD) * Math.min(1, dt * (phase == 'surface' || phase == 'tally' ? 3 : 8)); if (phase == 'drop' && hd - camD > (H - SURF - 60)/PXM) camD = hd - (H - SURF - 60)/PXM; camD = Math.max(Math.max(0, want) - 60, Math.min(Math.max(0, want) + 60, camD));
     draw(); });
+  // one-time rebalance for saves from before the Nov 2026 update: your line still reaches just as deep (Mega Spool levels are converted),
+  // and giant coin piles shrink to the new scale (about 20 full dives' worth of fish at your depth). Fish Book, spots and other upgrades stay.
+  if ((G.bal || 0) < 2) { try { const L = UL('line'), oldLine = Math.min(FLOOR, (30 + 12*L + .6*L*L) * Math.pow(2, UL('spool')) * (1 + .1*(G.pearls || 0)));
+      if (UL('spool') > 0) { let k = 0; G.upg.spool = 0; while (k < 180 && lineM(L) < oldLine * .999) G.upg.spool = ++k; }
+      const mult = Math.max(...LOCS.filter(o => G.locs[o.k]).map(o => o.mult), 1), fair = fin(20 * capN() * 4 * Math.pow(2.3, 7) * 4 * mult * depthMult(lineM(L)) * coinMult());
+      if (G.coins > fair) G.coins = fair; if (G.run > fair) G.run = fair; if (G.tot > fair * 10) G.tot = fair * 10;
+    } catch(e) { console.error('[fishing] rebalance failed', e); } G.bal = 2; save(); }
   refreshBar();
-  A._dbg = A._dbg || {}; A._dbg.fish = { G, s: () => ({st, phase, hd: base + hd, maxD, base, caught:caught.length, score, fish:fish.length, camD}), press, setX: x => { tx = x; }, fishes: () => fish.filter(o => !o.dead).map(o => ({x:o.x, d:o.d, j:!!(o.jelly || o.pred)})), hx: () => hx, ohTest: d => ({chance: ohChance(d), txt: ohTxt(d)}), caughtNames: () => caught.map(c2 => c2.f.n), autoBuy: keys => { let n = 0, go = true; while (go && n < 50) { go = false; let best = null, bc = Infinity; for (const u of UP) { if (!keys.includes(u.k) || (u.max != null && UL(u.k) >= u.max)) continue; const c = cost(u, UL(u.k)); if (c < bc) { bc = c; best = u; } } if (best && G.coins >= bc) { G.coins -= bc; G.upg[best.k] = UL(best.k) + 1; n++; go = true; } } return n; }, bookCount: () => ALL.filter(f => book()[f.k]).length, fillBook: (skip, leave) => { let n = 0; LOCS.filter(o => o.k != skip).forEach(o => [].concat(...FISH[o.k]).concat(SPEC[o.k]).forEach(f => { if (n++ >= (leave == null ? 1e9 : leave)) return; book()[f.k] = 1; })); return n; }, spawnFISH: () => spawnFISH(), spawnOh: () => { const f = SPEC[G.loc][2]; fish.push({f, x:W/2, d:hd + 22, vx:14, ph:0, gold:false}); }, newTest: (d, n) => { let k = 0; for (let i = 0; i < n; i++) { const f = pick(d); if (!f.junk && !f.chest && !book()[f.k]) k++; } return k / n; }, rarTest: (d, n) => { const c = {}; for (let k = 0; k < n; k++) { const f = pick(d); const nm = f.junk ? 'boot' : f.chest ? 'chest' : RN[f.r]; c[nm] = (c[nm]||0) + 1; } return {c, dens: +density(d).toFixed(2)}; }, gallery: () => ALL.map(f => ({n:f.n, sh:f.look ? f.look.shape : '', src:fishIcon(f)})) };
+  A._dbg = A._dbg || {}; A._dbg.fish = { G, s: () => ({st, phase, hd: base + hd, maxD, base, caught:caught.length, score, fish:fish.length, camD}), press, setX: x => { tx = x; }, fishes: () => fish.filter(o => !o.dead).map(o => ({x:o.x, d:o.d, j:!!(o.jelly || o.pred)})), hx: () => hx, ohTest: d => ({chance: ohChance(d), txt: ohTxt(d)}), caughtNames: () => caught.map(c2 => c2.f.n), autoBuy: keys => { let n = 0, go = true; while (go && n < 50) { go = false; let best = null, bc = Infinity; for (const u of UP) { if (!keys.includes(u.k) || (u.max != null && UL(u.k) >= u.max)) continue; const c = cost(u, UL(u.k)); if (c < bc) { bc = c; best = u; } } if (best && G.coins >= bc) { G.coins -= bc; G.upg[best.k] = UL(best.k) + 1; n++; go = true; } } return n; }, bookCount: () => ALL.filter(f => book()[f.k]).length, fillBook: (skip, leave) => { let n = 0; LOCS.filter(o => o.k != skip).forEach(o => [].concat(...FISH[o.k]).concat(SPEC[o.k]).forEach(f => { if (n++ >= (leave == null ? 1e9 : leave)) return; book()[f.k] = 1; })); return n; }, spawnFISH: () => spawnFISH(), spawnOh: () => { const f = SPEC[G.loc][2]; fish.push({f, x:W/2, d:hd + 22, vx:14, ph:0, gold:false}); }, econ: () => { const keep = JSON.stringify(G.upg), out = []; const sp = UP.find(u => u.k == 'spool'); for (let k = 0; k <= 192; k += 12) { G.upg = {line:60, spool:k}; const d = lineM(60); out.push({k, line: d.toExponential(2), layer: zoneName(d), pos: +layerPos(d).toFixed(2), cost: cost(sp, k).toExponential(2), fish: fishVal(FISH.coast[7][3], d).toExponential(2)}); } G.upg = JSON.parse(keep); return out; }, newTest: (d, n) => { let k = 0; for (let i = 0; i < n; i++) { const f = pick(d); if (!f.junk && !f.chest && !book()[f.k]) k++; } return k / n; }, rarTest: (d, n) => { const c = {}; for (let k = 0; k < n; k++) { const f = pick(d); const nm = f.junk ? 'boot' : f.chest ? 'chest' : RN[f.r]; c[nm] = (c[nm]||0) + 1; } return {c, dens: +density(d).toFixed(2)}; }, gallery: () => ALL.map(f => ({n:f.n, sh:f.look ? f.look.shape : '', src:fishIcon(f)})) };
   // ---- save & resume (Save & leave, reloads, closing the browser): coins & upgrades live in the game data; the trip's points here ----
   api.snap && api.snap(() => (st == 'play' && score > 0) ? {v:2, score} : null);
   { const R0 = api.resume; if (R0 && (R0.v == 1 || R0.v == 2)) { try { score = Math.max(0, fin(R0.score)); api.score(score); __skip = true; st = 'ready'; } catch(e) { console.error('[save] fishing resume failed', e); } } }
