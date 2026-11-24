@@ -66,6 +66,10 @@ A.init = ctx => { if (FAM.length) return; const G = ctx.games || [], NG = G.leng
   sp('mineCore','☄️','Armageddon Survivor', n => 'Calm The Armageddon Core on Layer 100'+(n>1?' '+n+' times':''), s => sm(s,'mineCore'), [1], {titles:{0:'Core Breaker'}});
   sp('mineChests','🧰','Treasure Hunter', n => 'Open '+n+' hidden treasure rooms in The Mines', s => sm(s,'mineChests'), [3,10,25,50,100]);
   sp('mineGemTree','💎','Gem Gardener', n => 'Buy '+n+' Gem Tree upgrades in The Mines', s => mx(s,'mineGemTree'), [1,5,15,30,60]);
+  sp('snowWave','❄️','Snow Survivor', n => 'Survive wave '+n+' in Snowball Showdown', s => mx(s,'snowWave'), [5,10,20,35,50]);
+  sp('snowBoss','👑','Boss Buster', n => 'Beat '+n+' Snowball Showdown boss'+(n==1?'':'es'), s => sm(s,'snowBoss'), [1,5,15,40,100]);
+  sp('snowPerfect','✨','Not a Scratch', n => 'Clear '+n+' perfect wave'+(n==1?'':'s')+' (no hits) in Snowball Showdown', s => sm(s,'snowPerfect'), [1,5,15,40,100]);
+  sp('snowBuild','🏰','Fort Builder', n => 'Place '+n+' buildings in Snowball Showdown', s => sm(s,'snowBuild'), [10,50,150,400,1000]);
   sp('minerLevel','⛏️','Miner Boss', n => 'Merge a level '+n+' miner in The Mines', s => mx(s,'minerLevel'), [5,10,15,20,30]);
   // ---------- Learning ----------
   const L = (id, e, name, desc, v, goals, x) => add(id, 'Learning', e, name, desc, v, goals, x);

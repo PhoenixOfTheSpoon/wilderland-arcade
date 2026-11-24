@@ -428,6 +428,10 @@ A.register('td', { w:720, mount(host, api){
   setMap(0); ui();
   // test hook (used by the arcade's automated checks)
   A._td = {prof, get: () => ({state, wave, enemies: enemies.length, towers: towers.length, fx: fx.length, map, spd, perf, gold}), newGame, startWave, setSpd: v => { spd = v; ui(); }, setPerf: v => { perf = v; bg = null; ui(); }, place: (type, cc, rr) => { if (!free(cc,rr) || towers.some(t=>t.c==cc&&t.r==rr)) return false; towers.push({c:cc,r:rr,type,lvl:5,spent:0,mode:'first',cd:0,heat:0,tg:null,buff:0}); return true; }, spawn: (t, ri) => spawn(t, 0, ri), cast, setGold: v => { gold = v; }, setLives: v => { lives = v; }, enemiesList: () => enemies, freeCells: () => { const out = []; for (let x=0;x<cols;x++) for (let y=0;y<rows;y++) if (free(x,y)) out.push([x,y]); return out; }};
-  return ()=>{ offK(); offL(); A._td = null; };
+  A.admins = A.admins || {}; A.admins.td = [
+    {label:'Go to wave', num:10, min:1, run:n => { if (state == 'menu') return; wave = Math.max(0, Math.floor(n) - 1); enemies = []; queue = []; state = 'build'; ui(true); }},
+    {label:'Add gold', num:1000, min:1, run:n => { gold += Math.floor(n); ui(true); }},
+    {label:'Add lives', num:10, min:1, max:20, run:n => { lives = Math.min(A.MAXLIVES || 20, lives + Math.floor(n)); ui(true); }}];
+  return ()=>{ offK(); offL(); A._td = null; if (A.admins) delete A.admins.td; };
 }});
 })();

@@ -806,6 +806,10 @@ A.register('idle', { mount(host, api){
       trans:trans?{...trans}:null, dlg:dlg?dlg.txt:null, dlgQ:dlgQ.length, mech:DEPTHS[depthIdx()].b.mech, biome:DEPTHS[depthIdx()].b.id, trait:trait()?trait().k:null, objs:objs.length, story:{...(S.story||{})}}),
     set: p => { Object.assign(S, p); if (p.up) S.up = {...S.up, ...p.up}; paintBar(); }, cashOut, sellMiner, tapRock: () => tapRock(ROCK.x, ROCK.y), hurtCore: n => { if (core) { core.hp = n; core.idle = 0; } },
     skipDlg: () => { dlgQ.length = 0; dlg = null; }, spawnMech: () => { const o = mechOf().spawn && mechOf().max ? mechOf().spawn() : null; if (o) objs.push(o); return o; }, tapAt: (x, y) => viewTap({x, y}), ROCK, VIEW, foreInt, GEM, DEPTHS, BIOMES, TRAITS};
-  return () => { persist(); offK(); offL(); window.removeEventListener('keyup', ku); if (shop) shop.remove(); if (mapO) mapO.remove(); if (gemO) gemO.remove(); A._mines = null; };
+  A.admins = A.admins || {}; A.admins.idle = [
+    {label:'Go to layer', num:10, min:1, run:n => { const i = Math.max(0, Math.min(DEPTHS.length - 1, Math.floor(n) - 1)); S.life = Math.max(S.life, DEPTHS[i].at); persist(); }},
+    {label:'Add miners', num:5, min:1, max:50, run:n => { let k = 0; for (let i = 0; i < S.grid.length && k < n; i++) if (!S.grid[i]) { S.grid[i] = 1; k++; } persist(); }},
+    {label:'Add ore', num:1e6, min:1, run:n => { S.ore += n; persist(); }}];
+  return () => { persist(); offK(); offL(); window.removeEventListener('keyup', ku); if (shop) shop.remove(); if (mapO) mapO.remove(); if (gemO) gemO.remove(); A._mines = null; if (A.admins) delete A.admins.idle; };
 }});
 })();

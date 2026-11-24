@@ -413,134 +413,404 @@ A.register('pipes', { mount(host, api){
 }});
 
 // =====================================================================================================
-// SNOWBALL SHOWDOWN — wave survival snow fight: 5 enemy types, a boss every 5 waves, 3 arenas, power-ups,
-// and between waves you build walls, towers and cannons, repair, and hire teammates.
+// SNOWBALL SHOWDOWN 2.0 — wave survival snow fight. Your throws LOB over your own walls; enemy throws are blocked by them.
+// Duck behind walls, pack big snowballs, keep your ammo up, heal with cocoa / Warm Up / a campfire, build forts, turrets,
+// trap pits and ice, hire named teammates, beat 4 bosses, and play Endless, Boss Rush or the Daily Challenge.
 // =====================================================================================================
 A.register('snowball', { mount(host, api){
   let __skip = false;
-  const {c,g,w,h} = A.canvas(host, 520, 600); c.style.touchAction = 'none';
-  const K = keysDown(), MID = 300, FIELD = 520;   // play field is 0..520 tall; the shop bar sits below it
-  // ---- arenas ----
+  const {c,g,w,h} = A.canvas(host, 600, 720); c.style.touchAction = 'none';
+  const K = keysDown(), MID = 300, FIELD = 620, PY = 566, BAR = FIELD;
+  const low = () => !!A.lowFx;
+  // ---------- permanent progress (kept between games, saved with your profile) ----------
+  const PERM = Object.assign({cr:0, up:{}, best:0, bosses:0}, (api.gdata && api.gdata().sb) || {});
+  const PU = k => PERM.up[k] || 0;
+  const savePerm = () => { try { api.setGdata && api.setGdata({sb:PERM}); } catch(e){} };
+  const PUPS = [{k:'coat', n:'Warm Coat', d:'+1 max heart (never above 20)', b:20, max:10}, {k:'pockets', n:'Big Pockets', d:'Carry 2 more snowballs', b:15, max:5},
+    {k:'arm', n:'Power Arm', d:'Snowballs hit 15% harder', b:25, max:10}, {k:'pack', n:'Quick Packing', d:'Pack big snowballs 12% faster', b:20, max:5},
+    {k:'walls', n:'Thick Walls', d:'Your walls get +2 strength', b:20, max:5}, {k:'mitts', n:'Warm Mittens', d:'Campfires heal faster, more cocoa drops', b:20, max:5},
+    {k:'stash', n:'Snowflake Stash', d:'Start with 15 more ❄', b:15, max:10}, {k:'captain', n:'Team Captain', d:'Teammates start 1 level higher', b:30, max:4}];
+  const pcost = u => Math.ceil(u.b * Math.pow(1.6, PU(u.k)));
+  // ---------- seeded random (Daily Challenge uses the same seed for everyone) ----------
+  let seed = 1; const R = () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let x = Math.imul(seed ^ seed >>> 15, 1 | seed); x = x + Math.imul(x ^ x >>> 7, 61 | x) ^ x; return ((x ^ x >>> 14) >>> 0) / 4294967296; };
+  const today = () => { const d = new Date(); return d.getFullYear()*10000 + (d.getMonth()+1)*100 + d.getDate(); };
+  // ---------- arenas ----------
   const ARENAS = [
-    {k:'lake', n:'Frozen Lake', bg:'#dff2ff', ice:'#c4e6fa', slip:true, walls:[]},
-    {k:'village', n:'Snowy Village', bg:'#f2f7fb', ice:'#e2ebf2', walls:[{x:60, y:150, w:70, h:50, house:1}, {x:390, y:150, w:70, h:50, house:1}, {x:225, y:200, w:70, h:40, house:1}]},
-    {k:'pass', n:'Mountain Pass', bg:'#eef3f6', ice:'#d6e0e8', wind:true, walls:[{x:0, y:60, w:70, h:440, rock:1}, {x:450, y:60, w:70, h:440, rock:1}]},
+    {k:'lake', n:'Frozen Lake', bg:'#e3f3ff', bg2:'#c9e6fa', slip:true, hz:'Slippery ice: you slide!', cover:[]},
+    {k:'village', n:'Snowy Village', bg:'#f2f7fb', bg2:'#dfe9f2', icicles:true, hz:'Watch out for falling icicles!', cover:[{x:70, y:140, w:80, h:56, house:1}, {x:450, y:140, w:80, h:56, house:1}]},
+    {k:'pass', n:'Mountain Pass', bg:'#edf2f6', bg2:'#d3dde6', aval:true, hz:'Avalanches roll down the mountain!', cover:[{x:250, y:120, w:100, h:40, rock:1}]},
+    {k:'castle', n:'Ice Castle', bg:'#e6f0ff', bg2:'#c6d8f5', wind:true, hz:'Wind bends every throw!', cover:[{x:40, y:200, w:90, h:44, ice:1}, {x:470, y:200, w:90, h:44, ice:1}]},
   ];
-  // ---- enemy types ----
+  // ---------- enemies ----------
   const TYPES = {
-    thrower: {hp:1, sp:70, cool:[2.2,1.7,1.3], col:'#FF4539', pts:50},
-    fast:    {hp:1, sp:140, cool:[1.4,1.1,.85], col:'#F9BF01', pts:70},
-    golem:   {hp:6, sp:30, cool:[3,2.6,2.2], col:'#e8f0f8', pts:150, big:1},
-    flanker: {hp:2, sp:110, cool:[2,1.6,1.2], col:'#b48cff', pts:90, flank:1},
-    builder: {hp:2, sp:60, cool:[3,2.6,2.2], col:'#64CDF5', pts:90, build:1},
+    thrower: {hp:1, sp:55, cool:[2.8,2.3,1.9], col:'#FF4539', pts:50, cover:1},
+    fast:    {hp:1, sp:110, cool:[1.9,1.5,1.2], col:'#F9BF01', pts:70},
+    golem:   {hp:6, sp:30, cool:[3.2,2.8,2.4], col:'#e8f0f8', pts:150, big:1},
+    flanker: {hp:2, sp:110, cool:[2.2,1.8,1.4], col:'#b48cff', pts:90, flank:1},
+    builder: {hp:2, sp:60, cool:[3.2,2.8,2.4], col:'#64CDF5', pts:90, build:1},
+    sniper:  {hp:2, sp:50, cool:[3.4,2.8,2.2], col:'#2f6a3a', pts:120, snipe:1, cover:1},
+    sledder: {hp:2, sp:150, cool:[9,9,9], col:'#ff8a3c', pts:100, sled:1},
+    medic:   {hp:2, sp:60, cool:[3,3,3], col:'#ffffff', pts:110, medic:1},
+    catapult:{hp:4, sp:25, cool:[4.6,3.8,3.2], col:'#8D5B1D', pts:140, cat:1},
+    iceman:  {hp:2, sp:80, cool:[2.6,2.2,1.8], col:'#7fe6ff', pts:100, ice:1},
   };
-  const BOSSES = [{k:'yeti', n:'THE YETI KING', hp:60, col:'#f4f8ff'}, {k:'plow', n:'THE SNOWPLOW BOT', hp:80, col:'#ff8a3c'}];
-  let st = 'ready', phase = 'fight', me, foes, balls, walls, towers, mates, drops, score, wave, flakes, t = 0, quiz = false, aim = {x:0, y:0}, hold = false, cool = 0, boss = null, buildT = 0, tool = 0, flakesFx = [], pw = {icy:0, mega:0, rapid:0, shield:0}, arena = 0, snowfall = [], msg = '', msgT = 0;
-  for (let i = 0; i < 50; i++) snowfall.push({x:Math.random()*520, y:Math.random()*520, s:.5 + Math.random()});
+  const TNAME = {thrower:'Thrower', fast:'Speedy', golem:'Snow Golem', flanker:'Flanker', builder:'Builder', sniper:'Sniper', sledder:'Sledder', medic:'Medic', catapult:'Catapult crew', iceman:'Ice thrower'};
+  const BOSSES = {yeti:{n:'THE YETI KING', hp:60, col:'#f4f8ff'}, plow:{n:'THE SNOWPLOW BOT', hp:70, col:'#ff8a3c'}, witch:{n:'THE BLIZZARD WITCH', hp:70, col:'#6a4ab8'}, dragon:{n:'THE FROST DRAGON', hp:150, col:'#9fe8ff'}};
+  const MATE_NAMES = ['Maya', 'Leo', 'Ava', 'Sam', 'Zoe', 'Kai', 'Mia', 'Ben', 'Ivy', 'Max'];
+  // ---------- state ----------
+  let st = 'ready', mode = 'endless', phase = 'fight', me, foes = [], balls = [], walls = [], builds = [], mates = [], drops = [], fx = [], nums = [], prints = [];
+  let score = 0, wave = 0, flakes = 0, t = 0, quiz = false, boss = null, arena = 0, pw = {icy:0, mega:0, rapid:0, shield:0}, msg = '', msgT = 0, shake = 0, combo = 0, comboT = 0, waveHurt = false, bossesBeat = 0;
+  let aim = {x:300, y:150}, aiming = false, packing = false, packT = 0, mouseOn = false, tool = 0, guide = false, upOpen = false, white = 0, hazT = 0, haz = null, cheerT = 0, builtN = 0;
+  const touch = {l:false, r:false, duck:false};
+  const snow = []; for (let i = 0; i < 70; i++) snow.push({x:Math.random()*600, y:Math.random()*620, s:.5 + Math.random()});
   const D3 = a => A.D(a[0], a[1], a[2]);
   const say = (s2, d = 2.5) => { msg = s2; msgT = d; };
-  const A0 = () => ARENAS[arena % ARENAS.length];
-  const reset = () => { if (__skip) { __skip = false; return; } me = {x:w/2, y:FIELD-50, vx:0, vy:0, hp:A.lives(A.D(6,5,4) + A.U('life')), max:0, inv:0}; me.max = me.hp; balls = []; drops = []; towers = []; mates = []; score = 0; wave = 0; flakes = 20; arena = 0; pw = {icy:0, mega:0, rapid:0, shield:0}; boss = null;
-    walls = [{x:120, y:420, w:70, h:22, hp:6, max:6, mine:1}, {x:330, y:420, w:70, h:22, hp:6, max:6, mine:1}]; for (let i = 0; i < Math.min(3, A.U('mate')); i++) addMate(); nextWave(); api.score(0); };
-  const addMate = () => { if (mates.length >= 4) return false; mates.push({x:80 + mates.length*120, y:FIELD - 30, hp:3, lv:1, cool:1 + Math.random(), tx:0, ty:0}); return true; };
-  const spawn = (k, x, y) => { const T = TYPES[k]; foes.push({k, x: x == null ? 60 + Math.random()*400 : x, y: y == null ? 40 + Math.random()*120 : y, hp:T.hp + Math.floor(wave/6), max:T.hp + Math.floor(wave/6), cool:1 + Math.random()*2, tx:0, ty:0, rt:0, slow:0}); };
-  const nextWave = () => { wave++; foes = []; phase = 'fight'; if ((wave - 1) % 3 == 0 && wave > 1) { arena++; say('New arena: '+A0().n+'!'); }
+  const AR = () => ARENAS[arena % ARENAS.length];
+  const armM = () => (1 + .15*PU('arm'));
+  const maxAmmo = () => 10 + 2*PU('pockets');
+  const wallHp = k => (k == 'reinforced' ? 16 : k == 'ice' ? 10 : 6) + 2*PU('walls');
+  // ---------- setup ----------
+  const startGame = m => { mode = m || mode; seed = mode == 'daily' ? today() : (Math.random()*1e9)|0;
+    const hp = A.lives(A.D(6,5,4) + A.U('life') + PU('coat'));
+    me = {x:300, y:PY, vx:0, hp, max:hp, inv:0, duck:false, roll:0, rollCd:0, rdir:1, freeze:0, ammo:maxAmmo(), throwT:0, hitT:0, face:1, scoop:0};
+    balls = []; drops = []; builds = []; mates = []; fx = []; nums = []; score = 0; wave = 0; flakes = 20 + 15*PU('stash'); arena = mode == 'daily' ? today() % 4 : 0; pw = {icy:0, mega:0, rapid:0, shield:0}; boss = null; bossesBeat = 0; builtN = 0; combo = 0;
+    walls = [{x:150, y:476, w:80, h:24, hp:wallHp('snow'), max:wallHp('snow'), mine:1, kind:'snow'}, {x:370, y:476, w:80, h:24, hp:wallHp('snow'), max:wallHp('snow'), mine:1, kind:'snow'}];
+    for (let i = 0; i < Math.min(3, A.U('mate')); i++) addMate('thrower');
+    st = 'play'; nextWave(); api.score(0); };
+  const addMate = role => { if (mates.length >= 4) return false; const lv = 1 + PU('captain'); mates.push({name:MATE_NAMES[(mates.length + wave) % MATE_NAMES.length], role, lv, xp:0, x:80 + mates.length*140, y:PY + 6, hp:2 + lv, max:2 + lv, ko:false, rev:0, cool:1 + Math.random(), tx:0, duck:false, job:0}); return true; };
+  const spawn = (k, x, y) => { const T = TYPES[k], hp = T.hp + Math.floor(wave/6); foes.push({k, x: x == null ? 60 + R()*480 : x, y: y == null ? 40 + R()*140 : y, hp, max:hp, cool:1 + R()*2, tx:0, ty:0, rt:0, slow:0, kb:0, kx:0, duck:false, dt:0, act:0}); };
+  const bossFor = wv => mode == 'rush' ? ['yeti', 'plow', 'witch', 'dragon'][(wv - 1) % 4] : wv % 20 == 0 ? 'dragon' : ['yeti', 'plow', 'witch'][(wv/5 - 1) % 3];
+  const nextWave = () => { wave++; foes = []; balls = []; phase = 'fight'; waveHurt = false; haz = null; hazT = 4 + R()*4;
+    if (mode == 'endless' && (wave - 1) % 3 == 0 && wave > 1) { arena++; say('New arena: ' + AR().n + '! ' + AR().hz, 3.5); } else if (wave == 1) say(AR().n + ' · ' + AR().hz, 3);
     walls = walls.filter(W2 => W2.mine);   // enemy walls melt between waves
-    if (wave % 5 == 0) { const B = BOSSES[(wave/5 - 1) % BOSSES.length]; boss = {k:B.k, n:B.n, x:w/2, y:90, hp:B.hp * (1 + (wave/5 - 1)*.6) * A.D(.8,1,1.25), max:0, cool:2, vx:90, charge:0, col:B.col}; boss.max = boss.hp; say(B.n+' appears!', 3); A.sfx('bad'); for (let i = 0; i < 2 + Math.floor(wave/10); i++) spawn('thrower'); return; }
-    const n = Math.min(10, 2 + Math.floor(wave*.8)), pool = ['thrower','thrower']; if (wave >= 2) pool.push('fast'); if (wave >= 3) pool.push('builder'); if (wave >= 4) pool.push('golem', 'flanker'); if (wave >= 7) pool.push('fast','flanker','golem');
-    for (let i = 0; i < n; i++) spawn(pool[Math.floor(Math.random()*pool.length)]); };
-  const throwAt = (from, tx, ty, o) => { const d = Math.hypot(tx - from.x, ty - from.y) || 1, sp = o.sp || 420; balls.push({x:from.x, y:from.y, vx:(tx - from.x)/d*sp, vy:(ty - from.y)/d*sp, mine:o.mine, dmg:o.dmg || 1, kind:o.kind || 'n', r:o.r || 5, life:2}); };
-  const lead = (f, sp) => { const d = Math.hypot(me.x - f.x, me.y - f.y), tt = d / sp, k = Math.min(1, wave/8); return {x: me.x + me.vx*tt*k, y: me.y + me.vy*tt*k}; };   // later waves aim where you're going
-  // ---- shop between waves ----
-  const TOOLS = [{k:'wall', n:'Snow wall', e:'🧱', cost:10}, {k:'tower', n:'Snow tower', e:'🗼', cost:30}, {k:'cannon', n:'Snow cannon', e:'💣', cost:50}, {k:'repair', n:'Repair all', e:'🔧', cost:0}, {k:'mate', n:'Teammate', e:'🧒', cost:0}, {k:'go', n:'Next wave', e:'▶', cost:0}];
-  const toolCost = k => k == 'repair' ? walls.filter(W2 => W2.mine).reduce((a, W2) => a + (W2.max - W2.hp), 0) * 2 : k == 'mate' ? (mates.length >= 4 ? Infinity : 40 + mates.length*40) : TOOLS.find(T2 => T2.k == k).cost;
-  const useTool = (k, x, y) => { if (k == 'go') { nextWave(); return; } const cost = toolCost(k); if (flakes < cost) { A.sfx('bad'); say('Need '+cost+' ❄'); return; }
+    // the enemy side always gets a little cover to hide behind
+    const nW = 1 + Math.min(3, Math.floor(wave/3)); for (let i = 0; i < nW; i++) walls.push({x:40 + R()*440, y:170 + R()*70, w:70, h:20, hp:4 + Math.floor(wave/4), max:4 + Math.floor(wave/4), mine:0, kind:'snow'});
+    const isBoss = mode == 'rush' || wave % 5 == 0;
+    if (isBoss) { const k = bossFor(wave), B = BOSSES[k], sc = (1 + (wave/5 - 1)*.45) * A.D(.8, 1, 1.25) * (mode == 'rush' ? .7 + wave*.15 : 1);
+      boss = {k, n:B.n, x:300, y:k == 'dragon' ? 80 : 100, hp:B.hp*sc, max:B.hp*sc, cool:2, vx:90, charge:0, col:B.col, ph:1, tp:0, kb:0}; say(B.n + ' appears!', 3); A.sfx('bad');
+      for (let i = 0; i < 1 + Math.floor(wave/10); i++) spawn('thrower'); return; }
+    const n = Math.min(12, 2 + Math.floor(wave*.8)), pool = ['thrower', 'thrower'];
+    if (wave >= 2) pool.push('fast'); if (wave >= 3) pool.push('builder', 'sniper'); if (wave >= 4) pool.push('golem', 'flanker', 'sledder'); if (wave >= 6) pool.push('medic', 'iceman'); if (wave >= 8) pool.push('catapult', 'fast', 'flanker', 'golem'); if (wave >= 12) pool.push('catapult', 'sniper', 'iceman');
+    for (let i = 0; i < n; i++) spawn(pool[Math.floor(R()*pool.length)]); };
+  // ---------- throwing ----------
+  // straight throw (enemies) and lob (you, teammates, turrets, catapults: flies over walls and lands on the target)
+  const straight = (from, tx, ty, o) => { const d = Math.hypot(tx - from.x, ty - from.y) || 1, sp = o.sp || 300; balls.push({x:from.x, y:from.y, vx:(tx - from.x)/d*sp, vy:(ty - from.y)/d*sp, mine:o.mine, dmg:o.dmg || 1, r:o.r || 5, ice:o.ice, life:3}); };
+  const lob = (from, tx, ty, o) => { const d = Math.hypot(tx - from.x, ty - from.y), sp = o.sp || 480, wind = AR().wind ? Math.sin(t*.4)*60 : 0;
+    balls.push({lob:1, x0:from.x, y0:from.y - 20, x1:tx + (o.mine ? wind*d/600 : 0), y1:ty, t:0, T:Math.max(.35, d/sp), mine:o.mine, dmg:o.dmg || 1, r:o.r || 5, big:o.big, kind:o.kind || 'n', ice:o.ice, x:from.x, y:from.y, z:0, life:9}); };
+  const nearestFoe = (x, y) => { let best = null, bd = 1e9; for (const f of foes) { const d = Math.hypot(f.x - x, f.y - y); if (d < bd) { bd = d; best = f; } } if (boss) { const d = Math.hypot(boss.x - x, boss.y - y); if (d < bd) best = boss; } return best; };
+  const throwMine = () => { if (!me || me.ammo <= 0) { say('Out of snowballs! Stand on a ❄ snow pile or duck behind a wall to scoop more', 2); A.sfx('bad'); packing = false; packT = 0; return; }
+    const p2 = Math.min(1, packT), small = packT < .12, nf = nearestFoe(me.x, me.y), tgt = mouseOn || aiming ? aim : nf ? {x:nf.x + Math.sign((nf.tx || nf.x) - nf.x)*20, y:nf.y} : {x:me.x, y:120};
+    const dmg = (small ? 1 : 1 + 2*p2) * armM() * (pw.mega > 0 ? 2 : 1), r = (small ? 5 : 5 + 5*p2) + (pw.mega > 0 ? 3 : 0), sp = small ? 760 : 640 - 220*p2;
+    lob(me, tgt.x, Math.min(MID - 4, tgt.y), {mine:1, dmg, r, sp:sp * (pw.rapid > 0 ? 1.3 : 1), big:p2 >= .6 || pw.mega > 0, kind:pw.mega > 0 ? 'mega' : pw.icy > 0 ? 'icy' : 'n'});
+    me.ammo--; me.throwT = .22; me.duck = false; packing = false; packT = 0; A.tone(small ? 640 : 420, .05, 'triangle', .04); };
+  // ---------- hurting ----------
+  const hurtMe = (dmg, ice) => { if (!me || me.inv > 0 || me.roll > 0 || A.immortal) return; if (pw.shield > 0) { pw.shield = 0; me.inv = .6; A.tone(900,.1,'sine',.05); return; }
+    me.hp -= dmg; me.inv = .8; me.hitT = .3; waveHurt = true; shake = Math.max(shake, .15); A.sfx('bad'); if (ice) { me.freeze = 1; say('🥶 Frozen for a moment!', 1.2); }
+    if (me.hp <= 0) { quiz = learn2(host, api, 'SPLAT! ANSWER TO SHAKE OFF THE SNOW', () => { quiz = false; me.hp = Math.ceil(me.max/2); me.inv = 2; }, () => { quiz = false; gameOver(); }); } };
+  const gameOver = () => { st = 'over'; A.sfx('over'); stat(api,'snowWave',wave,'max'); const cr = Math.floor(wave*1.5 + bossesBeat*5); PERM.cr += cr; PERM.best = Math.max(PERM.best, wave); savePerm(); say('+' + cr + ' 🧊 ice crystals for permanent upgrades', 5); api.over(score); };
+  const addNum = (x, y, txt, col) => { if (nums.length < 40) nums.push({x, y, txt, col:col || '#14204a', t:1}); };
+  const splat = (x, y, n, col) => { const k = low() ? Math.ceil(n/3) : n; for (let i = 0; i < k; i++) fx.push({x, y, vx:(Math.random() - .5)*160, vy:(Math.random() - .8)*140, t:.5 + Math.random()*.3, col:col || '#ffffff', r:1.5 + Math.random()*2.5}); };
+  const killFoe = f => { if (f.dead) return; f.dead = 1; const T = TYPES[f.k]; score += T.pts + wave*10; flakes += 10; api.score(score); splat(f.x, f.y, 14);
+    const r = Math.random(), cocoa = .2 + .04*PU('mitts');
+    if (r < cocoa) drops.push({x:Math.max(30, Math.min(570, f.x)), y:MID + 20, vy:60, k:'cocoa', life:14});
+    else if (r < cocoa + .2) drops.push({x:Math.max(30, Math.min(570, f.x)), y:MID + 20, vy:60, k:['icy','mega','rapid','shield'][Math.floor(Math.random()*4)], life:12}); };
+  const hitBoss = (dmg, x, y) => { if (!boss) return; boss.hp -= dmg; boss.kb = .15; addNum(x, y - 30, '-' + Math.round(dmg*10)/10, '#FF4539');
+    const ph = boss.hp < boss.max/3 ? 3 : boss.hp < boss.max*2/3 ? 2 : 1; if (ph > boss.ph) { boss.ph = ph; say(boss.n + (ph == 2 ? ' gets angry!' : ' goes WILD!'), 2.5); shake = .4; A.sfx('bad'); }
+    if (boss.hp <= 0) { score += 1500 + wave*100; flakes += 80; bossesBeat++; PERM.bosses++; api.score(score); A.sfx('win'); stat(api,'snowBoss',1,'add'); say(boss.n + ' is defeated!', 3); shake = .5; splat(boss.x, boss.y, 40); boss = null; } };
+  // ---------- build menu ----------
+  const TOOLS = [{k:'wall', n:'Wall', e:'🧱', cost:10}, {k:'upgrade', n:'Upgrade wall', e:'⬆', cost:15}, {k:'fort', n:'Snow fort', e:'🏰', cost:40}, {k:'turret', n:'Turret', e:'🎯', cost:35},
+    {k:'pit', n:'Trap pit', e:'🕳', cost:20}, {k:'ice', n:'Ice patch', e:'🧊', cost:15}, {k:'fire', n:'Campfire', e:'🔥', cost:40}, {k:'repair', n:'Repair all', e:'🔧', cost:0},
+    {k:'cocoa', n:'Warm Up +♥', e:'☕', cost:15}, {k:'mate', n:'Teammate', e:'🧒', cost:0}, {k:'role', n:'Mate role', e:'🔁', cost:0}, {k:'go', n:'Next wave', e:'▶', cost:0}];
+  const PLACE = ['wall', 'fort', 'turret', 'pit', 'ice', 'fire', 'upgrade'];
+  const toolCost = k => k == 'repair' ? walls.filter(W2 => W2.mine).reduce((a, W2) => a + Math.ceil(W2.max - W2.hp), 0) * 2 : k == 'mate' ? (mates.length >= 4 ? Infinity : 40 + mates.length*40) : (TOOLS.find(T2 => T2.k == k) || {cost:0}).cost;
+  const useTool = (k, x, y) => { if (k == 'go') { nextWave(); return; } const cost = toolCost(k);
+    if (k == 'role') { const m = mates.find(m2 => !m2.ko && m2.role == 'thrower') || mates[0]; if (!m) return say('Hire a teammate first'); const order = ['thrower', 'builder', 'medic']; m.role = order[(order.indexOf(m.role) + 1) % 3]; say(m.name + ' is now a ' + m.role, 1.6); return; }
+    if (!isFinite(cost)) return say('Your team is full (4)!'); if (flakes < cost) { A.sfx('bad'); say('Need ' + cost + ' ❄'); return; }
     if (k == 'repair') { if (!cost) return say('Your walls are fine!'); walls.forEach(W2 => { if (W2.mine) W2.hp = W2.max; }); }
-    else if (k == 'mate') { if (!addMate()) return say('Your team is full!'); else mates.forEach(m => m.lv = Math.max(m.lv, 1)); }
-    else { y = clamp(y, MID + 20, FIELD - 70); x = clamp(x, 20, w - 20); if (k == 'wall') walls.push({x:x - 35, y:y - 11, w:70, h:22, hp:6, max:6, mine:1}); else towers.push({k, x, y, cool:1, hp:k == 'cannon' ? 6 : 5}); }
+    else if (k == 'cocoa') { if (me.hp >= me.max) return say('Your hearts are full!'); me.hp = Math.min(me.max, me.hp + 1); say('☕ Warm cocoa: +1 heart', 1.4); }
+    else if (k == 'mate') { const role = ['thrower', 'builder', 'medic'][mates.length % 3]; addMate(role); say('Hired ' + mates[mates.length - 1].name + ' the ' + role + '!', 2); }
+    else { y = Math.max(MID + 30, Math.min(PY - 50, y)); x = Math.max(30, Math.min(570, x));
+      if (k == 'upgrade') { const W2 = walls.find(W3 => W3.mine && x > W3.x - 10 && x < W3.x + W3.w + 10 && Math.abs(y - (W3.y + W3.h/2)) < 40); if (!W2) return say('Tap one of your walls to upgrade it'); if (W2.kind == 'reinforced') return say('That wall is already reinforced!');
+        W2.kind = W2.kind == 'snow' ? 'ice' : 'reinforced'; const m = wallHp(W2.kind); W2.max = W2.fort ? m*1.5 : m; W2.hp = W2.max; say('Upgraded to ' + (W2.kind == 'ice' ? 'an ice wall' : 'a reinforced wall') + '!', 1.6); }
+      else if (k == 'wall') walls.push({x:x - 40, y:y - 12, w:80, h:24, hp:wallHp('snow'), max:wallHp('snow'), mine:1, kind:'snow'});
+      else if (k == 'fort') walls.push({x:x - 60, y:y - 14, w:120, h:28, hp:wallHp('snow')*1.5, max:wallHp('snow')*1.5, mine:1, kind:'snow', fort:1});
+      else if (k == 'fire') { if (builds.some(b => b.k == 'fire')) return say('Only one campfire at a time'); builds.push({k, x, y:Math.max(y, PY - 60), hp:4}); }
+      else builds.push({k, x, y, hp:k == 'turret' ? 5 : 3, cool:1, r:k == 'pit' ? 26 : 40}); builtN++; stat(api, 'snowBuild', 1, 'add'); }
     flakes -= cost; A.sfx('coin'); };
-  const offK = A.keys(e => { if ((e.key == ' ' || e.key == 'Enter') && st != 'play' && !quiz) { reset(); st = 'play'; return; } if (st != 'play') return;
-    if (phase == 'build') { const n = +e.key; if (n >= 1 && n <= TOOLS.length) { tool = n - 1; if (['repair','mate','go'].includes(TOOLS[tool].k)) useTool(TOOLS[tool].k); } if (e.key == ' ') useTool(TOOLS[tool].k, me.x, me.y - 40); if (e.key == 'Enter') nextWave(); } });
-  c.addEventListener('pointerdown', e => { const q = pt(c, e, w, h); if (st != 'play') { if (!quiz) { reset(); st = 'play'; } return; }
-    if (phase == 'build') { if (q.y > FIELD) { const i = Math.floor(q.x / (w/TOOLS.length)); tool = i; if (['repair','mate','go'].includes(TOOLS[i].k)) useTool(TOOLS[i].k); return; } if (q.y > MID) useTool(TOOLS[tool].k, q.x, q.y); return; }
-    aim = q; hold = true; });
-  c.addEventListener('pointermove', e => { aim = pt(c, e, w, h); }); const pu = () => { hold = false; }; c.addEventListener('pointerup', pu); c.addEventListener('pointercancel', pu);
-  const solid = (x, y) => walls.find(W2 => W2.hp > 0 && x > W2.x && x < W2.x + W2.w && y > W2.y && y < W2.y + W2.h) || A0().walls.find(W2 => x > W2.x && x < W2.x + W2.w && y > W2.y && y < W2.y + W2.h);
-  const hurtMe = dmg => { if (me.inv > 0 || A.immortal) return; if (pw.shield > 0) { pw.shield = 0; me.inv = .6; A.tone(900,.1,'sine',.05); return; } me.hp -= dmg; me.inv = .8; A.sfx('bad');
-    if (me.hp <= 0) { quiz = learn2(host, api, 'SPLAT! ANSWER TO SHAKE OFF THE SNOW', () => { quiz = false; me.hp = Math.ceil(me.max/2); me.inv = 2; }, () => { quiz = false; st = 'over'; A.sfx('over'); stat(api,'snowWave',wave,'max'); api.over(score); }); } };
-  const killFoe = f => { f.dead = 1; const T = TYPES[f.k]; score += T.pts + wave*10; flakes += 10; api.score(score); if (Math.random() < .3) drops.push({x:clamp(f.x, 30, w-30), y:MID + 40 + Math.random()*120, k:['icy','mega','rapid','shield'][Math.floor(Math.random()*4)], life:10}); };
-  const offL = A.loop(dt => { A.mood(() => ({danger: st=="play" && me && me.hp==1, boss: st=="play" && !!boss})); t += dt; dt = Math.min(dt, .033); msgT = Math.max(0, msgT - dt);
-    for (const f of snowfall) { f.y += 20*f.s*dt; f.x += (A0().wind ? 30 : Math.sin(t + f.y*.02)*6)*dt; if (f.y > FIELD) f.y = 0; if (f.x > w) f.x = 0; }
-    if (st == 'play' && !quiz) { const AR = A0(), mx = (K.k.ArrowRight||K.k.d ? 1 : 0) - (K.k.ArrowLeft||K.k.a ? 1 : 0), my = (K.k.ArrowDown||K.k.s ? 1 : 0) - (K.k.ArrowUp||K.k.w ? 1 : 0), sp = 200 * (1 + .05*A.U('boots'));
-      let ix = mx, iy = my; if (!mx && !my && hold && aim.y > MID && phase == 'fight') { ix = clamp((aim.x - me.x)/30, -1, 1); iy = clamp((aim.y - me.y)/30, -1, 1); }
-      const dl = Math.hypot(ix, iy) || 1, tvx = ix/dl*sp*(ix||iy ? 1 : 0), tvy = iy/dl*sp*(ix||iy ? 1 : 0), k = AR.slip ? 2.5 : 14; me.vx += (tvx - me.vx)*Math.min(1, k*dt); me.vy += (tvy - me.vy)*Math.min(1, k*dt);
-      const nx = clamp(me.x + me.vx*dt, 14, w-14), ny = clamp(me.y + me.vy*dt, MID + 14, FIELD - 14); if (!solid(nx, me.y)) me.x = nx; else me.vx = 0; if (!solid(me.x, ny)) me.y = ny; else me.vy = 0; me.inv = Math.max(0, me.inv - dt);
+  // ---------- input ----------
+  const inBar = q => q.y > BAR;
+  const barBtn = q => { const cols = phase == 'build' ? 6 : 5, row = phase == 'build' ? Math.floor((q.y - BAR) / 50) : 0, col = Math.floor(q.x / (600/cols)); return row*cols + col; };
+  const MENU = [['endless', '♾ Endless Waves'], ['rush', '👑 Boss Rush'], ['daily', '📅 Daily Challenge'], ['up', '🧊 Upgrades'], ['guide', '❓ How to play']];
+  const menuHit = q => { for (let i = 0; i < MENU.length; i++) { const bx = 150, by = 250 + i*58; if (q.x > bx && q.x < bx + 300 && q.y > by && q.y < by + 48) return MENU[i][0]; } return null; };
+  const upHit = q => { for (let i = 0; i < PUPS.length; i++) { const by = 150 + i*52; if (q.x > 440 && q.x < 560 && q.y > by && q.y < by + 44) return PUPS[i]; } return q.y > 590 && q.y < 640 ? 'close' : null; };
+  const onMenu = k => { if (k == 'guide') { guide = true; return; } if (k == 'up') { upOpen = true; return; } if (k) startGame(k); };
+  const offK = A.keys(e => { if (guide) { guide = false; return; } if (upOpen) { if (e.key == 'Escape' || e.key == 'Enter' || e.key == ' ') upOpen = false; return; }
+    if ((e.key == ' ' || e.key == 'Enter') && st != 'play' && !quiz) { if (__skip) { __skip = false; st = 'play'; return; } startGame(mode); return; } if (st != 'play') return;
+    if (e.key == 'h' || e.key == 'H' || e.key == '?') { guide = true; return; }
+    if (phase == 'build') { const n = e.key == '0' ? 10 : +e.key; if (n >= 1 && n <= TOOLS.length) { tool = n - 1; if (!PLACE.includes(TOOLS[tool].k)) useTool(TOOLS[tool].k); } if (e.key == 'Enter') nextWave(); if (e.key == ' ' && PLACE.includes(TOOLS[tool].k)) useTool(TOOLS[tool].k, me.x, me.y - 70); return; }
+    if ((e.key == 'e' || e.key == 'E') && me.rollCd <= 0 && !me.freeze) { me.roll = .3; me.rollCd = 1.6; me.rdir = me.face; A.tone(300, .06, 'sine', .04); } });
+  let lastTapX = -99, lastTapT = -9;
+  c.addEventListener('pointerdown', e => { const q = pt(c, e, w, h); aim = q; mouseOn = true;
+    if (guide) { guide = false; return; } if (upOpen) { const u = upHit(q); if (u == 'close') upOpen = false; else if (u && (u.max == null || PU(u.k) < u.max) && PERM.cr >= pcost(u)) { PERM.cr -= pcost(u); PERM.up[u.k] = PU(u.k) + 1; savePerm(); A.sfx('coin'); } else if (u) A.sfx('bad'); return; }
+    if (st != 'play') { if (quiz) return; if (__skip) { __skip = false; st = 'play'; return; } onMenu(menuHit(q) || (st == 'over' ? null : null)); return; }
+    if (q.x > 548 && q.y < 44) { guide = true; return; }
+    if (phase == 'build') { if (inBar(q)) { const i = barBtn(q); if (i < TOOLS.length) { tool = i; if (!PLACE.includes(TOOLS[i].k)) useTool(TOOLS[i].k); } return; } if (q.y > MID) useTool(TOOLS[tool].k, q.x, q.y); return; }
+    if (inBar(q)) { const i = barBtn(q); if (i == 0) touch.l = true; else if (i == 1) touch.r = true; else if (i == 2) touch.duck = true; else if (i == 3 && me.rollCd <= 0) { me.roll = .3; me.rollCd = 1.6; me.rdir = me.face; } else if (i == 4) guide = true; return; }
+    if (q.y < MID) { aiming = true; packing = true; packT = 0; return; }
+    // tap your own side to walk there (double tap = dodge roll)
+    if (t - lastTapT < .3 && Math.abs(q.x - lastTapX) < 60 && me.rollCd <= 0) { me.roll = .3; me.rollCd = 1.6; me.rdir = q.x > me.x ? 1 : -1; } lastTapT = t; lastTapX = q.x; me.tx = q.x; });
+  c.addEventListener('pointermove', e => { const q = pt(c, e, w, h); if (q.y < MID || aiming) aim = q; mouseOn = true; if (e.buttons && st == 'play' && phase == 'fight' && q.y >= MID && !aiming && !inBar(q)) me.tx = q.x; });
+  const pu = () => { touch.l = touch.r = touch.duck = false; if (aiming && packing && st == 'play' && phase == 'fight') throwMine(); aiming = false; };
+  c.addEventListener('pointerup', pu); c.addEventListener('pointercancel', () => { touch.l = touch.r = touch.duck = false; aiming = false; packing = false; packT = 0; });
+  c.addEventListener('pointerleave', () => { mouseOn = false; });
+  let spaceWas = false;
+  // ---------- helpers ----------
+  const covering = (x, y) => walls.find(W2 => W2.mine && W2.hp > 0 && x > W2.x - 8 && x < W2.x + W2.w + 8 && W2.y < y && y - W2.y < 110);
+  const enemyCover = f => walls.find(W2 => !W2.mine && W2.hp > 0 && f.x > W2.x - 6 && f.x < W2.x + W2.w + 6 && f.y < W2.y && W2.y - f.y < 40);
+  const inWall = (x, y, mine) => walls.find(W2 => W2.hp > 0 && !!W2.mine == mine && x > W2.x && x < W2.x + W2.w && y > W2.y && y < W2.y + W2.h) || AR().cover.find(C2 => x > C2.x && x < C2.x + C2.w && y > C2.y && y < C2.y + C2.h);
+  const weakestWall = () => walls.filter(W2 => W2.mine && W2.hp > 0).sort((a, b) => a.hp/a.max - b.hp/b.max)[0];
+  const underRoof = x => walls.find(W2 => W2.mine && W2.fort && W2.hp > 0 && x > W2.x && x < W2.x + W2.w);
+  const landHit = (b, x, y) => { // a lob lands
+    if (b.mine) { let hit = 0; const rad = (b.kind == 'mega' ? 56 : b.r + 22);
+      const W2 = inWall(x, y, false); if (W2 && W2.hp != null) { W2.hp -= b.dmg; addNum(x, y - 10, '🧱', '#5a7a9a'); }
+      for (const f of foes) { if (f.dead || Math.hypot(f.x - x, f.y - y) > rad + (TYPES[f.k].big ? 10 : 0)) continue;
+        if (f.duck && enemyCover(f) && !b.big) { const C2 = enemyCover(f); C2.hp -= b.dmg*.5; continue; }   // hiding behind their wall: only big snowballs get through
+        f.hp -= b.dmg; f.kb = .25; f.kx = (f.x - x) * .3; hit++; addNum(f.x, f.y - 26, '-' + Math.round(b.dmg*10)/10, '#FF4539'); if (b.kind == 'icy' || b.ice) f.slow = 3; if (f.hp <= 0) killFoe(f); }
+      if (boss && Math.hypot(boss.x - x, boss.y - y) < (boss.k == 'dragon' ? 85 : 62) + (b.kind == 'mega' ? 30 : 0)) { hitBoss(b.dmg, x, y); hit++; }
+      for (const f of foes) if (f.k == 'medic' && f.dead) {}
+      if (hit) { combo = t - comboT < 2.5 ? combo + 1 : 1; comboT = t; flakes += 1 + Math.min(5, Math.floor(combo/3)); if (combo >= 3) addNum(x, y - 44, 'COMBO ×' + combo, '#b48cff'); A.sfx('hit'); if (b.big) shake = Math.max(shake, .2); }
+      splat(x, y, b.big ? 14 : 7); return; }
+    // enemy lob (catapults, bosses)
+    splat(x, y, 10, '#e8f4ff'); if (underRoof(x) && y > MID + 60) { const W2 = underRoof(x); W2.hp -= b.dmg*.5; return; }
+    if (Math.abs(me.x - x) < 26 + b.r && Math.abs(me.y - y) < 40) hurtMe(b.dmg, b.ice);
+    for (const m of mates) if (!m.ko && Math.abs(m.x - x) < 24 && Math.abs(m.y - y) < 40) hurtMate(m);
+    for (const B2 of builds) if (Math.hypot(B2.x - x, B2.y - y) < 30 && B2.k != 'pit' && B2.k != 'ice') B2.hp -= 1;
+    const W2 = inWall(x, y, true); if (W2) W2.hp -= b.dmg; };
+  const hurtMate = m => { if (m.ko) return; m.hp--; if (m.hp <= 0) { m.ko = true; m.rev = 0; say(m.name + ' is knocked out! Stand next to them to help them up', 2.4); } };
+  // ---------- main loop ----------
+  const offL = A.loop(dt => { A.mood(() => ({danger: st=="play" && me && me.hp==1, boss: st=="play" && !!boss})); t += dt; dt = Math.min(dt, .033); msgT = Math.max(0, msgT - dt); shake = Math.max(0, shake - dt); white = Math.max(0, white - dt); cheerT = Math.max(0, cheerT - dt);
+    for (const f of snow) { f.y += 24*f.s*dt; f.x += (AR().wind ? 50*Math.sin(t*.4) : Math.sin(t + f.y*.02)*6)*dt; if (f.y > FIELD) f.y = 0; if (f.x > w) f.x = 0; if (f.x < 0) f.x = w; }
+    for (const p2 of fx) { p2.x += p2.vx*dt; p2.y += p2.vy*dt; p2.vy += 300*dt; p2.t -= dt; } fx = fx.filter(p2 => p2.t > 0);
+    for (const n of nums) { n.y -= 30*dt; n.t -= dt; } nums = nums.filter(n => n.t > 0);
+    for (const p2 of prints) p2.t -= dt; prints = prints.filter(p2 => p2.t > 0);
+    if (st == 'play' && !quiz && !guide) {
+      // ----- you -----
+      const space = !!K.k[' ']; const duckKey = K.k.Shift || K.k.s || K.k.S || K.k.ArrowDown || touch.duck;
+      me.inv = Math.max(0, me.inv - dt); me.throwT = Math.max(0, me.throwT - dt); me.hitT = Math.max(0, me.hitT - dt); me.rollCd = Math.max(0, me.rollCd - dt); me.freeze = Math.max(0, me.freeze - dt);
       for (const key in pw) pw[key] = Math.max(0, pw[key] - (key == 'shield' ? 0 : dt));
+      const mx = (K.k.ArrowRight || K.k.d || K.k.D || touch.r ? 1 : 0) - (K.k.ArrowLeft || K.k.a || K.k.A || touch.l ? 1 : 0);
+      let want = 0; if (mx) { want = mx; me.tx = null; } else if (me.tx != null) { const d = me.tx - me.x; want = Math.abs(d) < 6 ? 0 : Math.sign(d); if (!want) me.tx = null; }
+      if (want) me.face = want;
+      const spd = 220 * (1 + .05*A.U('boots')) * (me.duck ? .35 : 1) * (me.freeze > 0 ? 0 : 1);
+      if (me.roll > 0) { me.roll -= dt; me.vx = me.rdir * 420; } else { const k = AR().slip ? 3 : 14; me.vx += (want*spd - me.vx) * Math.min(1, k*dt); }
+      const ox = me.x; me.x = Math.max(16, Math.min(584, me.x + me.vx*dt)); if (Math.abs(me.x - ox) > .5 && Math.floor(t*8) != Math.floor((t - dt)*8)) prints.push({x:me.x, y:PY + 22, t:4});
+      me.duck = !!duckKey && me.roll <= 0 && !(packing && aiming);
+      // scoop more snow: from the snow piles, or while ducking behind a wall
+      me.scoop -= dt; const onPile = Math.abs(me.x - 60) < 34 || Math.abs(me.x - 540) < 34;
+      if ((onPile || (me.duck && covering(me.x, me.y))) && me.ammo < maxAmmo() && me.scoop <= 0) { me.ammo++; me.scoop = onPile ? .3 : .55; A.tone(220, .03, 'sine', .02); }
       if (phase == 'fight') {
-        // you throw
-        cool -= dt; const target = (foes.length || boss) ? (boss || foes.reduce((a, f) => !a || Math.hypot(f.x-me.x, f.y-me.y) < Math.hypot(a.x-me.x, a.y-me.y) ? f : a, null)) : null;
-        if ((K.k[' '] || (hold && aim.y < MID)) && cool <= 0) { cool = .32 * (1 - .08*A.U('arm')) * (pw.rapid > 0 ? .45 : 1); const tx = hold ? aim.x : (target ? target.x : me.x), ty = hold ? aim.y : (target ? target.y : 0);
-          throwAt(me, tx, ty, {mine:1, kind: pw.mega > 0 ? 'mega' : pw.icy > 0 ? 'icy' : 'n', r: pw.mega > 0 ? 8 : 5, dmg: pw.mega > 0 ? 2 : 1}); A.tone(600,.03,'triangle',.03); }
-        // teammates, towers, cannons
-        for (const m of mates) { if (m.hp <= 0) continue; m.cool -= dt; if (target && m.cool <= 0) { m.cool = 1.6 / (1 + .25*(m.lv-1)); throwAt(m, target.x + (Math.random()-.5)*20, target.y, {mine:1, sp:380}); } m.x += clamp((m.tx || m.x) - m.x, -60*dt, 60*dt); if (Math.random() < dt*.5) m.tx = 30 + Math.random()*(w-60); }
-        for (const T2 of towers) { if (T2.hp <= 0) continue; T2.cool -= dt; if (target && T2.cool <= 0) { if (T2.k == 'cannon') { T2.cool = 4; throwAt(T2, target.x, target.y, {mine:1, kind:'mega', r:9, dmg:3, sp:360}); } else { T2.cool = 1.2; throwAt(T2, target.x, target.y, {mine:1, sp:450}); } } }
-        // enemies
-        for (const f of foes) { const T = TYPES[f.k], spd = T.sp * (f.slow > 0 ? .4 : 1); f.slow = Math.max(0, f.slow - dt); f.rt -= dt;
-          if (f.rt <= 0) { f.rt = 1 + Math.random()*1.5; if (T.flank) { f.tx = Math.random() < .5 ? 30 : w - 30; f.ty = MID - 30; } else { f.tx = 40 + Math.random()*(w-80); f.ty = 30 + Math.random()*(MID - 110); } }
-          f.x += clamp(f.tx - f.x, -spd*dt, spd*dt); f.y += clamp(f.ty - f.y, -spd*dt, spd*dt);
-          f.cool -= dt * (f.slow > 0 ? .5 : 1); if (f.cool <= 0) { f.cool = D3(T.cool) * (.8 + Math.random()*.4) / (1 + wave*.04);
-            if (T.build && Math.random() < .5) walls.push({x:clamp(f.x - 30, 10, w-70), y:f.y + 24, w:60, h:18, hp:4, max:4, mine:0});
-            else { const L = lead(f, T.big ? 220 : 260); throwAt(f, L.x + (Math.random()-.5)*30, L.y, {sp: T.big ? 220 : A.D(230, 260, 300) + wave*4, r: T.big ? 9 : 5, dmg: T.big ? 2 : 1}); } } }
-        if (boss) { const B = boss; B.cool -= dt;
-          if (B.k == 'plow') { B.x += B.vx*dt*(B.charge > 0 ? 3 : 1); if (B.x < 60 || B.x > w-60) B.vx *= -1; B.charge = Math.max(0, B.charge - dt); if (Math.random() < dt*.3) B.charge = 1.2;
-            walls.forEach(W2 => { if (!W2.mine && Math.abs(W2.x + W2.w/2 - B.x) < 50 && Math.abs(W2.y - B.y) < 50) W2.hp = 0; });
-            if (B.cool <= 0) { B.cool = A.D(1.6, 1.3, 1); for (let k2 = -1; k2 <= 1; k2++) throwAt(B, me.x + k2*50, me.y, {sp:300, r:6}); } }
-          else { B.x += Math.sin(t*.7)*80*dt; if (B.cool <= 0) { B.cool = A.D(2.2, 1.8, 1.4); for (let k2 = -2; k2 <= 2; k2++) throwAt(B, me.x + k2*55, me.y, {sp:250, r:8, dmg:k2 == 0 ? 2 : 1}); if (Math.random() < .4) { spawn('golem', B.x, B.y + 40); say('The Yeti King calls a snow golem!'); } } } }
-        // snowballs
-        for (const b of balls) { const wind = A0().wind ? 40 : 0; b.vx += wind*dt*(b.mine ? 1 : -1)*.3; b.x += b.vx*dt; b.y += b.vy*dt; b.life -= dt; const W2 = solid(b.x, b.y);
-          if (W2) { if (W2.hp != null) W2.hp -= b.kind == 'mega' ? 2 : 1; b.life = 0; A.tone(150,.03,'square',.02); continue; }
-          if (b.mine) { const hitF = foes.find(f => Math.hypot(f.x - b.x, f.y - b.y) < (TYPES[f.k].big ? 22 : 15));
-            if (hitF || (boss && Math.hypot(boss.x - b.x, boss.y - b.y) < 40)) { b.life = 0; flakes += 2; A.sfx('hit'); const hits = b.kind == 'mega' ? foes.filter(f => Math.hypot(f.x - b.x, f.y - b.y) < 55) : [hitF].filter(Boolean);
-              hits.forEach(f => { f.hp -= b.dmg; if (b.kind == 'icy') f.slow = 3; if (f.hp <= 0 && !f.dead) killFoe(f); });
-              if (boss && Math.hypot(boss.x - b.x, boss.y - b.y) < (b.kind == 'mega' ? 70 : 40)) { boss.hp -= b.dmg; if (boss.hp <= 0) { score += 1500 + wave*100; flakes += 80; api.score(score); A.sfx('win'); stat(api,'snowBoss',1,'add'); say(boss.n+' is defeated!', 3); boss = null; } } } }
-          else { const hm = mates.find(m => m.hp > 0 && Math.hypot(m.x - b.x, m.y - b.y) < 14), ht = towers.find(T2 => T2.hp > 0 && Math.hypot(T2.x - b.x, T2.y - b.y) < 16);
-            if (Math.hypot(me.x - b.x, me.y - b.y) < 14) { b.life = 0; hurtMe(b.dmg); } else if (hm) { b.life = 0; hm.hp--; } else if (ht) { b.life = 0; ht.hp--; } } }
-        balls = balls.filter(b => b.life > 0 && b.x > -20 && b.x < w+20 && b.y > -20 && b.y < FIELD+20); foes = foes.filter(f => !f.dead); walls = walls.filter(W2 => W2.hp > 0); towers = towers.filter(T2 => T2.hp > 0); mates = mates.filter(m => m.hp > 0);
-        for (const d of drops) { d.life -= dt; if (Math.hypot(d.x - me.x, d.y - me.y) < 22) { d.life = 0; if (d.k == 'shield') pw.shield = 1; else pw[d.k] = 10; A.sfx('coin'); say({icy:'❄ Icy snowballs: hits slow enemies!', mega:'💥 Mega snowballs: big splash!', rapid:'⚡ Rapid throw!', shield:'🛡 Shield: blocks the next hit'}[d.k]); } } drops = drops.filter(d => d.life > 0);
-        if (!foes.length && !boss) { score += 200*wave; flakes += 15 + wave*2; api.score(score); A.sfx('win'); phase = 'build'; buildT = 0; balls = []; say('Wave '+wave+' cleared! Build, repair and hire between waves.', 3); } }
-      else { buildT += dt; } }
-    // ---- draw ----
-    const AR = A0(); g.fillStyle = AR.bg; g.fillRect(0, 0, w, FIELD); if (AR.slip) { g.fillStyle = AR.ice; g.beginPath(); g.ellipse(w/2, FIELD/2, 230, 200, 0, 0, TAU); g.fill(); g.strokeStyle = 'rgba(255,255,255,.6)'; g.lineWidth = 2; for (let k2 = 0; k2 < 5; k2++) { g.beginPath(); g.moveTo(100 + k2*70, 150); g.lineTo(160 + k2*60, 380); g.stroke(); } }
-    g.fillStyle = 'rgba(160,190,220,.35)'; g.fillRect(0, MID - 2, w, 4);
-    for (const W2 of AR.walls) { if (W2.house) { g.fillStyle = '#a0603a'; g.fillRect(W2.x, W2.y + 14, W2.w, W2.h - 14); g.fillStyle = '#fff'; g.beginPath(); g.moveTo(W2.x - 6, W2.y + 16); g.lineTo(W2.x + W2.w/2, W2.y - 8); g.lineTo(W2.x + W2.w + 6, W2.y + 16); g.fill(); g.fillStyle = '#ffe9b0'; g.fillRect(W2.x + W2.w/2 - 7, W2.y + 26, 14, 12); } else { g.fillStyle = '#8a8e94'; g.fillRect(W2.x, W2.y, W2.w, W2.h); g.fillStyle = '#fff'; g.fillRect(W2.x, W2.y, W2.w, 10); } }
-    if (walls) for (const W2 of walls) { g.fillStyle = W2.mine ? '#fff' : '#e4f2ff'; rr(g, W2.x, W2.y, W2.w, W2.h, 8); g.fill(); g.strokeStyle = W2.mine ? '#b8d0e8' : '#9ec4e8'; g.lineWidth = 2; g.stroke(); g.fillStyle = 'rgba(100,150,200,.7)'; g.fillRect(W2.x + 4, W2.y + W2.h - 4, (W2.w-8)*W2.hp/W2.max, 2); }
-    if (towers) for (const T2 of towers) { g.fillStyle = '#fff'; rr(g, T2.x - 12, T2.y - 26, 24, 30, 6); g.fill(); g.strokeStyle = '#b8d0e8'; g.stroke(); g.font = '16px '+A.font; g.textAlign = 'center'; g.fillText(T2.k == 'cannon' ? '💣' : '🗼', T2.x, T2.y - 6); }
-    if (drops) for (const d of drops) { g.font = '20px '+A.font; g.textAlign = 'center'; g.globalAlpha = d.life < 2 ? .5 + .5*Math.sin(t*20) : 1; g.fillText({icy:'❄',mega:'💥',rapid:'⚡',shield:'🛡'}[d.k], d.x, d.y + 6 + Math.sin(t*4)*3); g.globalAlpha = 1; }
-    const kid = (x, y, col, big) => { const s2 = big ? 1.5 : 1; g.fillStyle = col; rr(g, x-11*s2, y-6*s2, 22*s2, 18*s2, 7); g.fill(); g.fillStyle = big ? '#dfe8f0' : '#f2c9a0'; g.beginPath(); g.arc(x, y-12*s2, 8*s2, 0, TAU); g.fill(); if (!big) { g.fillStyle = col; g.beginPath(); g.arc(x, y-15, 8, Math.PI, 0); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(x, y-23, 3, 0, TAU); g.fill(); } else { g.fillStyle = '#121313'; g.beginPath(); g.arc(x-4, y-14*s2, 2, 0, TAU); g.arc(x+4, y-14*s2, 2, 0, TAU); g.fill(); g.fillStyle = '#FF8A3C'; g.fillRect(x-1, y-12*s2, 6, 3); } };
-    if (foes) for (const f of foes) { kid(f.x, f.y, TYPES[f.k].col, TYPES[f.k].big); if (f.slow > 0) { g.strokeStyle = '#64CDF5'; g.lineWidth = 2; g.beginPath(); g.arc(f.x, f.y - 6, 18, 0, TAU); g.stroke(); } if (f.max > 1) { g.fillStyle = 'rgba(0,0,0,.2)'; g.fillRect(f.x - 12, f.y + 14, 24, 3); g.fillStyle = '#FF4539'; g.fillRect(f.x - 12, f.y + 14, 24*f.hp/f.max, 3); } }
-    if (boss) { const B = boss; if (B.k == 'yeti') { g.fillStyle = B.col; g.beginPath(); g.ellipse(B.x, B.y, 40, 46, 0, 0, TAU); g.fill(); g.fillStyle = '#9ec4e8'; g.beginPath(); g.ellipse(B.x, B.y - 10, 22, 16, 0, 0, TAU); g.fill(); g.fillStyle = '#121313'; g.beginPath(); g.arc(B.x - 8, B.y - 14, 3, 0, TAU); g.arc(B.x + 8, B.y - 14, 3, 0, TAU); g.fill(); g.fillStyle = '#F9BF01'; g.beginPath(); g.moveTo(B.x - 18, B.y - 40); g.lineTo(B.x - 10, B.y - 56); g.lineTo(B.x, B.y - 42); g.lineTo(B.x + 10, B.y - 56); g.lineTo(B.x + 18, B.y - 40); g.fill(); }
-      else { g.fillStyle = B.col; rr(g, B.x - 44, B.y - 26, 88, 52, 10); g.fill(); g.fillStyle = '#c9ccd1'; g.fillRect(B.x - 54, B.y + 14, 108, 14); g.fillStyle = '#64CDF5'; g.fillRect(B.x - 26, B.y - 18, 52, 16); g.fillStyle = B.charge > 0 ? '#FF4539' : '#fff'; g.beginPath(); g.arc(B.x - 30, B.y - 18, 5, 0, TAU); g.arc(B.x + 30, B.y - 18, 5, 0, TAU); g.fill(); }
-      g.fillStyle = 'rgba(0,0,0,.25)'; rr(g, w/2 - 140, 8, 280, 14, 7); g.fill(); g.fillStyle = '#FF4539'; rr(g, w/2 - 140, 8, 280*Math.max(0, boss.hp)/boss.max, 14, 7); g.fill(); g.fillStyle = '#14204a'; g.font = '800 12px '+A.font; g.textAlign = 'center'; g.fillText(boss.n, w/2, 36); }
-    if (mates) for (const m of mates) kid(m.x, m.y, '#2fa8e0');
-    if (me && !(me.inv > 0 && Math.sin(t*25) > 0)) { kid(me.x, me.y, '#00B451'); if (pw.shield > 0) { g.strokeStyle = 'rgba(100,200,255,.8)'; g.lineWidth = 3; g.beginPath(); g.arc(me.x, me.y - 6, 20, 0, TAU); g.stroke(); } }
-    if (balls) for (const b of balls) { g.fillStyle = b.kind == 'icy' ? '#aee6ff' : b.kind == 'mega' ? '#fff' : '#fff'; g.strokeStyle = b.mine ? '#a0b8d0' : '#d08080'; g.lineWidth = 1; g.beginPath(); g.arc(b.x, b.y, b.r, 0, TAU); g.fill(); g.stroke(); }
-    g.fillStyle = 'rgba(255,255,255,.9)'; for (const f of snowfall) g.fillRect(f.x, f.y, 2*f.s, 2*f.s);
-    // HUD + shop bar
-    g.fillStyle = '#14204a'; g.font = '700 15px '+A.font; g.textAlign = 'left'; g.fillText('Wave '+(wave||0)+' · '+A0().n+'   '+A.fmt(score||0), 10, boss ? 56 : 22); g.textAlign = 'right'; g.fillText('❄ '+(flakes||0)+'   ♥ '+(me ? Math.max(0, me.hp) : 0)+'/'+(me ? me.max : 0), w - 10, boss ? 56 : 22);
-    const act = Object.keys(pw).filter(k2 => pw[k2] > 0).map(k2 => ({icy:'❄',mega:'💥',rapid:'⚡',shield:'🛡'}[k2] + (k2 == 'shield' ? '' : Math.ceil(pw[k2])))).join('  '); if (act) { g.textAlign = 'left'; g.fillText(act, 10, FIELD - 10); }
-    g.fillStyle = '#14204a'; g.fillRect(0, FIELD, w, h - FIELD);
-    if (phase == 'build' && st == 'play') TOOLS.forEach((T2, i) => { const x = i*w/TOOLS.length, cost = toolCost(T2.k), can = T2.k == 'go' || flakes >= cost; g.fillStyle = tool == i ? '#D5F367' : can ? 'rgba(255,255,255,.18)' : 'rgba(255,255,255,.06)'; rr(g, x + 4, FIELD + 8, w/TOOLS.length - 8, h - FIELD - 16, 10); g.fill();
-      g.fillStyle = tool == i ? '#14204a' : '#fff'; g.font = '20px '+A.font; g.textAlign = 'center'; g.fillText(T2.e, x + w/TOOLS.length/2, FIELD + 36); g.font = '700 10px '+A.font; g.fillText(T2.n, x + w/TOOLS.length/2, FIELD + 54); g.fillText(T2.k == 'go' ? 'Enter' : isFinite(cost) ? cost+' ❄ · '+(i+1) : 'full', x + w/TOOLS.length/2, FIELD + 68); });
-    else if (st == 'play') { g.fillStyle = '#fff'; g.font = '700 13px '+A.font; g.textAlign = 'center'; g.fillText('WASD / arrows move · Space or tap the top half to throw', w/2, FIELD + 36); g.font = '12px '+A.font; g.fillText('Walk over ❄ 💥 ⚡ 🛡 to grab power-ups', w/2, FIELD + 58); }
-    if (msgT > 0) { g.fillStyle = 'rgba(20,32,74,.8)'; rr(g, 30, MID - 22, w - 60, 40, 12); g.fill(); g.fillStyle = '#fff'; g.font = '700 14px '+A.font; g.textAlign = 'center'; g.fillText(msg, w/2, MID + 3); }
-    if (phase == 'build' && st == 'play') { g.fillStyle = '#14204a'; g.font = '700 13px '+A.font; g.textAlign = 'center'; g.fillText('BUILD TIME · pick 🧱 or 🗼 or 💣, then tap your side to place it', w/2, MID + 40); }
-    if (st == 'ready') A.overlayText(g, w, h, 'SNOWBALL SHOWDOWN', __skip ? 'Saved game · tap or press Space to continue' : 'Survive the waves · build forts and towers between waves · hire teammates · beat the bosses');
-    if (st == 'over') A.overlayText(g, w, h, 'SNOWED UNDER', A.fmt(score||0)+' points · wave '+wave+' · tap to play again'); });
-  // ---- save & resume ----
-  api.snap && api.snap(() => (st == 'play') ? {v:2, me, foes, walls, towers, mates, drops, score, wave, flakes, boss, phase, arena, pw} : null);
-  { const R0 = api.resume; if (R0 && R0.v == 2) { try { ({me, foes, walls, towers, mates, drops, score, wave, flakes, boss, phase, arena, pw} = R0); balls = []; api.score(score); __skip = true; st = 'ready'; } catch(e) { console.error('[save] snowball resume failed', e); } } }
-  A._dbg = A._dbg || {}; A._dbg.snow = () => ({me, foes, boss, wave, phase, walls, towers, mates, flakes, st, set:o => { if (o.wave != null) wave = o.wave; if (o.flakes != null) flakes = o.flakes; }, nextWave, useTool});
-  return () => { offK(); offL(); K.off(); };
+        // packing with Space (aim with the mouse, or the nearest enemy)
+        if (space && !spaceWas && !me.duck && me.freeze <= 0) { packing = true; packT = 0; }
+        if (!space && spaceWas && packing && !aiming) throwMine(); spaceWas = space;
+        if (packing && me.freeze <= 0) packT += dt / (.9 * Math.pow(.88, PU('pack')));
+        // ----- teammates -----
+        const target = nearestFoe(300, 150);
+        for (const m of mates) { if (m.ko) { if (Math.abs(me.x - m.x) < 34) { m.rev += dt; if (m.rev >= 1.5) { m.ko = false; m.hp = Math.ceil(m.max/2); say(m.name + ' is back up!', 1.5); A.sfx('coin'); } } else m.rev = Math.max(0, m.rev - dt*.5); continue; }
+          m.cool -= dt; m.job -= dt; const cov = covering(m.x, m.y); m.duck = !!cov && m.cool > .6;
+          if (m.role == 'thrower' && target && m.cool <= 0) { m.cool = 1.8 / (1 + .2*(m.lv - 1)); lob(m, target.x + (Math.random() - .5)*30, target.y, {mine:1, sp:440, dmg:(.8 + .2*m.lv) * armM()}); }
+          if (m.role == 'builder' && m.job <= 0) { m.job = 4 / m.lv; const W2 = weakestWall(); if (W2 && W2.hp < W2.max) { W2.hp = Math.min(W2.max, W2.hp + 1); addNum(W2.x + W2.w/2, W2.y - 8, '+🧱', '#2fa8e0'); } }
+          if (m.role == 'medic' && m.job <= 0) { m.job = 11 - m.lv; if (me.hp < me.max) { me.hp++; addNum(me.x, me.y - 40, '+♥', '#00B451'); } }
+          if (!m.tx || Math.random() < dt*.25) m.tx = 40 + Math.random()*520; m.x += Math.max(-60*dt, Math.min(60*dt, m.tx - m.x)); }
+        // ----- your buildings -----
+        for (const B2 of builds) { if (B2.k == 'turret' && target) { B2.cool -= dt; if (B2.cool <= 0) { B2.cool = 1.4; lob(B2, target.x, target.y, {mine:1, sp:460, dmg:armM()}); } }
+          if (B2.k == 'fire' && Math.abs(me.x - B2.x) < 70) { B2.heal = (B2.heal || 0) + dt * (1 + .25*PU('mitts')); if (B2.heal >= 4) { B2.heal = 0; if (me.hp < me.max) { me.hp++; addNum(me.x, me.y - 40, '+♥', '#FF8A3C'); A.tone(700, .08, 'sine', .04); } } } }
+        // ----- enemies -----
+        const AIc = 1 + wave*.04;
+        for (const f of foes) { const T = TYPES[f.k], spd2 = T.sp * (f.slow > 0 ? .4 : 1); f.slow = Math.max(0, f.slow - dt); f.kb = Math.max(0, f.kb - dt); f.rt -= dt; f.act -= dt;
+          if (T.sled) { // rush down to your weakest wall and smash it (trap pits and ice patches stop them)
+            const W2 = weakestWall(); const tx = W2 ? W2.x + W2.w/2 : me.x, ty = W2 ? W2.y - 14 : PY - 40; f.x += Math.max(-spd2*dt, Math.min(spd2*dt, tx - f.x)); if (!f.spin) f.y += Math.max(-spd2*dt, Math.min(spd2*dt, ty - f.y));
+            f.spin = Math.max(0, (f.spin || 0) - dt);
+            for (const B2 of builds) { if (B2.k == 'pit' && Math.hypot(B2.x - f.x, B2.y - f.y) < B2.r) { killFoe(f); B2.hp--; say('🕳 A sledder fell in your trap!', 1.4); } if (B2.k == 'ice' && !f.spin && Math.hypot(B2.x - f.x, B2.y - f.y) < B2.r) { f.spin = 2; f.slow = 3; } }
+            if (W2 && Math.abs(f.x - tx) < 12 && Math.abs(f.y - ty) < 14) { W2.hp -= 3; shake = .2; splat(f.x, f.y, 16); f.dead = 1; addNum(tx, ty, '-3 🧱', '#5a7a9a'); }
+            else if (!W2 && f.y > PY - 50) { hurtMe(1); f.dead = 1; }
+            continue; }
+          if (f.rt <= 0) { f.rt = 2.2 + R()*2.2;
+            const cov = walls.filter(W2 => !W2.mine && W2.hp > 0);
+            if (T.flank) { f.tx = R() < .5 ? 30 : 570; f.ty = MID - 40; }
+            else if ((T.cover || T.snipe) && cov.length) { const W2 = cov[Math.floor(R()*cov.length)]; f.tx = W2.x + 10 + R()*(W2.w - 20); f.ty = W2.y - 16; }
+            else if (T.medic) { f.tx = 60 + R()*480; f.ty = 40 + R()*70; }
+            else { f.tx = 40 + R()*520; f.ty = 30 + R()*(MID - 120); } }
+          f.x += Math.max(-spd2*dt, Math.min(spd2*dt, f.tx - f.x)); f.y += Math.max(-spd2*dt, Math.min(spd2*dt, f.ty - f.y));
+          // hiders duck behind their wall between throws
+          f.duck = (T.cover || T.snipe) && !!enemyCover(f) && f.cool > 1.2;
+          if (T.medic && f.act <= 0) { f.act = 3; const hurt = foes.filter(o => !o.dead && o !== f && o.hp < o.max && Math.hypot(o.x - f.x, o.y - f.y) < 160); if (hurt[0]) { hurt[0].hp++; addNum(hurt[0].x, hurt[0].y - 26, '+1', '#00B451'); } }
+          f.cool -= dt * (f.slow > 0 ? .5 : 1); if (f.cool <= 0 && !T.medic) { f.cool = D3(T.cool) * (.8 + R()*.4) / AIc;
+            if (T.build && R() < .5) walls.push({x:Math.max(10, Math.min(520, f.x - 35)), y:Math.min(MID - 40, f.y + 24), w:70, h:20, hp:4, max:4, mine:0, kind:'snow'});
+            else if (T.cat) { const W2 = weakestWall(), tx = R() < .5 && W2 ? W2.x + W2.w/2 : me.x, ty = R() < .5 && W2 ? W2.y + 10 : me.y; lob(f, tx, ty, {mine:0, sp:260, dmg:2, r:9}); balls[balls.length - 1].warn = 1; }
+            else { const lead = Math.min(1, wave/8), tt = Math.hypot(me.x - f.x, me.y - f.y) / 300; const tx = me.x + me.vx*tt*lead + (T.snipe ? 0 : (R() - .5)*(wave < 5 ? 80 : 40));
+              straight(f, tx, me.y, {sp: T.snipe ? 520 : T.big ? 230 : A.D(250, 290, 330) + wave*4, r: T.big ? 9 : 5, dmg: T.big ? 2 : 1, ice:T.ice}); } } }
+        // ----- bosses (3 phases each) -----
+        if (boss) { const B = boss, ph = B.ph; B.cool -= dt; B.kb = Math.max(0, B.kb - dt);
+          if (B.k == 'plow') { B.x += B.vx*dt*(B.charge > 0 ? 3 : 1)*(ph == 3 ? 1.3 : 1); if (B.x < 70 || B.x > 530) B.vx *= -1; B.charge = Math.max(0, B.charge - dt); if (Math.random() < dt*.3) B.charge = 1.2;
+            walls.forEach(W2 => { if (!W2.mine && Math.abs(W2.x + W2.w/2 - B.x) < 50 && Math.abs(W2.y - B.y) < 60) W2.hp = 0; });
+            if (B.cool <= 0) { B.cool = A.D(1.8, 1.5, 1.2) / (ph == 3 ? 1.3 : 1); for (let k2 = -1; k2 <= 1; k2++) straight(B, me.x + k2*60, me.y, {sp:300, r:6}); if (ph >= 2) lob(B, me.x, me.y, {mine:0, sp:240, dmg:2, r:9}); } }
+          else if (B.k == 'witch') { B.tp -= dt; if (B.tp <= 0) { B.tp = 5 - ph; B.x = 80 + Math.random()*440; B.y = 60 + Math.random()*120; splat(B.x, B.y, 12, '#b48cff'); }
+            if (B.cool <= 0) { B.cool = A.D(2.2, 1.8, 1.4) / (1 + .2*(ph - 1)); for (let k2 = -1; k2 <= 1; k2++) straight(B, me.x + k2*50, me.y, {sp:280, r:6, ice:k2 == 0});
+              if (Math.random() < .25 + .1*ph) { white = 3; say('❄ WHITEOUT! The Blizzard Witch hides her helpers', 2); } if (ph >= 2 && foes.length < 6 && Math.random() < .3) { spawn('thrower', B.x, B.y + 40); spawn('iceman', B.x + 30, B.y + 40); } } }
+          else if (B.k == 'dragon') { B.x = 300 + Math.sin(t*.32*(1 + .15*ph))*210; B.y = 80 + Math.sin(t*1.3)*20;
+            if (B.cool <= 0) { B.cool = A.D(3, 2.5, 2) / (1 + .25*(ph - 1)); const sweep = Math.random() < .5 ? 1 : -1; for (let k2 = 0; k2 < 7; k2++) setTimeout(() => { if (boss === B && st == 'play') straight(B, 300 + sweep*(k2 - 3)*80, PY, {sp:340, r:7, ice:true}); }, k2*110);
+              if (ph >= 2) for (let k2 = 0; k2 < ph; k2++) lob(B, 80 + Math.random()*440, PY - Math.random()*60, {mine:0, sp:250, dmg:2, r:10}); } }
+          else { B.x += Math.sin(t*.7)*80*dt*(ph == 3 ? 1.6 : 1); if (B.cool <= 0) { B.cool = A.D(2.2, 1.8, 1.4) / (1 + .2*(ph - 1)); const fan = ph >= 2 ? 3 : 2; for (let k2 = -fan; k2 <= fan; k2++) straight(B, me.x + k2*50, me.y, {sp:260, r:8, dmg:k2 == 0 ? 2 : 1});
+              if (ph == 3) for (let k2 = 0; k2 < 2; k2++) lob(B, me.x + (k2 ? 60 : -60), me.y, {mine:0, sp:240, dmg:2, r:10}); if (Math.random() < .3 && foes.length < 6) { spawn('golem', B.x, B.y + 40); say('The Yeti King calls a snow golem!'); } } } }
+        // ----- arena hazards -----
+        hazT -= dt; if (hazT <= 0) { hazT = AR().aval ? 16 : AR().icicles ? 5 : 999;
+          if (AR().icicles) haz = {k:'icicle', x:40 + R()*520, y:R() < .6 ? PY : 60 + R()*200, t:1.2};
+          if (AR().aval) { haz = {k:'aval', side:R() < .5 ? 0 : 1, t:2.5}; say('⚠ AVALANCHE coming down the ' + (haz.side ? 'right' : 'left') + ' side!', 2); } }
+        if (haz) { haz.t -= dt; if (haz.t <= 0) {
+            if (haz.k == 'icicle') { splat(haz.x, haz.y, 12, '#bfe9ff'); if (Math.abs(me.x - haz.x) < 24 && Math.abs(haz.y - me.y) < 30) hurtMe(1); for (const f of foes) if (Math.hypot(f.x - haz.x, f.y - haz.y) < 26) { f.hp--; if (f.hp <= 0) killFoe(f); } }
+            else { const x0 = haz.side ? 300 : 0; shake = .5; for (const f of foes) if (f.x >= x0 && f.x < x0 + 300) { f.hp -= 2; if (f.hp <= 0) killFoe(f); } walls.forEach(W2 => { if (W2.x + W2.w/2 >= x0 && W2.x + W2.w/2 < x0 + 300) W2.hp -= 2; });
+              if (me.x >= x0 && me.x < x0 + 300 && !(me.duck && covering(me.x, me.y))) hurtMe(1); }
+            haz = null; } }
+        // ----- snowballs -----
+        for (const b of balls) { if (b.lob) { b.t += dt; const k2 = Math.min(1, b.t / b.T); b.x = b.x0 + (b.x1 - b.x0)*k2; b.y = b.y0 + (b.y1 - b.y0)*k2; b.z = Math.sin(k2*Math.PI) * Math.min(160, 40 + b.T*120); if (k2 >= 1) { b.life = 0; landHit(b, b.x1, b.y1); } continue; }
+          b.x += b.vx*dt; b.y += b.vy*dt; b.life -= dt; if (AR().wind) b.vx += Math.sin(t*.4)*30*dt;
+          const W2 = inWall(b.x, b.y, !b.mine); if (W2) { if (W2.hp != null) W2.hp -= b.dmg; b.life = 0; splat(b.x, b.y, 5); A.tone(150,.03,'square',.02); continue; }
+          const tb = builds.find(B2 => (B2.k == 'turret' || B2.k == 'fire') && Math.hypot(B2.x - b.x, B2.y - b.y) < 16); if (tb) { tb.hp--; b.life = 0; splat(b.x, b.y, 5); continue; }
+          const hm = mates.find(m => !m.ko && !m.duck && Math.hypot(m.x - b.x, m.y - 10 - b.y) < 16); if (hm) { b.life = 0; hurtMate(hm); continue; }
+          if (Math.abs(me.x - b.x) < 16 + b.r && Math.abs(me.y - 14 - b.y) < 24) { if (me.duck && covering(me.x, me.y)) continue; b.life = 0; splat(b.x, b.y, 8); hurtMe(b.dmg, b.ice); } }
+        balls = balls.filter(b => b.life > 0 && (b.lob || (b.x > -20 && b.x < w + 20 && b.y > -20 && b.y < FIELD + 20)));
+        foes = foes.filter(f => !f.dead); walls = walls.filter(W2 => W2.hp > 0); builds = builds.filter(B2 => B2.hp > 0);
+        for (const d of drops) { d.life -= dt; if (d.y < PY + 10) d.y += d.vy*dt; if (Math.abs(d.x - me.x) < 26 && d.y > PY - 30) { d.life = 0;
+            if (d.k == 'cocoa') { if (me.hp < me.max) me.hp++; addNum(me.x, me.y - 40, '☕ +♥', '#8D5B1D'); } else if (d.k == 'shield') pw.shield = 1; else pw[d.k] = 10;
+            A.sfx('coin'); if (d.k != 'cocoa') say({icy:'❄ Icy snowballs: hits slow enemies!', mega:'💥 Mega snowballs: big splash!', rapid:'⚡ Rapid throws!', shield:'🛡 Shield: blocks the next hit'}[d.k], 1.6); } } drops = drops.filter(d => d.life > 0);
+        if (!foes.length && !boss) { score += 200*wave; flakes += 15 + wave*2; if (!waveHurt) { score += 300; flakes += 10; stat(api, 'snowPerfect', 1, 'add'); say('✨ PERFECT wave ' + wave + '! No hits taken · +300', 3); } else say('Wave ' + wave + ' cleared! Build, heal and hire before the next one.', 3);
+          api.score(score); A.sfx('win'); stat(api, 'snowWave', wave, 'max'); phase = 'build'; balls = []; cheerT = 2; tool = 0;
+          for (const m of mates) { m.xp++; if (m.xp >= 2 && m.lv < 5) { m.xp = 0; m.lv++; m.max++; m.hp = m.max; say(m.name + ' reached level ' + m.lv + '!', 2); } if (m.ko) { m.ko = false; m.hp = 1; } }
+          if (mode == 'daily' && wave >= 15) { say('📅 Daily Challenge complete!', 4); gameOver(); } } } }
+    // ======================= DRAW =======================
+    g.save(); if (shake > 0 && !low()) g.translate((Math.random() - .5)*shake*16, (Math.random() - .5)*shake*16);
+    const A0 = AR(), bgG = g.createLinearGradient(0, 0, 0, FIELD); bgG.addColorStop(0, A0.bg2); bgG.addColorStop(1, A0.bg); g.fillStyle = bgG; g.fillRect(-10, -10, w + 20, FIELD + 10);
+    if (!low()) { g.fillStyle = 'rgba(160,190,220,.18)'; for (let i = 0; i < 90; i++) { const x = (i*137) % 600, y = (i*89) % FIELD; g.beginPath(); g.ellipse(x, y, 14, 4, 0, 0, TAU); g.fill(); } }
+    if (A0.slip) { g.fillStyle = 'rgba(180,220,250,.55)'; g.beginPath(); g.ellipse(300, 410, 280, 120, 0, 0, TAU); g.fill(); g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 2; for (let k2 = 0; k2 < 6; k2++) { g.beginPath(); g.moveTo(90 + k2*80, 340); g.lineTo(140 + k2*70, 480); g.stroke(); } }
+    if (A0.k == 'castle') { g.fillStyle = '#b8cdf0'; for (let k2 = 0; k2 < 6; k2++) g.fillRect(k2*110 + 10, 0, 60, 40 + (k2 % 2)*20); }
+    g.fillStyle = 'rgba(90,130,180,.25)'; g.fillRect(0, MID - 2, w, 4);
+    // snow piles (scoop more ammo here)
+    for (const px of [60, 540]) { g.fillStyle = '#ffffff'; g.beginPath(); g.ellipse(px, PY + 16, 34, 16, 0, Math.PI, TAU); g.fill(); g.fillStyle = '#9ec4e8'; g.font = '700 10px '+A.font; g.textAlign = 'center'; g.fillText('❄ pile', px, PY + 30); }
+    for (const p2 of prints) { g.fillStyle = 'rgba(120,150,190,' + Math.min(.4, p2.t/6) + ')'; g.beginPath(); g.ellipse(p2.x, p2.y, 4, 2, 0, 0, TAU); g.fill(); }
+    for (const C2 of A0.cover) { if (C2.house) { g.fillStyle = '#a0603a'; g.fillRect(C2.x, C2.y + 16, C2.w, C2.h - 16); g.fillStyle = '#fff'; g.beginPath(); g.moveTo(C2.x - 8, C2.y + 18); g.lineTo(C2.x + C2.w/2, C2.y - 10); g.lineTo(C2.x + C2.w + 8, C2.y + 18); g.fill(); g.fillStyle = '#ffe9b0'; g.fillRect(C2.x + C2.w/2 - 8, C2.y + 28, 16, 14); }
+      else if (C2.rock) { g.fillStyle = '#8a8e94'; rr(g, C2.x, C2.y, C2.w, C2.h, 12); g.fill(); g.fillStyle = '#fff'; rr(g, C2.x, C2.y, C2.w, 12, 6); g.fill(); }
+      else { g.fillStyle = '#bfe0ff'; g.fillRect(C2.x, C2.y, C2.w, C2.h); g.fillStyle = '#e8f4ff'; for (let k2 = 0; k2 < C2.w; k2 += 18) g.fillRect(C2.x + k2, C2.y - 10, 10, 10); } }
+    if (haz && haz.k == 'icicle') { g.fillStyle = 'rgba(20,40,80,' + (.15 + .25*(1 - haz.t/1.2)) + ')'; g.beginPath(); g.ellipse(haz.x, haz.y + 18, 22, 7, 0, 0, TAU); g.fill(); }
+    if (haz && haz.k == 'aval') { g.fillStyle = 'rgba(255,255,255,' + (.2 + .4*(1 - haz.t/2.5)) + ')'; g.fillRect(haz.side ? 300 : 0, 0, 300, FIELD); }
+    // buildings on the ground
+    for (const B2 of builds) { if (B2.k == 'pit') { g.fillStyle = '#5a6a80'; g.beginPath(); g.ellipse(B2.x, B2.y, B2.r, B2.r*.45, 0, 0, TAU); g.fill(); g.fillStyle = '#2a3440'; g.beginPath(); g.ellipse(B2.x, B2.y + 2, B2.r*.75, B2.r*.3, 0, 0, TAU); g.fill(); }
+      if (B2.k == 'ice') { g.fillStyle = 'rgba(160,220,255,.6)'; g.beginPath(); g.ellipse(B2.x, B2.y, B2.r, B2.r*.5, 0, 0, TAU); g.fill(); g.strokeStyle = '#fff'; g.beginPath(); g.moveTo(B2.x - 20, B2.y - 4); g.lineTo(B2.x + 14, B2.y + 6); g.stroke(); } }
+    // walls with damage stages (cracks, then crumbling) and upgrades
+    for (const W2 of walls) { const fr = W2.hp / W2.max, base = W2.mine ? (W2.kind == 'reinforced' ? '#c8d4e0' : W2.kind == 'ice' ? '#bfe9ff' : '#ffffff') : '#e4f2ff';
+      g.fillStyle = base; g.beginPath(); g.moveTo(W2.x, W2.y + W2.h); if (fr < .33) { for (let x = 0; x <= W2.w; x += 10) g.lineTo(W2.x + x, W2.y + 6 + ((x/10) % 2)*7); } else { g.lineTo(W2.x, W2.y + 6); g.quadraticCurveTo(W2.x + W2.w/2, W2.y - 6, W2.x + W2.w, W2.y + 6); } g.lineTo(W2.x + W2.w, W2.y + W2.h); g.closePath(); g.fill();
+      g.strokeStyle = W2.mine ? (W2.kind == 'reinforced' ? '#6a7a8a' : '#9ec4e8') : '#9ec4e8'; g.lineWidth = 2; g.stroke();
+      g.strokeStyle = 'rgba(150,180,210,.6)'; g.lineWidth = 1; for (let x = 16; x < W2.w; x += 20) { g.beginPath(); g.moveTo(W2.x + x, W2.y + 8); g.lineTo(W2.x + x, W2.y + W2.h - 2); g.stroke(); }
+      if (W2.kind == 'reinforced') { g.fillStyle = '#6a7a8a'; for (let x = 6; x < W2.w; x += 22) g.fillRect(W2.x + x, W2.y + W2.h/2 - 2, 8, 4); }
+      if (fr < .66) { g.strokeStyle = '#5a7a9a'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(W2.x + W2.w*.3, W2.y + 4); g.lineTo(W2.x + W2.w*.38, W2.y + W2.h*.6); g.lineTo(W2.x + W2.w*.3, W2.y + W2.h); g.moveTo(W2.x + W2.w*.7, W2.y + 6); g.lineTo(W2.x + W2.w*.64, W2.y + W2.h*.7); g.stroke(); }
+      if (W2.fort) { g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.moveTo(W2.x - 6, W2.y - 26); g.lineTo(W2.x + W2.w + 6, W2.y - 26); g.lineTo(W2.x + W2.w - 4, W2.y - 40); g.lineTo(W2.x + 4, W2.y - 40); g.fill(); g.strokeStyle = '#9ec4e8'; g.stroke(); [W2.x + 4, W2.x + W2.w - 10].forEach(x => { g.fillStyle = '#ffffff'; g.fillRect(x, W2.y - 26, 6, 26); }); } }
+    for (const B2 of builds) { if (B2.k == 'turret') { g.fillStyle = '#ffffff'; rr(g, B2.x - 14, B2.y - 22, 28, 30, 8); g.fill(); g.strokeStyle = '#9ec4e8'; g.lineWidth = 2; g.stroke(); g.fillStyle = '#14204a'; g.beginPath(); g.arc(B2.x, B2.y - 12, 7, 0, TAU); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(B2.x, B2.y - 14, 3, 0, TAU); g.fill(); }
+      if (B2.k == 'fire') { g.fillStyle = '#6b4a2b'; g.fillRect(B2.x - 16, B2.y + 4, 32, 6); for (let k2 = 0; k2 < 3; k2++) { const fl = Math.sin(t*12 + k2)*3; g.fillStyle = ['#FF4539', '#ff8a3c', '#F9BF01'][k2]; g.beginPath(); g.moveTo(B2.x - 12 + k2*4, B2.y + 4); g.quadraticCurveTo(B2.x, B2.y - 28 + k2*7 + fl, B2.x + 12 - k2*4, B2.y + 4); g.fill(); }
+        if (Math.abs(me.x - B2.x) < 70 && st == 'play') { g.strokeStyle = 'rgba(255,138,60,.4)'; g.lineWidth = 2; g.beginPath(); g.ellipse(B2.x, B2.y + 6, 70, 18, 0, 0, TAU); g.stroke(); } } }
+    for (const d of drops) { g.font = '22px '+A.font; g.textAlign = 'center'; g.globalAlpha = d.life < 2 ? .5 + .5*Math.sin(t*20) : 1; g.fillText({cocoa:'☕', icy:'❄', mega:'💥', rapid:'⚡', shield:'🛡'}[d.k], d.x, d.y + Math.sin(t*4)*3); g.globalAlpha = 1; }
+    // ----- characters: bigger, with wind-up, throw, duck, hit and cheer poses -----
+    const kid = (x, y, col, o) => { o = o || {}; const s2 = (o.big ? 1.6 : 1.25) * (o.duck ? .7 : 1), dy = o.duck ? 10 : 0, cheer = o.cheer && Math.sin(t*10) > 0;
+      g.save(); g.translate(x + (o.kx || 0), y + dy); if (o.hit) g.globalAlpha = .6;
+      g.fillStyle = 'rgba(0,0,0,.12)'; g.beginPath(); g.ellipse(0, 16*s2 - dy, 14*s2, 4*s2, 0, 0, TAU); g.fill();
+      g.fillStyle = o.boots || '#3a4a6a'; g.fillRect(-9*s2, 8*s2, 7*s2, 8*s2); g.fillRect(2*s2, 8*s2, 7*s2, 8*s2);
+      g.fillStyle = col; rr(g, -12*s2, -8*s2, 24*s2, 20*s2, 8*s2); g.fill(); g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(-12*s2, 2*s2, 24*s2, 3*s2);
+      const armA = o.wind ? -2.4 : o.throwT > 0 ? .4 : cheer ? -2.6 : o.big ? .3 : .6; g.strokeStyle = col; g.lineWidth = 5*s2; g.lineCap = 'round'; g.beginPath(); g.moveTo(10*s2, -4*s2); g.lineTo(10*s2 + Math.cos(armA)*12*s2, -4*s2 + Math.sin(armA)*12*s2); g.stroke(); g.beginPath(); g.moveTo(-10*s2, -4*s2); g.lineTo(-10*s2 - Math.cos(cheer ? -2.6 : .6)*12*s2, -4*s2 + Math.sin(cheer ? -2.6 : .6)*12*s2); g.stroke();
+      if (o.wind) { g.fillStyle = '#ffffff'; g.beginPath(); g.arc(10*s2 + Math.cos(armA)*14*s2, -4*s2 + Math.sin(armA)*14*s2, 4 + 5*Math.min(1, o.pack || 0), 0, TAU); g.fill(); g.strokeStyle = '#9ec4e8'; g.lineWidth = 1; g.stroke(); }
+      g.fillStyle = o.big ? '#dfe8f0' : '#f2c9a0'; g.beginPath(); g.arc(0, -15*s2, 9*s2, 0, TAU); g.fill();
+      if (o.big) { g.fillStyle = '#121313'; g.beginPath(); g.arc(-4*s2, -17*s2, 2*s2, 0, TAU); g.arc(4*s2, -17*s2, 2*s2, 0, TAU); g.fill(); g.fillStyle = '#FF8A3C'; g.fillRect(-1*s2, -15*s2, 7*s2, 3*s2); }
+      else { g.fillStyle = col; g.beginPath(); g.arc(0, -18*s2, 9*s2, Math.PI, 0); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(0, -27*s2, 3.5*s2, 0, TAU); g.fill(); g.fillStyle = '#121313'; g.beginPath(); g.arc(-3*s2, -14*s2, 1.4*s2, 0, TAU); g.arc(3*s2, -14*s2, 1.4*s2, 0, TAU); g.fill(); if (o.medic) { g.fillStyle = '#FF4539'; g.fillRect(-2*s2, -4*s2, 4*s2, 12*s2); g.fillRect(-6*s2, 0, 12*s2, 4*s2); } }
+      g.restore(); };
+    const hidden = white > 0;
+    for (const f of foes) { if (hidden && Math.random() < .9) continue; const T = TYPES[f.k];
+      if (T.cat) { g.fillStyle = '#8D5B1D'; g.fillRect(f.x - 22, f.y + 4, 44, 8); g.strokeStyle = '#6b4a2b'; g.lineWidth = 4; g.beginPath(); g.moveTo(f.x, f.y + 6); g.lineTo(f.x + 18*Math.cos(-1 - (f.cool < .4 ? 1 : 0)), f.y + 6 + 18*Math.sin(-1 - (f.cool < .4 ? 1 : 0))); g.stroke(); }
+      if (T.sled) { g.fillStyle = '#c84a2a'; rr(g, f.x - 16, f.y + 8, 32, 8, 4); g.fill(); }
+      kid(f.x, f.y, T.col, {big:T.big, duck:f.duck, kx:f.kb > 0 ? f.kx : 0, hit:f.kb > 0, wind:f.cool < .35 && !T.medic && !T.sled, medic:T.medic});
+      if (f.slow > 0) { g.strokeStyle = '#64CDF5'; g.lineWidth = 2; g.beginPath(); g.arc(f.x, f.y - 8, 22, 0, TAU); g.stroke(); }
+      if (f.max > 1) { g.fillStyle = 'rgba(0,0,0,.2)'; g.fillRect(f.x - 14, f.y + 24, 28, 3); g.fillStyle = '#FF4539'; g.fillRect(f.x - 14, f.y + 24, 28*f.hp/f.max, 3); } }
+    if (boss) { const B = boss; g.save(); g.translate(B.x + (B.kb > 0 ? (Math.random() - .5)*6 : 0), B.y);
+      if (B.k == 'yeti') { g.fillStyle = B.col; g.beginPath(); g.ellipse(0, 0, 44, 50, 0, 0, TAU); g.fill(); g.fillStyle = '#9ec4e8'; g.beginPath(); g.ellipse(0, -10, 24, 18, 0, 0, TAU); g.fill(); g.fillStyle = B.ph >= 2 ? '#FF4539' : '#121313'; g.beginPath(); g.arc(-8, -14, 3.5, 0, TAU); g.arc(8, -14, 3.5, 0, TAU); g.fill(); g.fillStyle = '#F9BF01'; g.beginPath(); g.moveTo(-20, -44); g.lineTo(-12, -60); g.lineTo(0, -46); g.lineTo(12, -60); g.lineTo(20, -44); g.fill(); }
+      else if (B.k == 'plow') { g.fillStyle = B.col; rr(g, -48, -28, 96, 56, 10); g.fill(); g.fillStyle = '#c9ccd1'; g.fillRect(-58, 16, 116, 14); g.fillStyle = '#64CDF5'; g.fillRect(-28, -20, 56, 18); g.fillStyle = B.charge > 0 ? '#FF4539' : '#fff'; g.beginPath(); g.arc(-32, -20, 5, 0, TAU); g.arc(32, -20, 5, 0, TAU); g.fill(); }
+      else if (B.k == 'witch') { g.fillStyle = B.col; g.beginPath(); g.moveTo(-30, 30); g.lineTo(0, -30); g.lineTo(30, 30); g.fill(); g.fillStyle = '#dfe8f0'; g.beginPath(); g.arc(0, -30, 13, 0, TAU); g.fill(); g.fillStyle = '#3a2a6a'; g.beginPath(); g.moveTo(-18, -38); g.lineTo(0, -78); g.lineTo(18, -38); g.fill(); g.fillStyle = '#7df9ff'; g.beginPath(); g.arc(-5, -32, 2.5, 0, TAU); g.arc(5, -32, 2.5, 0, TAU); g.fill(); g.strokeStyle = '#8D5B1D'; g.lineWidth = 4; g.beginPath(); g.moveTo(26, 30); g.lineTo(40, -20); g.stroke(); g.fillStyle = '#9fe8ff'; g.beginPath(); g.arc(40, -24, 7, 0, TAU); g.fill(); }
+      else { const fl = Math.sin(t*6)*.5; g.fillStyle = B.col; g.beginPath(); g.ellipse(0, 0, 60, 26, 0, 0, TAU); g.fill(); g.fillStyle = '#7fd0f0'; g.beginPath(); g.moveTo(-20, -8); g.lineTo(-90, -40 - fl*30); g.lineTo(-50, 6); g.fill(); g.beginPath(); g.moveTo(20, -8); g.lineTo(90, -40 - fl*30); g.lineTo(50, 6); g.fill(); g.fillStyle = B.col; g.beginPath(); g.ellipse(0, 26, 22, 18, 0, 0, TAU); g.fill(); g.fillStyle = B.ph >= 2 ? '#FF4539' : '#14204a'; g.beginPath(); g.arc(-8, 26, 3, 0, TAU); g.arc(8, 26, 3, 0, TAU); g.fill(); g.fillStyle = '#ffffff'; g.beginPath(); g.moveTo(-12, -20); g.lineTo(-6, -36); g.lineTo(0, -20); g.lineTo(6, -36); g.lineTo(12, -20); g.fill(); }
+      g.restore(); }
+    for (const m of mates) { if (m.ko) { g.fillStyle = '#2fa8e0'; rr(g, m.x - 16, m.y + 6, 32, 12, 6); g.fill(); g.fillStyle = '#f2c9a0'; g.beginPath(); g.arc(m.x + 18, m.y + 10, 7, 0, TAU); g.fill(); g.font = '12px '+A.font; g.textAlign = 'center'; g.fillText('💫', m.x, m.y - 4);
+        if (m.rev > 0) { g.strokeStyle = '#00B451'; g.lineWidth = 3; g.beginPath(); g.arc(m.x, m.y, 20, -Math.PI/2, -Math.PI/2 + TAU*m.rev/1.5); g.stroke(); } }
+      else kid(m.x, m.y, {thrower:'#2fa8e0', builder:'#64CDF5', medic:'#ff9ad5'}[m.role], {duck:m.duck, cheer:cheerT > 0, wind:m.cool < .35 && m.role == 'thrower'});
+      g.fillStyle = '#14204a'; g.font = '700 10px '+A.font; g.textAlign = 'center'; g.fillText(m.name + ' · ' + {thrower:'🎯', builder:'🔨', medic:'➕'}[m.role] + ' Lv' + m.lv, m.x, m.y + 34); }
+    if (me && st != 'ready' && !(me.inv > 0 && Math.sin(t*25) > 0)) { kid(me.x, me.y, me.freeze > 0 ? '#7fe6ff' : '#00B451', {duck:me.duck, wind:packing && phase == 'fight', pack:packT, throwT:me.throwT, hit:me.hitT > 0, cheer:cheerT > 0, boots:'#14204a'});
+      if (me.roll > 0) { g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 3; g.beginPath(); g.arc(me.x, me.y - 6, 24, 0, TAU); g.stroke(); }
+      if (pw.shield > 0) { g.strokeStyle = 'rgba(100,200,255,.8)'; g.lineWidth = 3; g.beginPath(); g.arc(me.x, me.y - 8, 28, 0, TAU); g.stroke(); }
+      if (me.duck && covering(me.x, me.y)) { g.fillStyle = '#00B451'; g.font = '700 11px '+A.font; g.textAlign = 'center'; g.fillText('safe behind wall · scooping', me.x, me.y + 36); } }
+    // aim arc preview
+    if (st == 'play' && phase == 'fight' && me && (packing || (mouseOn && aim.y < MID))) { const tx = aim.x, ty = Math.min(MID - 4, aim.y), d = Math.hypot(tx - me.x, ty - me.y), hz = Math.min(160, 40 + d/520*120);
+      g.strokeStyle = 'rgba(20,32,74,' + (packing ? .5 : .2) + ')'; g.setLineDash([5, 7]); g.lineWidth = 2; g.beginPath(); for (let k2 = 0; k2 <= 20; k2++) { const q = k2/20; g.lineTo(me.x + (tx - me.x)*q, me.y - 20 + (ty - me.y + 20)*q - Math.sin(q*Math.PI)*hz); } g.stroke(); g.setLineDash([]);
+      g.strokeStyle = 'rgba(255,69,57,.6)'; g.beginPath(); g.arc(tx, ty, 8 + 6*Math.min(1, packT), 0, TAU); g.stroke(); }
+    // snowballs (lobs fly high with a shadow; enemy lobs show where they'll land)
+    for (const b of balls) { if (hidden && !b.mine && Math.random() < .7) continue;
+      if (b.lob) { if (b.warn || !b.mine) { g.strokeStyle = 'rgba(255,69,57,.6)'; g.lineWidth = 2; g.beginPath(); g.ellipse(b.x1, b.y1 + 6, 16, 6, 0, 0, TAU); g.stroke(); }
+        g.fillStyle = 'rgba(0,0,0,.12)'; g.beginPath(); g.ellipse(b.x, b.y + 4, b.r, b.r*.4, 0, 0, TAU); g.fill(); g.fillStyle = b.kind == 'icy' || b.ice ? '#aee6ff' : '#fff'; g.strokeStyle = b.mine ? '#a0b8d0' : '#d08080'; g.lineWidth = 1; g.beginPath(); g.arc(b.x, b.y - b.z, b.r, 0, TAU); g.fill(); g.stroke(); continue; }
+      g.fillStyle = b.ice ? '#aee6ff' : '#fff'; g.strokeStyle = b.mine ? '#a0b8d0' : '#d08080'; g.lineWidth = 1; g.beginPath(); g.arc(b.x, b.y, b.r, 0, TAU); g.fill(); g.stroke(); }
+    for (const p2 of fx) { g.fillStyle = p2.col; g.globalAlpha = Math.min(1, p2.t*2); g.beginPath(); g.arc(p2.x, p2.y, p2.r, 0, TAU); g.fill(); } g.globalAlpha = 1;
+    for (const n of nums) { g.globalAlpha = Math.min(1, n.t*2); g.fillStyle = n.col; g.font = '800 14px '+A.font; g.textAlign = 'center'; g.fillText(n.txt, n.x, n.y); } g.globalAlpha = 1;
+    g.fillStyle = 'rgba(255,255,255,.9)'; for (const f of snow) { if (low() && f.s < 1) continue; g.fillRect(f.x, f.y, 2*f.s, 2*f.s); }
+    if (white > 0) { g.fillStyle = 'rgba(245,250,255,' + Math.min(.85, white*.5) + ')'; g.fillRect(0, 0, w, MID + 20); }
+    g.restore();
+    // ----- HUD -----
+    if (boss) { g.fillStyle = 'rgba(0,0,0,.25)'; rr(g, 150, 8, 300, 16, 8); g.fill(); g.fillStyle = boss.ph == 3 ? '#8a0000' : boss.ph == 2 ? '#ff6a3c' : '#FF4539'; rr(g, 150, 8, 300*Math.max(0, boss.hp)/boss.max, 16, 8); g.fill(); g.fillStyle = '#fff'; g.fillRect(250, 8, 2, 16); g.fillRect(350, 8, 2, 16);
+      g.fillStyle = '#14204a'; g.font = '800 12px '+A.font; g.textAlign = 'center'; g.fillText(boss.n + ' · phase ' + boss.ph, 300, 38); }
+    if (st != 'ready') { g.fillStyle = '#14204a'; g.font = '700 15px '+A.font; g.textAlign = 'left'; g.fillText('Wave ' + (wave||0) + ' · ' + AR().n + (mode == 'rush' ? ' · Boss Rush' : mode == 'daily' ? ' · Daily' : ''), 10, boss ? 58 : 22); g.fillText(A.fmt(score||0) + ' pts', 10, boss ? 78 : 42);
+      g.textAlign = 'right'; g.fillText('❄ ' + (flakes||0) + '   ♥ ' + (me ? Math.max(0, me.hp) : 0) + '/' + (me ? me.max : 0), 540, boss ? 58 : 22);
+      if (me) { g.fillText('⚪ ' + me.ammo + '/' + maxAmmo() + (me.rollCd > 0 ? '   🤸 ' + me.rollCd.toFixed(1) : '   🤸 ready'), 540, boss ? 78 : 42); }
+      if (combo >= 3 && t - comboT < 2.5) { g.fillStyle = '#b48cff'; g.font = '800 18px '+A.font; g.textAlign = 'center'; g.fillText('COMBO ×' + combo, 300, MID - 14); }
+      const act = Object.keys(pw).filter(k2 => pw[k2] > 0).map(k2 => ({icy:'❄', mega:'💥', rapid:'⚡', shield:'🛡'}[k2] + (k2 == 'shield' ? '' : Math.ceil(pw[k2])))).join('  '); if (act) { g.textAlign = 'left'; g.font = '700 14px '+A.font; g.fillText(act, 10, FIELD - 10); }
+      if (packing && phase == 'fight') { g.fillStyle = 'rgba(0,0,0,.25)'; rr(g, me.x - 30, me.y + 40, 60, 7, 3); g.fill(); g.fillStyle = packT >= .6 ? '#FF4539' : '#64CDF5'; rr(g, me.x - 30, me.y + 40, 60*Math.min(1, packT), 7, 3); g.fill(); } }
+    g.fillStyle = '#14204a'; g.beginPath(); g.arc(574, 22, 15, 0, TAU); g.fill(); g.fillStyle = '#fff'; g.font = '800 16px '+A.font; g.textAlign = 'center'; g.fillText('?', 574, 28);
+    // ----- bottom bar: touch controls in a fight, the build menu between waves -----
+    g.fillStyle = '#14204a'; g.fillRect(0, BAR, w, h - BAR);
+    if (st == 'play' && phase == 'build') { const cols = 6; TOOLS.forEach((T2, i) => { const x = (i % cols)*w/cols, y = BAR + Math.floor(i/cols)*50, cost = toolCost(T2.k), can = ['go', 'role'].includes(T2.k) || flakes >= cost;
+        g.fillStyle = tool == i ? '#D5F367' : can ? 'rgba(255,255,255,.18)' : 'rgba(255,255,255,.06)'; rr(g, x + 3, y + 4, w/cols - 6, 42, 9); g.fill(); g.fillStyle = tool == i ? '#14204a' : '#fff'; g.textAlign = 'center';
+        g.font = '15px '+A.font; g.fillText(T2.e, x + w/cols/2, y + 22); g.font = '700 10px '+A.font; g.fillText(T2.n + (T2.k == 'go' || T2.k == 'role' ? '' : isFinite(cost) ? ' · ' + cost + '❄' : ' · full'), x + w/cols/2, y + 38); });
+      g.fillStyle = '#14204a'; g.font = '700 13px '+A.font; g.textAlign = 'center'; g.fillText(PLACE.includes(TOOLS[tool].k) ? 'BUILD TIME · tap your side to place ' + TOOLS[tool].e + ' ' + TOOLS[tool].n : 'BUILD TIME · pick something below, then ▶ Next wave', 300, MID + 40); }
+    else if (st == 'play') { const L = [['◀', touch.l], ['▶', touch.r], ['🦆 Duck', touch.duck || me.duck], ['🤸 Roll', me.roll > 0], ['❓ Help', false]]; L.forEach(([tx2, on], i) => { const x = i*w/5; g.fillStyle = on ? '#D5F367' : 'rgba(255,255,255,.16)'; rr(g, x + 5, BAR + 12, w/5 - 10, 76, 14); g.fill(); g.fillStyle = on ? '#14204a' : '#fff'; g.font = '800 18px '+A.font; g.textAlign = 'center'; g.fillText(tx2, x + w/10, BAR + 58); }); }
+    if (msgT > 0 && st == 'play') { g.fillStyle = 'rgba(20,32,74,.85)'; rr(g, 30, MID - 22, w - 60, 40, 12); g.fill(); g.fillStyle = '#fff'; g.font = '700 14px '+A.font; g.textAlign = 'center'; g.fillText(msg, 300, MID + 3); }
+    // ----- menus -----
+    if (st != 'play') { g.fillStyle = 'rgba(20,32,74,.8)'; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; g.textAlign = 'center'; g.font = '900 34px '+A.font; g.fillText(st == 'over' ? 'SNOWED UNDER' : 'SNOWBALL SHOWDOWN', 300, 130);
+      g.font = '600 15px '+A.font; g.fillStyle = '#cfe3f5'; g.fillText(st == 'over' ? A.fmt(score||0) + ' points · wave ' + wave + (msgT > 0 ? ' · ' + msg : '') : __skip ? 'Saved game · tap anywhere or press Space to keep going' : 'Best wave ' + PERM.best + ' · 🧊 ' + PERM.cr + ' ice crystals', 300, 170);
+      if (!__skip) MENU.forEach(([k, n], i) => { const by = 250 + i*58; g.fillStyle = k == mode && st == 'over' ? '#D5F367' : k == 'up' ? '#64CDF5' : k == 'guide' ? 'rgba(255,255,255,.2)' : '#ffffff'; rr(g, 150, by, 300, 48, 14); g.fill(); g.fillStyle = '#14204a'; g.font = '800 18px '+A.font; g.fillText(n, 300, by + 31); }); }
+    if (upOpen) { g.fillStyle = 'rgba(10,20,50,.95)'; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; g.textAlign = 'center'; g.font = '900 26px '+A.font; g.fillText('🧊 Permanent upgrades', 300, 70); g.font = '600 14px '+A.font; g.fillStyle = '#9fe8ff'; g.fillText('You have ' + PERM.cr + ' ice crystals · earn them every game (more for later waves and bosses)', 300, 100);
+      PUPS.forEach((u, i) => { const by = 150 + i*52, L = PU(u.k), mx2 = L >= u.max, cst = pcost(u); g.fillStyle = 'rgba(255,255,255,.08)'; rr(g, 30, by, 540, 44, 10); g.fill(); g.textAlign = 'left'; g.fillStyle = '#fff'; g.font = '800 15px '+A.font; g.fillText(u.n + ' · Lv ' + L + '/' + u.max, 44, by + 19); g.font = '500 12px '+A.font; g.fillStyle = '#cfe3f5'; g.fillText(u.d, 44, by + 36);
+        g.fillStyle = mx2 ? 'rgba(255,255,255,.1)' : PERM.cr >= cst ? '#00B451' : 'rgba(255,255,255,.18)'; rr(g, 440, by + 4, 120, 36, 10); g.fill(); g.fillStyle = '#fff'; g.textAlign = 'center'; g.font = '800 14px '+A.font; g.fillText(mx2 ? 'MAX' : '🧊 ' + cst, 500, by + 27); });
+      g.fillStyle = '#ffffff'; rr(g, 200, 594, 200, 44, 12); g.fill(); g.fillStyle = '#14204a'; g.font = '800 16px '+A.font; g.fillText('Done', 300, 622); }
+    if (guide) { g.fillStyle = 'rgba(10,20,50,.95)'; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; g.textAlign = 'left'; g.font = '900 26px '+A.font; g.fillText('❓ How to play', 30, 60);
+      [['🎯', 'Aim at the top half and HOLD to pack a bigger snowball, let go to throw. Quick taps = small fast ones.'], ['🧱', 'Your snowballs fly OVER your own walls. Enemy snowballs hit your walls.'], ['🦆', 'Duck (Shift / S / Duck button) behind a wall: straight throws can’t hit you.'],
+       ['⚪', 'You carry 10 snowballs. Scoop more on the ❄ piles or while ducking behind a wall.'], ['🤸', 'Move with A/D or ◀ ▶. Dodge-roll with E, the Roll button, or double-tap.'], ['☕', 'Heal: cocoa drops, ☕ Warm Up between waves, or stand near your 🔥 campfire.'],
+       ['🏰', 'Between waves build walls, forts (roof stops catapults), turrets, trap pits, ice and a campfire.'], ['🧒', 'Teammates: throwers, builders (fix walls) and medics. Stand next to a knocked-out one to help them up.'], ['👑', 'Bosses every 5 waves (the Frost Dragon every 20). Each has 3 phases.']]
+        .forEach(([e2, tx2], i) => { const y = 110 + i*58; g.font = '28px '+A.font; g.fillText(e2, 30, y + 14); g.fillStyle = '#e8f4ff'; g.font = '600 14px '+A.font; const words = tx2.split(' '); let line = '', ly = y; words.forEach(wd => { if (g.measureText(line + wd).width > 480) { g.fillText(line, 80, ly); line = ''; ly += 18; } line += wd + ' '; }); g.fillText(line, 80, ly); g.fillStyle = '#fff'; });
+      g.textAlign = 'center'; g.font = '700 15px '+A.font; g.fillStyle = '#D5F367'; g.fillText('Tap anywhere to close', 300, 680); } });
+  // ---- admin controls (only in this game) ----
+  A.admins = A.admins || {}; A.admins.snowball = [
+    {label:'Go to wave', num:10, min:1, run:n => { if (st != 'play') startGame(mode); wave = Math.floor(n) - 1; boss = null; foes = []; nextWave(); }},
+    {label:'Add snowflakes', num:500, min:1, run:n => { flakes += Math.floor(n); }},
+    {label:'Add hearts', num:5, min:1, max:20, run:n => { if (me) { me.max = A.lives(me.max + Math.floor(n)); me.hp = me.max; } }},
+    {label:'Spawn boss', run:() => { if (st != 'play') startGame(mode); const k = ['yeti', 'plow', 'witch', 'dragon'][Math.floor(Math.random()*4)], B = BOSSES[k]; boss = {k, n:B.n, x:300, y:k == 'dragon' ? 80 : 100, hp:B.hp, max:B.hp, cool:2, vx:90, charge:0, col:B.col, ph:1, tp:0, kb:0}; phase = 'fight'; say(B.n + ' appears!', 2); }},
+    {label:'Add ice crystals', num:100, min:1, run:n => { PERM.cr += Math.floor(n); savePerm(); }}];
+  // ---- save & resume (old v2 saves still load) ----
+  api.snap && api.snap(() => (st == 'play') ? {v:3, mode, seed, me, foes, walls, builds, mates, drops, score, wave, flakes, boss, phase, arena, pw, bossesBeat} : null);
+  { const R0 = api.resume; if (R0 && (R0.v == 2 || R0.v == 3)) { try {
+      if (R0.v == 3) ({mode, seed, me, foes, walls, builds, mates, drops, score, wave, flakes, boss, phase, arena, pw, bossesBeat} = R0);
+      else { startGame('endless'); score = R0.score || 0; wave = R0.wave || 1; flakes = R0.flakes || 20; arena = R0.arena || 0; phase = 'build'; foes = []; boss = null; if (R0.me) { me.hp = R0.me.hp; me.max = R0.me.max; } }
+      me.ammo = me.ammo == null ? maxAmmo() : me.ammo; me.y = PY; balls = []; api.score(score); __skip = true; st = 'ready'; } catch(e) { console.error('[save] snowball resume failed', e); } } }
+  A._dbg = A._dbg || {}; A._dbg.snow = () => ({me, foes, boss, wave, phase, walls, builds, mates, flakes, st, mode, balls, PERM, set:o => { if (o.wave != null) wave = o.wave; if (o.flakes != null) flakes = o.flakes; }, nextWave, useTool, startGame, throwAt:(x, y, p) => { aim = {x, y}; packT = p || 0; mouseOn = true; throwMine(); }});
+  return () => { offK(); offL(); K.off(); if (A.admins) delete A.admins.snowball; };
 }});
 
 // =====================================================================================================
