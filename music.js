@@ -30,16 +30,70 @@ const build = name => { const M = MOODS[name], r = rnd(M.seed * 9973 + 17), deg 
       out.push(rest ? null : hold ? 'h' : deg((strong ? tones[Math.floor(r()*3)] : c + Math.floor(r()*6) - 1) + 7)); } }); return out; };
   const A = phrase(), B = phrase(); return {M, deg, mel:[...A, ...A, ...B, ...A]}; };
 
+// ---------- THE WILDERLAND PLAYLIST: 8 original songs, written note by note for the arcade ----------
+// Melodies: one token per eighth note ("." holds the last note, "-" is a rest, "|" is just a bar line). Chords: one per bar.
+// drums: 8 steps per bar (k kick, s snare, h hi-hat, x kick + hat). arp: 'arp' (broken chord), 'pad' (soft held chord) or ''.
+// bass: 'walk' (root, fifth, octave), 'root8' (driving eighths), 'whole' (long notes).
+const SONGS = [
+ {n:'Snowball Morning', bpm:120, lead:'square', arpW:'triangle', bassW:'triangle', arp:'arp', bass:'walk', drums:'k.h.s.hk', echo:.18, form:['A','A','B','A'],
+  A:{ch:'C G Am F C G F G', mel:'E5 . G5 . C6 . G5 E5 | D5 . G5 . B5 . A5 G5 | A5 . E5 . A5 B5 C6 . | A5 . F5 . A5 . G5 F5 | E5 . G5 . C6 . D6 E6 | D6 . B5 . G5 . A5 B5 | C6 . A5 . F5 . A5 C6 | B5 . . . - - G5 .'},
+  B:{ch:'F G Em Am Dm G C C', mel:'A5 . . C6 A5 . F5 . | B5 . . D6 B5 . G5 . | G5 . E5 . B4 . E5 G5 | A5 . . . C6 . A5 . | F5 . A5 . D6 . C6 . | B5 . A5 . G5 . F5 . | E5 . G5 . C6 . . . | - - E5 G5 C6 . - -'}},
+ {n:'Pinecone Parade', bpm:132, lead:'square', arpW:'square', bassW:'triangle', arp:'arp', bass:'root8', drums:'k.s.k.ss', echo:0, form:['A','B','A','A'],
+  A:{ch:'G C G D G C D G', mel:'G5 . B5 . D6 . B5 . | C6 . E6 . C6 . G5 . | B5 A5 G5 A5 B5 . G5 . | A5 . F#5 . D5 . - - | G5 . B5 . D6 . G6 . | E6 . D6 C6 E6 . C6 . | D6 . C6 B5 A5 . F#5 . | G5 . . . - G5 A5 B5'},
+  B:{ch:'Em Em C C G G D D', mel:'E6 . . D6 B5 . . G5 | E5 . G5 . B5 . . . | C6 . . B5 A5 . . G5 | E5 . G5 . C6 . . . | D6 . . C6 B5 . A5 . | G5 . B5 . D6 . . . | A5 B5 C6 B5 A5 . F#5 . | D5 . - - D6 . . .'}},
+ {n:'Glimmer Lake', bpm:96, lead:'triangle', arpW:'sine', bassW:'sine', arp:'arp', bass:'whole', drums:'', echo:.35, form:['A','A','B','A'],
+  A:{ch:'D A Bm G D G Em A', mel:'F#5 . . . A5 . . . | E5 . . . C#6 . . . | D6 . . C#6 B5 . . . | B5 . . . G5 . A5 . | F#5 . . . D6 . . . | B5 . . A5 G5 . . . | E5 . G5 . B5 . . . | A5 . . . - - - -'},
+  B:{ch:'G A F#m Bm G A D D', mel:'D6 . . . B5 . . . | C#6 . . . E6 . . . | F#6 . . E6 C#6 . . . | D6 . . . B5 . . . | G5 . B5 . D6 . . B5 | C#6 . . . A5 . . . | D6 . . . . . . . | - - A5 . F#5 . A5 .'}},
+ {n:'Hex Pup Hustle', bpm:150, lead:'square', arpW:'square', bassW:'sawtooth', arp:'arp', bass:'root8', drums:'x.hsk.hs', echo:0, form:['A','A','B','A','B'],
+  A:{ch:'Am Am F G Am Am F E', mel:'A5 - A5 C6 - A5 E6 . | D6 C6 B5 A5 - E5 A5 . | C6 - C6 A5 - F5 C6 . | B5 A5 G5 B5 D6 . . . | A5 - A5 C6 - A5 E6 . | G6 . E6 . C6 . A5 . | F5 A5 C6 F6 E6 . C6 . | B5 . G#5 . E5 . . .'},
+  B:{ch:'Dm Am Dm E F G Am E', mel:'F6 . E6 D6 . . A5 . | E6 . D6 C6 . . A5 . | D6 . F6 . A6 . F6 . | E6 . . . G#5 . B5 . | C6 . A5 . F5 . A5 C6 | D6 . B5 . G5 . B5 D6 | E6 . C6 . A5 . E6 . | G#6 . . . E6 . . .'}},
+ {n:'Crystal Caves', bpm:100, lead:'triangle', arpW:'sine', bassW:'triangle', arp:'arp', bass:'whole', drums:'k...h...', echo:.4, form:['A','B','A'],
+  A:{ch:'Em C Em D Em C Am B', mel:'E5 . . G5 B5 . . . | C6 . . B5 G5 . . . | E5 . . G5 B5 . E6 . | D6 . . . F#5 . . . | G5 . F#5 . E5 . B4 . | C5 . E5 . G5 . C6 . | A5 . . G5 E5 . . . | D#5 . . . F#5 . B5 .'},
+  B:{ch:'Am Em Am Em C D B B', mel:'A5 . C6 . E6 . . . | D6 . B5 . G5 . . . | A5 . C6 . E6 . A6 . | G6 . . F#6 E6 . . . | E6 . D6 . C6 . . . | D6 . C6 . A5 . . . | B5 . . . D#6 . . . | F#6 . . . - - - -'}},
+ {n:'Campfire Cocoa', bpm:84, lead:'sine', arpW:'triangle', bassW:'sine', arp:'pad', bass:'walk', drums:'k...s...', echo:.3, form:['A','B','A'],
+  A:{ch:'F Dm Bb C F Dm Bb C', mel:'A5 . C6 . A5 . F5 . | D5 . F5 . A5 . . . | A#5 . A5 . G5 . F5 . | G5 . . . E5 . . . | F5 . A5 . C6 . D6 . | C6 . A5 . F5 . . . | D6 . C6 . A#5 . A5 . | G5 . . . - - - -'},
+  B:{ch:'Bb C Am Dm Gm C F F', mel:'D6 . . . F6 . D6 . | E6 . . . G6 . E6 . | C6 . . A5 E5 . . . | F5 . A5 . D6 . . . | A#5 . A5 . G5 . A#5 . | C6 . . . E5 . G5 . | F5 . . . . . . . | - - C6 . A5 . F5 .'}},
+ {n:'Bwird Zone Rocket', bpm:140, lead:'sawtooth', arpW:'square', bassW:'triangle', arp:'arp', bass:'root8', drums:'x.hsk.hs', echo:.22, form:['A','A','B','A','B'],
+  A:{ch:'Dm Bb C Dm Dm Bb C A', mel:'D6 . A5 . F5 . A5 D6 | F6 . D6 . A#5 . D6 F6 | E6 . C6 . G5 . C6 E6 | D6 . . . A5 . . . | D6 E6 F6 . E6 D6 A5 . | A#5 . D6 . F6 . A#6 . | G6 . E6 . C6 . E6 G6 | A6 . . . C#6 . E6 .'},
+  B:{ch:'Gm Gm Dm Dm Bb C A A', mel:'G6 . . . A#6 . . . | A6 . G6 . D6 . . . | F6 . . . A6 . . . | G6 . F6 . D6 . . . | F6 . D6 . A#5 . D6 . | E6 . G6 . C7 . . . | A6 . . . E6 . C#6 . | A5 . . . - - - -'}},
+ {n:'Victory Lap', bpm:144, lead:'square', arpW:'triangle', bassW:'triangle', arp:'arp', bass:'walk', drums:'x.hsk.hs', echo:.15, form:['A','A','B','A'],
+  A:{ch:'E B C#m A E B A B', mel:'G#5 . B5 . E6 . B5 . | F#5 . B5 . D#6 . B5 . | E6 . D#6 . C#6 . G#5 . | A5 . C#6 . E6 . . . | E6 . . F#6 G#6 . E6 . | F#6 . . E6 D#6 . B5 . | C#6 . E6 . A6 . F#6 . | G#6 . F#6 . D#6 . B5 .'},
+  B:{ch:'A B G#m C#m A B E E', mel:'C#6 . . B5 A5 . C#6 . | D#6 . . C#6 B5 . D#6 . | B5 . D#6 . G#6 . . . | G#6 . F#6 . E6 . C#6 . | A5 . C#6 . E6 . A6 . | F#6 . D#6 . B5 . F#6 . | E6 . . . . . . . | - - B5 . E6 . . .'}},
+];
+const NOTE = {C:0, 'C#':1, Db:1, D:2, 'D#':3, Eb:3, E:4, F:5, 'F#':6, Gb:6, G:7, 'G#':8, Ab:8, A:9, 'A#':10, Bb:10, B:11};
+const pn = tk => { const m = /^([A-G][#b]?)(\d)$/.exec(tk); return m ? NOTE[m[1]] + 12*(+m[2] + 1) : null; };
+const chordOf = nm => { const m = /^([A-G][#b]?)(m?)/.exec(nm); return {r:NOTE[m[1]], minor:!!m[2]}; };
+// a song becomes one long list of eighth notes (form A A B A …) plus one chord per bar, with a bar of rest at the end
+const compile = S => { const mel = [], ch = []; S.form.forEach(sec => { const P = S[sec]; P.mel.split(/\s+/).filter(x => x && x != '|').forEach(tk => mel.push(tk == '.' ? 'h' : tk == '-' ? null : pn(tk))); P.ch.split(/\s+/).filter(Boolean).forEach(c => ch.push(chordOf(c))); });
+  for (let i = 0; i < 8; i++) mel.push(null); ch.push(ch[ch.length - 1]); return {S, mel, ch}; };
+let si = 0, sstep = 0, songC = null; try { si = Math.max(0, Math.min(SONGS.length - 1, +localStorage.getItem(KEY + '-song') || 0)); } catch(e){}
+let dly = null;
 const ensure = () => { if (ctx) return true; try { ctx = new (window.AudioContext || window.webkitAudioContext)(); master = ctx.createGain(); master.gain.value = .0; master.connect(ctx.destination);
+    dly = ctx.createDelay(1); dly.delayTime.value = .3; const fb = ctx.createGain(); fb.gain.value = .32; dly.connect(fb); fb.connect(dly); const wet = ctx.createGain(); wet.gain.value = .5; dly.connect(wet); wet.connect(master);
     noiseBuf = ctx.createBuffer(1, ctx.sampleRate * .2, ctx.sampleRate); const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random()*2 - 1; return true; } catch(e) { return false; } };
-const note = (f, t, d, type, v) => { const o = ctx.createOscillator(), g = ctx.createGain(); o.type = type; o.frequency.setValueAtTime(f, t);
-  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + d); o.connect(g); g.connect(master); o.start(t); o.stop(t + d + .02); };
+const note = (f, t, d, type, v, fx) => { const o = ctx.createOscillator(), g = ctx.createGain(); o.type = type; o.frequency.setValueAtTime(f, t);
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(v, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + d); o.connect(g); g.connect(master); if (fx && dly) { const s2 = ctx.createGain(); s2.gain.value = fx; g.connect(s2); s2.connect(dly); } o.start(t); o.stop(t + d + .02); };
 const hat = (t, v) => { const s = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain(); s.buffer = noiseBuf; f.type = 'highpass'; f.frequency.value = 7000;
   g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + .05); s.connect(f); f.connect(g); g.connect(master); s.start(t); s.stop(t + .06); };
 const kick = (t, v) => { const o = ctx.createOscillator(), g = ctx.createGain(); o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(40, t + .12);
   g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + .15); o.connect(g); g.connect(master); o.start(t); o.stop(t + .16); };
 
-const schedule = () => { if (!cur || !ctx) return; const {M, deg, mel} = cur, e = 60 / M.bpm / 2;   // one eighth note
+const snare = (t, v) => { const s2 = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain(); s2.buffer = noiseBuf; f.type = 'bandpass'; f.frequency.value = 1800; f.Q.value = .8;
+  g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + .13); s2.connect(f); f.connect(g); g.connect(master); s2.start(t); s2.stop(t + .14); };
+const scheduleSong = () => { if (!songC) songC = compile(SONGS[si]);
+  while (nextT < ctx.currentTime + .25) { if (sstep >= songC.mel.length) { si = (si + 1) % SONGS.length; sstep = 0; songC = compile(SONGS[si]); try { localStorage.setItem(KEY + '-song', si); } catch(e){} }
+    const {S, mel, ch} = songC, e = 60 / S.bpm / 2, i = sstep, bar = Math.floor(i / 8), beat = i % 8, C = ch[Math.min(bar, ch.length - 1)], t = nextT;
+    const m = mel[i]; if (m != null && m !== 'h') { let len = 1; while (mel[i + len] === 'h' && len < 8) len++; note(mtof(m), t, e*len*.92, S.lead, S.lead == 'sawtooth' ? .035 : S.lead == 'sine' ? .07 : .05, S.echo); }
+    const tones = [C.r, C.r + (C.minor ? 3 : 4), C.r + 7];
+    if (S.arp == 'arp') note(mtof(60 + [tones[0], tones[1], tones[2], tones[0] + 12][beat % 4]), t, e*.8, S.arpW, .02);
+    else if (S.arp == 'pad' && beat == 0) tones.forEach(x => note(mtof(60 + x), t, e*7.6, S.arpW, .016));
+    const b = 36 + C.r;
+    if (S.bass == 'root8') note(mtof(b + (beat % 2 ? 12 : 0)), t, e*.9, S.bassW, .06);
+    else if (S.bass == 'walk') { if (beat % 2 == 0) note(mtof(b + [0, 7, 12, 7][beat/2]), t, e*1.8, S.bassW, .07); }
+    else if (beat == 0 || beat == 4) note(mtof(b), t, e*3.8, S.bassW, .08);
+    const dr = (S.drums || '')[beat]; if (dr == 'k' || dr == 'x') kick(t, .12); if (dr == 'h' || dr == 'x') hat(t, .022); if (dr == 's') snare(t, .06);
+    nextT += e; sstep++; } };
+const schedule = () => { if (!cur || !ctx) return; if (track == 'playlist' && !dramatic()) { scheduleSong(); return; } const {M, deg, mel} = cur, e = 60 / M.bpm / 2;   // one eighth note
   while (nextT < ctx.currentTime + .25) { const i = step % mel.length, bar = Math.floor(i / 8) % 4, c = M.prog[bar], t = nextT, beat = i % 8, V = M.vol;
     // melody (hold = let the last note ring)
     const m = mel[i]; if (m && m !== 'h') { let len = 1; while (mel[(i+len) % mel.length] === 'h' && len < 4) len++; note(mtof(m), t, e*len*.95, M.lead, .05*V); }
@@ -59,7 +113,7 @@ const FILES = {monkeys: {src:'assets/music/monkeys-spinning-monkeys.mp3', n:'Mon
   snitch: {src:'assets/music/sneaky-snitch.mp3', n:'Sneaky Snitch', s:'SNEAKY SNITCH', need:10, credit:'“Sneaky Snitch” Kevin MacLeod (incompetech.com)' + CC},
   duck: {src:'assets/music/fluffing-a-duck.mp3', n:'Fluffing a Duck', s:'FLUFFING A DUCK', need:20, credit:'“Fluffing a Duck” Kevin MacLeod (incompetech.com)' + CC}};
 let rebirths = 0; const unlocked = k => !FILES[k] || rebirths >= (FILES[k].need || 0);
-let track = 'chip'; try { const t = localStorage.getItem(KEY+'-track'); if (t && (t == 'chip' || FILES[t])) track = t; } catch(e){}
+let track = 'chip'; try { const t = localStorage.getItem(KEY+'-track'); if (t && (t == 'chip' || t == 'playlist' || FILES[t])) track = t; } catch(e){}
 let audio = null, audioKey = '';
 const playFile = () => { const F = FILES[track]; if (!audio || audioKey !== track) { if (audio) audio.pause(); audio = new Audio(F.src); audio.loop = true; audio.volume = .35; audioKey = track; }
   const pr = audio.play(); if (pr && pr.catch) pr.catch(() => {}); };
@@ -84,9 +138,14 @@ const WLMusic = {
   // MUSIC button: Chiptune → each song file → Off → Chiptune …
   setRebirths(n){ const was = unlocked(track); rebirths = Number(n) || 0; if (was != unlocked(track) && on) { stop(); run(); } },
   locked: () => Object.keys(FILES).filter(k => !unlocked(k)).map(k => FILES[k].n + ' unlocks at ' + FILES[k].need + ' rebirths'),
-  cycle(){ const order = ['chip', ...Object.keys(FILES).filter(unlocked), 'off'], curK = on ? track : 'off', nx = order[(order.indexOf(curK)+1) % order.length];
+  cycle(){ const order = ['chip', 'playlist', ...Object.keys(FILES).filter(unlocked), 'off'], curK = on ? track : 'off', nx = order[(order.indexOf(curK)+1) % order.length];
     if (nx == 'off') { this.setOn(false); return; } track = nx; try { localStorage.setItem(KEY+'-track', track); } catch(e){} if (!on) this.setOn(true); else { stop(); started = true; if (!cur) cur = build(moodName); run(); } },
-  label: () => !on ? 'MUSIC OFF' : FILES[track] && unlocked(track) ? FILES[track].s : 'CHIPTUNE',
+  label: () => !on ? 'MUSIC OFF' : track == 'playlist' ? 'PLAYLIST · ' + SONGS[si].n.toUpperCase() : FILES[track] && unlocked(track) ? FILES[track].s : 'CHIPTUNE',
+  // the Wilderland Playlist: skip to the next song (turns the playlist on if something else was playing)
+  next(){ if (track != 'playlist' || !on) { track = 'playlist'; try { localStorage.setItem(KEY+'-track', track); } catch(e){} } else { si = (si + 1) % SONGS.length; } sstep = 0; songC = null; try { localStorage.setItem(KEY + '-song', si); } catch(e){}
+    if (!on) this.setOn(true); else { stop(); started = true; if (!cur) cur = build(moodName); run(); } },
+  songs: () => SONGS.map(S2 => S2.n), song: () => track == 'playlist' ? SONGS[si].n : '',
+  _songCheck: () => SONGS.map(S2 => ({n:S2.n, secs:S2.form.map(k => k + ':' + S2[k].mel.split(/\s+/).filter(x => x && x != '|').length + '/' + S2[k].ch.split(/\s+/).filter(Boolean).length)})),
   credit: () => on && FILES[track] && unlocked(track) ? FILES[track].credit : '',
   // every song file's credit, always (Creative Commons BY needs the credit shown)
   allCredits: () => Object.values(FILES).map(f => f.credit).join(' · '),
