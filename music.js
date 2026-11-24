@@ -145,7 +145,10 @@ const CC = ' · Licensed under Creative Commons: By Attribution 4.0 · creativec
 // need = rebirths needed to unlock the song (the arcade tells us the player's rebirths)
 const FILES = {monkeys: {src:'assets/music/monkeys-spinning-monkeys.mp3', n:'Monkeys Spinning Monkeys', s:'MONKEYS', need:0, credit:'“Monkeys Spinning Monkeys” Kevin MacLeod (incompetech.com)' + CC},
   snitch: {src:'assets/music/sneaky-snitch.mp3', n:'Sneaky Snitch', s:'SNEAKY SNITCH', need:10, credit:'“Sneaky Snitch” Kevin MacLeod (incompetech.com)' + CC},
-  duck: {src:'assets/music/fluffing-a-duck.mp3', n:'Fluffing a Duck', s:'FLUFFING A DUCK', need:20, credit:'“Fluffing a Duck” Kevin MacLeod (incompetech.com)' + CC}};
+  duck: {src:'assets/music/fluffing-a-duck.mp3', n:'Fluffing a Duck', s:'FLUFFING A DUCK', need:20, credit:'“Fluffing a Duck” Kevin MacLeod (incompetech.com)' + CC},
+  weasel: {src:'assets/music/scheming-weasel-faster.mp3', n:'Scheming Weasel (faster version)', s:'SCHEMING WEASEL', need:30, credit:'“Scheming Weasel (faster version)” Kevin MacLeod (incompetech.com)' + CC},
+  invest: {src:'assets/music/investigations.mp3', n:'Investigations', s:'INVESTIGATIONS', need:40, credit:'“Investigations” Kevin MacLeod (incompetech.com)' + CC},
+  cipher: {src:'assets/music/cipher.mp3', n:'Cipher', s:'CIPHER', need:50, credit:'“Cipher” Kevin MacLeod (incompetech.com)' + CC}};
 let rebirths = 0; const unlocked = k => !FILES[k] || rebirths >= (FILES[k].need || 0);
 let track = 'chip'; try { const t = localStorage.getItem(KEY+'-track'); if (t && (t == 'chip' || t == 'playlist' || FILES[t])) track = t; } catch(e){}
 let audio = null, audioKey = '';
