@@ -99,6 +99,10 @@ A.snowWorld = function(X) {
   const p = {x:W.x || CAMPX.x, y:W.y || CAMPX.y, hp:mx0, max:mx0, inv:2, ab:0, shieldT:0, eye:0, fortT:0, ammo:X.maxAmmo(), reload:0, vx:0, vy:0, face:-Math.PI/2, hitT:0, walk:0};
   if (blocked(p.x, p.y, 12)) { p.x = CAMPX.x; p.y = CAMPX.y; }
   const mau = {x:p.x - 40, y:p.y + 10, cool:1};
+  // teammates from your upgrades (Upgrade Workshop teammates + Snow Friends, levelled by Team Captain) come along too
+  const MI = X.mates ? X.mates() : {n:0, lv:1, names:[]}, ROLES = ['thrower', 'builder', 'medic'], RCOL = {thrower:'#2fa8e0', builder:'#64CDF5', medic:'#ff9ad5'}, RE = {thrower:'🎯', builder:'🔨', medic:'➕'};
+  const mates = []; for (let i = 0; i < MI.n; i++) mates.push({name:(MI.names[i] || 'Pal'), role:ROLES[i % 3], lv:MI.lv, x:p.x + (i - 1.5)*30, y:p.y + 40, cool:1 + i*.3, heal:12, hp:2 + MI.lv, max:2 + MI.lv, ko:0, face:0, walk:0, throwT:0});
+  const mateHome = () => mates.forEach((m, i) => { m.x = p.x + (i - 1.5)*30; m.y = p.y + 40; });
   let foes = [], balls = [], fx = [], nums = [], drops = [], boss = null, dlg = null, mapOpen = false, travel = false, quiz = false, msg = '', msgT = 0, t = 0, score = 0;
   let saveT = 10, revealT = 0, spawnT = 1, dead = 0, lastReg = '', gateT = 0, lokiReady = !!W.bau, charge = null, aim = {x:300, y:200}, mouseIn = false, healT = 0;
   const pads = new Map(); const pad = k => { for (const v of pads.values()) if (v == k) return 1; return 0; };
@@ -178,7 +182,7 @@ A.snowWorld = function(X) {
   const hurtMe = dmg => { if (p.inv > 0 || p.shieldT > 0 || A.immortal || dead > 0 || quiz) return; if (Math.random() < .06*X.PU('armor')) { p.inv = .4; addNum(p.x, p.y - 40, 'Shrugged off!', '#2f8ad8'); return; } p.hp -= dmg; p.inv = .9; p.hitT = .3; A.sfx('bad'); splat(p.x, p.y - 10, 8, '#e8f4ff');
     if (p.hp <= 0) { p.hp = 0; W.deaths = (W.deaths || 0) + 1; quiz = true;
       if (!X.learn2('SNOWED UNDER! ANSWER RIGHT TO GET BACK UP RIGHT HERE', () => { quiz = false; p.hp = Math.ceil(p.max/2); p.inv = 2.5; say('Back on your feet!', 1.6); }, () => { quiz = false; dead = 1.8; say('❄ Snowed under! Waking up at Camp Cocoa...', 2.4); A.sfx('over'); })) quiz = false; } };
-  const respawn = () => { p.x = CAMPX.x; p.y = CAMPX.y; p.vx = p.vy = 0; p.hp = p.max; p.inv = 2.5; p.ammo = X.maxAmmo(); foes = []; balls = []; if (boss) { boss = null; } mau.x = p.x - 40; mau.y = p.y + 10; save(); say('🏕 Back at Camp Cocoa. Everything you found is safe!', 3); };
+  const respawn = () => { p.x = CAMPX.x; p.y = CAMPX.y; p.vx = p.vy = 0; p.hp = p.max; p.inv = 2.5; p.ammo = X.maxAmmo(); foes = []; balls = []; if (boss) { boss = null; } mau.x = p.x - 40; mau.y = p.y + 10; mates.forEach(m => { m.ko = 0; m.hp = m.max; }); mateHome(); save(); say('🏕 Back at Camp Cocoa. Everything you found is safe!', 3); };
   // ---------- bosses ----------
   const bossDone = k => k == 'loki' ? (W.loki > 0 && !lokiReady) : !!W.down[k];
   const spawnBoss = k => { W.bhp = W.bhp || {}; const B = BOSS[k], H = LAIR[k], hp = B.hp * A.D(.8, 1, 1.2) * (1 + .05*(X.lv() - 1)) * (k == 'loki' && W.loki ? 1.15 : 1);
@@ -235,7 +239,7 @@ A.snowWorld = function(X) {
   const openMap = tr => { mapOpen = true; travel = !!tr; A.sfx('blip'); };
   const MAPR = {x:20, y:66, s:5.6};
   const mapDown = q => { if (q.y > 650 && q.y < 700) { if (q.x < 300) { mapOpen = false; travel = false; } else { close(); X.exit(); } return; }
-    if (travel) for (const k in WAYS) { if (!W.ways[k]) continue; const sx = MAPR.x + (WAYS[k].x + .5)*MAPR.s, sy = MAPR.y + (WAYS[k].y + .5)*MAPR.s; if (Math.hypot(q.x - sx, q.y - sy) < 24) { const w2 = px(WAYS[k]); p.x = w2.x; p.y = w2.y + 40; p.vx = p.vy = 0; foes = []; balls = []; if (boss) boss = null; mapOpen = false; travel = false; A.sfx('win'); say('✨ Whoosh! ' + WAYS[k].n, 2); save(); return; } } };
+    if (travel) for (const k in WAYS) { if (!W.ways[k]) continue; const sx = MAPR.x + (WAYS[k].x + .5)*MAPR.s, sy = MAPR.y + (WAYS[k].y + .5)*MAPR.s; if (Math.hypot(q.x - sx, q.y - sy) < 24) { const w2 = px(WAYS[k]); p.x = w2.x; p.y = w2.y + 40; p.vx = p.vy = 0; foes = []; balls = []; if (boss) boss = null; mateHome(); mapOpen = false; travel = false; A.sfx('win'); say('✨ Whoosh! ' + WAYS[k].n, 2); save(); return; } } };
   const toWorld = q => ({x:q.x + cam.x, y:q.y + cam.y});
   // ---------- input (called by Snowball Showdown) ----------
   const BTN = ['◀', '▲', '▼', '▶', '⭐', '✋', '🗺'], BW = VW/BTN.length;
@@ -300,6 +304,14 @@ A.snowWorld = function(X) {
     if (W.mau) { const tx = p.x - Math.cos(p.face)*46, ty = p.y - Math.sin(p.face)*46 + 8, dm = Math.hypot(tx - mau.x, ty - mau.y); if (dm > 600) { mau.x = tx; mau.y = ty; } else if (dm > 8) { const s2 = Math.min(dm*4, 300); mau.x += (tx - mau.x)/dm*s2*dt; mau.y += (ty - mau.y)/dm*s2*dt; }
       mau.cool -= dt; if (mau.cool <= 0) { let tg = boss && dist(boss, mau) < 340 ? boss : null; if (!tg) { let bd = 320; for (const f of foes) { const d3 = dist(f, mau); if (d3 < bd) { bd = d3; tg = f; } } }
         if (tg) { mau.cool = 1.1; const a = Math.atan2(tg.y - mau.y, tg.x - mau.x); balls.push({x:mau.x, y:mau.y - 10, vx:Math.cos(a)*480, vy:Math.sin(a)*480, mine:1, dmg:1, r:5, life:.9, hits:[], col:'#ffe0f0'}); } else mau.cool = .3; } }
+    mates.forEach((m, i) => { m.throwT = Math.max(0, m.throwT - dt);
+      if (m.ko > 0) { m.ko -= dt * (dist(m, p) < 50 ? 4 : 1); if (m.ko <= 0) { m.ko = 0; m.hp = m.max; addNum(m.x, m.y - 30, m.name + ' is back!', '#00B451'); } return; }
+      const a = p.face + Math.PI + (i - (mates.length - 1)/2)*.55, tx = p.x + Math.cos(a)*(70 + (i % 2)*18), ty = p.y + Math.sin(a)*(70 + (i % 2)*18) + 6, dm = Math.hypot(tx - m.x, ty - m.y);
+      if (dm > 650) { m.x = tx; m.y = ty; } else if (dm > 10) { const s2 = Math.min(dm*3.5, 280); m.x += (tx - m.x)/dm*s2*dt; m.y += (ty - m.y)/dm*s2*dt; m.walk += dt; }
+      if (m.role == 'medic') { m.heal -= dt; if (m.heal <= 0 && p.hp < p.max && dead <= 0) { m.heal = Math.max(6, 14 - m.lv); p.hp++; addNum(p.x, p.y - 44, '➕ ' + m.name + ' +♥', '#ff5fa8'); } }
+      m.cool -= dt; if (m.cool <= 0) { let tg = boss && dist(boss, m) < 360 ? boss : null; if (!tg) { let bd = 330; for (const f of foes) { const d3 = dist(f, m); if (d3 < bd) { bd = d3; tg = f; } } }
+        if (!tg) { m.cool = .3; return; } m.cool = (m.role == 'thrower' ? 1.2 : m.role == 'builder' ? 1.7 : 2.2) / (1 + .1*m.lv); const a2 = Math.atan2(tg.y - m.y, tg.x - m.x); m.face = a2; m.throwT = .18;
+        balls.push({x:m.x, y:m.y - 10, vx:Math.cos(a2)*470, vy:Math.sin(a2)*470, mine:1, dmg:X.armM()*(.5 + .1*m.lv)*(m.role == 'builder' ? 1.3 : 1), r:m.role == 'builder' ? 7 : 5, life:.9, hits:[], kind:m.role == 'builder' ? 'slush' : 'snow', col:m.role == 'builder' ? '#bfe0ff' : '#ffffff'}); } });
     // snowballs
     for (const b of balls) { b.x += b.vx*dt; b.y += b.vy*dt; b.life -= dt;
       if (b.kind == 'boomer' && !b.ret && b.life < .45) { b.ret = 1; b.hits = []; const a = Math.atan2(p.y - b.y, p.x - b.x); b.vx = Math.cos(a)*560; b.vy = Math.sin(a)*560; b.life = .9; }
@@ -309,7 +321,8 @@ A.snowWorld = function(X) {
           const ka = Math.atan2(b.vy, b.vx); f.kbx = Math.cos(ka)*120; f.kby = Math.sin(ka)*120; f.kb = .12; splat(b.x, b.y, 6); A.sfx('hit'); if (!b.pierce) { b.life = 0; break; } }
         if (b.life > 0 && boss && !b.hits.includes(boss) && Math.hypot(boss.x - b.x, boss.y - b.y) < boss.r + b.r) { b.hits.push(boss); hurtBoss(b.dmg * (1 + .1*X.PU('boss'))); splat(b.x, b.y, 7); A.sfx('hit'); if (!b.pierce) b.life = 0; } }
       else { if (p.fortT > 0 && Math.hypot(b.x - p.x, b.y - p.y) < 64) { b.life = 0; splat(b.x, b.y, 5); continue; }
-        if (Math.hypot(b.x - p.x, b.y - (p.y - 8)) < 13 + b.r) { b.life = 0; hurtMe(b.dmg); } } }
+        if (Math.hypot(b.x - p.x, b.y - (p.y - 8)) < 13 + b.r) { b.life = 0; hurtMe(b.dmg); continue; }
+        for (const m of mates) if (!m.ko && Math.hypot(b.x - m.x, b.y - (m.y - 8)) < 12 + b.r) { b.life = 0; m.hp -= b.dmg; splat(m.x, m.y - 8, 6); if (m.hp <= 0) { m.ko = 10; say('💫 ' + m.name + ' is knocked out! Stand next to them to help them up faster', 2.2); } break; } } }
     balls = balls.filter(b => b.life > 0);
     A.mood(() => ({danger:p.hp == 1, boss:!!boss}));
     cam.x = Math.max(0, Math.min(WORLD - VW, p.x - VW/2)); cam.y = Math.max(0, Math.min(WORLD - VH, p.y - VH/2 - 20)); };
@@ -435,6 +448,8 @@ A.snowWorld = function(X) {
     // characters, back to front
     const ents = foes.filter(f => onScreen(f.x, f.y)).map(f => ({y:f.y, d:() => drawFoe(f)}));
     if (boss) ents.push({y:boss.y, d:() => drawBoss(boss)}); if (W.mau) ents.push({y:mau.y, d:() => cat(mau.x, mau.y, {fur:'#b8bcc8', stripe:'#7a7e8a', helmet:1})});
+    for (const m of mates) if (onScreen(m.x, m.y)) ents.push({y:m.y, d:() => { if (m.ko > 0) { g.fillStyle = RCOL[m.role]; rr(g, m.x - 16, m.y + 4, 32, 12, 6); g.fill(); g.fillStyle = '#f2c9a0'; g.beginPath(); g.arc(m.x + 18, m.y + 8, 7, 0, TAU); g.fill(); g.font = '12px ' + A.font; g.textAlign = 'center'; g.fillText('💫', m.x, m.y - 6); }
+      else kid(m.x, m.y, RCOL[m.role], {walk:m.walk, face:m.face, throwT:m.throwT}); g.fillStyle = '#14204a'; g.font = '700 9px ' + A.font; g.textAlign = 'center'; g.fillText(m.name + ' ' + RE[m.role] + ' Lv' + m.lv, m.x, m.y + 30); }});
     if (dead <= 0 && !(p.inv > 0 && p.inv < 2 && Math.sin(t*25) > 0)) ents.push({y:p.y, d:() => { kid(p.x, p.y, X.CL().col, {hat:X.CL().hat, walk:Math.hypot(p.vx, p.vy) > 30 ? p.walk : 0, face:p.face, throwT:p.throwT, charge:charge ? charge.t : 0, hit:p.hitT > 0});
       if (p.shieldT > 0) { g.strokeStyle = 'rgba(255,233,120,' + (.5 + .4*Math.sin(t*12)) + ')'; g.lineWidth = 4; g.beginPath(); g.arc(p.x, p.y - 6, 32, 0, TAU); g.stroke(); }
       if (p.fortT > 0) { g.strokeStyle = 'rgba(255,255,255,.9)'; g.lineWidth = 7; g.beginPath(); g.arc(p.x, p.y - 6, 60, 0, TAU); g.stroke(); g.strokeStyle = '#9ec4e8'; g.lineWidth = 2; g.stroke(); }
@@ -487,5 +502,5 @@ A.snowWorld = function(X) {
   reveal(); lastReg = regAt(p.x, p.y);
   if (!W.met) say('❄ Welcome to the Snow Kingdom! Talk to Old Pip, the penguin by the campfire', 4); else say('❄ Welcome back to the Snow Kingdom!', 2.4);
   return {frame:dt => { update(dt); draw(); }, down, move, up, key, close, admin:{reveal:() => { fog.fill(1); for (let i = 0; i < fog.length; i++) paintBlock(i); explored = fog.length; save(); }, quest:() => { W.met = 1; W.runes = {forest:1, lake:1, caves:1}; W.mau = 1; W.down.grumble = W.down.icefang = W.down.crystal = W.down.rufus = 1; save(); say('Admin: runes + Mau Mau given, gate open'); }, tp:k => { const w2 = px(WAYS[k] || WAYS.camp); p.x = w2.x; p.y = w2.y + 40; foes = []; boss = null; }},
-    dbg:() => ({p, W, foes, boss, balls, gateOpen, things, spawnBoss, hurtBoss, chests, LAIR, use, update, dlg:() => dlg, nextLine})}; };
+    dbg:() => ({p, W, mates, foes, boss, balls, gateOpen, things, spawnBoss, hurtBoss, chests, LAIR, use, update, dlg:() => dlg, nextLine})}; };
 })();

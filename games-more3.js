@@ -650,7 +650,7 @@ A.register('snowball', { mount(host, api){
     wm = A.snowWorld({host, api, c, K, PERM, savePerm, stat:(k2, v, m2) => stat(api, k2, v, m2), learn2:(t2, y2, n2) => learn2(host, api, t2, y2, n2), PU,
       maxHp:() => A.lives(A.D(6,5,4) + A.U('life') + PU('coat') + (CL().hp || 0) + skR(PERM.cls, 2) + (eqd('hat') ? Math.max(1, Math.round(gStat('hat')*.8)) : 0)),
       maxAmmo, armM, CL, abCd, gStat, makeGear, lv:() => clsLv(PERM.cls), addXp:n => { PERM.cx[PERM.cls] = clsXp(PERM.cls) + n; stat(api, 'snowClass_' + PERM.cls, clsLv(PERM.cls), 'max'); }, crit:() => PU('crit'), ballK:() => PERM.ball,
-      spd:() => (1 + .05*A.U('boots')) * (1 + .08*PU('boots')) * (1 + .05*gStat('boots')) * (CL().slow || 1), scoop:() => 1 + .12*PU('scoop'), exit:() => { wm = null; st = 'ready'; mode = 'endless'; }});
+      spd:() => (1 + .05*A.U('boots')) * (1 + .08*PU('boots')) * (1 + .05*gStat('boots')) * (CL().slow || 1), scoop:() => 1 + .12*PU('scoop'), mates:() => ({n:Math.min(4, A.U('mate') + PU('mates')), lv:1 + PU('captain'), names:MATE_NAMES}), exit:() => { wm = null; st = 'ready'; mode = 'endless'; }});
     st = 'world'; mode = 'world'; A.sfx('win'); };
   const onMenu = k => { if (k == 'world') { openWorld(); return; } if (k == 'guide') { guide = true; return; } if (k == 'up') { upOpen = true; return; } if (k == 'class' || k == 'loadout') { openPanel(k); return; } if (k) startGame(k); };
   const offK = A.keys(e => { if (wm) { wm.key(e); return; } if (guide) { guide = false; return; } if (upOpen) { if (e.key == 'Escape' || e.key == 'Enter' || e.key == ' ') upOpen = false; return; }
