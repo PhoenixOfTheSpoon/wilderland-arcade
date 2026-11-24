@@ -1695,7 +1695,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-12-05y';
+const BUILD = '2026-12-05z';
 const SCRIPTS = ['arcade-core.js','music.js','prizes-more.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js','games-secrets.js','games-more.js','games-more2.js','games-more3.js','snow-world.js'];
 const fmt = n => fmtN(Math.round(n));
 
@@ -2576,7 +2576,7 @@ class Component extends DCLogic {
       H('LEARNING'), I('edu', '🎓', 'Learn mode', stay('toggleEdu'), onv(this.eduOn() ? 'ON' : 'OFF', this.eduOn())),
       H('REBIRTH'), I('autorb', '♻️', 'Auto rebirth', stay('toggleAutoRb'), onv(autoOn ? 'ON' : 'OFF', autoOn), true), ...(R0.rbReady ? [I('rbnow', '⭐', 'Rebirth now', go('rebirthNow'), null, true)] : []),
       H('PLAY TOGETHER'), I('chat', '💬', 'Chat', go('openChat'), {val:'T', valFg:'#9fb8ad'}), I('sug', '💡', 'Suggest an idea', go('openSug')),
-      H('SETTINGS'), I('sound', s.muted ? '🔇' : '🔊', 'Sound', stay('toggleSound'), onv(s.muted ? 'OFF' : 'ON', !s.muted)), I('music', '🎵', 'Music', stay('toggleMusic'), onv(musicNow.replace(/^MUSIC\s*·?\s*/i, '') || 'ON', !/off/i.test(musicNow))), I('mnext', '⏭', /^PLAYLIST/.test(musicNow) ? 'Next song' : 'Wilderland Playlist', stay('nextSong'), onv(/^PLAYLIST/.test(musicNow) ? '8 songs' : 'PLAY', true)), I('mcredit', '🎼', 'Music credits', ()=>{ const L = window.WLMusic && window.WLMusic.locked ? window.WLMusic.locked() : []; this.toast((window.WLMusic && window.WLMusic.allCredits ? window.WLMusic.allCredits() : 'Kevin MacLeod (incompetech.com)') + (L.length ? ' · 🔒 ' + L.join(' · ') : '')); }),
+      H('SETTINGS'), I('sound', s.muted ? '🔇' : '🔊', 'Sound', stay('toggleSound'), onv(s.muted ? 'OFF' : 'ON', !s.muted)), I('music', '🎵', 'Music', stay('toggleMusic'), onv(musicNow.replace(/^MUSIC\s*·?\s*/i, '') || 'ON', !/off/i.test(musicNow))), I('mnext', '⏭', /^PLAYLIST/.test(musicNow) ? 'Next song' : 'Wilderland Playlist', stay('nextSong'), onv(/^PLAYLIST/.test(musicNow) ? (window.WLMusic.songs ? window.WLMusic.songs().length : 18) + ' songs' : 'PLAY', true)), I('mcredit', '🎼', 'Music credits', ()=>{ const L = window.WLMusic && window.WLMusic.locked ? window.WLMusic.locked() : []; this.toast((window.WLMusic && window.WLMusic.allCredits ? window.WLMusic.allCredits() : 'Kevin MacLeod (incompetech.com)') + (L.length ? ' · 🔒 ' + L.join(' · ') : '')); }),
         I('notif', '🔔', 'Notifications', stay('toggleNotif'), onv({all:'ALL', few:'FEW', off:'OFF'}[notifM] || 'ALL', notifM != 'off')), I('fx', '🐢', 'Performance mode', stay('toggleFx'), onv(LOWFX ? 'ON' : 'OFF', LOWFX)),
         I('fs', '⛶', 'Full screen', go('siteFsBtn'), {val:'Y', valFg:'#9fb8ad'}),
       H('ADMIN'), I('code', s.admin ? '🛠️' : '🔑', s.admin ? 'Admin tools' : 'Enter a code', go('openCode'), s.admin ? {val:'∞', valFg:'#F9BF01'} : null)];

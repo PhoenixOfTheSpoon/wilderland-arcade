@@ -32,7 +32,7 @@ const build = name => { const M = MOODS[name], r = rnd(M.seed * 9973 + 17), deg 
 
 // ---------- THE WILDERLAND PLAYLIST: 8 original songs, written note by note for the arcade ----------
 // Melodies: one token per eighth note ("." holds the last note, "-" is a rest, "|" is just a bar line). Chords: one per bar.
-// drums: 8 steps per bar (k kick, s snare, h hi-hat, x kick + hat). arp: 'arp' (broken chord), 'pad' (soft held chord) or ''.
+// drums: one step per eighth (k kick, s snare, h hi-hat, x kick + hat, S kick + snare). beats: eighths per bar (6 = waltz). swing: delay of the off-beats. arp: 'arp' (broken chord), 'pad' (soft held chord) or ''.
 // bass: 'walk' (root, fifth, octave), 'root8' (driving eighths), 'whole' (long notes).
 const SONGS = [
  {n:'Snowball Morning', bpm:120, lead:'square', arpW:'triangle', bassW:'triangle', arp:'arp', bass:'walk', drums:'k.h.s.hk', echo:.18, form:['A','A','B','A'],
@@ -59,6 +59,37 @@ const SONGS = [
  {n:'Victory Lap', bpm:144, lead:'square', arpW:'triangle', bassW:'triangle', arp:'arp', bass:'walk', drums:'x.hsk.hs', echo:.15, form:['A','A','B','A'],
   A:{ch:'E B C#m A E B A B', mel:'G#5 . B5 . E6 . B5 . | F#5 . B5 . D#6 . B5 . | E6 . D#6 . C#6 . G#5 . | A5 . C#6 . E6 . . . | E6 . . F#6 G#6 . E6 . | F#6 . . E6 D#6 . B5 . | C#6 . E6 . A6 . F#6 . | G#6 . F#6 . D#6 . B5 .'},
   B:{ch:'A B G#m C#m A B E E', mel:'C#6 . . B5 A5 . C#6 . | D#6 . . C#6 B5 . D#6 . | B5 . D#6 . G#6 . . . | G#6 . F#6 . E6 . C#6 . | A5 . C#6 . E6 . A6 . | F#6 . D#6 . B5 . F#6 . | E6 . . . . . . . | - - B5 . E6 . . .'}},
+ // ---- volume 2: more styles ----
+ {n:'Shadow Hound Chase', bpm:160, lead:'square', arpW:'square', bassW:'sawtooth', arp:'arp', bass:'root8', drums:'x.hsk.hs', echo:0, form:['A','A','B','A','B'],
+  A:{ch:'Em Em C D Em Em C B', mel:'E5 - E5 G5 - E5 B5 . | A5 G5 F#5 E5 - B4 E5 . | G5 - G5 E5 - C5 G5 . | F#5 E5 D5 F#5 A5 . . . | E5 - E5 G5 - E5 B5 . | D6 . B5 . G5 . E5 . | C5 E5 G5 C6 B5 . G5 . | F#5 . D#5 . B4 . . .'},
+  B:{ch:'Am Em Am B C D Em B', mel:'C6 . B5 A5 . . E5 . | B5 . A5 G5 . . E5 . | A5 . C6 . E6 . C6 . | B5 . . . D#5 . F#5 . | G5 . E5 . C5 . E5 G5 | A5 . F#5 . D5 . F#5 A5 | B5 . G5 . E5 . B5 . | D#6 . . . B5 . . .'}},
+ {n:'Loki’s Last Trick', bpm:152, lead:'square', arpW:'square', bassW:'sawtooth', arp:'arp', bass:'root8', drums:'x.hsk.hs', echo:.12, form:['A','A','B','A','B'],
+  A:{ch:'Dm Dm Bb A Dm Dm Gm A', mel:'D5 F5 A5 D6 - A5 F5 D5 | E5 F5 G5 A5 - - D6 . | D6 - D6 C6 A#5 . F5 . | E5 . C#5 . A4 . - - | D5 F5 A5 D6 - A5 F5 D5 | F6 . E6 . D6 . A5 . | G5 A#5 D6 G6 F6 . D6 . | C#6 . E6 . A6 . . .'},
+  B:{ch:'Gm Dm Gm A Bb C Dm A', mel:'A#5 . A5 G5 . . D5 . | A5 . G5 F5 . . D5 . | G5 . A#5 . D6 . G6 . | E6 . . . C#6 . A5 . | D6 . A#5 . F5 . A#5 D6 | E6 . C6 . G5 . C6 E6 | F6 . D6 . A5 . F6 . | E6 . C#6 . A5 . . .'}},
+ {n:'Snow Fort Funk', bpm:108, lead:'square', arpW:'triangle', bassW:'sawtooth', arp:'stab', bass:'funk', drums:'x.hsxkhs', echo:0, swing:.12, form:['A','A','B','A'],
+  A:{ch:'Em A Em A Em A G A', mel:'E5 - G5 - A5 B5 - - | D6 - C#6 - B5 A5 - - | E5 - G5 A5 - B5 - D6 | C#6 . . A5 - - E5 - | B5 - B5 - A5 G5 - E5 | F#5 - A5 - C#6 . . - | B5 - D6 - B5 A5 G5 - | A5 . . . - - E5 F#5'},
+  B:{ch:'C D Em Em C D B B', mel:'G5 . E5 G5 - C6 - - | A5 . F#5 A5 - D6 - - | E6 - D6 - B5 - G5 - | E5 . . . - - - - | C6 - C6 - E6 - C6 - | D6 - D6 - F#6 - D6 - | D#6 . . B5 - F#5 - - | B5 . . . - - - -'}},
+ {n:'Surf the Glacier', bpm:168, lead:'sawtooth', arpW:'square', bassW:'triangle', arp:'arp', bass:'root8', drums:'k.hsk.hs', echo:.35, form:['A','A','B','A'],
+  A:{ch:'E E A A B A E B', mel:'E5 . G#5 . B5 . G#5 . | E6 . D#6 . B5 . G#5 . | A5 . C#6 . E6 . C#6 . | A6 . G#6 . E6 . C#6 . | B5 . D#6 . F#6 . . . | E6 . C#6 . A5 . . . | G#5 . B5 . E6 . B5 G#5 | F#5 . . . D#5 . . .'},
+  B:{ch:'C#m C#m A A E E B B', mel:'C#6 . E6 . G#6 . E6 . | C#6 . . . G#5 . . . | A5 . C#6 . E6 . A6 . | G#6 . F#6 . E6 . C#6 . | B5 . . . G#5 . E5 . | B5 . E6 . G#6 . B6 . | A6 . F#6 . D#6 . B5 . | F#5 . . . - - - -'}},
+ {n:'Penguin Ska', bpm:156, lead:'square', arpW:'square', bassW:'triangle', arp:'off', bass:'walk', drums:'k.s.k.s.', echo:0, form:['A','B','A','B'],
+  A:{ch:'C Am F G C Am Dm G', mel:'E5 . G5 . E5 . C5 . | A5 . C6 . A5 . E5 . | F5 . A5 . C6 . A5 . | G5 . B5 . D6 . . . | C6 . B5 . A5 . G5 . | E5 . G5 . A5 . . . | F5 . E5 . D5 . F5 . | G5 . . . - - - -'},
+  B:{ch:'F F C C F G C C', mel:'A5 - A5 - C6 - A5 - | F5 . . . A5 . . . | G5 - G5 - C6 - G5 - | E5 . . . G5 . . . | F5 . A5 . C6 . F6 . | D6 . B5 . G5 . B5 . | C6 . . . . . . . | - - G5 . E5 . C5 .'}},
+ {n:'Moonlight Waltz', bpm:132, beats:6, lead:'triangle', arpW:'triangle', bassW:'sine', arp:'waltz', bass:'waltz', drums:'k.h.h.', echo:.3, form:['A','A','B','A'],
+  A:{ch:'G D Em C G D C D', mel:'B5 . . . D6 . | A5 . . . F#5 . | G5 . . B5 E6 . | E6 . . . C6 . | D6 . . B5 G5 . | A5 . . F#5 D5 . | E5 . G5 . C6 . | A5 . . . . .'},
+  B:{ch:'Em Bm C G Am D G G', mel:'G6 . . . E6 . | F#6 . . . D6 . | E6 . . D6 C6 . | B5 . . . G5 . | A5 . C6 . E6 . | D6 . . C6 A5 . | G5 . . . . . | - - D5 . G5 .'}},
+ {n:'Sleepy Bwird Lullaby', bpm:70, lead:'sine', arpW:'triangle', bassW:'sine', arp:'pad', bass:'whole', drums:'', echo:.4, form:['A','B','A'],
+  A:{ch:'F C Dm Bb F C Bb F', mel:'C6 . . . A5 . . . | G5 . . . E5 . . . | F5 . A5 . D6 . . . | D6 . . C6 A#5 . . . | A5 . . . C6 . . . | G5 . . . E5 . G5 . | F5 . . . D5 . . . | F5 . . . - - - -'},
+  B:{ch:'Bb C Am Dm Bb C F F', mel:'D6 . . . F6 . . . | E6 . . . C6 . . . | C6 . . . A5 . . . | D6 . . . A5 . . . | A#5 . . . D6 . . . | C6 . . . G5 . . . | A5 . . . . . . . | - - - - - - - -'}},
+ {n:'Haunted Igloo', bpm:118, lead:'triangle', arpW:'sine', bassW:'triangle', arp:'arp', bass:'walk', drums:'k..hk.s.', echo:.3, form:['A','B','A'],
+  A:{ch:'Cm Ab G Cm Cm Fm G G', mel:'C5 . D#5 . G5 . . F#5 | G5 . D#5 . C5 . . . | D5 . G5 . B5 . . A#5 | C6 . G5 . D#5 . . . | G5 . G#5 . G5 . F5 . | G#5 . F5 . C5 . . . | B4 . D5 . F5 . G#5 . | G5 . . . - - - -'},
+  B:{ch:'Fm Cm Fm Cm Ab G Cm Cm', mel:'F5 . G#5 . C6 . . . | D#6 . D6 . C6 . . . | G#5 . C6 . F6 . . . | D#6 . . . C6 . . . | C6 . D#6 . G#6 . . . | G6 . F6 . D6 . B5 . | C6 . . . G5 . . . | C5 . - - - - - -'}},
+ {n:'Rocket Rave', bpm:128, lead:'sawtooth', arpW:'square', bassW:'sawtooth', arp:'arp', bass:'root8', drums:'khShkhSh', echo:.25, form:['A','A','B','A','B'],
+  A:{ch:'Am Am F F C C G G', mel:'A5 - A5 - C6 - A5 - | E6 - D6 - C6 - B5 - | A5 - A5 - C6 - A5 - | F6 - E6 - C6 - A5 - | G5 - G5 - C6 - G5 - | E6 - D6 - C6 - G5 - | B5 - D6 - G6 - D6 - | B5 . . . D6 . . .'},
+  B:{ch:'Am F C G Am F G G', mel:'E6 . . . A6 . . . | F6 . . . C6 . . . | G6 . . . E6 . . . | D6 . . . B5 . . . | C6 . E6 . A6 . E6 . | A5 . C6 . F6 . C6 . | B5 . D6 . G6 . B6 . | A6 . G6 . F6 . D6 .'}},
+ {n:'Swing Shift Sledding', bpm:150, lead:'square', arpW:'triangle', bassW:'triangle', arp:'stab', bass:'walk', drums:'x.h.s.h.', echo:0, swing:.33, form:['A','A','B','A'],
+  A:{ch:'F Dm Gm C F Dm Gm C', mel:'A5 . C6 A5 F5 . . . | D6 . C6 A5 F5 . . . | G5 A#5 D6 A#5 G5 . F5 . | E5 . G5 . C6 . . . | F6 . E6 D6 C6 . A5 . | D6 . A5 . F5 . D5 . | A#5 . A5 G5 F5 . E5 . | G5 . . . - - C6 .'},
+  B:{ch:'Bb Bb F F G G C C', mel:'D6 . . F6 D6 . A#5 . | F5 . A#5 . D6 . . . | C6 . . A5 F5 . A5 . | C6 . . . A5 . . . | B5 . D6 . G6 . F6 . | D6 . B5 . G5 . . . | C6 . E6 . G6 . E6 . | C6 . . . - - - -'}},
 ];
 const NOTE = {C:0, 'C#':1, Db:1, D:2, 'D#':3, Eb:3, E:4, F:5, 'F#':6, Gb:6, G:7, 'G#':8, Ab:8, A:9, 'A#':10, Bb:10, B:11};
 const pn = tk => { const m = /^([A-G][#b]?)(\d)$/.exec(tk); return m ? NOTE[m[1]] + 12*(+m[2] + 1) : null; };
@@ -82,16 +113,19 @@ const snare = (t, v) => { const s2 = ctx.createBufferSource(), f = ctx.createBiq
   g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + .13); s2.connect(f); f.connect(g); g.connect(master); s2.start(t); s2.stop(t + .14); };
 const scheduleSong = () => { if (!songC) songC = compile(SONGS[si]);
   while (nextT < ctx.currentTime + .25) { if (sstep >= songC.mel.length) { si = (si + 1) % SONGS.length; sstep = 0; songC = compile(SONGS[si]); try { localStorage.setItem(KEY + '-song', si); } catch(e){} }
-    const {S, mel, ch} = songC, e = 60 / S.bpm / 2, i = sstep, bar = Math.floor(i / 8), beat = i % 8, C = ch[Math.min(bar, ch.length - 1)], t = nextT;
+    const {S, mel, ch} = songC, BB = S.beats || 8, e = 60 / S.bpm / 2, i = sstep, bar = Math.floor(i / BB), beat = i % BB, C = ch[Math.min(bar, ch.length - 1)], t = nextT + (beat % 2 ? e*(S.swing || 0) : 0);
     const m = mel[i]; if (m != null && m !== 'h') { let len = 1; while (mel[i + len] === 'h' && len < 8) len++; note(mtof(m), t, e*len*.92, S.lead, S.lead == 'sawtooth' ? .035 : S.lead == 'sine' ? .07 : .05, S.echo); }
     const tones = [C.r, C.r + (C.minor ? 3 : 4), C.r + 7];
     if (S.arp == 'arp') note(mtof(60 + [tones[0], tones[1], tones[2], tones[0] + 12][beat % 4]), t, e*.8, S.arpW, .02);
-    else if (S.arp == 'pad' && beat == 0) tones.forEach(x => note(mtof(60 + x), t, e*7.6, S.arpW, .016));
+    else if (S.arp == 'pad' && beat == 0) tones.forEach(x => note(mtof(60 + x), t, e*(BB - .4), S.arpW, .016));
+    else if ((S.arp == 'off' && beat % 2 == 1) || (S.arp == 'stab' && (beat == 2 || beat == 6)) || (S.arp == 'waltz' && (beat == 2 || beat == 4))) tones.forEach(x => note(mtof(60 + x), t, e*.55, S.arpW, .018));
     const b = 36 + C.r;
     if (S.bass == 'root8') note(mtof(b + (beat % 2 ? 12 : 0)), t, e*.9, S.bassW, .06);
     else if (S.bass == 'walk') { if (beat % 2 == 0) note(mtof(b + [0, 7, 12, 7][beat/2]), t, e*1.8, S.bassW, .07); }
+    else if (S.bass == 'funk') { const f2 = [0, null, 12, 0, null, 7, 10, 12][beat]; if (f2 != null) note(mtof(b + f2), t, e*.8, S.bassW, .065); }
+    else if (S.bass == 'waltz') { if (beat == 0) note(mtof(b), t, e*1.8, S.bassW, .08); }
     else if (beat == 0 || beat == 4) note(mtof(b), t, e*3.8, S.bassW, .08);
-    const dr = (S.drums || '')[beat]; if (dr == 'k' || dr == 'x') kick(t, .12); if (dr == 'h' || dr == 'x') hat(t, .022); if (dr == 's') snare(t, .06);
+    const dr = (S.drums || '')[beat]; if (dr == 'k' || dr == 'x' || dr == 'S') kick(t, .12); if (dr == 'h' || dr == 'x') hat(t, .022); if (dr == 's' || dr == 'S') snare(t, .06);
     nextT += e; sstep++; } };
 const schedule = () => { if (!cur || !ctx) return; if (track == 'playlist' && !dramatic()) { scheduleSong(); return; } const {M, deg, mel} = cur, e = 60 / M.bpm / 2;   // one eighth note
   while (nextT < ctx.currentTime + .25) { const i = step % mel.length, bar = Math.floor(i / 8) % 4, c = M.prog[bar], t = nextT, beat = i % 8, V = M.vol;
