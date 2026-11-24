@@ -294,6 +294,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
           <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;"><sc-if value="{{ showCash }}" hint-placeholder-val="{{ true }}"><button onClick="{{ cashOutGame }}" title="End this run now and collect tickets for your score so far" style="background:#F9BF01; color:#121313; border:none; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;">{{ cashLabel }}</button></sc-if>
 <button onClick="{{ toggleFs }}" title="Full screen (Y)" style="background:#ffffff; color:#015640; border:1.5px solid #015640; border-radius:999px; padding:7px 12px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;">{{ fsLabel }}</button><button onClick="{{ closeGame }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;">Save &amp; leave · Esc</button></div>
         </div>
+        <div style="display:{{ optDisp }}; flex-direction:column; gap:12px; position:{{ optPos }}; top:{{ optTop }}; right:{{ optRight }}; width:{{ optW }}; max-height:{{ optMaxH }}; overflow-y:auto; z-index:{{ optZ }}; background:#EDE9D8; border-radius:16px; padding:{{ optPad }}; box-sizing:border-box; box-shadow:{{ optShadow }};">
         <div style="display:flex; flex-wrap:wrap; align-items:center; gap:8px; font-size:14px; font-weight:700;">
           <div style="background:#ffffff; border-radius:999px; padding:6px 14px;">Score <span style="color:#015640;">{{ liveScore }}</span></div>
           <div style="background:#ffffff; border-radius:999px; padding:6px 14px;">Best <span style="color:#015640;">{{ game.best }}</span></div>
@@ -344,8 +345,16 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
             </sc-for>
           </div>
         </sc-if>
+        </div>
         <div ref="{{ boxRef }}" style="width:{{ boxWcss }}; height:{{ boxHcss }}; position:{{ boxPos }}; inset:{{ boxInset }}; z-index:{{ boxZ }}; background:{{ boxBg }}; align-self:center; touch-action:{{ boxTouch }};">
-          <sc-if value="{{ fsOn }}" hint-placeholder-val="{{ false }}"><div style="position:absolute; left:0; right:0; top:0; height:48px; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:0 12px; box-sizing:border-box; color:#D5F367; font-weight:700; font-size:14px;"><span>{{ game.title }} · score {{ liveScoreFmt }}</span><span style="display:flex; gap:6px;"><sc-if value="{{ showCash }}" hint-placeholder-val="{{ true }}"><button onClick="{{ cashOutGame }}" style="background:#F9BF01; color:#121313; border:none; border-radius:999px; padding:7px 12px; font-weight:700; font-size:13px; cursor:pointer;">{{ cashLabel }}</button></sc-if><button onClick="{{ toggleFs }}" style="background:#D5F367; color:#015640; border:none; border-radius:999px; padding:7px 12px; font-weight:800; font-size:13px; cursor:pointer;">{{ fsExit }}</button></span></div></sc-if>
+          <sc-if value="{{ fsOn }}" hint-placeholder-val="{{ false }}"><div style="position:absolute; left:0; right:0; top:0; height:48px; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:0 max(10px, env(safe-area-inset-right)) 0 max(10px, env(safe-area-inset-left)); box-sizing:border-box; color:#D5F367; font-weight:700; font-size:14px; z-index:2;">
+            <span style="min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><span style="display:{{ fsTitleDisp }};">{{ game.title }} · </span>Score <span style="color:#ffffff;">{{ liveScoreFmt }}</span> · Best <span style="color:#ffffff;">{{ game.best }}</span><sc-if value="{{ game.daily }}" hint-placeholder-val="{{ false }}"> · 🎯 {{ game.target }}</sc-if></span>
+            <span style="display:flex; gap:6px; flex-shrink:0;">
+              <sc-if value="{{ hintBtn }}" hint-placeholder-val="{{ false }}"><button onClick="{{ hintBtn.run }}" style="border:none; border-radius:999px; padding:7px 12px; font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap; background:{{ hintBtn.bg }}; color:{{ hintBtn.fg }};">{{ hintBtn.label }}</button></sc-if>
+              <button onClick="{{ toggleOpts }}" aria-expanded="{{ optsExpanded }}" title="Difficulty, Learn mode, tips and more" style="background:{{ optsBg }}; color:{{ optsFg }}; border:none; border-radius:999px; padding:7px 12px; font-family:inherit; font-weight:800; font-size:13px; cursor:pointer; white-space:nowrap;">⚙ {{ optsLabel }}</button>
+              <sc-if value="{{ showCash }}" hint-placeholder-val="{{ true }}"><button onClick="{{ cashOutGame }}" style="background:#F9BF01; color:#121313; border:none; border-radius:999px; padding:7px 12px; font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap;">{{ cashLabel }}</button></sc-if>
+              <button onClick="{{ closeGame }}" title="Save and go back to the arcade (Esc)" style="background:#D5F367; color:#015640; border:none; border-radius:999px; padding:7px 12px; font-family:inherit; font-weight:800; font-size:13px; cursor:pointer; white-space:nowrap;">{{ leaveLabel }}</button>
+            </span></div></sc-if>
           <div ref="{{ gameRef }}" style="position:absolute; left:{{ gameLeft }}px; top:{{ gameTop }}px; width:{{ gameW }}px; min-height:480px; transform:scale({{ gameScale }}); transform-origin:0 0;"></div>
         </div>
         <sc-if value="{{ padShow }}" hint-placeholder-val="{{ false }}">
@@ -1686,7 +1695,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-12-05o';
+const BUILD = '2026-12-05p';
 const SCRIPTS = ['arcade-core.js','music.js','prizes-more.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js','games-secrets.js','games-more.js','games-more2.js','games-more3.js'];
 const fmt = n => fmtN(Math.round(n));
 
@@ -1830,9 +1839,9 @@ class Component extends DCLogic {
     (async()=>{ for (const s of SCRIPTS) await new Promise(r=>{ const e=document.createElement('script'); e.src=s+'?v='+BUILD; e.onload=r; e.onerror=r; document.head.appendChild(e); }); this.ready=true; })();
     this.kd = e => {
       const k = e.key.length==1 ? e.key.toLowerCase() : e.key;
-      if (k=='Escape') { if (this.state.menuOpen) { this.setState({menuOpen:false}); return; } if (this.state.fs) { this.setFs(false); return; } if (this.state.chatOpen) { this.closeChat(); return; } this.closeAll(); this.setState({codeOpen:false}); return; }
+      if (k=='Escape') { if (this.state.menuOpen) { this.setState({menuOpen:false}); return; } if (this.state.fsOpts) { this.setState({fsOpts:false}); return; } if (this.state.chatOpen) { this.closeChat(); return; } this.closeAll(); this.setState({codeOpen:false}); return; }
       if (k=='y' && !this.state.game && !this.state.chatOpen && !(e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName))) { e.preventDefault(); this.siteFs(); return; }
-      if (k=='y' && this.state.game && !(e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) && !(this.state.game=='typing' && !e.shiftKey)) { e.preventDefault(); this.setFs(!this.state.fs); return; }
+      if (k=='y' && this.state.game && !(e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) && !(this.state.game=='typing' && !e.shiftKey)) { e.preventDefault(); this.siteFs(); return; }
       const tg = e.target && e.target.tagName; if (tg=='INPUT' || tg=='TEXTAREA' || tg=='SELECT') return;
       if (this.state.kickUntil > Date.now() && !this.state.admin) return;
       if (k=='t' && !this.state.calOpen && !this.state.chatOpen && !this.state.game && !this.state.codeOpen && !this.state.authOpen) { e.preventDefault(); this.openChat(); return; }
@@ -2238,7 +2247,7 @@ class Component extends DCLogic {
     else { window.Arcade && window.Arcade.sfx('bad'); this.setState({codeMsg:'Code not recognised', codeVal:''}); } }
   open(id){ this.keys = {}; if (!this.downPassOK()) { this.toast('THE ARCADE IS CLOSED FOR MAINTENANCE'); return; } this.setState({game:id, liveScore:0, payout:''});
     const touch = typeof window != 'undefined' && (window.innerWidth < 820 || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches));
-    let autoFs = true; try { autoFs = localStorage.getItem('wl-autofs') !== '0'; } catch(e){} if ((touch || FS_GAMES.includes(id)) && autoFs && !this.state.fs) this.setFs(true); }
+    let autoFs = true; try { autoFs = localStorage.getItem('wl-autofs') !== '0'; } catch(e){} this.setState({fsOpts:false}); if (autoFs && !this.state.fs) this.setFs(true); }
   closeAll(){ const saved = this.unmountGame(); this.keys = {}; Object.keys(this.padHeld).forEach(k=>{ if (this.padHeld[k]) fireKey(k,'keyup'); }); this.padHeld = {};
     setTimeout(()=>window.WLA && window.WLA.pump(), 400); if (this.state.fs) this.setFs(false);
     this.setState({game:null, homeOpen:false, sugOpen:false, shopOpen:false, avOpen:false, prizesOpen:false, payout:'', authOpen:false, achOpen:false, learnOpen:false, lbOpen:false, uOpen:false, clearArm:false}); if (saved) this.toast('GAME SAVED · PICK IT UP ANY TIME'); }
@@ -2313,7 +2322,7 @@ class Component extends DCLogic {
     const guestP = !s.account && s.authOpen && isSignup ? this.P : null;
     // layout
     const vw = s.vw || 1200, narrow = vw < 760, GW = (s.game && GAMEW[s.game]) || 480, modalW = Math.min(GW+40, vw-16), modalPad = vw<560 ? 12 : 20;
-    const vh = s.vh || (typeof window!='undefined' ? window.innerHeight : 800), GH = s.gameH||480, fsOn = !!(s.fs && s.game);
+    const vh = s.vh || (typeof window!='undefined' ? window.innerHeight : 800), GH = s.gameH||480, fsOn = !!s.game;   // every game fills the whole screen
     const padRes = fsOn && s.game && PADS[s.game] && s.padOn ? 128 : 0;
     // full screen fits the whole game on screen; the windowed view also shrinks tall games to fit the screen height
     const gameScale = fsOn ? Math.min((vw-8)/GW, (vh-56-padRes)/GH) : Math.max(.45, Math.min(1, (modalW-2*modalPad)/GW, (vh-110)/GH));
@@ -2334,6 +2343,9 @@ class Component extends DCLogic {
     const mkPad = key => ({down: e=>{ if (e && e.preventDefault) e.preventDefault(); this.padHeld[key] = 1; fireKey(key,'keydown'); }, up: ()=>{ if (this.padHeld[key]) { this.padHeld[key] = 0; fireKey(key,'keyup'); } }});
     const R0 = {
       narrow, wide: !narrow, mainPad: narrow ? '14px 12px' : '20px 24px', headPad: narrow ? '12px 14px' : '14px 24px', logoH: narrow ? '22px' : '30px', rbWordDisp: narrow ? 'none' : 'inline', brandFs: narrow ? '14px' : '18px', brandLs: narrow ? '0.12em' : '0.189em', floorH: FH, exY1018: 1018+EY, exY950: 950+EY, exY892: 892+EY, exY890: 890+EY,
+      fsOpts: !!s.fsOpts, toggleOpts: ()=>this.setState({fsOpts:!s.fsOpts}), optsExpanded: s.fsOpts ? 'true' : 'false', optsLabel: vw < 560 ? '' : 'Options', optsBg: s.fsOpts ? '#ffffff' : 'rgba(255,255,255,.16)', optsFg: s.fsOpts ? '#015640' : '#ffffff',
+      leaveLabel: vw < 560 ? '⏏ Leave' : '⏏ Save & leave · Esc', fsTitleDisp: vw < 720 ? 'none' : 'inline',
+      optDisp: !fsOn || s.fsOpts ? 'flex' : 'none', optPos: fsOn ? 'fixed' : 'static', optTop: fsOn ? '52px' : 'auto', optRight: fsOn ? 'max(8px, env(safe-area-inset-right))' : 'auto', optW: fsOn ? 'min(560px, calc(100vw - 16px))' : 'auto', optMaxH: fsOn ? 'calc(100vh - 64px)' : 'none', optZ: fsOn ? 760 : 'auto', optPad: fsOn ? '14px' : '0', optShadow: fsOn ? '0 14px 40px rgba(0,0,0,.45)' : 'none',
       modalW, modalPad, gameScale, gameBoxW: Math.round(GW*gameScale), gameBoxH: Math.round(GH*gameScale), gameW: GW, fsOn, liveScoreFmt: fmtN(s.liveScore||0), toggleFs: ()=>this.setFs(!s.fs), fsExit: vw < 560 ? 'Exit · Y' : 'Exit full screen · Y', fsLabel: s.game=='typing' ? '⛶ Full screen · Shift+Y' : '⛶ Full screen · Y',
       boxPos: fsOn ? 'fixed' : 'relative', boxInset: fsOn ? '0' : 'auto', boxZ: fsOn ? 700 : 'auto', boxBg: fsOn ? '#0b2e24' : 'transparent', boxWcss: fsOn ? '100vw' : Math.round(GW*gameScale)+'px', boxHcss: fsOn ? '100vh' : Math.round(GH*gameScale)+'px',
       gameLeft: fsOn ? Math.max(0, Math.round((vw - GW*gameScale)/2)) : 0, gameTop: fsOn ? 48 + Math.max(0, Math.round((vh - 52 - padRes - GH*gameScale)/2)) : 0, padPos: fsOn ? 'fixed' : 'static', padBottom: fsOn ? 'max(10px, env(safe-area-inset-bottom))' : 'auto', padZ: fsOn ? 720 : 'auto', boxRef: this.boxRef, boxTouch: s.game && SWIPE.includes(s.game) ? 'none' : 'manipulation',
