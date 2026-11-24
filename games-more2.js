@@ -398,6 +398,10 @@ A.register('fishing', { mount(host, api){
   const G = Object.assign({coins:0, upg:{}, loc:'lake', locs:{lake:1}, best:0, deepest:0, pearls:0, run:0, tot:0, dives:0, caught:0}, (api.gdata && api.gdata().fg) || {});
   const UL = k => G.upg[k] || 0;
   const spd = k => Math.max(10, Math.min(100, G[k] == null ? 100 : G[k])) / 100;   // speed sliders: 10–100% of your upgraded speed
+  // 📏 Depth slider: let out only part of your line (from 25 m up to the whole line) so shallow fish are reachable again
+  // a short line never moves so fast you can't fish it: each way takes at least ~3 s
+  const capV = v => Math.min(v, Math.max(20, maxD / 3));
+  const lineUse = () => { const full = lineM(UL('line')); return G.lineCap == null ? full : Math.max(25, Math.min(full, G.lineCap)); };
   const skipMax = () => Math.min(80, 8*UL('drop')) + (UL('drop') >= 10 ? 5*UL('deepmap') : 0), skipPct = () => G.skip == null ? skipMax() : Math.max(0, Math.min(skipMax(), G.skip));
   const save = () => { try { api.setGdata && api.setGdata({book:book(), fg:G}); } catch(e){} try { localStorage.setItem('wl-fishbook', JSON.stringify(book())); } catch(e){} };
   const LOC = () => LOCS.find(L => L.k == G.loc) || LOCS[0];
@@ -453,7 +457,7 @@ A.register('fishing', { mount(host, api){
     save(); try { api.jackpot && api.jackpot('🌍 FISH!!'); } catch(e){} stat(api, 'fishFISH', 1, 'add'); refreshBar(); };
   const ohChance = d => Math.min(1, Math.max(0, d) * 1e-12); let ohT = 0;
   const ohTxt = d => { const p = ohChance(d) * 100; return p >= 1 ? p.toFixed(p >= 10 ? 0 : 1) + '%' : p >= .001 ? p.toPrecision(2) + '%' : p.toExponential(1).replace('e-', '×10⁻').replace(/⁻(\d+)/, (m, n) => '⁻' + n.split('').map(c => '⁰¹²³⁴⁵⁶⁷⁸⁹'[c]).join('')) + '%'; };
-  const startDive = () => { ohT = 0; genUp = -1; if (panel) closePanel(); maxD = lineM(UL('line')); skipD = Math.floor(maxD * skipPct() / 100); fish = []; genTo = Math.max(1, skipD); caught = []; ghostN = UL('ghost'); shieldN = UL('shield');
+  const startDive = () => { ohT = 0; genUp = -1; if (panel) closePanel(); maxD = lineUse(); skipD = Math.floor(maxD * skipPct() / 100); fish = []; genTo = Math.max(1, skipD); caught = []; ghostN = UL('ghost'); shieldN = UL('shield');
     combo = 0; hd = skipD; hx = tx != null ? tx : W/2; phase = 'drop'; lastZone = -1; A.tone(300, .15, 'sine', .05); if (skipD) say('Express drop to '+fmt(skipD)+' m', 1.2); refreshBar(); };
   const startReel = why => { if (phase != 'drop') return; phase = 'reel'; combo = 0; lastCatch = -9; if (why) say(why, 1.6); A.sfx('blip'); refreshBar(); };
   const catchIt = o => { const v = fishVal(o.f, o.d) * (o.gold ? 5 : 1), p = fishPts(o.f, o.d) * (o.gold ? 2 : 1);
@@ -487,12 +491,21 @@ A.register('fishing', { mount(host, api){
   const skipIn = el('input', {width:'120px', accentColor:'#00B451'}); skipIn.type = 'range'; skipIn.min = 0; skipIn.step = 1; skipIn.tabIndex = -1;
   const skipTx = el('span', {minWidth:'92px'}); skipBox.appendChild(el('span', {}, '⏬ Skip')); skipBox.appendChild(skipIn); skipBox.appendChild(skipTx); bar.appendChild(skipBox);
   skipIn.addEventListener('pointerdown', e => e.stopPropagation()); skipIn.addEventListener('keydown', e => e.stopPropagation());
-  skipIn.addEventListener('input', () => { G.skip = +skipIn.value; skipTx.textContent = skipIn.value + '% · ' + fmt(Math.floor(lineM(UL('line')) * skipPct() / 100)) + ' m'; });
+  skipIn.addEventListener('input', () => { G.skip = +skipIn.value; skipTx.textContent = skipIn.value + '% · ' + fmt(Math.floor(lineUse() * skipPct() / 100)) + ' m'; });
   skipIn.addEventListener('change', () => { save(); skipIn.blur(); });
+  const depBox = el('label', {display:'flex', alignItems:'center', gap:'6px', background:'rgba(1,86,64,.12)', borderRadius:'999px', padding:'4px 12px', font:'700 13px '+A.font, color:'#015640'});
+  const depIn = el('input', {width:'120px', accentColor:'#00B451'}); depIn.type = 'range'; depIn.min = 0; depIn.max = 1000; depIn.step = 1; depIn.tabIndex = -1; const depTx = el('span', {minWidth:'110px'});
+  depBox.appendChild(el('span', {}, '📏 Depth')); depBox.appendChild(depIn); depBox.appendChild(depTx); bar.appendChild(depBox);
+  const depFrom = v => { const full = lineM(UL('line')); if (v >= 1000) return null; return Math.round(Math.exp(Math.log(25) + (Math.log(Math.max(26, full)) - Math.log(25)) * v / 1000)); };
+  const depTo = () => { const full = lineM(UL('line')); if (G.lineCap == null || G.lineCap >= full) return 1000; return Math.round(1000 * (Math.log(Math.max(25, G.lineCap)) - Math.log(25)) / (Math.log(Math.max(26, full)) - Math.log(25))); };
+  const depShow = () => { const u = lineUse(); depTx.textContent = fmt(u) + ' m' + (G.lineCap == null || u >= lineM(UL('line')) ? ' (all)' : ' · ' + zoneName(u).split(' · ')[0]); };
+  depIn.addEventListener('pointerdown', e => e.stopPropagation()); depIn.addEventListener('keydown', e => e.stopPropagation());
+  depIn.addEventListener('input', () => { G.lineCap = depFrom(+depIn.value); depShow(); try { sinkSl.show(); reelSl.show(); } catch(e){} if (typeof skipTx != 'undefined') skipTx.textContent = skipPct() + '% · ' + fmt(Math.floor(lineUse() * skipPct() / 100)) + ' m'; });
+  depIn.addEventListener('change', () => { save(); depIn.blur(); });
   // speed sliders: how fast the hook sinks and reels (10–100% of what your upgrades give)
   const speedSlider = (key, label, fn) => { const box = el('label', {display:'flex', alignItems:'center', gap:'6px', background:'rgba(1,86,64,.12)', borderRadius:'999px', padding:'4px 12px', font:'700 13px '+A.font, color:'#015640'});
     const inp = el('input', {width:'100px', accentColor:'#00B451'}); inp.type = 'range'; inp.min = 10; inp.max = 100; inp.step = 5; inp.tabIndex = -1; const tx = el('span', {minWidth:'92px'});
-    const show = () => { inp.value = Math.round(spd(key)*100); tx.textContent = inp.value + '% · ' + fmt(fn() * spd(key)) + ' m/s'; };
+    const show = () => { inp.value = Math.round(spd(key)*100); tx.textContent = inp.value + '% · ' + fmt(Math.min(fn() * spd(key), Math.max(20, lineUse() / 3))) + ' m/s'; };
     box.appendChild(el('span', {}, label)); box.appendChild(inp); box.appendChild(tx); bar.appendChild(box);
     inp.addEventListener('pointerdown', e => e.stopPropagation()); inp.addEventListener('keydown', e => e.stopPropagation());
     inp.addEventListener('input', () => { G[key] = +inp.value; show(); }); inp.addEventListener('change', () => { save(); inp.blur(); }); return {box, show}; };
@@ -503,9 +516,9 @@ A.register('fishing', { mount(host, api){
   const drawGhost = () => { ghostBox.innerHTML = ''; ghostBox.appendChild(el('span', {padding:'0 4px'}, '👻 Ignore')); const mx = Math.min(3, UL('ghost')), cur = ghostTier();
     ['Off', 'Common', '≤ Uncommon', '≤ Rare'].slice(0, mx + 1).forEach((n, k) => { const b = mk(n, () => { G.ghostSel = k; save(); drawGhost(); }, cur == k ? '#015640' : 'transparent', cur == k ? '#fff' : '#015640'); b.style.padding = '4px 9px'; b.style.fontSize = '12px'; if (cur != k) b.style.border = '1.5px solid rgba(1,86,64,.35)'; ghostBox.appendChild(b); }); };
   function refreshBar(){ const dive = st == 'play' && (phase == 'drop' || phase == 'reel'); [bUp, bSpot, bPearl, bMix].forEach(b => b.style.display = dive ? 'none' : ''); bReel.style.display = st == 'play' && phase == 'drop' ? '' : 'none'; bSlow.style.display = dive ? '' : 'none'; if (!dive) slowHeld = false;
-    [sinkSl, reelSl].forEach(o => { o.box.style.display = dive ? 'none' : 'flex'; o.show(); });
+    [sinkSl, reelSl].forEach(o => { o.box.style.display = dive ? 'none' : 'flex'; o.show(); }); depBox.style.display = dive ? 'none' : 'flex'; depIn.value = depTo(); depShow();
     ghostBox.style.display = UL('ghost') > 0 && !dive ? 'flex' : 'none'; if (UL('ghost') > 0) drawGhost();
-    const sm = skipMax(); skipBox.style.display = sm > 0 && !dive ? 'flex' : 'none'; if (sm > 0) { skipIn.max = sm; skipIn.value = skipPct(); skipTx.textContent = skipPct() + '% · ' + fmt(Math.floor(lineM(UL('line')) * skipPct() / 100)) + ' m'; } }
+    const sm = skipMax(); skipBox.style.display = sm > 0 && !dive ? 'flex' : 'none'; if (sm > 0) { skipIn.max = sm; skipIn.value = skipPct(); skipTx.textContent = skipPct() + '% · ' + fmt(Math.floor(lineUse() * skipPct() / 100)) + ' m'; } }
   function closePanel(){ if (panel) { panel.remove(); panel = null; } armPearl = false; try { refreshBar(); } catch(e){} }
   function openPanel(tab){ if (st == 'play' && (phase == 'drop' || phase == 'reel')) return; panelTab = tab; closePanel();
     panel = el('div', {position:'absolute', left:0, top:0, width:W+'px', height:H+'px', background:'rgba(6,30,44,.97)', borderRadius:'12px', zIndex:5, color:'#fff', display:'flex', flexDirection:'column', boxSizing:'border-box', padding:'12px'});
@@ -640,14 +653,14 @@ A.register('fishing', { mount(host, api){
       if (kx) { tx = null; hx += kx * sp * dt; } else if (tx != null) { const dx = tx - hx; hx += Math.sign(dx) * Math.min(Math.abs(dx), sp*dt); } hx = clamp(hx, 14, W - 14);
       for (const o of fish) { if (o.dead) continue; const y = sy(o.d); if (y < -200 || y > H + 200) continue; o.x += o.vx * dt; if (o.x < -30) o.x = W + 30; if (o.x > W + 30) o.x = -30; }
       const prevD = hd;
-      if (phase == 'drop') { hd += sinkV(UL('sink')) * spd('sinkPct') * slowF() * dt; const pD = ride(prevD, 1, dt); gen(hd + 160);
+      if (phase == 'drop') { hd += capV(sinkV(UL('sink')) * spd('sinkPct')) * slowF() * dt; const pD = ride(prevD, 1, dt); gen(hd + 160);
         const z = zoneOf(hd); if (z != lastZone) { if (lastZone >= 0 || z > 0) { zoneShow = zoneName(hd) + ' · ' + fmt(ZONES[z].d) + ' m'; zoneT = 2; } lastZone = z; }
         if (hd >= 2000 && layerOf(hd) != layerOf(prevD) && t - layerT > 1.5) { layerT = t; zoneShow = zoneName(hd); zoneT = 2; A.sfx('blip'); }
         for (const o of fish) { if (o.dead || o.jelly || o.passed || o.f.special == 'ohdang' || o.f.special == 'fishmax') continue; if (o.d < pD - 3 || o.d > hd + 3) continue; if (Math.abs(o.x - hx) < o.f.s + 7) {
             if (ghosty(o)) { o.passed = true; continue; }
             o.passed = true; if (caught.length < capN()) { catchIt(o); say('Hooked ' + (/^[AEIOU]/i.test(o.f.n) ? 'an ' : 'a ') + o.f.n + ' on the way down' + (caught.length >= capN() ? ' · hook full!' : ''), 1.2); } } }
         if (phase == 'drop' && hd >= maxD) { hd = maxD; startReel('End of the line! Reel up and grab fish'); } }
-      else if (phase == 'reel') { const full = caught.length >= capN(), turbo = full || hd < skipD ? 4 : 1; hd -= reelV(UL('reel')) * spd('reelPct') * turbo * slowF() * dt; const pD = ride(prevD, -1, dt); if (genUp >= 0) genAbove(hd - 160);
+      else if (phase == 'reel') { const full = caught.length >= capN(), turbo = full || hd < skipD ? 4 : 1; hd -= capV(reelV(UL('reel')) * spd('reelPct')) * turbo * slowF() * dt; const pD = ride(prevD, -1, dt); if (genUp >= 0) genAbove(hd - 160);
         if (!full) for (const o of fish) { if (o.dead) continue; if (o.d > pD + 4 || o.d < hd - 4) continue; const rad = (o.jelly ? 12 : o.f.s) + 8 + 3*UL('magnet');
           if (Math.abs(o.x - hx) < rad && Math.abs(o.d*PXM - hd*PXM) < rad + Math.abs(pD - hd)*PXM) {
             if (o.jelly) { o.dead = true; if (shieldN > 0) { shieldN--; A.tone(900, .06, 'sine', .04); say('Jelly Guard blocked a sting!', 1.2); continue; } if (!caught.length) { A.sfx('bad'); continue; }
