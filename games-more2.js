@@ -217,7 +217,8 @@ A.register('fishing', { mount(host, api){
       'Fwish Minnow|Blub Guppy|Wobble Perch|Fwishy Trout', 'Bloop Eel|Squish Ray|Gloop Bass|Wiggle Pike', 'Fwump Salmon|Blorp Sturgeon|Splish Swordfish|Splosh Grouper',
       'Glimmer Fwish|Twinkle Squid|Dazzle Eel|Fwish Koi', 'Mega Bloop|Fwish Shark|Ultra Wiggle|Fwish Serpent', 'Hyper Fwish|Fwish Octopus|Fwish Turtle|Fwish Dragon',
       'Giga Fwish|Fwish Whale|Fwish Kraken|Fwish Leviathan', 'Omega Fwish|Fwish King|Fwish Narwhal|The Almost-Biggest Fish']}];
-  const RN = ['Common','Uncommon','Rare','Epic','Legendary','Mythic','Godly','DANG','OH DANG!!!!','FISH!!'], RC = ['#c9ccd1','#7fe08a','#64CDF5','#E9B9F7','#F9BF01','#ff6ad5','#7df9ff','#ff3b3b','#ff7bff','#ffffff'];
+  const RN = ['Common','Uncommon','Rare','Epic','Legendary','Mythic','Godly','DANG','OH DANG!!!!','FISH!!','Ancient','Celestial','Cosmic','Eternal','BIRD!!','Secret'], RC = ['#c9ccd1','#7fe08a','#64CDF5','#E9B9F7','#F9BF01','#ff6ad5','#7df9ff','#ff3b3b','#ff7bff','#ffffff','#d89a5a','#9fe8ff','#b48cff','#ffd1f7','#ffffff','#ff9a3c'];
+  const mixR = f => f.r >= 10 ? 5 : f.r;   // the newer rarities count as Mythic for the bait mix
   const hue = s => { let h = 7; for (const ch of s) h = (h*31 + ch.charCodeAt(0)) % 360; return h; };
   // ---------- fish art: every species gets a body shape from what it is (eel, ray, shark, squid, puffer, whale, anglerfish,
   // crab, seahorse, turtle, dragon …), its own colors and a pattern. Real fish use their real colors. ----------
@@ -392,7 +393,7 @@ A.register('fishing', { mount(host, api){
         return {k:lk + '-ohdang', n, z:7, i:6, r:8, loc:lk, look:lo, get col(){ return this.look.col; }, s:58 * (lo.shape == 'whale' ? 1.15 : 1), special:'ohdang', minD:Infinity}; }
       if (j) { lo.col = 'hsl(0,85%,48%)'; lo.dark = 'hsl(0,80%,22%)'; lo.belly = 'hsl(20,90%,70%)'; lo.acc = '#121313'; } else { lo.col = 'hsl(48,100%,62%)'; lo.dark = 'hsl(40,90%,36%)'; lo.belly = '#fffbe6'; lo.acc = '#7df9ff'; }
       lo.glow = true; return {k:lk + '-' + (j ? 'dang' : 'godly'), n, z:6, i:4 + j, r:6 + j, loc:lk, look:lo, get col(){ return this.look.col; }, s:(j ? 25 : 22) * (lo.shape == 'whale' ? 1.1 : 1), special:j ? 'dang' : 'godly', minD:j ? 10000 : 5000}; }); });
-  const GUARD = LAYERS.map((Ly, j) => { const lo = mkLook(Ly.fish, 7, 3); lo.glow = true; return {k:'deep-' + j, n:Ly.fish, z:7, i:3, r:5, loc:'deep', look:lo, get col(){ return this.look.col; }, s:18 + j*.4, guard:j, minD:Ly.d}; });
+  const GUARD = LAYERS.map((Ly, j) => { const lo = mkLook(Ly.fish, 7, 3); lo.glow = true; return {k:'deep-' + j, n:Ly.fish, z:7, i:3, r:j < 15 ? 5 : j < 25 ? 10 : j < 35 ? 11 : j < 42 ? 12 : 13, loc:'deep', look:lo, get col(){ return this.look.col; }, s:18 + j*.4, guard:j, minD:Ly.d}; });
   // ⛵ Boats: buy them in order; each one looks different and adds hook space and coins (and sky bonuses for the flying ones)
   const BOATS = [
     {n:'Little Fishing Boat', cost:0, hook:0, coin:1, sky:1, hull:'#7a4a1e', trim:'#a0632a', rim:'#f3efe0', cabin:'#e8dcc0', roof:'#8D5B1D', flag:'#FF4539'},
@@ -415,10 +416,12 @@ A.register('fishing', { mount(host, api){
     'Comet Gull*|Orbit Ray|Asteroid Puffer|Galaxy Goose*', 'Warp Wren*|Wormhole Eel|Portal Parrot*|Twist Dragon', 'Prism Pelican*|Spectrum Ray|Rainbow Robin*|Color Whale', 'Sleepy Swan*|Dream Squid|Pillow Puffer|Dream Dragon',
     'Gear Hawk*|Cog Crab|Tick-Tock Toucan*|Clockwork Whale', 'Crystal Crane*|Diamond Ray|Glass Swan*|Prism Serpent', 'Every-Bird*|Infinity Eel|Cosmic Condor*|Sky Leviathan', 'Bwird Sparrow*|Bwird Owl*|Bwird Eagle*|Bwird Phoenix*']
     .map((row, z) => row.split('|').map((it, i) => { const bird = it.endsWith('*'), n = it.replace('*', ''), lo = mkLook(n, Math.min(7, z), i);
-      return {k:'sky-' + z + '-' + i, n, z, i, loc:'sky', r:Math.min(5, i + (z >= 4 ? 1 : 0) + (z >= 7 ? 1 : 0)), look:lo, get col(){ return this.look.col; }, s:(10 + i*2 + Math.min(z, 10)*.7) * (lo.shape == 'whale' ? 1.3 : 1), bird, sky:true}; }));
-  const BIRDMAX = (() => { const lo = mkLook('BIRD!! Rainbow Phoenix', 7, 3); lo.rainbow = true; return {k:'sky-BIRD', n:'BIRD!!', z:15, i:3, r:9, loc:'sky', look:lo, get col(){ return this.look.col; }, s:120, bird:true, sky:true, special:'birdmax'}; })();
+      return {k:'sky-' + z + '-' + i, n, z, i, loc:'sky', r:z >= 15 ? [11, 12, 13, 13][i] : z >= 12 ? [5, 10, 11, 12][i] : z >= 8 ? [4, 5, 10, 11][i] : Math.min(5, i + (z >= 4 ? 1 : 0) + (z >= 7 ? 1 : 0)), look:lo, get col(){ return this.look.col; }, s:(10 + i*2 + Math.min(z, 10)*.7) * (lo.shape == 'whale' ? 1.3 : 1), bird, sky:true}; }));
+  const BIRDMAX = (() => { const lo = mkLook('BIRD!! Rainbow Phoenix', 7, 3); lo.rainbow = true; return {k:'sky-BIRD', n:'BIRD!!', z:15, i:3, r:14, loc:'sky', look:lo, get col(){ return this.look.col; }, s:120, bird:true, sky:true, special:'birdmax'}; })();
   const SKYALL = [].concat(...SKY).concat([BIRDMAX]);
-  const ALL = [].concat(...LOCS.map(L => [].concat(...FISH[L.k]).concat(SPEC[L.k]))).concat(GUARD).concat([BOOT, CHEST]);
+  const SECRET = {}; [['lake', 'Secret Golden Minnow'], ['isle', 'Secret Snow Spirit'], ['coast', 'Secret Mermaid Fish'], ['vent', 'Secret Lava Pearl'], ['star', 'Secret Wishing Starfish'], ['fwish', 'Secret Fwish Fish']].forEach(([lk, n]) => {
+    const lo = mkLook(n, 7, 3); lo.glow = true; SECRET[lk] = {k:'secret-' + lk, n, z:7, i:3, r:15, loc:lk, look:lo, get col(){ return this.look.col; }, s:16, secret:true}; });
+  const ALL = [].concat(...LOCS.map(L => [].concat(...FISH[L.k]).concat(SPEC[L.k]))).concat(GUARD).concat(Object.values(SECRET)).concat([BOOT, CHEST]);
 
   // ---------- upgrades (bought with coins; levels never reset except by a Pearl Dive) ----------
   const UP = [
@@ -498,8 +501,8 @@ A.register('fishing', { mount(host, api){
   const luck = () => 1 + .12*UL('luck') + .15*A.U('lure') + (UL('sonar') >= 3 ? .15 : 0) + (isNight() ? .3 : 0);
   function buddyRate(L) { const z = zoneOf(G.best||0); return L ? fin(L * .35 * 4 * Math.pow(2.3, z) * Math.sqrt(depthMult(Math.min(G.best||0, lineUse()))) * LOC().mult * coinMult()) : 0; }
   const fishVal = (f, d) => fin(fishVal0(f, d)), fishPts = (f, d) => fin(fishPts0(f, d));   // never ∞, however deep
-  const fishVal0 = (f, d) => f.guard != null ? 4 * Math.pow(2.3, 7) * 30 * LOC().mult * depthMult(d) : f.special ? 4 * Math.pow(2.3, zoneOf(d)) * ({dang:500, godly:60, ohdang:1e6, fishmax:1e9})[f.special] * LOC().mult * depthMult(d) : f.chest ? 60 * Math.pow(2.3, zoneOf(d)) * LOC().mult * depthMult(d) * (1 + .2*UL('chest')) : f.junk ? 1 : 4 * Math.pow(2.3, f.z) * [1, 2, 4, 9][f.i] * LOC().mult * depthMult(d);
-  const fishPts0 = (f, d) => f.guard != null ? 900 + 60*f.guard + 25*layerOf(d) : f.special ? (f.special == 'fishmax' ? 9e15 : f.special == 'ohdang' ? 100000 + 1000*zoneOf(d) : f.special == 'dang' ? 1500 + 80*zoneOf(d) : 400 + 30*zoneOf(d)) + 25*layerOf(d) : f.junk ? 2 : f.chest ? 150 + 20*zoneOf(d) : Math.round((10 + 14*f.z) * [1, 1.6, 2.6, 4.5][f.i] + 25*layerOf(d));
+  const fishVal0 = (f, d) => f.secret ? 4 * Math.pow(2.3, zoneOf(d)) * 300 * LOC().mult * depthMult(d) : f.guard != null ? 4 * Math.pow(2.3, 7) * 30 * LOC().mult * depthMult(d) : f.special ? 4 * Math.pow(2.3, zoneOf(d)) * ({dang:500, godly:60, ohdang:1e6, fishmax:1e9})[f.special] * LOC().mult * depthMult(d) : f.chest ? 60 * Math.pow(2.3, zoneOf(d)) * LOC().mult * depthMult(d) * (1 + .2*UL('chest')) : f.junk ? 1 : 4 * Math.pow(2.3, f.z) * [1, 2, 4, 9][f.i] * LOC().mult * depthMult(d);
+  const fishPts0 = (f, d) => f.secret ? 3000 + 25*layerOf(d) : f.guard != null ? 900 + 60*f.guard + 25*layerOf(d) : f.special ? (f.special == 'fishmax' ? 9e15 : f.special == 'ohdang' ? 100000 + 1000*zoneOf(d) : f.special == 'dang' ? 1500 + 80*zoneOf(d) : 400 + 30*zoneOf(d)) + 25*layerOf(d) : f.junk ? 2 : f.chest ? 150 + 20*zoneOf(d) : Math.round((10 + 14*f.z) * [1, 1.6, 2.6, 4.5][f.i] + 25*layerOf(d));
 
   // ---------- time of day (a 5-minute day) & weather ----------
   const DAYLEN = 300; const dayT = () => ((Date.now()/1000) % DAYLEN) / DAYLEN;
@@ -525,12 +528,12 @@ A.register('fishing', { mount(host, api){
   const poolAt = d => { const z = zoneOf(d), L = LOC(), lk = luck(), w8 = [10, 5, 2.2*lk, .7*lk], out = [];
     FISH[L.k][z].forEach((f, i) => out.push({f, w:w8[i]*(z ? .8 : 1)})); if (z > 0) FISH[L.k][z-1].forEach((f, i) => out.push({f, w:w8[i]*.2}));
     const li = layerIdx(d); if (li >= 0) out.push({f:GUARD[li], w:.25*lk});
-    const gd = SPEC[L.k][0], dg = SPEC[L.k][1]; if (d >= gd.minD) out.push({f:gd, w:.05*lk}); if (d >= dg.minD) out.push({f:dg, w:.008*lk}); return out; };
-  const mixed = pool => { if (!mixOn()) return pool; const nat = new Array(MIXN).fill(0); let T = 0; pool.forEach(p2 => { nat[p2.f.r] += p2.w; T += p2.w; });
+    const gd = SPEC[L.k][0], dg = SPEC[L.k][1]; if (d >= gd.minD) out.push({f:gd, w:.05*lk}); if (d >= dg.minD) out.push({f:dg, w:.008*lk}); if (SECRET[L.k]) out.push({f:SECRET[L.k], w:.0035*lk}); return out; };
+  const mixed = pool => { if (!mixOn()) return pool; const nat = new Array(MIXN).fill(0); let T = 0; pool.forEach(p2 => { nat[mixR(p2.f)] += p2.w; T += p2.w; });
     const want = G.mix.map((v, r) => nat[r] > 0 ? Math.max(0, v) : 0), W8 = want.reduce((a, b) => a + b, 0); if (!(W8 > 0)) return pool;
-    return pool.map(p2 => ({f:p2.f, w:p2.w / nat[p2.f.r] * want[p2.f.r] / W8 * T})); };
+    return pool.map(p2 => ({f:p2.f, w:p2.w / nat[mixR(p2.f)] * want[mixR(p2.f)] / W8 * T})); };
   const densCache = {}; const density = d => { const key = zoneOf(d) + '|' + (d >= 10000 ? 2 : d >= 5000 ? 1 : 0) + '|' + G.loc + '|' + (mixOn() ? G.mix.join(',') : 'n'); if (densCache[key] != null) return densCache[key];
-    const nat = poolAt(d), mx = mixed(nat), ec = p2 => { let a = 0, b = 0; p2.forEach(q => { a += q.w*COST[q.f.r]; b += q.w; }); return a / b; };
+    const nat = poolAt(d), mx = mixed(nat), ec = p2 => { let a = 0, b = 0; p2.forEach(q => { a += q.w*COST[mixR(q.f)]; b += q.w; }); return a / b; };
     return (densCache[key] = Math.max(.008, Math.min(1.35, ec(nat) / ec(mx)))); };
   const pick = d => { const z = zoneOf(d), u = Math.random();
     if (z <= 2 && u < .07*(mixOn() ? (G.mix[0]||0) / Math.max(1, G.mix.reduce((a, b) => a + b, 0)) * 3 : 1)) return BOOT;
@@ -777,7 +780,10 @@ A.register('fishing', { mount(host, api){
       body.appendChild(el('div', {font:'800 15px '+A.font, marginTop:'6px'}, '🌌 Deep layer guardians (every spot)'));
       for (let q = 0; q < GUARD.length; q += 2) { const r = row(); r.style.flexWrap = 'wrap'; r.style.gap = '4px'; GUARD.slice(q, q + 2).forEach(f => { const n = b[f.k] || 0, cell = el('div', {flex:'1 1 45%', display:'flex', alignItems:'center', gap:'6px', font:'600 12px '+A.font, color:n ? RC[f.r] : '#5d7d8a'});
           if (n) { const im = el('img', {width:'46px', height:'30px', flexShrink:0}); im.src = fishIcon(f); cell.appendChild(im); } else cell.appendChild(el('div', {width:'46px', height:'30px', flexShrink:0, borderRadius:'8px', background:'rgba(255,255,255,.06)', textAlign:'center', lineHeight:'30px'}, '?'));
-          cell.appendChild(el('span', {}, n ? f.n + ' ×' + n : '??? · ' + LAYERS[f.guard].n + ' (' + fmt(LAYERS[f.guard].d) + ' m+)')); r.appendChild(cell); }); }
+          cell.appendChild(el('span', {}, n ? f.n + ' ×' + n + ' · ' + RN[f.r] : '??? (' + RN[f.r] + ') · ' + LAYERS[f.guard].n + ' (' + fmt(LAYERS[f.guard].d) + ' m+)')); r.appendChild(cell); }); }
+      body.appendChild(el('div', {font:'800 15px '+A.font, marginTop:'6px', color:RC[15]}, '🤫 Secret fish (1 hiding in every spot · about 1 in 5,000 fish)'));
+      { const r = row(); r.style.flexWrap = 'wrap'; r.style.gap = '4px'; Object.values(SECRET).forEach(f => { const n = b[f.k] || 0, cell = el('div', {flex:'1 1 30%', display:'flex', alignItems:'center', gap:'6px', font:'600 12px '+A.font, color:n ? RC[15] : '#5d7d8a'});
+          if (n) { const im = el('img', {width:'46px', height:'30px', flexShrink:0}); im.src = fishIcon(f); cell.appendChild(im); } cell.appendChild(el('span', {}, n ? f.n + ' ×' + n : '??? · ' + (LOCS.find(L => L.k == f.loc) || {}).n)); r.appendChild(cell); }); }
       const r = row(); [BOOT, CHEST].forEach(f => { const cell = el('div', {flex:'1', display:'flex', alignItems:'center', gap:'6px', font:'600 12px '+A.font, color:b[f.k] ? RC[f.r] : '#5d7d8a'}); if (b[f.k]) { const im = el('img', {width:'46px', height:'30px'}); im.src = fishIcon(f); cell.appendChild(im); } cell.appendChild(el('span', {}, b[f.k] ? f.n + ' ×' + b[f.k] : '??? (' + RN[f.r] + ')')); r.appendChild(cell); }); }
     if (panelTab == 'mix') { const deep = Math.max(30, lineM(UL('line'))), WH = ['up to 250 m', 'up to 2,000 m', 'everywhere', 'everywhere', '250 m+', '2,000 m+', '5,000 m+', '10,000 m+'];
       const cur = mixOn() ? G.mix.slice() : null, vals = cur || [60, 30, 12, 5, 2, 1, 0, 0];
