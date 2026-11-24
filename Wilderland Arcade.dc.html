@@ -333,26 +333,15 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
           <sc-if value="{{ padAvail }}" hint-placeholder-val="{{ false }}"><button onClick="{{ togglePad }}" style="flex-shrink:0; border:none; border-radius:999px; padding:7px 14px; font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap; background:{{ padBg }}; color:{{ padFg }};">{{ padLabel }}</button></sc-if>
           <sc-if value="{{ showImmortal }}" hint-placeholder-val="{{ false }}"><button onClick="{{ toggleImmortal }}" style="flex-shrink:0; border:none; border-radius:999px; padding:7px 14px; font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap; background:{{ immortalBg }}; color:{{ immortalFg }};">{{ immortalLabel }}</button></sc-if><sc-if value="{{ showMult }}" hint-placeholder-val="{{ false }}"><button onClick="{{ cycleMult }}" style="flex-shrink:0; border:none; border-radius:999px; padding:7px 14px; font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; white-space:nowrap; background:#EA55AB; color:#ffffff;">{{ multLabel }}</button></sc-if>
         </div>
-        <sc-if value="{{ showImmortal }}" hint-placeholder-val="{{ false }}">
+        <sc-if value="{{ showGameAdm }}" hint-placeholder-val="{{ false }}">
           <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px; flex-wrap:wrap;">
-            <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:#8a6100;">ADMIN</div>
-            <div style="display:flex; align-items:center; gap:4px; background:#ffffff; border-radius:999px; padding:3px 3px 3px 10px;">
-              <input type="number" min="1" value="{{ levelCount }}" onChange="{{ levelInput }}" onKeyDown="{{ stopKey }}" aria-label="Level number" style="width:72px; border:none; outline:none; font-family:inherit; font-weight:700; font-size:13px; color:#015640; background:transparent;">
-              <button onClick="{{ goLevel }}" style="border:none; border-radius:999px; padding:4px 12px; font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; background:#F9BF01; color:#015640;">Go to level</button>
-            </div>
-            <div style="display:flex; align-items:center; gap:4px; background:#ffffff; border-radius:999px; padding:3px 3px 3px 10px;">
-              <input type="number" min="1" max="200" value="{{ ballCount }}" onChange="{{ ballInput }}" onKeyDown="{{ stopKey }}" aria-label="Ball count" style="width:52px; border:none; outline:none; font-family:inherit; font-weight:700; font-size:13px; color:#015640; background:transparent;">
-              <button onClick="{{ addBalls }}" style="border:none; border-radius:999px; padding:4px 12px; font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; background:#F9BF01; color:#015640;">Add balls</button>
-            </div>
-            <div style="display:flex; align-items:center; gap:8px; background:#ffffff; border-radius:999px; padding:5px 12px;">
-              <span style="font-size:12px; font-weight:700; color:#015640;">Ball power</span>
-              <input type="range" min="0" max="100" step="1" value="{{ powerSlider }}" onInput="{{ powerSlide }}" onChange="{{ powerSlide }}" onKeyDown="{{ stopKey }}" aria-label="Ball power" style="width:120px; accent-color:#F9BF01;">
-              <span style="font-size:13px; font-weight:700; color:#015640; min-width:52px; text-align:right;">{{ ballPower }}</span>
-            </div>
-            <div style="display:flex; align-items:center; gap:4px; background:#ffffff; border-radius:999px; padding:3px 3px 3px 10px;">
-              <input type="number" min="1" value="{{ powerSetVal }}" onChange="{{ powerSetInput }}" onKeyDown="{{ stopKey }}" aria-label="Exact ball power" style="width:96px; border:none; outline:none; font-family:inherit; font-weight:700; font-size:13px; color:#015640; background:transparent;">
-              <button onClick="{{ setPower }}" style="border:none; border-radius:999px; padding:4px 12px; font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; background:#F9BF01; color:#015640;">Set power</button>
-            </div>
+            <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:#8a6100;">ADMIN · {{ gameAdmName }}</div>
+            <sc-for list="{{ gameAdm }}" as="ga" hint-placeholder-count="3">
+              <div style="display:flex; align-items:center; gap:4px; background:#ffffff; border-radius:999px; padding:3px 3px 3px 10px;">
+                <sc-if value="{{ ga.hasNum }}" hint-placeholder-val="{{ true }}"><input type="number" value="{{ ga.val }}" onChange="{{ ga.inp }}" onInput="{{ ga.inp }}" onKeyDown="{{ stopKey }}" aria-label="{{ ga.label }}" style="width:80px; border:none; outline:none; font-family:inherit; font-weight:700; font-size:13px; color:#015640; background:transparent;"></sc-if>
+                <button onClick="{{ ga.run }}" style="border:none; border-radius:999px; padding:4px 12px; font-family:inherit; font-weight:700; font-size:13px; cursor:pointer; background:#F9BF01; color:#015640;">{{ ga.label }}</button>
+              </div>
+            </sc-for>
           </div>
         </sc-if>
         <div ref="{{ boxRef }}" style="width:{{ boxWcss }}; height:{{ boxHcss }}; position:{{ boxPos }}; inset:{{ boxInset }}; z-index:{{ boxZ }}; background:{{ boxBg }}; align-self:center; touch-action:{{ boxTouch }};">
@@ -1697,7 +1686,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-12-05l';
+const BUILD = '2026-12-05m';
 const SCRIPTS = ['arcade-core.js','music.js','prizes-more.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js','games-secrets.js','games-more.js','games-more2.js','games-more3.js'];
 const fmt = n => fmtN(Math.round(n));
 
@@ -2396,7 +2385,7 @@ class Component extends DCLogic {
       uRules: unameRules(uv, !!uOwner && uOwner!==myK).map(([label,ok])=>({label, color: ok?'#015640':'#4a4a4a', dot: ok?'#00B451':'#b0ab95', mark: ok?'✓':'·'})),
       boardShadow: ni===NG+2?glow:base, learnShadow: ni===NG+3?glow:base, boardIcon: KIOSK_ICONS.board, learnIcon: KIOSK_ICONS.learn,
       lbLeader: (lbRows('_ov','all',1)[0]||{}).name || 'Nobody yet',
-      tickets: fmtN(P.tickets), multLabelHead: '×'+(window.WLP ? window.WLP.fmt(window.WLP.totalMult(P)) : '1')+' total'+((P.stars||0) ? ' · ⭐'+fmtN(P.stars) : '')+(window.WLE && window.WLE.diamonds(P) ? ' · 💎'+fmtN(window.WLE.diaFree(P)) : ''), soundLabel: s.muted ? 'SOUND OFF' : 'SOUND ON', musicLabel: '🎵 '+(window.WLMusic ? window.WLMusic.label() : 'MUSIC'), musicCredit: window.WLMusic ? window.WLMusic.credit() : '', toggleMusic: ()=>{ if (window.WLMusic) { window.WLMusic.cycle(); this.setState({musicTick:Date.now()}); } },
+      tickets: fmtN(P.tickets), multLabelHead: '×'+(window.WLP ? window.WLP.fmt(window.WLP.totalMult(P)) : '1')+' total'+((P.stars||0) ? ' · ⭐'+fmtN(P.stars) : '')+(window.WLE && window.WLE.diamonds(P) ? ' · 💎'+fmtN(window.WLE.diaFree(P)) : ''), soundLabel: s.muted ? 'SOUND OFF' : 'SOUND ON', musicLabel: '🎵 '+(window.WLMusic ? window.WLMusic.label() : 'MUSIC'), musicCredit: window.WLMusic ? (window.WLMusic.credit() || (window.WLMusic.allCredits ? 'Music: ' + window.WLMusic.allCredits() : '')) : '', toggleMusic: ()=>{ if (window.WLMusic) { window.WLMusic.cycle(); this.setState({musicTick:Date.now()}); } },
       showCash: !!s.game && s.game!='idle' && s.game!='secrets', cashOutGame: ()=>this.cashOutGame(), cashLabel: s.admin ? 'Cash out · (admin)' : 'Cash out · '+fmtN(s.liveScore||0),
       expFloor: window.WLE ? window.WLE.EXP.filter(x=>(P.exp||{})[x.k]).map(x=>({key:x.k+'-'+P.exp[x.k], e:x.e, n:x.n, lv:P.exp[x.k]})) : [], expEmpty: !window.WLE || !window.WLE.EXP.some(x=>(P.exp||{})[x.k]),
       openExp: ()=>{ this.keys = {}; this._pzTab = 'exp'; this.setState({prizesOpen:true}); },
@@ -2466,6 +2455,7 @@ class Component extends DCLogic {
       showAuto: s.admin && !!s.hint && s.game!='simon',
       autoLabel: s.autoHint ? 'Auto hint · ON' : 'Auto hint · OFF', autoBg: s.autoHint ? '#015640' : '#D9D9D9', autoFg: s.autoHint ? '#D5F367' : '#4a4a4a',
       toggleAuto: ()=>this.setState(st=>({autoHint:!st.autoHint})),
+      showGameAdm: !!(s.admin && s.game && window.Arcade && window.Arcade.admins && (window.Arcade.admins[s.game]||[]).length),
       showImmortal: s.admin && !!s.game && !['2048','tictactoe','connect4','memory','typing','reaction','trace','idle'].includes(s.game), multLabel: 'Score ×'+(s.adminMult||1), cycleMult: ()=>{ const L=[1,2,5,10,100], v=L[(L.indexOf(s.adminMult||1)+1)%L.length]; this.setState({adminMult:v}); window.Arcade && window.Arcade.sfx('blip'); }, showMult: s.admin && !!s.game,
       ballCount: s.ballCount ?? 5, ballInput: e=>this.setState({ballCount:e.target.value}), stopKey: e=>e.stopPropagation(),
       ballPower: s.ballPower ?? 1, powerSlider: Math.min(100,Math.round(Math.log10(s.ballPower ?? 1)*20)),
@@ -2473,6 +2463,12 @@ class Component extends DCLogic {
       powerSetVal: s.powerSetVal ?? (s.ballPower ?? 1), powerSetInput: e=>this.setState({powerSetVal:e.target.value}),
       setPower: ()=>{ const v=Math.max(1,parseInt(s.powerSetVal ?? s.ballPower ?? 1)||1); if(window.Arcade){ window.Arcade.ballPower=v; window.Arcade.sfx('coin'); } this.setState({ballPower:v}); },
       levelCount: s.levelCount ?? 10, levelInput: e=>this.setState({levelCount:e.target.value}),
+      // Each game registers its own admin controls in window.Arcade.admins[<game id>] while it is open (and removes them when it closes),
+      // so the admin bar only ever shows the controls of the game you're in, and hides when a game has none.
+      gameAdm: (()=>{ const L = (s.admin && s.game && window.Arcade && window.Arcade.admins && window.Arcade.admins[s.game]) || []; return L.map((c, i)=>{ const key = s.game + ':' + i, v = ((s.admVals||{})[key] ?? c.num);
+        return {label:c.label, hasNum: c.num != null, val:v, inp: e=>this.setState({admVals:{...(s.admVals||{}), [key]: e.target.value}}),
+          run: ()=>{ try { const n = c.num != null ? Math.max(c.min ?? 0, Math.min(c.max ?? 1e300, parseFloat(v) || c.num)) : undefined; c.run(n); window.Arcade.sfx('coin'); this.setState({admTick:Date.now()}); } catch(e){ console.error('[admin]', e); } } }; }); })(),
+      gameAdmName: s.game ? gname(s.game) : '',
       goLevel: ()=>{ const B=window.Arcade&&window.Arcade.breakoutAdmin, n=Math.max(1,parseInt(s.levelCount??10)||1); if(B){ B.goLevel(n); window.Arcade.sfx('coin'); } },
       addBalls: ()=>{ const B=window.Arcade&&window.Arcade.breakoutAdmin, n=Math.max(1,Math.min(200,parseInt(s.ballCount??5)||1)); if(B) B.addBalls(n); },
       immortalLabel: s.immortal ? 'Immortal · ON' : 'Immortal · OFF', immortalBg: s.immortal ? '#F9BF01' : '#D9D9D9', immortalFg: s.immortal ? '#015640' : '#4a4a4a',
@@ -2567,7 +2563,7 @@ class Component extends DCLogic {
       H('LEARNING'), I('edu', '🎓', 'Learn mode', stay('toggleEdu'), onv(this.eduOn() ? 'ON' : 'OFF', this.eduOn())),
       H('REBIRTH'), I('autorb', '♻️', 'Auto rebirth', stay('toggleAutoRb'), onv(autoOn ? 'ON' : 'OFF', autoOn), true), ...(R0.rbReady ? [I('rbnow', '⭐', 'Rebirth now', go('rebirthNow'), null, true)] : []),
       H('PLAY TOGETHER'), I('chat', '💬', 'Chat', go('openChat'), {val:'T', valFg:'#9fb8ad'}), I('sug', '💡', 'Suggest an idea', go('openSug')),
-      H('SETTINGS'), I('sound', s.muted ? '🔇' : '🔊', 'Sound', stay('toggleSound'), onv(s.muted ? 'OFF' : 'ON', !s.muted)), I('music', '🎵', 'Music', stay('toggleMusic'), onv(musicNow.replace(/^MUSIC\s*·?\s*/i, '') || 'ON', !/off/i.test(musicNow))),
+      H('SETTINGS'), I('sound', s.muted ? '🔇' : '🔊', 'Sound', stay('toggleSound'), onv(s.muted ? 'OFF' : 'ON', !s.muted)), I('music', '🎵', 'Music', stay('toggleMusic'), onv(musicNow.replace(/^MUSIC\s*·?\s*/i, '') || 'ON', !/off/i.test(musicNow))), I('mcredit', '🎼', 'Music credits', ()=>{ this.toast(window.WLMusic && window.WLMusic.allCredits ? window.WLMusic.allCredits() : 'Kevin MacLeod (incompetech.com)'); }),
         I('notif', '🔔', 'Notifications', stay('toggleNotif'), onv({all:'ALL', few:'FEW', off:'OFF'}[notifM] || 'ALL', notifM != 'off')), I('fx', '🐢', 'Performance mode', stay('toggleFx'), onv(LOWFX ? 'ON' : 'OFF', LOWFX)),
         I('fs', '⛶', 'Full screen', go('siteFsBtn'), {val:'Y', valFg:'#9fb8ad'}),
       H('ADMIN'), I('code', s.admin ? '🛠️' : '🔑', s.admin ? 'Admin tools' : 'Enter a code', go('openCode'), s.admin ? {val:'∞', valFg:'#F9BF01'} : null)];

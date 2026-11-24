@@ -161,6 +161,7 @@ A.register('breakout', { mount(host, api){
     if(bombN>0){ bombN--; boom(k.x+bw/2,k.y+BH/2,bw*1.6); } };
   const damageBoss=d=>{ const B=boss; if(!B||B.hp<=0)return; B.hp=Math.max(0,B.hp-d); B.hitT=.12; combo++; comboT=4; milestone(); add(20*level*Math.max(1,combo>>2)); A.sfx('hit');
     if(B.hp<=0){ const bb=500*level*(1+B.cyc); add(bb); A.sfx('win'); flash=.2; shots=[]; bricks.forEach(k=>{if(k.sum)k.alive=0;}); burst(B.x+B.w/2,B.y+B.h/2,C.gold,30); api.stat&&api.stat('bossKills',1,'add'); banner={t:2,txt:B.name+' DEFEATED',sub:'+'+bb}; } };
+  A.admins=A.admins||{}; A.admins.breakout=[{label:'Go to level', num:10, min:1, run:n=>A.breakoutAdmin&&A.breakoutAdmin.goLevel(Math.floor(n))}, {label:'Add balls', num:5, min:1, max:200, run:n=>A.breakoutAdmin&&A.breakoutAdmin.addBalls(Math.floor(n))}, {label:'Set ball power', num:10, min:1, max:100000, run:n=>{ A.ballPower=Math.floor(n); }}];
   A.breakoutAdmin={ goLevel:n=>{ level=n; build(); serve(); if(state!='play')state='play'; }, addBalls:n=>{ const src=balls.find(b=>!b.stuck); for(let i=0;i<n;i++){ const a=-Math.PI/2+(Math.random()-.5)*1.6, v=spd(); balls.push({x:src?src.x:px,y:src?src.y:h-40,vx:Math.cos(a)*v,vy:Math.sin(a)*v}); } if(state!='play')state='play'; A.sfx('coin'); } };
   const offL=A.loop(dt=>{ A.mood(() => ({danger: lives==1, boss: !!(boss && boss.hp>0)}));
     if(state=='play'&&!quizzing){
@@ -319,7 +320,7 @@ A.register('breakout', { mount(host, api){
     if(state=='ready')A.overlayText(g,w,h,resumed?'PAUSED':'BREAKOUT',resumed?'Level '+level+' · '+lives+' lives · Space to continue':'Endless levels · combos · power-ups · Space');
     if(state=='dead')A.overlayText(g,w,h,'GAME OVER','Level '+level+' · score '+score+' · Space to replay');
   });
-  return()=>{A.breakoutAdmin=null;offK();offL();c.removeEventListener('mousedown',md);window.removeEventListener('keydown',kd);window.removeEventListener('keyup',kd);};
+  return()=>{A.breakoutAdmin=null; if(A.admins) delete A.admins.breakout;offK();offL();c.removeEventListener('mousedown',md);window.removeEventListener('keydown',kd);window.removeEventListener('keyup',kd);};
 }});
 
 A.register('flappy', { mount(host, api){

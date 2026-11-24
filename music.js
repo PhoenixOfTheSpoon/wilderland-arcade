@@ -81,6 +81,8 @@ const WLMusic = {
     if (nx == 'off') { this.setOn(false); return; } track = nx; try { localStorage.setItem(KEY+'-track', track); } catch(e){} if (!on) this.setOn(true); else { stop(); started = true; if (!cur) cur = build(moodName); run(); } },
   label: () => !on ? 'MUSIC OFF' : FILES[track] ? FILES[track].s : 'CHIPTUNE',
   credit: () => on && FILES[track] ? FILES[track].credit : '',
+  // every song file's credit, always (Creative Commons BY needs the credit shown)
+  allCredits: () => Object.values(FILES).map(f => f.credit).join(' · '),
   on: () => on, setMuted(v){ muted = !!v; if (muted) stop(); else run(); }, moods: Object.keys(MOODS),
 };
 // Browsers only allow sound after the player clicks or presses a key.
