@@ -157,7 +157,7 @@ A.register('fishing', { mount(host, api){
   const fmt = n => { n = Math.max(0, Number(n)||0); if (!isFinite(n)) return '∞'; if (n < 10 && n % 1) return n.toFixed(1); if (n < 1000) return String(Math.floor(n));
     const u = ['K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc']; if (n >= 1e36) return n.toExponential(2).replace('e+','e');
     let i = -1; while (n >= 1000 && i < u.length-1) { n /= 1000; i++; } return (n < 10 ? n.toFixed(2) : n < 100 ? n.toFixed(1) : Math.floor(n)) + u[i]; };
-  const fin = v => (v = Number(v), isFinite(v) ? v : 0);
+  const fin = v => (v = Number(v), v !== v ? 0 : v > 1e300 ? 1e300 : v < -1e300 ? -1e300 : v);   // never lose coins to Infinity
   const wrap = el('div', {position:'relative', width:W+'px', fontFamily:A.font, userSelect:'none'}); host.appendChild(wrap);
   const CV = A.canvas(wrap, W, H), c = CV.c; let g = CV.g; c.style.touchAction = 'none';
 
@@ -165,7 +165,7 @@ A.register('fishing', { mount(host, api){
   const ZONES = [{d:0,n:'Sunny Shallows'},{d:25,n:'Reed Beds'},{d:60,n:'Deep Water'},{d:120,n:'Twilight Zone'},{d:250,n:'Midnight Zone'},{d:500,n:'The Abyss'},{d:1000,n:'The Trench'},{d:2000,n:'The Unknown'}];
   const zoneOf = d => { let z = 0; for (let i = 0; i < ZONES.length; i++) if (d >= ZONES[i].d) z = i; return z; };
   const layerOf = d => d >= 2000 ? Math.floor((d - 2000) / 1000) : 0;   // every 1,000 m past 2,000 m doubles fish value
-  const zoneName = d => ZONES[zoneOf(d)].n + (d >= 2000 ? ' · Layer ' + (layerOf(d) + 1) : '');
+  const zoneName = d => ZONES[zoneOf(d)].n + (d >= 2000 ? ' · Layer ' + A.fmt(layerOf(d) + 1) : '');
   const LOCS = [
     {k:'lake', n:'Wilder Lake', cost:0, mult:1, sky:['#ffd9a0','#ffb380'], sea:'#3aa0c8', land:'#5a8a3a', fish:[
       'minnow:Minnow|perch:Yellow Perch|sunfish:Sunfish|trout:Rainbow Trout', 'bluegill:Bluegill|bass:Bass|catfish:Catfish|pike:Northern Pike',
@@ -370,22 +370,29 @@ A.register('fishing', { mount(host, api){
     {k:'combo', n:'Combo Charm', d:L => 'Each fish in a row adds +'+(10+4*L)+'% → +'+(14+4*L)+'%', b:90, gr:1.45},
     {k:'drop', n:'Express Drop', d:L => 'Skip up to '+Math.min(80, 8*L)+'% → '+Math.min(80, 8*L+8)+'% of the line (choose how much with the ⏬ slider)', b:300, gr:1.9, max:10},
     {k:'chest', n:'Treasure Map', d:L => 'Chests '+(25*L)+'% → '+(25*L+25)+'% more common & richer', b:300, gr:1.5},
+    {k:'haggle', n:'Haggler', d:L => 'Every other upgrade costs ' + Math.round(100 - 100*Math.pow(.95, L)) + '% → ' + Math.round(100 - 100*Math.pow(.95, L+1)) + '% less', b:500, gr:1.8, max:30},
+    {k:'spool', n:'Mega Spool', d:L => 'Line ×' + fmt(Math.pow(2, L)) + ' → ×' + fmt(Math.pow(2, L+1)) + ' as long', b:2e4, gr:25},
+    {k:'drill', n:'Anchor Drill', d:L => 'Sink ×' + fmt(Math.pow(2, L)) + ' → ×' + fmt(Math.pow(2, L+1)) + ' faster', b:1e4, gr:20},
+    {k:'winch', n:'Turbo Winch', d:L => 'Reel ×' + fmt(Math.pow(2, L)) + ' → ×' + fmt(Math.pow(2, L+1)) + ' faster', b:1e4, gr:20},
+    {k:'deepmap', n:'Deep Map', d:L => UL('drop') < 10 ? 'Needs Express Drop maxed first' : 'Express Drop can skip up to ' + (80 + 5*L) + '% → ' + (80 + 5*L + 5) + '%', b:5e5, gr:30, max:3},
     {k:'buddy', n:'Fishing Buddy', d:L => 'Earns '+fmt(buddyRate(L))+' → '+fmt(buddyRate(L+1))+' coins/s for you', b:250, gr:1.42},
     {k:'sonar', n:'Sonar', d:L => ['Rare fish get a colored ring','Shows each fish’s price','Rares +15% more often','Fish missing from your Fish Book flash','Maxed!'][Math.min(4, L)], b:400, gr:6, max:4}];
   const GHOST = ['nothing', 'Old Boots & Common fish', 'Boots, Common & Uncommon fish', 'everything below Epic'];
   const ghostTier = () => { const mx = Math.min(3, UL('ghost')); return G.ghostSel == null ? mx : Math.max(0, Math.min(mx, G.ghostSel)); };
   const ghosty = o => { const tier = ghostTier(); return tier > 0 && !o.jelly && (o.f.junk || (!o.f.chest && !o.gold && o.f.i < tier)); };
-  const lineM = L => Math.round(30 + 12*L + .6*L*L);
-  const sinkV = L => 20 * (1 + .15*L), reelV = L => 24 * (1 + .15*L) * (1 + .1*A.U('reel'));
+  const lineM = L => Math.round((30 + 12*L + .6*L*L) * Math.pow(2, UL('spool')) * (1 + .1*G.pearls));
+  const sinkV = L => 20 * (1 + .15*L) * Math.pow(2, UL('drill')), reelV = L => 24 * (1 + .15*L) * (1 + .1*A.U('reel')) * Math.pow(2, UL('winch'));
+  // value doubles every 1,000 m past 2,000 m, then (after 200 doublings) keeps growing more gently so it never becomes Infinity
+  const depthMult = d => { const l = layerOf(d); return l <= 200 ? Math.pow(2, l) : Math.pow(2, 200) * Math.pow(l / 200, 4); };
   const goldP = L => 1 + .6*L;
-  const cost = (u, L) => Math.ceil(u.b * Math.pow(u.gr, L));
+  const cost = (u, L) => Math.ceil(Math.min(1e300, u.b * Math.pow(u.gr, L) * (u.k == 'haggle' ? 1 : Math.pow(.95, UL('haggle')))));
 
   // ---------- saved progress (with your profile + the cloud) ----------
   let bookC = null; const book = () => { if (bookC) return bookC; let loc = {}; try { loc = JSON.parse(localStorage.getItem('wl-fishbook') || '{}'); } catch(e){} const sv = (api.gdata && api.gdata().book) || {}; bookC = {...loc}; for (const k in sv) bookC[k] = Math.max(bookC[k]||0, sv[k]); return bookC; };
   const G = Object.assign({coins:0, upg:{}, loc:'lake', locs:{lake:1}, best:0, deepest:0, pearls:0, run:0, tot:0, dives:0, caught:0}, (api.gdata && api.gdata().fg) || {});
   const UL = k => G.upg[k] || 0;
   const spd = k => Math.max(10, Math.min(100, G[k] == null ? 100 : G[k])) / 100;   // speed sliders: 10–100% of your upgraded speed
-  const skipMax = () => Math.min(80, 8*UL('drop')), skipPct = () => G.skip == null ? skipMax() : Math.max(0, Math.min(skipMax(), G.skip));
+  const skipMax = () => Math.min(80, 8*UL('drop')) + (UL('drop') >= 10 ? 5*UL('deepmap') : 0), skipPct = () => G.skip == null ? skipMax() : Math.max(0, Math.min(skipMax(), G.skip));
   const save = () => { try { api.setGdata && api.setGdata({book:book(), fg:G}); } catch(e){} try { localStorage.setItem('wl-fishbook', JSON.stringify(book())); } catch(e){} };
   const LOC = () => LOCS.find(L => L.k == G.loc) || LOCS[0];
   const bookBonus = () => { const b = book(); let m = 1; LOCS.forEach(L => { let all = true; FISH[L.k].forEach(z => { const done = z.every(f => b[f.k]); if (done) m += .03; else all = false; }); if (all) m += .25; }); return m; };
@@ -393,7 +400,7 @@ A.register('fishing', { mount(host, api){
   const capN = () => 3 + UL('hook') + A.U('bait');
   const luck = () => 1 + .12*UL('luck') + .15*A.U('lure') + (UL('sonar') >= 3 ? .15 : 0);
   function buddyRate(L) { const z = zoneOf(G.best||0); return L ? L * .35 * 4 * Math.pow(2.3, z) * LOC().mult * coinMult() : 0; }
-  const fishVal = (f, d) => f.special ? 4 * Math.pow(2.3, zoneOf(d)) * ({dang:500, godly:60, ohdang:1e6})[f.special] * LOC().mult * Math.pow(2, layerOf(d)) : f.chest ? 60 * Math.pow(2.3, zoneOf(d)) * LOC().mult * Math.pow(2, layerOf(d)) * (1 + .2*UL('chest')) : f.junk ? 1 : 4 * Math.pow(2.3, f.z) * [1, 2, 4, 9][f.i] * LOC().mult * Math.pow(2, layerOf(d));
+  const fishVal = (f, d) => f.special ? 4 * Math.pow(2.3, zoneOf(d)) * ({dang:500, godly:60, ohdang:1e6})[f.special] * LOC().mult * depthMult(d) : f.chest ? 60 * Math.pow(2.3, zoneOf(d)) * LOC().mult * depthMult(d) * (1 + .2*UL('chest')) : f.junk ? 1 : 4 * Math.pow(2.3, f.z) * [1, 2, 4, 9][f.i] * LOC().mult * depthMult(d);
   const fishPts = (f, d) => f.special ? (f.special == 'ohdang' ? 100000 + 1000*zoneOf(d) : f.special == 'dang' ? 1500 + 80*zoneOf(d) : 400 + 30*zoneOf(d)) + 25*layerOf(d) : f.junk ? 2 : f.chest ? 150 + 20*zoneOf(d) : Math.round((10 + 14*f.z) * [1, 1.6, 2.6, 4.5][f.i] + 25*layerOf(d));
 
   // ---------- one dive ----------
@@ -418,14 +425,23 @@ A.register('fishing', { mount(host, api){
     if (z <= 2 && u < .07*(mixOn() ? (G.mix[0]||0) / Math.max(1, G.mix.reduce((a, b) => a + b, 0)) * 3 : 1)) return BOOT;
     if (z >= 2 && u < .012 * (1 + .25*UL('chest'))) return CHEST;
     const pool = mixed(poolAt(d)); let S = pool.reduce((a, b) => a + b.w, 0), x = Math.random()*S; for (const p2 of pool) { x -= p2.w; if (x <= 0) return p2.f; } return pool[0].f; };
-  const gen = upTo => { const df = A.D(.8, 1, 1.25); while (genTo < upTo) { const b0 = genTo, z = zoneOf(b0); genTo += 12;
+  const spawnBand = (b0, band) => { const df = A.D(.8, 1, 1.25), z = zoneOf(b0);
       const dn = density(b0), n = (Math.random() < .9*dn ? 1 : 0) + (Math.random() < .35*dn ? 1 : 0) + (z >= 4 && Math.random() < .25*dn ? 1 : 0);
       for (let i = 0; i < n; i++) { const f = pick(b0), dir = Math.random() < .5 ? 1 : -1;
-        fish.push({f, x:20 + Math.random()*(W-40), d:b0 + Math.random()*12, vx:f.chest ? 0 : dir * (25 + Math.random()*45 + z*6) * df, ph:Math.random()*TAU, gold:!f.junk && !f.chest && Math.random()*100 < goldP(UL('gold'))}); }
-      if (z >= 1 && Math.random() < Math.min(.5, (.12 + .04*z) * df)) fish.push({jelly:true, x:20 + Math.random()*(W-40), d:b0 + Math.random()*12, vx:(Math.random()-.5)*30, ph:Math.random()*TAU}); } };
+        fish.push({f, x:20 + Math.random()*(W-40), d:b0 + Math.random()*band, vx:f.chest ? 0 : dir * (25 + Math.random()*45 + z*6) * df, ph:Math.random()*TAU, gold:!f.junk && !f.chest && Math.random()*100 < goldP(UL('gold'))}); }
+      if (z >= 1 && Math.random() < Math.min(.5, (.12 + .04*z) * df)) fish.push({jelly:true, x:20 + Math.random()*(W-40), d:b0 + Math.random()*band, vx:(Math.random()-.5)*30, ph:Math.random()*TAU}); };
+  const gen = upTo => { if (upTo - genTo > 12*400) genTo = upTo - 12*400; while (genTo < upTo) { const b0 = genTo; genTo += 12; spawnBand(b0, 12); } };
+  // Very fast hooks: the water near you "rides along" so fish still pass at a speed you can see (max 150 m/s on screen),
+  // and fresh fish are made ahead of you on the way up too.
+  const FASTV = 150; let genUp = -1;
+  const genAbove = to => { while (genUp > to && genUp > 0) { const b1 = Math.max(0, genUp - 12); spawnBand(b1, genUp - b1); genUp = b1; } };
+  const ride = (prevD, dir, dt) => { const ex = Math.max(0, Math.abs(hd - prevD) - FASTV*dt); if (!(ex > 0)) return prevD; const sh = ex*dir;
+    for (const o of fish) if (!o.dead && (dir > 0 ? (o.d > prevD - 60 && o.d < prevD + 420) : (o.d < prevD + 60 && o.d > prevD - 420))) o.d += sh;
+    if (dir > 0) genTo += sh; else { if (genUp < 0) genUp = prevD - 60; genUp += sh; } return prevD + sh; };
+  let layerT = -9;
   const ohChance = d => Math.min(1, Math.max(0, d) * 1e-12); let ohT = 0;
   const ohTxt = d => { const p = ohChance(d) * 100; return p >= 1 ? p.toFixed(p >= 10 ? 0 : 1) + '%' : p >= .001 ? p.toPrecision(2) + '%' : p.toExponential(1).replace('e-', '×10⁻').replace(/⁻(\d+)/, (m, n) => '⁻' + n.split('').map(c => '⁰¹²³⁴⁵⁶⁷⁸⁹'[c]).join('')) + '%'; };
-  const startDive = () => { ohT = 0; if (panel) closePanel(); maxD = lineM(UL('line')); skipD = Math.floor(maxD * skipPct() / 100); fish = []; genTo = Math.max(1, skipD); caught = []; ghostN = UL('ghost'); shieldN = UL('shield');
+  const startDive = () => { ohT = 0; genUp = -1; if (panel) closePanel(); maxD = lineM(UL('line')); skipD = Math.floor(maxD * skipPct() / 100); fish = []; genTo = Math.max(1, skipD); caught = []; ghostN = UL('ghost'); shieldN = UL('shield');
     combo = 0; hd = skipD; hx = tx != null ? tx : W/2; phase = 'drop'; lastZone = -1; A.tone(300, .15, 'sine', .05); if (skipD) say('Express drop to '+fmt(skipD)+' m', 1.2); refreshBar(); };
   const startReel = why => { if (phase != 'drop') return; phase = 'reel'; combo = 0; lastCatch = -9; if (why) say(why, 1.6); A.sfx('blip'); refreshBar(); };
   const catchIt = o => { const v = fishVal(o.f, o.d) * (o.gold ? 5 : 1), p = fishPts(o.f, o.d) * (o.gold ? 2 : 1);
@@ -522,7 +538,7 @@ A.register('fishing', { mount(host, api){
       body.appendChild(el('div', {font:'500 11px '+A.font, color:'#8fb9c9', marginTop:'6px'}, 'Only rarities that live at your depth can show up — if none of your picks live there, you get the natural mix. Treasure chests and golden fish are not affected.'));
       upd(); }
     if (panelTab == 'pearl') { const n = pearlsFor(), ok = n >= 1 && (G.best||0) >= 250;
-      body.appendChild(el('div', {font:'600 14px '+A.font, lineHeight:1.4}, '🦪 You have ' + G.pearls + ' pearl' + (G.pearls == 1 ? '' : 's') + '. Each pearl makes every fish worth +10% forever (now ×' + (1 + .1*G.pearls).toFixed(1) + ').'));
+      body.appendChild(el('div', {font:'600 14px '+A.font, lineHeight:1.4}, '🦪 You have ' + G.pearls + ' pearl' + (G.pearls == 1 ? '' : 's') + '. Each pearl makes every fish worth +10% and your line 10% longer, forever (now ×' + (1 + .1*G.pearls).toFixed(1) + ').'));
       body.appendChild(el('div', {font:'500 13px '+A.font, color:'#b9d9e6', lineHeight:1.4}, 'A Pearl Dive starts your fishing over: coins, upgrades and spots go back to the start. You keep your pearls, your Fish Book, your tickets and Workshop upgrades. Pearls come from coins earned since your last Pearl Dive, and you must have reached 250 m.'));
       body.appendChild(el('div', {font:'700 14px '+A.font, color:'#D5F367'}, 'Coins this run: ' + fmt(G.run) + ' · deepest this run: ' + fmt(G.best||0) + ' m → ' + n + ' pearl' + (n == 1 ? '' : 's')));
       if (ok) body.appendChild(mk(armPearl ? 'YES · Pearl Dive for ' + n + ' 🦪' : 'Pearl Dive for ' + n + ' 🦪', () => { if (!armPearl) { armPearl = true; drawPanel(); return; } pearlDive(); }, armPearl ? '#FF4539' : '#E9B9F7', '#121313'));
@@ -606,16 +622,16 @@ A.register('fishing', { mount(host, api){
       if (kx) { tx = null; hx += kx * sp * dt; } else if (tx != null) { const dx = tx - hx; hx += Math.sign(dx) * Math.min(Math.abs(dx), sp*dt); } hx = clamp(hx, 14, W - 14);
       for (const o of fish) { if (o.dead) continue; const y = sy(o.d); if (y < -200 || y > H + 200) continue; o.x += o.vx * dt; if (o.x < -30) o.x = W + 30; if (o.x > W + 30) o.x = -30; }
       const prevD = hd;
-      if (phase == 'drop') { hd += sinkV(UL('sink')) * spd('sinkPct') * slowF() * dt; gen(hd + 160);
+      if (phase == 'drop') { hd += sinkV(UL('sink')) * spd('sinkPct') * slowF() * dt; const pD = ride(prevD, 1, dt); gen(hd + 160);
         const z = zoneOf(hd); if (z != lastZone) { if (lastZone >= 0 || z > 0) { zoneShow = zoneName(hd) + ' · ' + fmt(ZONES[z].d) + ' m'; zoneT = 2; } lastZone = z; }
-        if (hd >= 2000 && layerOf(hd) != layerOf(prevD)) { zoneShow = zoneName(hd); zoneT = 2; A.sfx('blip'); }
-        for (const o of fish) { if (o.dead || o.jelly || o.passed || o.f.special == 'ohdang') continue; if (o.d < prevD - 3 || o.d > hd + 3) continue; if (Math.abs(o.x - hx) < o.f.s + 7) {
+        if (hd >= 2000 && layerOf(hd) != layerOf(prevD) && t - layerT > 1.5) { layerT = t; zoneShow = zoneName(hd); zoneT = 2; A.sfx('blip'); }
+        for (const o of fish) { if (o.dead || o.jelly || o.passed || o.f.special == 'ohdang') continue; if (o.d < pD - 3 || o.d > hd + 3) continue; if (Math.abs(o.x - hx) < o.f.s + 7) {
             if (ghosty(o)) { o.passed = true; continue; }
-            o.passed = true; if (caught.length < capN()) { catchIt(o); say('Hooked a ' + o.f.n + ' on the way down' + (caught.length >= capN() ? ' · hook full!' : ''), 1.2); } } }
+            o.passed = true; if (caught.length < capN()) { catchIt(o); say('Hooked ' + (/^[AEIOU]/i.test(o.f.n) ? 'an ' : 'a ') + o.f.n + ' on the way down' + (caught.length >= capN() ? ' · hook full!' : ''), 1.2); } } }
         if (phase == 'drop' && hd >= maxD) { hd = maxD; startReel('End of the line! Reel up and grab fish'); } }
-      else if (phase == 'reel') { const full = caught.length >= capN(), turbo = full || hd < skipD ? 4 : 1; hd -= reelV(UL('reel')) * spd('reelPct') * turbo * slowF() * dt;
-        if (!full) for (const o of fish) { if (o.dead) continue; if (o.d > prevD + 4 || o.d < hd - 4) continue; const rad = (o.jelly ? 12 : o.f.s) + 8 + 3*UL('magnet');
-          if (Math.abs(o.x - hx) < rad && Math.abs(o.d*PXM - hd*PXM) < rad + Math.abs(prevD - hd)*PXM) {
+      else if (phase == 'reel') { const full = caught.length >= capN(), turbo = full || hd < skipD ? 4 : 1; hd -= reelV(UL('reel')) * spd('reelPct') * turbo * slowF() * dt; const pD = ride(prevD, -1, dt); if (genUp >= 0) genAbove(hd - 160);
+        if (!full) for (const o of fish) { if (o.dead) continue; if (o.d > pD + 4 || o.d < hd - 4) continue; const rad = (o.jelly ? 12 : o.f.s) + 8 + 3*UL('magnet');
+          if (Math.abs(o.x - hx) < rad && Math.abs(o.d*PXM - hd*PXM) < rad + Math.abs(pD - hd)*PXM) {
             if (o.jelly) { o.dead = true; if (shieldN > 0) { shieldN--; A.tone(900, .06, 'sine', .04); say('Jelly Guard blocked a sting!', 1.2); continue; } if (!caught.length) { A.sfx('bad'); continue; }
               // jellyfish never take a fish that's new for your Fish Book — only one you already have (or a second copy)
               let li = -1; for (let q = caught.length - 1; q >= 0; q--) { const kk = caught[q].f.k; if (book()[kk] || caught.findIndex(c2 => c2.f.k == kk) < q) { li = q; break; } }
@@ -632,7 +648,7 @@ A.register('fishing', { mount(host, api){
         if (hd > G.best) G.best = hd; if (hd > (G.deepest||0)) { G.deepest = hd; stat(api,'fishDepth',Math.floor(hd),'max'); } }
       if (combo && t - lastCatch > 1.6) combo = 0; }
     const want = phase == 'drop' ? hd - (230 - SURF)/PXM : phase == 'reel' ? hd - (440 - SURF)/PXM : 0;
-    camD += (Math.max(0, want) - camD) * Math.min(1, dt * (phase == 'surface' || phase == 'tally' ? 3 : 8)); if (phase == 'drop' && hd - camD > (H - SURF - 60)/PXM) camD = hd - (H - SURF - 60)/PXM;
+    camD += (Math.max(0, want) - camD) * Math.min(1, dt * (phase == 'surface' || phase == 'tally' ? 3 : 8)); if (phase == 'drop' && hd - camD > (H - SURF - 60)/PXM) camD = hd - (H - SURF - 60)/PXM; if (phase == 'drop' || phase == 'reel') camD = Math.max(Math.max(0, want) - 60, Math.min(Math.max(0, want) + 60, camD));
     draw(); });
   refreshBar();
   A._dbg = A._dbg || {}; A._dbg.fish = { G, s: () => ({st, phase, hd, maxD, caught:caught.length, score, fish:fish.length, camD}), press, setX: x => { tx = x; }, fishes: () => fish.filter(o => !o.dead).map(o => ({x:o.x, d:o.d, j:!!o.jelly})), hx: () => hx, ohTest: d => ({chance: ohChance(d), txt: ohTxt(d)}), caughtNames: () => caught.map(c2 => c2.f.n), spawnOh: () => { const f = SPEC[G.loc][2]; fish.push({f, x:W/2, d:hd + 22, vx:14, ph:0, gold:false}); }, rarTest: (d, n) => { const c = {}; for (let k = 0; k < n; k++) { const f = pick(d); const nm = f.junk ? 'boot' : f.chest ? 'chest' : RN[f.r]; c[nm] = (c[nm]||0) + 1; } return {c, dens: +density(d).toFixed(2)}; }, gallery: () => ALL.map(f => ({n:f.n, sh:f.look ? f.look.shape : '', src:fishIcon(f)})) };
