@@ -485,7 +485,7 @@ A.register('fishing', { mount(host, api){
   const FASTV = 42; let visBoost = 1; const visV = () => FASTV * slowF() * visBoost; let genUp = -1;
   const genAbove = to => { let n = 0; while (genUp > to && genUp > 0 && n++ < 500) { const b1 = Math.max(0, genUp - 12); if (b1 == genUp) { genUp = to; break; } spawnBand(b1, genUp - b1); genUp = b1; } };
   const ride = (prevD, dir, dt) => { const ex = Math.max(0, Math.abs(hd - prevD) - visV()*dt); if (!(ex > 0)) return prevD; const sh = ex*dir;
-    for (const o of fish) if (!o.dead && (dir > 0 ? (o.d > prevD - 60 && o.d < prevD + 420) : (o.d < prevD + 60 && o.d > prevD - 420))) o.d += sh;
+    for (const o of fish) if (!o.dead && (dir > 0 ? (o.d > prevD - 60 && o.d < prevD + 420) : (o.d < prevD + 60 && o.d > prevD - 420))) { o.d += sh; if (o.d < 1 && base == 0) o.dead = true; }
     if (dir > 0) genTo += sh; else { if (genUp < 0) genUp = prevD - 60; genUp += sh; } return prevD + sh; };
   let layerT = -9;
   let fT = 0; const spawnFISH = () => { const f = SPEC.fwish[3]; if (fish.some(o => !o.dead && o.f === f)) return; fish.push({f, x:W/2, d:Math.max(1, hd + (phase == 'reel' ? -40 : 40)), vx:8, ph:0, gold:false});
@@ -507,15 +507,15 @@ A.register('fishing', { mount(host, api){
   const catchIt = o => { const v = fishVal(o.f, AB(o.d)) * (o.gold ? 5 : 1), p = fishPts(o.f, AB(o.d)) * (o.gold ? 2 : 1);
     if (t - lastCatch < 1.6) combo++; else combo = 0; lastCatch = t; caught.push({f:o.f, v:v * (1 + combo*(.1 + .04*UL('combo'))), p, gold:o.gold}); o.dead = true;
     A.tone(500 + Math.min(10, combo)*60, .05, 'square', .04); if (o.f.r >= 3 || o.gold) A.sfx('coin'); };
-  const finishDive = () => { phase = 'tally'; let coins = 0, pts = 0; const b = book(), news = [];
+  const finishDive = () => { fish = fish.filter(o => !o.dead && o.d >= 1); phase = 'tally'; let coins = 0, pts = 0; const b = book(), news = [];
     caught.forEach(x => { coins += x.v; pts += x.p; if (!b[x.f.k]) news.push(x.f.n); b[x.f.k] = (b[x.f.k]||0) + 1; stat(api,'fishCaught',1,'add'); if (x.f.r >= 3) stat(api,'fishRare',1,'add'); });
     coins = fin(coins * coinMult()); let bonus = 0; fillBounties();
     caught.forEach(x => { const bq = G.bounties.find(b => b.k == x.f.k && b.have < b.need); if (bq) { bq.have++; if (bq.have >= bq.need) { bonus += bq.reward; A.sfx('win'); } } }); if (bonus) { coins = fin(coins + bonus); setTimeout(() => say('📜 Bounty complete! +🪙' + fmt(bonus), 2.5), 300); } fillBounties();
     G.coins = fin(G.coins + coins); G.run = fin(G.run + coins); G.tot = fin(G.tot + coins); G.dives++; G.caught += caught.length;
-    score = fin(score + pts); api.score(score); tally = {coins, pts, n:caught.length, news, list:caught.slice(0, 40), bounty:bonus}; save(); refreshBar();
+    score = fin(score + pts); api.score(score); tally = {coins, pts, n:caught.length, news, list:caught.slice(0, 40), bounty:bonus, at:t}; save(); refreshBar();
     A.sfx(caught.length ? 'win' : 'blip'); if (news.length) setTimeout(() => A.sfx('coin'), 300); };
   const preview = () => { caught = []; genUp = -1; fish = fish.filter(o => !o.dead && !o.pred && o.d >= 0 && o.d < 150); if (fish.length < 8) { genTo = 1; gen(140); } else genTo = Math.max(genTo, 150); };   // fish swimming under the boat while you get ready
-  const toSurface = () => { phase = 'surface'; tally = null; rollWeather(); preview(); refreshBar(); };
+  const toSurface = () => { fish = fish.filter(o => !o.dead && o.d >= 1); phase = 'surface'; tally = null; rollWeather(); preview(); refreshBar(); };
   const press = () => { if (quiz) return; if (st != 'play') { reset(); st = 'play'; refreshBar(); return; }
     if (phase == 'surface') startDive(); else if (phase == 'tally') toSurface(); };
   const reset = () => { if (__skip) { __skip = false; phase = 'surface'; preview(); return; } score = 0; api.score(0); phase = 'surface'; tally = null; caught = []; preview(); };
@@ -811,7 +811,7 @@ A.register('fishing', { mount(host, api){
       g.fillStyle = '#F9BF01'; g.font = '800 28px '+A.font; g.fillText('+🪙 ' + fmt(tally.coins), W/2, 188); g.fillStyle = '#fff'; g.font = '700 14px '+A.font; g.fillText('+' + fmt(tally.pts) + ' points · ' + tally.n + ' fish' + (tally.bounty ? ' · 📜 +' + fmt(tally.bounty) : ''), W/2, 214);
       const cnt = {}; tally.list.forEach(x => { const k = x.f.n + (x.gold ? ' ✨' : ''); cnt[k] = (cnt[k]||0) + 1; }); g.font = '600 13px '+A.font; Object.entries(cnt).slice(0, 8).forEach(([n, k], i) => { g.fillStyle = '#e8f4ff'; g.fillText(n + (k > 1 ? ' ×' + k : ''), W/2, 242 + i*20); });
       if (tally.news.length) { g.fillStyle = '#E9B9F7'; g.font = '700 13px '+A.font; g.fillText('📖 New in your Fish Book: ' + tally.news.slice(0, 2).join(', ') + (tally.news.length > 2 ? ' +' + (tally.news.length - 2) : ''), W/2, 410); }
-      g.fillStyle = '#cfe3d9'; g.font = '600 12px '+A.font; g.fillText('Tap to keep fishing', W/2, 440); }
+      g.fillStyle = '#cfe3d9'; g.font = '600 12px '+A.font; g.fillText('Tap to keep fishing (closes by itself)', W/2, 440); }
     if (st == 'ready') A.overlayText(g, W, H, 'FISHING HOLE', __skip ? 'Saved trip · tap or press Space to continue' : 'Endless dive fishing · tap to start');
     if (st == 'over') A.overlayText(g, W, H, 'TICKETS CASHED IN!', fmt(score) + ' points · your coins & upgrades are saved · tap to fish on'); };
 
@@ -853,6 +853,8 @@ A.register('fishing', { mount(host, api){
         if (base > 0 && (hd > 1e7 || hd < 500)) rebase(); }
       if (combo && t - lastCatch > 1.6) combo = 0; }
     const want = phase == 'drop' ? hd - (230 - SURF)/PXM : phase == 'reel' ? hd - (440 - SURF)/PXM : 0;
+    // the catch card closes by itself after 5 s (or tap to close it sooner)
+    if (phase == 'tally' && tally && !panel && t - (tally.at || 0) > 5) toSurface();
     camD += (Math.max(0, want) - camD) * Math.min(1, dt * (phase == 'surface' || phase == 'tally' ? 3 : 8)); if (phase == 'drop' && hd - camD > (H - SURF - 60)/PXM) camD = hd - (H - SURF - 60)/PXM; camD = Math.max(Math.max(0, want) - 60, Math.min(Math.max(0, want) + 60, camD));
     draw(); });
   refreshBar();
