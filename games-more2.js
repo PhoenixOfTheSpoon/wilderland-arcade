@@ -188,7 +188,7 @@ A.register('fishing', { mount(host, api){
       'Star Minnow|Moon Guppy|Comet Perch|Nebula Trout', 'Meteor Eel|Galaxy Ray|Orbit Fish|Saturn Bass', 'Quasar Pike|Cosmic Salmon|Rocket Swordfish|Planet Sturgeon',
       'Void Lantern|Wormhole Eel|Pulsar Squid|Supernova Koi', 'Black Hole Gulper|Eclipse Shark|Starlight Serpent|Celestial Narwhal', 'Dark Matter Fish|Time Trout|Gravity Ray|Cosmic Dragon',
       'Quantum Kraken|Infinity Eel|Big Bang Bass|Galaxy Whale', 'Dream Fish|The Starfish King|Universe Koi|The First Fish']}];
-  const RN = ['Common','Uncommon','Rare','Epic','Legendary','Mythic','Godly','DANG'], RC = ['#c9ccd1','#7fe08a','#64CDF5','#E9B9F7','#F9BF01','#ff6ad5','#7df9ff','#ff3b3b'];
+  const RN = ['Common','Uncommon','Rare','Epic','Legendary','Mythic','Godly','DANG','OH DANG!!!!'], RC = ['#c9ccd1','#7fe08a','#64CDF5','#E9B9F7','#F9BF01','#ff6ad5','#7df9ff','#ff3b3b','#ff7bff'];
   const hue = s => { let h = 7; for (const ch of s) h = (h*31 + ch.charCodeAt(0)) % 360; return h; };
   // ---------- fish art: every species gets a body shape from what it is (eel, ray, shark, squid, puffer, whale, anglerfish,
   // crab, seahorse, turtle, dragon …), its own colors and a pattern. Real fish use their real colors. ----------
@@ -346,10 +346,12 @@ A.register('fishing', { mount(host, api){
   Object.values(FISH).forEach(rows => rows.forEach(row => row.forEach(f => { f.s = (9 + f.i*2.5 + f.z*1.2) * ({whale:1.6, shark:1.35, dragon:1.1, squid:1.15, sword:1.2, ray:1.2, crab:.85, shrimp:.75, seahorse:.9, puffer:.9, star:.85, eel:.95}[f.look.shape] || 1); })));
   const BOOT = {k:'boot', n:'Old Boot', z:0, i:-1, r:0, col:'#5a3a1a', s:11, junk:true}, CHEST = {k:'chest', n:'Treasure Chest', z:2, i:-2, r:4, col:'#c8964a', s:13, chest:true};
   // Godly (from 60 m) and DANG (from 250 m) fish: one of each per spot, worth a fortune, very rare unless you aim your bait mix at them
-  const SPECIAL = {lake:['Crown Sturgeon', 'DANG Catfish'], isle:['Glacier God Narwhal', 'DANG Yeti Fish'], coast:['Poseidon Ray', 'DANG Megalodon'], vent:['Volcano God Koi', 'DANG Lava Kraken'], star:['Galaxy Guardian', 'DANG Cosmic Whale']};
-  const SPEC = {}; Object.entries(SPECIAL).forEach(([lk, [gn, dn]]) => { SPEC[lk] = [gn, dn].map((n, j) => { const lo = mkLook(n, 6, 3);
+  const SPECIAL = {lake:['Crown Sturgeon', 'DANG Catfish', 'OH DANG!!!! Lake Titan'], isle:['Glacier God Narwhal', 'DANG Yeti Fish', 'OH DANG!!!! Frost Colossus Whale'], coast:['Poseidon Ray', 'DANG Megalodon', 'OH DANG!!!! Abyss Behemoth Shark'], vent:['Volcano God Koi', 'DANG Lava Kraken', 'OH DANG!!!! Magma Titan Dragon'], star:['Galaxy Guardian', 'DANG Cosmic Whale', 'OH DANG!!!! Galaxy Devourer']};
+  const SPEC = {}; Object.entries(SPECIAL).forEach(([lk, names]) => { SPEC[lk] = names.map((n, j) => { const lo = mkLook(n, 6, 3);
+      if (j == 2) { lo.rainbow = true; lo.col = 'hsl(300,90%,60%)'; lo.dark = 'hsl(260,80%,30%)'; lo.belly = '#ffffff'; lo.acc = '#ffff00'; lo.crown = true; lo.glow = true;
+        return {k:lk + '-ohdang', n, z:7, i:6, r:8, loc:lk, look:lo, get col(){ return this.look.col; }, s:58 * (lo.shape == 'whale' ? 1.15 : 1), special:'ohdang', minD:Infinity}; }
       if (j) { lo.col = 'hsl(0,85%,48%)'; lo.dark = 'hsl(0,80%,22%)'; lo.belly = 'hsl(20,90%,70%)'; lo.acc = '#121313'; } else { lo.col = 'hsl(48,100%,62%)'; lo.dark = 'hsl(40,90%,36%)'; lo.belly = '#fffbe6'; lo.acc = '#7df9ff'; }
-      lo.glow = true; return {k:lk + '-' + (j ? 'dang' : 'godly'), n, z:6, i:4 + j, r:6 + j, loc:lk, look:lo, get col(){ return this.look.col; }, s:(j ? 30 : 26) * (lo.shape == 'whale' ? 1.2 : 1), special:j ? 'dang' : 'godly', minD:j ? 250 : 60}; }); });
+      lo.glow = true; return {k:lk + '-' + (j ? 'dang' : 'godly'), n, z:6, i:4 + j, r:6 + j, loc:lk, look:lo, get col(){ return this.look.col; }, s:(j ? 30 : 26) * (lo.shape == 'whale' ? 1.2 : 1), special:j ? 'dang' : 'godly', minD:j ? 10000 : 5000}; }); });
   const ALL = [].concat(...LOCS.map(L => [].concat(...FISH[L.k]).concat(SPEC[L.k]))).concat([BOOT, CHEST]);
 
   // ---------- upgrades (bought with coins; levels never reset except by a Pearl Dive) ----------
@@ -391,8 +393,8 @@ A.register('fishing', { mount(host, api){
   const capN = () => 3 + UL('hook') + A.U('bait');
   const luck = () => 1 + .12*UL('luck') + .15*A.U('lure') + (UL('sonar') >= 3 ? .15 : 0);
   function buddyRate(L) { const z = zoneOf(G.best||0); return L ? L * .35 * 4 * Math.pow(2.3, z) * LOC().mult * coinMult() : 0; }
-  const fishVal = (f, d) => f.special ? 4 * Math.pow(2.3, zoneOf(d)) * (f.special == 'dang' ? 500 : 60) * LOC().mult * Math.pow(2, layerOf(d)) : f.chest ? 60 * Math.pow(2.3, zoneOf(d)) * LOC().mult * Math.pow(2, layerOf(d)) * (1 + .2*UL('chest')) : f.junk ? 1 : 4 * Math.pow(2.3, f.z) * [1, 2, 4, 9][f.i] * LOC().mult * Math.pow(2, layerOf(d));
-  const fishPts = (f, d) => f.special ? (f.special == 'dang' ? 1500 + 80*zoneOf(d) : 400 + 30*zoneOf(d)) + 25*layerOf(d) : f.junk ? 2 : f.chest ? 150 + 20*zoneOf(d) : Math.round((10 + 14*f.z) * [1, 1.6, 2.6, 4.5][f.i] + 25*layerOf(d));
+  const fishVal = (f, d) => f.special ? 4 * Math.pow(2.3, zoneOf(d)) * ({dang:500, godly:60, ohdang:1e6})[f.special] * LOC().mult * Math.pow(2, layerOf(d)) : f.chest ? 60 * Math.pow(2.3, zoneOf(d)) * LOC().mult * Math.pow(2, layerOf(d)) * (1 + .2*UL('chest')) : f.junk ? 1 : 4 * Math.pow(2.3, f.z) * [1, 2, 4, 9][f.i] * LOC().mult * Math.pow(2, layerOf(d));
+  const fishPts = (f, d) => f.special ? (f.special == 'ohdang' ? 100000 + 1000*zoneOf(d) : f.special == 'dang' ? 1500 + 80*zoneOf(d) : 400 + 30*zoneOf(d)) + 25*layerOf(d) : f.junk ? 2 : f.chest ? 150 + 20*zoneOf(d) : Math.round((10 + 14*f.z) * [1, 1.6, 2.6, 4.5][f.i] + 25*layerOf(d));
 
   // ---------- one dive ----------
   let st = 'ready', phase = 'surface', score = 0, t = 0, hx = W/2, tx = null, hd = 0, camD = 0, maxD = 0, skipD = 0, caught = [], fish = [], genTo = 0, ghostN = 0, shieldN = 0,
@@ -405,11 +407,11 @@ A.register('fishing', { mount(host, api){
   const mixOn = () => Array.isArray(G.mix) && G.mix.length == MIXN && G.mix.some(v => v > 0);
   const poolAt = d => { const z = zoneOf(d), L = LOC(), lk = luck(), w8 = [10, 5, 2.2*lk, .7*lk], out = [];
     FISH[L.k][z].forEach((f, i) => out.push({f, w:w8[i]*(z ? .8 : 1)})); if (z > 0) FISH[L.k][z-1].forEach((f, i) => out.push({f, w:w8[i]*.2}));
-    const [gd, dg] = SPEC[L.k]; if (d >= gd.minD) out.push({f:gd, w:.05*lk}); if (d >= dg.minD) out.push({f:dg, w:.008*lk}); return out; };
+    const gd = SPEC[L.k][0], dg = SPEC[L.k][1]; if (d >= gd.minD) out.push({f:gd, w:.05*lk}); if (d >= dg.minD) out.push({f:dg, w:.008*lk}); return out; };
   const mixed = pool => { if (!mixOn()) return pool; const nat = new Array(MIXN).fill(0); let T = 0; pool.forEach(p2 => { nat[p2.f.r] += p2.w; T += p2.w; });
     const want = G.mix.map((v, r) => nat[r] > 0 ? Math.max(0, v) : 0), W8 = want.reduce((a, b) => a + b, 0); if (!(W8 > 0)) return pool;
     return pool.map(p2 => ({f:p2.f, w:p2.w / nat[p2.f.r] * want[p2.f.r] / W8 * T})); };
-  const densCache = {}; const density = d => { const key = zoneOf(d) + '|' + (d >= 250 ? 2 : d >= 60 ? 1 : 0) + '|' + G.loc + '|' + (mixOn() ? G.mix.join(',') : 'n'); if (densCache[key] != null) return densCache[key];
+  const densCache = {}; const density = d => { const key = zoneOf(d) + '|' + (d >= 10000 ? 2 : d >= 5000 ? 1 : 0) + '|' + G.loc + '|' + (mixOn() ? G.mix.join(',') : 'n'); if (densCache[key] != null) return densCache[key];
     const nat = poolAt(d), mx = mixed(nat), ec = p2 => { let a = 0, b = 0; p2.forEach(q => { a += q.w*COST[q.f.r]; b += q.w; }); return a / b; };
     return (densCache[key] = Math.max(.008, Math.min(1.35, ec(nat) / ec(mx)))); };
   const pick = d => { const z = zoneOf(d), u = Math.random();
@@ -421,7 +423,9 @@ A.register('fishing', { mount(host, api){
       for (let i = 0; i < n; i++) { const f = pick(b0), dir = Math.random() < .5 ? 1 : -1;
         fish.push({f, x:20 + Math.random()*(W-40), d:b0 + Math.random()*12, vx:f.chest ? 0 : dir * (25 + Math.random()*45 + z*6) * df, ph:Math.random()*TAU, gold:!f.junk && !f.chest && Math.random()*100 < goldP(UL('gold'))}); }
       if (z >= 1 && Math.random() < Math.min(.5, (.12 + .04*z) * df)) fish.push({jelly:true, x:20 + Math.random()*(W-40), d:b0 + Math.random()*12, vx:(Math.random()-.5)*30, ph:Math.random()*TAU}); } };
-  const startDive = () => { if (panel) closePanel(); maxD = lineM(UL('line')); skipD = Math.floor(maxD * skipPct() / 100); fish = []; genTo = Math.max(1, skipD); caught = []; ghostN = UL('ghost'); shieldN = UL('shield');
+  const ohChance = d => Math.min(1, Math.max(0, d) * 1e-12); let ohT = 0;
+  const ohTxt = d => { const p = ohChance(d) * 100; return p >= 1 ? p.toFixed(p >= 10 ? 0 : 1) + '%' : p >= .001 ? p.toPrecision(2) + '%' : p.toExponential(1).replace('e-', '×10⁻').replace(/⁻(\d+)/, (m, n) => '⁻' + n.split('').map(c => '⁰¹²³⁴⁵⁶⁷⁸⁹'[c]).join('')) + '%'; };
+  const startDive = () => { ohT = 0; if (panel) closePanel(); maxD = lineM(UL('line')); skipD = Math.floor(maxD * skipPct() / 100); fish = []; genTo = Math.max(1, skipD); caught = []; ghostN = UL('ghost'); shieldN = UL('shield');
     combo = 0; hd = skipD; hx = tx != null ? tx : W/2; phase = 'drop'; lastZone = -1; A.tone(300, .15, 'sine', .05); if (skipD) say('Express drop to '+fmt(skipD)+' m', 1.2); refreshBar(); };
   const startReel = why => { if (phase != 'drop') return; phase = 'reel'; combo = 0; lastCatch = -9; if (why) say(why, 1.6); A.sfx('blip'); refreshBar(); };
   const catchIt = o => { const v = fishVal(o.f, o.d) * (o.gold ? 5 : 1), p = fishPts(o.f, o.d) * (o.gold ? 2 : 1);
@@ -497,10 +501,10 @@ A.register('fishing', { mount(host, api){
     if (panelTab == 'book') { const b = book(), found = ALL.filter(f => b[f.k]).length;
       body.appendChild(el('div', {font:'600 13px '+A.font, color:'#D5F367'}, found + ' of ' + ALL.length + ' found · Book bonus ×' + bookBonus().toFixed(2) + ' coins (+3% per full zone, +25% per full spot)'));
       LOCS.forEach(L => { body.appendChild(el('div', {font:'800 15px '+A.font, marginTop:'6px'}, L.n + (G.locs[L.k] ? '' : ' 🔒')));
-        FISH[L.k].concat([SPEC[L.k]]).forEach((zr, z) => { const r = row(); r.style.flexWrap = 'wrap'; r.style.gap = '4px'; r.appendChild(el('div', {width:'100%', font:'600 11px '+A.font, color:z < 8 ? '#8fb9c9' : '#ff9b9b'}, z < 8 ? ZONES[z].n + ' · ' + ZONES[z].d + ' m+' : '✨ Godly (60 m+) & 🔥 DANG (250 m+)'));
+        FISH[L.k].concat([SPEC[L.k]]).forEach((zr, z) => { const r = row(); r.style.flexWrap = 'wrap'; r.style.gap = '4px'; r.appendChild(el('div', {width:'100%', font:'600 11px '+A.font, color:z < 8 ? '#8fb9c9' : '#ff9b9b'}, z < 8 ? ZONES[z].n + ' · ' + ZONES[z].d + ' m+' : '✨ Godly (5,000 m+) · 🔥 DANG (10,000 m+) · 🌈 OH DANG!!!! (deeper = likelier)'));
           zr.forEach(f => { const n = b[f.k] || 0, cell = el('div', {flex:'1 1 45%', display:'flex', alignItems:'center', gap:'6px', font:'600 12px '+A.font, color:n ? RC[f.r] : '#5d7d8a'}); if (n) { const im = el('img', {width:'46px', height:'30px', flexShrink:0}); im.src = fishIcon(f); cell.appendChild(im); } else cell.appendChild(el('div', {width:'46px', height:'30px', flexShrink:0, borderRadius:'8px', background:'rgba(255,255,255,.06)', textAlign:'center', lineHeight:'30px'}, '?')); cell.appendChild(el('span', {}, n ? f.n + ' ×' + n : '??? (' + RN[f.r] + ')')); r.appendChild(cell); }); }); });
       const r = row(); [BOOT, CHEST].forEach(f => { const cell = el('div', {flex:'1', display:'flex', alignItems:'center', gap:'6px', font:'600 12px '+A.font, color:b[f.k] ? RC[f.r] : '#5d7d8a'}); if (b[f.k]) { const im = el('img', {width:'46px', height:'30px'}); im.src = fishIcon(f); cell.appendChild(im); } cell.appendChild(el('span', {}, b[f.k] ? f.n + ' ×' + b[f.k] : '??? (' + RN[f.r] + ')')); r.appendChild(cell); }); }
-    if (panelTab == 'mix') { const deep = Math.max(30, lineM(UL('line'))), WH = ['up to 250 m', 'up to 2,000 m', 'everywhere', 'everywhere', '250 m+', '2,000 m+', '60 m+', '250 m+'];
+    if (panelTab == 'mix') { const deep = Math.max(30, lineM(UL('line'))), WH = ['up to 250 m', 'up to 2,000 m', 'everywhere', 'everywhere', '250 m+', '2,000 m+', '5,000 m+', '10,000 m+'];
       const cur = mixOn() ? G.mix.slice() : null, vals = cur || [60, 30, 12, 5, 2, 1, 0, 0];
       body.appendChild(el('div', {font:'600 13px '+A.font, lineHeight:1.4, color:'#cfe3ec'}, 'Choose what your bait attracts. Higher numbers = more of that rarity. Aiming for rarer fish means fewer fish in the water, so pick your mix to fit your hook.'));
       const info = el('div', {font:'800 14px '+A.font, color:'#D5F367'}); body.appendChild(info);
@@ -539,12 +543,15 @@ A.register('fishing', { mount(host, api){
     if (f.chest) { g.fillStyle = '#8D5B1D'; rr(g, -14, -9, 28, 18, 3); g.fill(); g.fillStyle = '#F9BF01'; g.fillRect(-14, -2, 28, 3); g.fillRect(-2, -4, 4, 7); if (!low()) { g.fillStyle = 'rgba(255,233,120,' + (.4 + .3*Math.sin(t*4 + o.ph)) + ')'; g.beginPath(); g.arc(0, 0, 20, 0, TAU); g.fill(); } g.restore(); return; }
     if ((f.r >= 3 || o.gold) && !low()) { g.shadowColor = o.gold ? '#FFD700' : f.look.acc; g.shadowBlur = f.r >= 4 ? 16 : 10; }
     drawLook(f, s, o.ph, o.gold, low()); g.shadowBlur = 0;
-    if (f.special && !low()) { const pu = .5 + .5*Math.sin(t*5 + o.ph); g.strokeStyle = f.special == 'dang' ? 'rgba(255,40,40,' + (.4 + .5*pu) + ')' : 'rgba(125,249,255,' + (.35 + .4*pu) + ')'; g.lineWidth = 3; g.beginPath(); g.ellipse(0, 0, s*1.5 + pu*4, s*.95 + pu*3, 0, 0, TAU); g.stroke();
+    if (f.look && f.look.rainbow) { const hh = (t*140) % 360; f.look.col = 'hsl(' + hh + ',95%,60%)'; f.look.acc = 'hsl(' + ((hh + 180) % 360) + ',95%,60%)'; }
+    if (f.special == 'ohdang' && !low()) { for (let k = 0; k < 3; k++) { g.strokeStyle = 'hsla(' + ((t*200 + k*120) % 360) + ',95%,60%,.75)'; g.lineWidth = 4; g.beginPath(); g.ellipse(0, 0, s*1.4 + k*10 + Math.sin(t*4 + k)*5, s*.9 + k*8, 0, 0, TAU); g.stroke(); }
+      g.save(); g.scale(o.vx < 0 ? -1 : 1, 1); g.font = '900 22px ' + A.font; g.textAlign = 'center'; g.lineWidth = 5; g.strokeStyle = '#121313'; g.strokeText('OH DANG!!!!', 0, -s*1.3); g.fillStyle = 'hsl(' + ((t*240) % 360) + ',95%,65%)'; g.fillText('OH DANG!!!!', 0, -s*1.3); g.restore(); }
+    if (f.special && f.special != 'ohdang' && !low()) { const pu = .5 + .5*Math.sin(t*5 + o.ph); g.strokeStyle = f.special == 'dang' ? 'rgba(255,40,40,' + (.4 + .5*pu) + ')' : 'rgba(125,249,255,' + (.35 + .4*pu) + ')'; g.lineWidth = 3; g.beginPath(); g.ellipse(0, 0, s*1.5 + pu*4, s*.95 + pu*3, 0, 0, TAU); g.stroke();
       if (f.special == 'dang') { g.fillStyle = '#fff'; g.font = '900 ' + Math.round(s*.5) + 'px ' + A.font; g.textAlign = 'center'; g.save(); g.scale(o.vx < 0 ? -1 : 1, 1); g.fillText('DANG!', 0, -s*1.05); g.restore(); } }
     if (f.r >= 4 && !low()) { g.fillStyle = '#fff'; for (let k = 0; k < 3; k++) { const a = t*2 + k*2.1 + o.ph; g.globalAlpha = .5 + .5*Math.sin(t*6 + k); g.fillRect(Math.cos(a)*s*1.2, Math.sin(a)*s*.8, 2, 2); } g.globalAlpha = 1; }
     g.restore();
     // Sonar Lv 4: fish you haven't caught yet flash (3 times a second at most, so it's safe for eyes)
-    if (UL('sonar') >= 4 && !f.junk && !book()[f.k]) { const on = Math.floor(t*6) % 2 == 0, R2 = s*1.6 + 6;
+    if (UL('sonar') >= 4 && !f.junk && !book()[f.k] && !caught.some(c2 => c2.f.k == f.k)) { const on = Math.floor(t*6) % 2 == 0, R2 = s*1.6 + 6;
       g.save(); g.lineWidth = 4; g.strokeStyle = on ? '#ffff00' : '#ff2bd6'; g.shadowColor = g.strokeStyle; g.shadowBlur = low() ? 0 : 14; g.beginPath(); g.arc(x, y, R2, 0, TAU); g.stroke();
       g.fillStyle = on ? 'rgba(255,255,0,.22)' : 'rgba(255,43,214,.18)'; g.fill(); g.shadowBlur = 0;
       g.font = '900 12px ' + A.font; g.textAlign = 'center'; g.lineWidth = 3; g.strokeStyle = '#121313'; g.strokeText('NEW!', x, y - R2 - 4); g.fillStyle = on ? '#ffff00' : '#ff2bd6'; g.fillText('NEW!', x, y - R2 - 4); g.restore(); }
@@ -577,7 +584,7 @@ A.register('fishing', { mount(host, api){
     g.fillStyle = 'rgba(0,0,0,.45)'; rr(g, 6, 6, W - 12, 30, 10); g.fill(); g.font = '700 14px '+A.font; g.textBaseline = 'middle'; g.fillStyle = '#F9BF01'; g.textAlign = 'left'; g.fillText('🪙 ' + fmt(G.coins), 14, 21);
     g.fillStyle = '#fff'; g.textAlign = 'center'; g.fillText((phase == 'surface' || phase == 'tally' ? 'Line ' + fmt(lineM(UL('line'))) : fmt(hd) + ' / ' + fmt(maxD)) + ' m', W/2 - 30, 21);
     g.textAlign = 'right'; g.fillText('🐟 ' + caught.length + '/' + capN() + ' · ' + fmt(score) + ' pts', W - 14, 21); g.textBaseline = 'alphabetic';
-    if (phase == 'drop' || phase == 'reel') { g.font = '600 11px '+A.font; g.textAlign = 'left'; g.fillStyle = 'rgba(255,255,255,.75)'; g.fillText((ghostTier() && phase == 'drop' ? '👻 ignoring ' + ['', 'Common', 'Common & Uncommon', 'below Epic'][ghostTier()] + '  ' : '') + (shieldN ? '🛡 ' + shieldN + '  ' : '') + (combo ? 'COMBO ×' + (combo + 1) + '  ' : '') + (slowF() < 1 ? '🐢 SLOW' : ''), 12, 52);
+    if (phase == 'drop' || phase == 'reel') { g.font = '600 11px '+A.font; g.textAlign = 'left'; g.fillStyle = 'rgba(255,255,255,.75)'; g.fillText((ghostTier() && phase == 'drop' ? '👻 ignoring ' + ['', 'Common', 'Common & Uncommon', 'below Epic'][ghostTier()] + '  ' : '') + (shieldN ? '🛡 ' + shieldN + '  ' : '') + (combo ? 'COMBO ×' + (combo + 1) + '  ' : '') + (slowF() < 1 ? '🐢 SLOW  ' : '') + '🌈 ' + ohTxt(hd) + ' / 10 s', 12, 52);
       const bw = 8, bh = H - 120; g.fillStyle = 'rgba(0,0,0,.35)'; rr(g, W - 16, 60, bw, bh, 4); g.fill(); g.fillStyle = '#D5F367'; g.beginPath(); g.arc(W - 12, 60 + bh * Math.min(1, hd / Math.max(1, maxD)), 6, 0, TAU); g.fill(); }
     if (zoneT > 0) { g.globalAlpha = Math.min(1, zoneT); g.fillStyle = 'rgba(0,0,0,.5)'; rr(g, W/2 - 140, 70, 280, 38, 12); g.fill(); g.fillStyle = '#D5F367'; g.font = '800 17px '+A.font; g.textAlign = 'center'; g.fillText(zoneShow, W/2, 95); g.globalAlpha = 1; }
     if (msgT > 0) { g.fillStyle = 'rgba(0,0,0,.6)'; rr(g, W/2 - 170, H - 90, 340, 36, 12); g.fill(); g.fillStyle = '#fff'; g.font = '700 15px '+A.font; g.textAlign = 'center'; g.fillText(msg, W/2, H - 66); }
@@ -602,7 +609,7 @@ A.register('fishing', { mount(host, api){
       if (phase == 'drop') { hd += sinkV(UL('sink')) * spd('sinkPct') * slowF() * dt; gen(hd + 160);
         const z = zoneOf(hd); if (z != lastZone) { if (lastZone >= 0 || z > 0) { zoneShow = zoneName(hd) + ' · ' + fmt(ZONES[z].d) + ' m'; zoneT = 2; } lastZone = z; }
         if (hd >= 2000 && layerOf(hd) != layerOf(prevD)) { zoneShow = zoneName(hd); zoneT = 2; A.sfx('blip'); }
-        for (const o of fish) { if (o.dead || o.jelly || o.passed) continue; if (o.d < prevD - 3 || o.d > hd + 3) continue; if (Math.abs(o.x - hx) < o.f.s + 7) {
+        for (const o of fish) { if (o.dead || o.jelly || o.passed || o.f.special == 'ohdang') continue; if (o.d < prevD - 3 || o.d > hd + 3) continue; if (Math.abs(o.x - hx) < o.f.s + 7) {
             if (ghosty(o)) { o.passed = true; continue; }
             o.passed = true; if (caught.length < capN()) { catchIt(o); say('Hooked a ' + o.f.n + ' on the way down' + (caught.length >= capN() ? ' · hook full!' : ''), 1.2); } } }
         if (phase == 'drop' && hd >= maxD) { hd = maxD; startReel('End of the line! Reel up and grab fish'); } }
@@ -610,16 +617,25 @@ A.register('fishing', { mount(host, api){
         if (!full) for (const o of fish) { if (o.dead) continue; if (o.d > prevD + 4 || o.d < hd - 4) continue; const rad = (o.jelly ? 12 : o.f.s) + 8 + 3*UL('magnet');
           if (Math.abs(o.x - hx) < rad && Math.abs(o.d*PXM - hd*PXM) < rad + Math.abs(prevD - hd)*PXM) {
             if (o.jelly) { o.dead = true; if (shieldN > 0) { shieldN--; A.tone(900, .06, 'sine', .04); say('Jelly Guard blocked a sting!', 1.2); continue; } if (!caught.length) { A.sfx('bad'); continue; }
-              const lost = caught[caught.length - 1]; A.sfx('bad'); quiz = learn2(host, api, 'A JELLYFISH STUNG YOUR LINE! ANSWER TO KEEP YOUR ' + lost.f.n.toUpperCase(), () => { quiz = false; say('You held on to the ' + lost.f.n + '!', 1.6); }, () => { quiz = false; caught.pop(); say('Ouch! A jellyfish knocked off your ' + lost.f.n, 1.8); }); if (quiz) break; continue; }
+              // jellyfish never take a fish that's new for your Fish Book — only one you already have (or a second copy)
+              let li = -1; for (let q = caught.length - 1; q >= 0; q--) { const kk = caught[q].f.k; if (book()[kk] || caught.findIndex(c2 => c2.f.k == kk) < q) { li = q; break; } }
+              if (li < 0) { A.tone(900, .06, 'sine', .04); say('The jellyfish couldn’t grab your new fish!', 1.4); continue; }
+              const lost = caught[li]; A.sfx('bad'); quiz = learn2(host, api, 'A JELLYFISH STUNG YOUR LINE! ANSWER TO KEEP YOUR ' + lost.f.n.toUpperCase(), () => { quiz = false; say('You held on to the ' + lost.f.n + '!', 1.6); }, () => { quiz = false; const j2 = caught.indexOf(lost); if (j2 >= 0) caught.splice(j2, 1); say('Ouch! A jellyfish knocked off your ' + lost.f.n, 1.8); }); if (quiz) break; continue; }
             catchIt(o); if (caught.length >= capN()) { say('Hook full! Zooming up', 1.2); break; } } }
         if (hd <= 0) { hd = 0; finishDive(); } }
-      if (phase == 'drop' || phase == 'reel') { if (hd > G.best) G.best = hd; if (hd > (G.deepest||0)) { G.deepest = hd; stat(api,'fishDepth',Math.floor(hd),'max'); } }
+      if (phase == 'drop' || phase == 'reel') {
+        // 🌈 OH DANG!!!!: every 10 s of diving, a chance of depth × 0.00001% per 100,000 m (1 million m = 0.0001% … 1 trillion m = 100%)
+        ohT += dt; if (ohT >= 10) { ohT -= 10; if (Math.random() < ohChance(hd)) { const f = SPEC[G.loc][2]; fish.push({f, x:80 + Math.random()*(W-160), d:Math.max(1, hd + (phase == 'drop' ? 22 : -22)), vx:(Math.random() < .5 ? -1 : 1)*14, ph:0, gold:false});
+          say('🌈 OH DANG!!!! Something ENORMOUS is right next to you!', 4); flash = .7; A.sfx('win'); stat(api,'ohDangSeen',1,'add'); } }
+        // it can always be hooked, even with a full hook
+        for (const o of fish) { if (o.dead || o.jelly || !o.f || o.f.special != 'ohdang') continue; if (Math.abs(o.x - hx) < o.f.s + 12 && Math.abs(o.d - hd)*PXM < o.f.s*.6 + 12) { catchIt(o); say('🌈🌈 YOU CAUGHT ' + o.f.n.toUpperCase() + '!!! 🌈🌈', 5); flash = 1; } }
+        if (hd > G.best) G.best = hd; if (hd > (G.deepest||0)) { G.deepest = hd; stat(api,'fishDepth',Math.floor(hd),'max'); } }
       if (combo && t - lastCatch > 1.6) combo = 0; }
     const want = phase == 'drop' ? hd - (230 - SURF)/PXM : phase == 'reel' ? hd - (440 - SURF)/PXM : 0;
     camD += (Math.max(0, want) - camD) * Math.min(1, dt * (phase == 'surface' || phase == 'tally' ? 3 : 8)); if (phase == 'drop' && hd - camD > (H - SURF - 60)/PXM) camD = hd - (H - SURF - 60)/PXM;
     draw(); });
   refreshBar();
-  A._dbg = A._dbg || {}; A._dbg.fish = { G, s: () => ({st, phase, hd, maxD, caught:caught.length, score, fish:fish.length, camD}), press, setX: x => { tx = x; }, fishes: () => fish.filter(o => !o.dead).map(o => ({x:o.x, d:o.d, j:!!o.jelly})), hx: () => hx, rarTest: (d, n) => { const c = {}; for (let k = 0; k < n; k++) { const f = pick(d); const nm = f.junk ? 'boot' : f.chest ? 'chest' : RN[f.r]; c[nm] = (c[nm]||0) + 1; } return {c, dens: +density(d).toFixed(2)}; }, gallery: () => ALL.map(f => ({n:f.n, sh:f.look ? f.look.shape : '', src:fishIcon(f)})) };
+  A._dbg = A._dbg || {}; A._dbg.fish = { G, s: () => ({st, phase, hd, maxD, caught:caught.length, score, fish:fish.length, camD}), press, setX: x => { tx = x; }, fishes: () => fish.filter(o => !o.dead).map(o => ({x:o.x, d:o.d, j:!!o.jelly})), hx: () => hx, ohTest: d => ({chance: ohChance(d), txt: ohTxt(d)}), caughtNames: () => caught.map(c2 => c2.f.n), spawnOh: () => { const f = SPEC[G.loc][2]; fish.push({f, x:W/2, d:hd + 22, vx:14, ph:0, gold:false}); }, rarTest: (d, n) => { const c = {}; for (let k = 0; k < n; k++) { const f = pick(d); const nm = f.junk ? 'boot' : f.chest ? 'chest' : RN[f.r]; c[nm] = (c[nm]||0) + 1; } return {c, dens: +density(d).toFixed(2)}; }, gallery: () => ALL.map(f => ({n:f.n, sh:f.look ? f.look.shape : '', src:fishIcon(f)})) };
   // ---- save & resume (Save & leave, reloads, closing the browser): coins & upgrades live in the game data; the trip's points here ----
   api.snap && api.snap(() => (st == 'play' && score > 0) ? {v:2, score} : null);
   { const R0 = api.resume; if (R0 && (R0.v == 1 || R0.v == 2)) { try { score = Math.max(0, fin(R0.score)); api.score(score); __skip = true; st = 'ready'; } catch(e) { console.error('[save] fishing resume failed', e); } } }
