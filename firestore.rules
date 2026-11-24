@@ -62,6 +62,15 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Suggestion box: anyone can send an idea — signed-in players as themselves, guests with an empty uid and the name "guest".
+    // Only the admin can delete. (Reading is covered by the leaderboard rule above.)
+    match /boards/_suggest/scores/{id} {
+      allow create: if request.resource.data.t is string && request.resource.data.t.size() > 0 && request.resource.data.t.size() <= 800
+        && request.resource.data.u is string && request.resource.data.u.size() <= 30
+        && ((request.auth == null && request.resource.data.uid == '' && request.resource.data.u == 'guest')
+            || (request.auth != null && request.resource.data.uid == request.auth.uid));
+    }
+
     // ================= WILDERLAND BUSINESS TYCOON =================
     // Nothing here can touch profiles (tickets, prizes, stars, pets, homes, avatars) — those stay owner-only above.
     function signedIn() { return request.auth != null; }

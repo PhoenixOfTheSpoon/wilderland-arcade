@@ -383,6 +383,20 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
           <div><div style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#8a6100;">OPERATOR ACCESS · ADMIN ∞</div><div style="font-size:28px; font-weight:700; color:#015640;">Admin tools</div><div style="font-size:13px; font-weight:500; color:#3d3d3d;">Games played in admin mode never save, pay tickets or post scores.</div></div>
           <div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;"><button onClick="{{ adminOff }}" style="background:#F9BF01; color:#121313; border:none; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;">Turn admin mode off · play normally</button><button onClick="{{ closeAdmin }}" style="background:#015640; color:#ffffff; border:none; border-radius:999px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer;">Close</button></div>
         </div>
+        <div role="tablist" aria-label="Admin sections" style="display:flex; gap:6px; flex-wrap:wrap;"><sc-for list="{{ admTabs }}" as="at" hint-placeholder-count="2"><button role="tab" aria-selected="{{ at.on }}" onClick="{{ at.pick }}" style="border:2px solid #015640; border-radius:999px; padding:8px 16px; font-weight:800; font-size:14px; cursor:pointer; background:{{ at.bg }}; color:{{ at.fg }};">{{ at.label }}</button></sc-for></div>
+        <sc-if value="{{ admTabSug }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#ffffff; border-radius:14px; padding:14px; display:flex; flex-direction:column; gap:10px; border:2px solid #AB2372;">
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;"><div style="font-size:12px; font-weight:800; letter-spacing:0.1em; color:#AB2372;">SUGGESTION BOX · {{ sugTotal }}</div>
+              <div style="display:flex; gap:6px; flex-wrap:wrap;"><button onClick="{{ sugCopy }}" title="Copies every idea so you can paste them to Claude" style="border:none; border-radius:999px; padding:7px 14px; font-weight:700; font-size:12px; cursor:pointer; background:#AB2372; color:#ffffff;">📋 Copy all for Claude</button></div></div>
+            <input class="wl-field" value="{{ sugFind }}" onChange="{{ inSugFind }}" onKeyDown="{{ stopKey }}" placeholder="Search ideas or players" aria-label="Search suggestions" style="font-family:inherit; font-size:13px; border:1.5px solid #AB2372; border-radius:10px; padding:6px 10px;">
+            <sc-if value="{{ sugEmpty }}" hint-placeholder-val="{{ false }}"><div style="font-size:13px; color:#6a6a6a;">No suggestions yet. Ideas from the 💡 Suggest an idea button land here, with who sent them (or “guest”).</div></sc-if>
+            <div style="max-height:60vh; overflow-y:auto; display:flex; flex-direction:column; gap:8px;"><sc-for list="{{ sugList }}" as="sg" hint-placeholder-count="3"><div style="font-size:14px; background:#faf7ee; border-radius:12px; padding:10px 12px; display:flex; flex-direction:column; gap:4px;">
+              <div style="display:flex; justify-content:space-between; gap:8px; align-items:center;"><div><b style="color:{{ sg.whoCol }};">{{ sg.who }}</b> <span style="font-size:11px; color:#8a8a8a;">{{ sg.when }}</span></div><button onClick="{{ sg.del }}" style="border:1.5px solid #B3001B; border-radius:999px; padding:3px 10px; font-weight:700; font-size:11px; cursor:pointer; background:#ffffff; color:#B3001B;">{{ sg.delLabel }}</button></div>
+              <div style="color:#2d2d2d; white-space:pre-wrap; overflow-wrap:anywhere;">{{ sg.what }}</div></div></sc-for></div>
+            <sc-if value="{{ sugCopied }}" hint-placeholder-val="{{ false }}"><div role="status" style="font-size:12px; font-weight:700; color:#00804a;">Copied! Paste it into your chat with Claude.</div></sc-if>
+          </div>
+        </sc-if>
+        <sc-if value="{{ admTabTools }}" hint-placeholder-val="{{ true }}">
         <div style="background:#ffffff; border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:8px; border:2px solid #015640;">
           <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;"><div style="font-size:12px; font-weight:700; letter-spacing:0.1em; color:#015640;">ACTIVITY TRACKER · LIVE</div><div style="font-size:12px; font-weight:700; color:#00B451;">🟢 {{ actOnline }} online now</div></div>
           <div style="font-size:12px; color:#3d3d3d;"><b>Online:</b> {{ actOnlineNames }}</div>
@@ -398,11 +412,6 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
             <sc-for list="{{ actList }}" as="ar" hint-placeholder-count="6"><div style="display:flex; gap:8px; align-items:baseline; font-size:13px; padding:3px 2px; border-bottom:1px dashed #eee8d2;"><span style="width:20px; text-align:center;">{{ ar.ico }}</span><button onClick="{{ ar.pick }}" title="Show only this player" style="border:none; background:none; padding:0; font-weight:800; color:#015640; cursor:pointer; font-size:13px;">{{ ar.who }}</button><span style="font-size:11px; color:#AB2372; font-weight:700;">{{ ar.rb }}</span><span style="flex:1; min-width:0; color:#3d3d3d;">{{ ar.what }}</span><span style="font-size:11px; color:#8a8a8a; white-space:nowrap;">{{ ar.when }}</span></div></sc-for>
           </div>
           <div style="font-size:11px; color:#4a4a4a;">Shows signed-in players only: coming online, games finished, rebirths and big prize buys. Click a name to see just that player.</div>
-        </div>
-        <div style="background:#ffffff; border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:6px; border:2px solid #AB2372;">
-          <div style="font-size:12px; font-weight:700; letter-spacing:0.1em; color:#AB2372;">SUGGESTION BOX</div>
-          <sc-if value="{{ sugEmpty }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px; color:#6a6a6a;">No suggestions yet. (When you paste a Google Form link into SUGGEST_FORM, ideas go to your form instead.)</div></sc-if>
-          <div style="max-height:220px; overflow-y:auto; display:flex; flex-direction:column; gap:4px;"><sc-for list="{{ sugList }}" as="sg" hint-placeholder-count="3"><div style="font-size:13px; border-bottom:1px dashed #eee8d2; padding:4px 0;"><b style="color:#015640;">{{ sg.who }}</b> <span style="font-size:11px; color:#8a8a8a;">{{ sg.when }}</span><div style="color:#3d3d3d; white-space:pre-wrap;">{{ sg.what }}</div></div></sc-for></div>
         </div>
         <div style="background:#ffffff; border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:8px; border:2px solid #B3001B;">
           <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;"><div style="font-size:12px; font-weight:700; letter-spacing:0.1em; color:#B3001B;">MAINTENANCE · CLOSE OR REOPEN</div><div style="font-size:12px; font-weight:700; color:#015640;">Now: {{ downStatus }}</div></div>
@@ -435,6 +444,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
           </div>
           <div style="font-size:12px; font-weight:500; color:#4a4a4a;">{{ admEmpty }} Online actions only work for admin emails listed in the database rules.</div>
         </div>
+        </sc-if>
       </div>
     </div>
   </sc-if>
@@ -690,7 +700,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
           <div style="font-size:13px; color:#3d3d3d;">New games, prizes, avatar ideas, bugs you found — tell us! Please don’t include your full name, address, school or phone number.</div>
           <textarea class="wl-field" value="{{ sugText }}" onChange="{{ inSugText }}" onKeyDown="{{ stopKey }}" placeholder="My idea is…" aria-label="Your suggestion" style="width:100%; min-height:120px; box-sizing:border-box; font-family:inherit; font-size:15px; border:1.5px solid #015640; border-radius:12px; padding:10px 12px; resize:vertical;"></textarea>
           <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-            <input class="wl-field" value="{{ sugName }}" onChange="{{ inSugName }}" onKeyDown="{{ stopKey }}" placeholder="Name or username (optional)" aria-label="Your name (optional)" style="flex:1 1 180px; min-width:0; font-family:inherit; font-size:14px; border:1.5px solid #015640; border-radius:10px; padding:8px 10px;">
+            <span style="flex:1 1 180px; font-size:12px; color:#3d3d3d;">Sent as <b>{{ sugWho }}</b></span><input class="wl-field" value="{{ sugName }}" onChange="{{ inSugName }}" onKeyDown="{{ stopKey }}" placeholder="" aria-label="" style="display:none; min-width:0; font-family:inherit; font-size:14px; border:1.5px solid #015640; border-radius:10px; padding:8px 10px;">
             <span style="font-size:11px; color:#6a6a6a;">{{ sugCount }}</span>
           </div>
           <sc-if value="{{ sugMsg }}" hint-placeholder-val="{{ false }}"><div style="font-size:13px; font-weight:700; color:#B3001B;">{{ sugMsg }}</div></sc-if>
@@ -1678,7 +1688,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-12-05a';
+const BUILD = '2026-12-05c';
 const SCRIPTS = ['arcade-core.js','music.js','prizes-more.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js','games-secrets.js','games-more.js','games-more2.js','games-more3.js'];
 const fmt = n => fmtN(Math.round(n));
 
@@ -2066,13 +2076,17 @@ class Component extends DCLogic {
   setFs(on){ if (TOUCH_FS) { if (!!this.state.fs === !!on) return; this.setState({fs:!!on, vw:window.innerWidth, vh:window.innerHeight}); return; } if (!!this.state.fs === !!on) return; this.setState({fs:!!on, vw:window.innerWidth, vh:window.innerHeight});
     try { if (on && document.documentElement.requestFullscreen && !document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{}); if (!on && document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(()=>{}); } catch(e){}
     setTimeout(()=>this.setState({vw:window.innerWidth, vh:window.innerHeight}), 250); window.Arcade && window.Arcade.sfx('blip'); }
+  // who sent an idea: your username, or your account name if you have no username yet, or just "guest"
+  async adminSugDelete(id){ if (!this.state.admin) return; if (this.state.admArm !== 'sug:'+id) return this.setState({admArm:'sug:'+id});
+    try { await window.WLCloud.sugDelete(id); this.setState({admArm:'', sugRows:(this.state.sugRows||[]).filter(r=>r.id!==id)}); } catch(e) { this.setState({admArm:'', admMsg:'Couldn’t delete that idea: '+(e && (e.code||e.message))}); } }
+  sugWho(){ if (!this.cloudUid) return 'guest'; return String(this.P.username || (this.cloudMeta && this.cloudMeta.name) || 'player').slice(0, 30); }
   sendSuggestion(){ const s = this.state, text = String(s.sugText||'').trim().slice(0, 800), name = String(s.sugName||'').trim().slice(0, 30);
     if (text.length < 4) return this.setState({sugMsg:'Write a little more about your idea first.'});
     if (Date.now() - (this._sugAt||0) < 30000) return this.setState({sugMsg:'Thanks! Give it 30 seconds before sending another one.'});
     this._sugAt = Date.now();
     if (SUGGEST_FORM) { let url = SUGGEST_FORM; const q = []; if (SUGGEST_ENTRY) q.push(SUGGEST_ENTRY+'='+encodeURIComponent(text)); if (SUGGEST_NAME_ENTRY && name) q.push(SUGGEST_NAME_ENTRY+'='+encodeURIComponent(name));
       if (q.length) url += (url.includes('?') ? '&' : '?') + 'usp=pp_url&' + q.join('&'); try { window.open(url, '_blank', 'noopener'); } catch(e){} }
-    else if (s.cloud && window.WLCloud && window.WLCloud.suggest) window.WLCloud.suggest({uid:this.cloudUid||'', u:(name || this.P.username || 'anonymous').slice(0,30), t:text}).catch(()=>{});
+    else if (s.cloud && window.WLCloud && window.WLCloud.suggest) window.WLCloud.suggest({uid:this.cloudUid||'', u:this.sugWho(), t:text}).catch(e=>{ console.warn('[suggest] not saved', e && (e.code||e.message)); });
     try { const L = JSON.parse(localStorage.getItem('wl-suggestions')||'[]'); L.unshift({t:text, n:name, at:Date.now()}); localStorage.setItem('wl-suggestions', JSON.stringify(L.slice(0,30))); } catch(e){}
     this.setState({sugText:'', sugMsg:'', sugDone:true}); window.Arcade && window.Arcade.sfx('win'); this.logAct('here', 'sent a suggestion'); }
   econApi(){ return { P:()=>this.P, setP:pt=>this.setP(pt), toast:t=>this.toast(t), sfx:n=>window.Arcade && window.Arcade.sfx(n), admin:()=>!!this.state.admin, addTix:(n,f)=>this.addTix(n,f) }; }
@@ -2469,7 +2483,14 @@ class Component extends DCLogic {
           actKinds:[['all','All'],['play','Games'],['big','Rebirths & prizes'],['online','Online']].map(([k,l])=>({key:k, label:l, bg:kf==k?'#015640':'#ffffff', fg:kf==k?'#ffffff':'#015640', pick:()=>this.setState({actKind:k})})) }; })(),
       sugOpen: !!s.sugOpen, openSug: ()=>{ this.keys = {}; this.setState({sugOpen:true, sugDone:false, sugMsg:''}); }, closeSug: ()=>this.setState({sugOpen:false}), sugText: s.sugText||'', sugName: s.sugName||'',
       inSugText: e=>this.setState({sugText:e.target.value.slice(0,800)}), inSugName: e=>this.setState({sugName:e.target.value.slice(0,30)}), sendSug: ()=>this.sendSuggestion(), sugMsg: s.sugMsg||'', sugDone: !!s.sugDone, sugForm: !s.sugDone,
-      sugCount: String((s.sugText||'').length)+' / 800', sugList: (s.sugRows||[]).slice(0,40).map(r=>({key:r.id, who:r.u||'anonymous', what:r.t||'', when:new Date(r.at).toLocaleDateString()})), sugEmpty: !(s.sugRows||[]).length,
+      sugCount: String((s.sugText||'').length)+' / 800', sugWho: this.sugWho(),
+      sugList: (s.sugRows||[]).filter(r => { const q = String(s.sugFind||'').toLowerCase().trim(); return !q || String(r.t||'').toLowerCase().includes(q) || String(r.u||'').toLowerCase().includes(q); }).slice(0,200).map(r=>({key:r.id, who:(!r.uid || r.u=='guest' || r.u=='anonymous') ? 'guest' : r.u, whoCol:(!r.uid || r.u=='guest') ? '#8a8a8a' : '#015640', what:r.t||'', when:new Date(r.at).toLocaleString(undefined,{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}),
+        del: ()=>this.adminSugDelete(r.id), delLabel: s.admArm=='sug:'+r.id ? 'Yes, delete' : 'Delete'})),
+      sugTotal: (s.sugRows||[]).length + ' idea' + ((s.sugRows||[]).length==1?'':'s'), sugFind: s.sugFind||'', inSugFind: e=>this.setState({sugFind:e.target.value.slice(0,40)}), sugCopied: !!s.sugCopied,
+      sugCopy: ()=>{ const txt = (s.sugRows||[]).map((r,i)=>(i+1)+'. ['+((!r.uid||r.u=='guest')?'guest':r.u)+', '+new Date(r.at).toLocaleDateString()+'] '+String(r.t||'').replace(/\s+/g,' ')).join('\n'); const done = ()=>{ this.setState({sugCopied:true}); setTimeout(()=>this.setState({sugCopied:false}), 2500); };
+        try { navigator.clipboard.writeText('Wilderland Arcade suggestions ('+(s.sugRows||[]).length+'):\n'+txt).then(done, ()=>{}); } catch(e){} },
+      admTabs: [['tools','🛠 Tools'],['sug','💡 Suggestions'+((s.sugRows||[]).length ? ' ('+(s.sugRows||[]).length+')' : '')]].map(([k,l])=>({key:k, label:l, on:(s.admTab||'tools')==k, pick:()=>this.setState({admTab:k}), bg:(s.admTab||'tools')==k?'#015640':'#ffffff', fg:(s.admTab||'tools')==k?'#ffffff':'#015640'})),
+      admTabSug: (s.admTab||'tools')=='sug', admTabTools: (s.admTab||'tools')=='tools', sugEmpty: !(s.sugRows||[]).length,
       adminOpen: !!s.adminOpen, closeAdmin: ()=>this.setState({adminOpen:false, admArm:''}),
       admTix: s.admTix ?? '', inAdmTix: e=>this.setState({admTix:e.target.value.replace(/[^0-9]/g,'').slice(0,10), admArm:''}), admMsg: s.admMsg||'',
       admNow: 'Tickets '+fmtN(P.tickets)+' · lifetime earned '+fmtN(P.earned)+' · '+Object.keys(P.best).length+' high scores · '+Object.keys(P.saves).length+' saved games',
