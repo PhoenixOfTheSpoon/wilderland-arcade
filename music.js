@@ -149,7 +149,7 @@ const FILES = {monkeys: {src:'assets/music/monkeys-spinning-monkeys.mp3', n:'Mon
   weasel: {src:'assets/music/scheming-weasel-faster.mp3', n:'Scheming Weasel (faster version)', s:'SCHEMING WEASEL', need:30, credit:'“Scheming Weasel (faster version)” Kevin MacLeod (incompetech.com)' + CC},
   invest: {src:'assets/music/investigations.mp3', n:'Investigations', s:'INVESTIGATIONS', need:40, credit:'“Investigations” Kevin MacLeod (incompetech.com)' + CC},
   cipher: {src:'assets/music/cipher.mp3', n:'Cipher', s:'CIPHER', need:50, credit:'“Cipher” Kevin MacLeod (incompetech.com)' + CC}};
-let rebirths = 0; const unlocked = k => !FILES[k] || rebirths >= (FILES[k].need || 0);
+let rebirths = 0, rbSet = false; const unlocked = k => !FILES[k] || rebirths >= (FILES[k].need || 0);
 let track = 'chip'; try { const t = localStorage.getItem(KEY+'-track'); if (t && (t == 'chip' || t == 'playlist' || FILES[t])) track = t; } catch(e){}
 let audio = null, audioKey = '';
 const playFile = () => { const F = FILES[track]; if (!audio || audioKey !== track) { if (audio) audio.pause(); audio = new Audio(F.src); audio.loop = true; audio.volume = .35; audioKey = track; }
@@ -173,7 +173,11 @@ const WLMusic = {
   setOn(v){ on = !!v; try { localStorage.setItem(KEY, on ? 'on' : 'off'); } catch(e){} if (on) { started = true; if (!cur) cur = build(moodName); run(); } else stop(); },
   _state: () => ({ctx: ctx && ctx.state, playing: !!timer, mood: moodName, flags: flagsNow, file: !!(audio && !audio.paused)}),
   // MUSIC button: Chiptune → each song file → Off → Chiptune …
-  setRebirths(n){ const was = unlocked(track); rebirths = Number(n) || 0; if (was != unlocked(track) && on) { stop(); run(); } },
+  setRebirths(n){ const was = unlocked(track), before = Object.keys(FILES).filter(unlocked), old = rebirths; rebirths = Number(n) || 0; if (was != unlocked(track) && on) { stop(); run(); }
+    const fresh = Object.keys(FILES).filter(k => unlocked(k) && !before.includes(k)); if (rbSet && rebirths - old >= 1 && rebirths - old <= 2 && fresh.length && this.onUnlock) { try { this.onUnlock(fresh.map(k => FILES[k].n)); } catch(e){} } rbSet = true; },
+  // the next song file you can unlock: its name, the rebirths it needs, and the rebirths the one before it needed (for the meter)
+  nextSong: () => { const ks = Object.keys(FILES).filter(k => !unlocked(k)).sort((a, b) => FILES[a].need - FILES[b].need); if (!ks.length) return null; const F = FILES[ks[0]];
+    return {n:F.n, need:F.need, prev:Math.max(0, ...Object.values(FILES).map(f => f.need || 0).filter(x => x < F.need))}; },
   locked: () => Object.keys(FILES).filter(k => !unlocked(k)).map(k => FILES[k].n + ' unlocks at ' + FILES[k].need + ' rebirths'),
   cycle(){ const order = ['chip', 'playlist', ...Object.keys(FILES).filter(unlocked), 'off'], curK = on ? track : 'off', nx = order[(order.indexOf(curK)+1) % order.length];
     if (nx == 'off') { this.setOn(false); return; } track = nx; try { localStorage.setItem(KEY+'-track', track); } catch(e){} if (!on) this.setOn(true); else { stop(); started = true; if (!cur) cur = build(moodName); run(); } },
