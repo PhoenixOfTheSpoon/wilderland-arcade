@@ -35,7 +35,7 @@ E.clickKeys = OLD_CLICK.map(x=>x.k);
 
 // ---------------- PRESTIGE: every 10 Rebirths = 1 Diamond Star, spent only in the Prestige Tree ----------------
 E.prestige = P => Math.floor((P.rebirths||0) / 10);
-E.diamonds = P => E.prestige(P);                                    // Diamond Stars earned (1 per prestige)
+E.diamonds = P => E.prestige(P) + (P.diaBonus||0);                                    // Diamond Stars earned (1 per prestige)
 E.diaFree = P => Math.max(0, E.diamonds(P) - (P.diaSpent||0));
 E.toNextDia = P => 10 - ((P.rebirths||0) % 10);
 // Tiers get pricier the deeper they are. Each node needs the one above it in the same branch.

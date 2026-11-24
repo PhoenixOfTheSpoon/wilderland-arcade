@@ -41,12 +41,12 @@ const WLCloud = {
       if (s.exists() && s.data().uid !== uid) throw Object.assign(new Error('taken'), { code: 'taken' });
       tx.set(ref, { uid, name }); if (old && old.toLowerCase() !== key) tx.delete(doc(db, 'usernames', old.toLowerCase())); }); },
   // Leaderboard season: bump SEASON to start a fresh, empty leaderboard.
-  postScore(game, row) { return addDoc(board(game), row); },
+  postScore(game, row) { return addDoc(board(game), { ...row, s: Math.min(Number(row.s) || 0, 9.99e299) }); },
   // Overall ticket board: ONE always-current row per player, kept on the player's own username record
   // (the existing rules let each player update the name they own). This replaced a row-per-game board that filled up
   // with one player's old rows and stopped showing everyone else.
   setTix(uid, row) { if (!row || !row.u) return Promise.resolve(); const key = String(row.u).toLowerCase();
-    return setDoc(doc(db, 'usernames', key), { uid, name: row.u, s: row.s, av: row.av || '', al: row.al || 0, d: row.d || '', rb: row.rb || 0, ss: SEASON, at: Date.now() }, { merge: true }); },
+    return setDoc(doc(db, 'usernames', key), { uid, name: row.u, s: Math.min(Number(row.s) || 0, 9.99e299), av: row.av || '', al: row.al || 0, d: row.d || '', rb: row.rb || 0, ss: SEASON, at: Date.now() }, { merge: true }); },
   async top(game, n = 100) { const hs = new Set(C.hiddenScores || []);
     if (game == '_tix') { const r = await getDocs(query(collection(db, 'usernames'), orderBy('s', 'desc'), limit(150))); const ht = C.hiddenTix || {};
       // old-style hides (no time) only count until the player posts again with the newer page
