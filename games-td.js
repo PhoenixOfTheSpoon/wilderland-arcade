@@ -431,7 +431,7 @@ A.register('td', { w:720, mount(host, api){
   A.admins = A.admins || {}; A.admins.td = [
     {label:'Go to wave', num:10, min:1, run:n => { if (state == 'menu') return; wave = Math.max(0, Math.floor(n) - 1); enemies = []; queue = []; state = 'build'; ui(true); }},
     {label:'Add gold', num:1000, min:1, run:n => { gold += Math.floor(n); ui(true); }},
-    {label:'Add lives', num:10, min:1, max:20, run:n => { lives = Math.min(A.MAXLIVES || 20, lives + Math.floor(n)); ui(true); }}];
+    {label:'Add lives', num:10, min:1, max:50, run:n => { lives = Math.min(A.MAXLIVES || 50, lives + Math.floor(n)); ui(true); }}];
   return ()=>{ offK(); offL(); A._td = null; if (A.admins) delete A.admins.td; };
 }});
 })();

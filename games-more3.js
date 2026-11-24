@@ -426,7 +426,7 @@ A.register('snowball', { mount(host, api){
   const PERM = Object.assign({cr:0, up:{}, best:0, bosses:0}, (api.gdata && api.gdata().sb) || {});
   const PU = k => PERM.up[k] || 0;
   const savePerm = () => { try { api.setGdata && api.setGdata({sb:PERM}); } catch(e){} };
-  const PUPS = [{k:'coat', n:'Warm Coat', d:'+1 max heart (never above 20)', b:20, max:10}, {k:'pockets', n:'Big Pockets', d:'Carry 2 more snowballs', b:15, max:5},
+  const PUPS = [{k:'coat', n:'Warm Coat', d:'+1 max heart (never above 50)', b:20, max:10}, {k:'pockets', n:'Big Pockets', d:'Carry 2 more snowballs', b:15, max:5},
     {k:'arm', n:'Power Arm', d:'Snowballs hit 15% harder', b:25, max:10}, {k:'pack', n:'Quick Packing', d:'Pack big snowballs 12% faster', b:20, max:5},
     {k:'walls', n:'Thick Walls', d:'Your walls get +2 strength', b:20, max:5}, {k:'mitts', n:'Warm Mittens', d:'Campfires heal faster, more cocoa drops', b:20, max:5},
     {k:'stash', n:'Snowflake Stash', d:'Start with 15 more ❄', b:15, max:10}, {k:'captain', n:'Team Captain', d:'Teammates start 1 level higher', b:30, max:4},
@@ -932,7 +932,7 @@ A.register('snowball', { mount(host, api){
   A.admins = A.admins || {}; A.admins.snowball = [
     {label:'Go to wave', num:10, min:1, run:n => { if (st != 'play') startGame(mode); wave = Math.floor(n) - 1; boss = null; foes = []; nextWave(); }},
     {label:'Add snowflakes', num:500, min:1, run:n => { flakes += Math.floor(n); }},
-    {label:'Add hearts', num:5, min:1, max:20, run:n => { if (me) { me.max = A.lives(me.max + Math.floor(n)); me.hp = me.max; } }},
+    {label:'Add hearts', num:5, min:1, max:50, run:n => { if (me) { me.max = A.lives(me.max + Math.floor(n)); me.hp = me.max; } }},
     {label:'Spawn boss', run:() => { if (st != 'play') startGame(mode); const k = ['yeti', 'plow', 'witch', 'dragon'][Math.floor(Math.random()*4)], B = BOSSES[k]; boss = {k, n:B.n, x:300, y:k == 'dragon' ? 118 : 100, hp:B.hp, max:B.hp, cool:2, vx:90, charge:0, col:B.col, ph:1, tp:0, kb:0}; phase = 'fight'; say(B.n + ' appears!', 2); }},
     {label:'Add ice crystals', num:100, min:1, run:n => { PERM.cr += Math.floor(n); savePerm(); }},
     {label:'Add Frost Crystals', num:100, min:1, run:n => { PERM.frost += Math.floor(n); savePerm(); }},

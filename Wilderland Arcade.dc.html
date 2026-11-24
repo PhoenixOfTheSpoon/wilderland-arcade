@@ -1011,7 +1011,7 @@ const RIVAL = id => RIVALS.find(r=>r[0]==id);
 // Upgrade Workshop: permanent per-game upgrades bought with tickets. Games read the level with A.U(key).
 // Upgrade Workshop: per-game upgrades bought with tickets. Levels go on forever (∞): prices keep rising.
 // `cap` = the most the game effect can stack (more would break the game); levels past the cap still add +2% tickets each.
-// Lives never go over 20 (A.MAXLIVES), so life upgrades stop adding lives at that point and pay tickets instead.
+// Lives never go over 50 (A.MAXLIVES), so life upgrades stop adding lives at that point and pay tickets instead.
 // one:1 = a one-time unlock. Every machine (except 2048) also has an infinite Ticket Booster (+10% tickets per level).
 // Which background tune each machine plays (music.js)
 const MUSIC_MOOD = {sokoban:'puzzle',airhockey:'action',skeeball:'action',words:'calm',pipes:'puzzle',snowball:'action',farm:'calm',cardbattle:'puzzle',runner:'action',pinball:'action',fishing:'calm',rhythm:'action',platformer:'action',racing:'action',bubble:'puzzle',snake:'action',breakout:'action',flappy:'action',pong:'action',whack:'action',crossing:'action',td:'action',bounce:'action',maze:'action',lumber:'action',space:'space',comets:'space','2048':'puzzle',memory:'puzzle',tictactoe:'puzzle',connect4:'puzzle',mines:'puzzle',simon:'puzzle',stack:'puzzle',gems:'puzzle',typing:'puzzle',reaction:'puzzle',rootout:'calm',trace:'calm',idle:'mines',secrets:'story'};
@@ -1695,7 +1695,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048'); return GAMES.indexOf(DG[h % DG.length]); };
-const BUILD = '2026-12-05v';
+const BUILD = '2026-12-05w';
 const SCRIPTS = ['arcade-core.js','music.js','prizes-more.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js','games-secrets.js','games-more.js','games-more2.js','games-more3.js','snow-world.js'];
 const fmt = n => fmtN(Math.round(n));
 
