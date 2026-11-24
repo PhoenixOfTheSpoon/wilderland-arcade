@@ -26,6 +26,7 @@ const setDown = d => { MUTES = d.mutes || []; DOWN = {until: d.downUntil || 0, m
 try { const c = await Promise.race([getDoc(CTRL), new Promise((_, no) => setTimeout(() => no(new Error('slow')), 4000))]); if (c && c.exists()) { C = c.data(); if (C.season) SEASON = C.season; RESET_AT = C.resetAt || 0; DOWN = {until: C.downUntil || 0, msg: C.downMsg || ''}; MUTES = C.mutes || []; } } catch (e) {}
 const board = game => collection(db, 'boards', game + '@' + SEASON, 'scores');
 
+const PL = {rows:null, at:0};   // shared cache for the player boards
 const WLCloud = {
   ready: true,
   onAuth: cb => onAuthStateChanged(auth, cb),
@@ -49,12 +50,12 @@ const WLCloud = {
     return setDoc(doc(db, 'usernames', key), { uid, name: row.u, s: Math.min(Number(row.s) || 0, 9.99e299), av: row.av || '', al: row.al || 0, d: row.d || '', rb: row.rb || 0, db: row.db || 0, ov: Math.min(Number(row.ov) || 0, 9.99e299), ss: SEASON, at: Date.now() }, { merge: true }); },
   // Every player's progress row (rebirths, prestige, achievements) for the Overall / Rebirths / Diamond Stars / Achievements boards.
   // One shared fetch (cached a minute) feeds all of them, to keep reads low.
-  async players() { if (C._plAt && Date.now() - C._plAt < 60000 && C._pl) return C._pl;
+  async players() { if (PL.at && Date.now() - PL.at < 60000 && PL.rows) return PL.rows;
     const hs = new Set(C.hiddenScores || []), ht = C.hiddenTix || {}, hid = x => (hs.has(x.id) && !x.at) || (ht[x.id] && (x.at || 0) < ht[x.id]);
     const qs = await Promise.allSettled(['ov', 'rb', 'al'].map(f => getDocs(query(collection(db, 'usernames'), orderBy(f, 'desc'), limit(100)))));
     const by = {}; qs.forEach(q => { if (q.status == 'fulfilled') q.value.docs.forEach(d => { by[d.id] = { ...d.data(), id: d.id, u: d.data().name }; }); });
-    C._pl = Object.values(by).filter(x => x.uid && x.ss === SEASON && !hid(x) && x.id !== '~admin'); C._plAt = Date.now(); return C._pl; },
-  async top(game, n = 100) { if (game == '_pl') return C.players(); const hs = new Set(C.hiddenScores || []);
+    PL.rows = Object.values(by).filter(x => x.uid && x.ss === SEASON && !hid(x) && x.id !== '~admin'); PL.at = Date.now(); return PL.rows; },
+  async top(game, n = 100) { if (game == '_pl') return WLCloud.players(); const hs = new Set(C.hiddenScores || []);
     if (game == '_tix') { const r = await getDocs(query(collection(db, 'usernames'), orderBy('s', 'desc'), limit(150))); const ht = C.hiddenTix || {};
       // old-style hides (no time) only count until the player posts again with the newer page
       const hid = x => (hs.has(x.id) && !x.at) || (ht[x.id] && (x.at || 0) < ht[x.id]);

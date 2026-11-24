@@ -404,15 +404,21 @@ A.register('fishing', { mount(host, api){
     {n:'Sky Pirate Ship', cost:1e20, hook:12, coin:4, sky:2.5, hull:'#3a2a1e', trim:'#5a4030', rim:'#F9BF01', cabin:'#6a4a30', roof:'#2a1a10', flag:'#121313', sail:'#2a2a3a', balloon:['#3a2a6a', '#6a4ab8']},
     {n:'Golden Galleon', cost:1e28, hook:15, coin:6, sky:3, hull:'#e8b81a', trim:'#ffd84a', rim:'#fff6c8', cabin:'#fff2b0', roof:'#c8961a', flag:'#D5F367', sail:'#fff6c8', gold:true}];
   const boatT = () => BOATS[Math.max(0, Math.min(BOATS.length - 1, G.boat || 0))];
-  // ☁️ Sky fishing: 8 sky zones, 4 flying creatures each (a * marks a bird)
+  // ☁️ Sky fishing: 16 skies, 4 flying creatures each (a * marks a bird). The last one, the Bwird Zone, is home of BIRD!!
   const SKYZ = [{a:0, n:'Treetops', c:['#7fc8f8', '#d8f3ff']}, {a:40, n:'Low Clouds', c:['#8ab8e8', '#eef6ff']}, {a:120, n:'Rainbow Skies', c:['#a898f0', '#ffd6ef']}, {a:300, n:'Storm Clouds', c:['#3a4660', '#6a7690']},
-    {a:800, n:'Aurora Heights', c:['#06243a', '#1a5a5a']}, {a:2500, n:'Edge of Space', c:['#05071e', '#1a2a5a']}, {a:1e4, n:'Moon Orbit', c:['#03030f', '#16163a']}, {a:1e5, n:'Star Nebula', c:['#10031f', '#3a0a4a']}];
+    {a:800, n:'Aurora Heights', c:['#06243a', '#1a5a5a']}, {a:2500, n:'Edge of Space', c:['#05071e', '#1a2a5a']}, {a:1e4, n:'Moon Orbit', c:['#03030f', '#16163a']}, {a:1e5, n:'Star Nebula', c:['#10031f', '#3a0a4a']},
+    {a:1e8, n:'Galaxy Rim', c:['#0a0626', '#2a1a6a']}, {a:1e15, n:'Wormhole Winds', c:['#12002a', '#4a0a6a']}, {a:1e30, n:'Rainbow Cosmos', c:['#2a0a4a', '#ff9ad5']}, {a:1e50, n:'Dream Sky', c:['#3a1a5a', '#ffd1f7']},
+    {a:1e80, n:'Clockwork Heavens', c:['#1a1408', '#8a6a2a']}, {a:1e120, n:'Crystal Firmament', c:['#0a2a4a', '#bfe9ff']}, {a:1e170, n:'Sky of Everything', c:['#000000', '#3a3a6a']}, {a:1e230, n:'Bwird Zone', c:['#ff9ad5', '#b8e8ff']}];
   const skyZ = a => { let z = 0; for (let i = 0; i < SKYZ.length; i++) if (a >= SKYZ[i].a) z = i; return z; };
   const SKY = ['Sparrow*|Robin*|Blue Jay*|Golden Eagle*', 'Puffy Cloud Puffer|Kite Ray|Seagull*|Sky Seahorse', 'Rainbow Lorikeet*|Flying Fish|Parrot*|Rainbow Dragon', 'Storm Petrel*|Lightning Eel|Thunderbird*|Thunder Whale',
-    'Snowy Owl*|Aurora Ray|Glow Squid|Aurora Phoenix*', 'Satellite Squid|Meteor Hawk*|Space Shark|Sky Whale', 'Moon Puffer|Crater Crab|Lunar Moth*|Moon Dragon', 'Star Swallow*|Comet Koi|Nebula Ray|Galaxy Griffin*']
-    .map((row, z) => row.split('|').map((it, i) => { const bird = it.endsWith('*'), n = it.replace('*', ''), lo = mkLook(n, z, i);
-      return {k:'sky-' + z + '-' + i, n, z, i, loc:'sky', r:Math.min(5, i + (z >= 4 ? 1 : 0) + (z >= 7 ? 1 : 0)), look:lo, get col(){ return this.look.col; }, s:(10 + i*2 + z*.7) * (lo.shape == 'whale' ? 1.3 : 1), bird, sky:true}; }));
-  const ALL = [].concat(...LOCS.map(L => [].concat(...FISH[L.k]).concat(SPEC[L.k]))).concat(GUARD).concat([].concat(...SKY)).concat([BOOT, CHEST]);
+    'Snowy Owl*|Aurora Ray|Glow Squid|Aurora Phoenix*', 'Satellite Squid|Meteor Hawk*|Space Shark|Sky Whale', 'Moon Puffer|Crater Crab|Lunar Moth*|Moon Dragon', 'Star Swallow*|Comet Koi|Nebula Ray|Galaxy Griffin*',
+    'Comet Gull*|Orbit Ray|Asteroid Puffer|Galaxy Goose*', 'Warp Wren*|Wormhole Eel|Portal Parrot*|Twist Dragon', 'Prism Pelican*|Spectrum Ray|Rainbow Robin*|Color Whale', 'Sleepy Swan*|Dream Squid|Pillow Puffer|Dream Dragon',
+    'Gear Hawk*|Cog Crab|Tick-Tock Toucan*|Clockwork Whale', 'Crystal Crane*|Diamond Ray|Glass Swan*|Prism Serpent', 'Every-Bird*|Infinity Eel|Cosmic Condor*|Sky Leviathan', 'Bwird Sparrow*|Bwird Owl*|Bwird Eagle*|Bwird Phoenix*']
+    .map((row, z) => row.split('|').map((it, i) => { const bird = it.endsWith('*'), n = it.replace('*', ''), lo = mkLook(n, Math.min(7, z), i);
+      return {k:'sky-' + z + '-' + i, n, z, i, loc:'sky', r:Math.min(5, i + (z >= 4 ? 1 : 0) + (z >= 7 ? 1 : 0)), look:lo, get col(){ return this.look.col; }, s:(10 + i*2 + Math.min(z, 10)*.7) * (lo.shape == 'whale' ? 1.3 : 1), bird, sky:true}; }));
+  const BIRDMAX = (() => { const lo = mkLook('BIRD!! Rainbow Phoenix', 7, 3); lo.rainbow = true; return {k:'sky-BIRD', n:'BIRD!!', z:15, i:3, r:9, loc:'sky', look:lo, get col(){ return this.look.col; }, s:120, bird:true, sky:true, special:'birdmax'}; })();
+  const SKYALL = [].concat(...SKY).concat([BIRDMAX]);
+  const ALL = [].concat(...LOCS.map(L => [].concat(...FISH[L.k]).concat(SPEC[L.k]))).concat(GUARD).concat([BOOT, CHEST]);
 
   // ---------- upgrades (bought with coins; levels never reset except by a Pearl Dive) ----------
   const UP = [
@@ -462,8 +468,12 @@ A.register('fishing', { mount(host, api){
   let bookC = null; const book = () => { if (bookC) return bookC; let loc = {}; try { loc = JSON.parse(localStorage.getItem('wl-fishbook') || '{}'); } catch(e){} const sv = (api.gdata && api.gdata().book) || {}; bookC = {...loc}; for (const k in sv) bookC[k] = Math.max(bookC[k]||0, sv[k]); return bookC; };
   const G = Object.assign({coins:0, upg:{}, loc:'lake', locs:{lake:1}, best:0, deepest:0, pearls:0, run:0, tot:0, dives:0, caught:0}, (api.gdata && api.gdata().fg) || {});
   const UL = k => G.upg[k] || 0;
+  // ☁️ sky fishing has its own wallet (🪶 feathers), upgrades and Sky Book
+  G.sky = Object.assign({feathers:0, upg:{}, best:0, run:0, tot:0, cap:null, upMS:null, downMS:null}, G.sky || {}); const SG = G.sky;
+  const SUL = k => SG.upg[k] || 0;
+  const inSky = () => !!G.skyMode;
   // 🎣 Extra Lines: more hooks beside your main one, 90 px apart
-  const hooksX = () => { const n = Math.min(4, UL('lines')), xs = [hx]; for (let i = 0; i < n; i++) xs.push(Math.max(14, Math.min(W - 14, hx + (i % 2 ? 1 : -1) * 90 * (1 + (i >> 1))))); return xs; };
+  const hooksX = () => { const n = Math.min(4, inSky() ? SUL('sballoons') : UL('lines')), xs = [hx]; for (let i = 0; i < n; i++) xs.push(Math.max(14, Math.min(W - 14, hx + (i % 2 ? 1 : -1) * 90 * (1 + (i >> 1))))); return xs; };
   let hitHook = 0; const nearHook = (x, r) => { const xs = hooksX(); for (let k = 0; k < xs.length; k++) if (Math.abs(x - xs[k]) < r) { hitHook = k; return true; } return false; };
   // what you caught hangs under the hook that caught it
   const hangCatch = (hy, skyLook) => { const xs = hooksX(); xs.forEach((x0, k) => { caught.filter(c2 => (c2.h || 0) == k || (k == 0 && (c2.h || 0) >= xs.length)).slice(-8).forEach((x, i) => { g.save(); g.translate(x0 + Math.sin(t*3 + i)*6, hy + (skyLook ? 20 : 16) + i*9);
@@ -482,7 +492,7 @@ A.register('fishing', { mount(host, api){
   const skipMax = () => Math.min(80, 8*UL('drop')) + (UL('drop') >= 10 ? 5*UL('deepmap') : 0), skipPct = () => G.skip == null ? skipMax() : Math.max(0, Math.min(skipMax(), G.skip));
   const save = () => { try { api.setGdata && api.setGdata({book:book(), fg:G}); } catch(e){} try { localStorage.setItem('wl-fishbook', JSON.stringify(book())); } catch(e){} };
   const LOC = () => LOCS.find(L => L.k == G.loc) || LOCS[0];
-  const bookBonus = () => { const b = book(); let m = 1; LOCS.forEach(L => { let all = true; FISH[L.k].forEach(z => { const done = z.every(f => b[f.k]); if (done) m += .03; else all = false; }); if (all) m += .25; }); let allS = true; SKY.forEach(z => { if (z.every(f => b[f.k])) m += .03; else allS = false; }); if (allS) m += .25; return m; };
+  const bookBonus = () => { const b = book(); let m = 1; LOCS.forEach(L => { let all = true; FISH[L.k].forEach(z => { const done = z.every(f => b[f.k]); if (done) m += .03; else all = false; }); if (all) m += .25; }); return m; };
   const coinMult = () => marketM(UL('value')) * pearlM() * bookBonus() * boatT().coin;
   const capN = () => 5 + UL('hook') + A.U('bait') + boatT().hook;
   const luck = () => 1 + .12*UL('luck') + .15*A.U('lure') + (UL('sonar') >= 3 ? .15 : 0) + (isNight() ? .3 : 0);
@@ -559,41 +569,92 @@ A.register('fishing', { mount(host, api){
   const startDive = () => { ohT = 0; genUp = -1; base = 0; if (panel) closePanel(); maxD = lineUse(); skipD = Math.floor(maxD * skipPct() / 100); fish = fish.filter(o => !o.dead && !o.pred); genTo = Math.max(1, skipD, genTo || 0);   // the fish under the boat stay caught = []; ghostN = UL('ghost'); shieldN = UL('shield');
     combo = 0; hd = skipD; if (hd > 1e8) rebase(); hx = tx != null ? tx : W/2; phase = 'drop'; lastZone = -1; A.tone(300, .15, 'sine', .05); if (skipD) say('Express drop to '+fmt(skipD)+' m', 1.2); refreshBar(); };
   // ======================= ☁️ SKY FISHING: your balloon lure floats UP; catch flying creatures, dodge lightning, come back down =======================
-  let alt = 0, skyMax = 0, skyCr = [], skyHi = 0, skyLo = 0, skyScroll = 0, lastSkyZ = -1, skyHY = 340;
+  let alt = 0, skyMax = 0, skyCr = [], skyHi = 0, skyLo = 0, skyScroll = 0, lastSkyZ = -1, skyHY = 340, bT = 0;
   const skyPh = () => phase == 'skyup' || phase == 'skydown';
-  const skyVal = (f, a) => fin(4 * Math.pow(2.3, f.z) * [1, 2, 4, 9][f.i] * LOC().mult * depthMult(a) * boatT().sky);
-  const skyPts = (f, a) => Math.round((10 + 14*f.z) * [1, 1.6, 2.6, 4.5][f.i] + 25*layerOf(a));
-  const skyPick = a => { const z = skyZ(a), lk = luck(), w8 = [10, 5, 2.2*lk, .7*lk], nb = 1 + .4*UL('newbait'), bk = book(), pool = [];
+  // every 4 Rocket Balloon levels reach about one more sky (past the Storm Clouds)
+  const skyLg = j => j < SKYZ.length ? Math.log10(Math.max(10, SKYZ[j].a)) : Math.log10(SKYZ[SKYZ.length - 1].a) + 30*(j - SKYZ.length + 1);
+  const skySpoolM = k => { if (!(k > 0)) return 1; const x = Math.min(k / 4 + 3, SKYZ.length + 1), i = Math.floor(x), f = x - i, a = skyLg(i), b = skyLg(i + 1); return Math.pow(10, Math.min(308, a + f*(b - a))) / SKYZ[3].a; };
+  const skyLineM = L => Math.min(FLOOR, Math.round((30 + 12*L + .6*L*L) * skySpoolM(SUL('srocket'))));
+  const skyUse = () => { const full = skyLineM(SUL('sline')); return SG.cap == null ? full : Math.max(1, Math.min(full, SG.cap)); };
+  const riseV = L => 20 * (1 + .15*L) * Math.pow(2, Math.min(40, SUL('sjet'))), fallV = L => 24 * (1 + .15*L) * Math.pow(2, Math.min(40, SUL('sjet')));
+  const capVs = v => Math.max(Math.min(v, Math.max(14, skyMax / 8)), skyMax / 40);
+  const riseEff = () => SG.upMS != null ? Math.max(1, Math.min(riseV(SUL('sbig')), SG.upMS)) : capVs(riseV(SUL('sbig')));
+  const fallEff = () => SG.downMS != null ? Math.max(1, Math.min(fallV(SUL('schute')), SG.downMS)) : capVs(fallV(SUL('schute')));
+  const skyCap = () => 5 + SUL('snet') + boatT().hook;
+  const skyPos = a => { if (!(a >= SKYZ[7].a)) return 7; const z = skyZ(a), lo = skyLg(z), hi = skyLg(z + 1); return z + Math.max(0, Math.min(1, (Math.log10(Math.min(a, Number.MAX_VALUE)) - lo) / (hi - lo))); };
+  const skyMult = a => Math.pow(3, Math.max(0, skyPos(a) - 7));   // ×3 for every sky past the Star Nebula
+  const skyBookBonus = () => { const b = book(); let m = 1, all = true; SKY.forEach(z => { if (z.every(f => b[f.k])) m += .03; else all = false; }); return m + (all ? .25 : 0); };
+  const featherMult = () => marketM(SUL('sval')) * skyBookBonus() * boatT().sky;
+  const skyVal = (f, a) => f.special == 'birdmax' ? Number.MAX_VALUE : fin(4 * Math.pow(2.3, Math.min(7, f.z)) * [1, 2, 4, 9][f.i] * skyMult(a));
+  const skyPts = (f, a) => f.special == 'birdmax' ? 9e15 : Math.round((10 + 14*Math.min(10, f.z)) * [1, 1.6, 2.6, 4.5][f.i] + 25*Math.max(0, Math.floor(skyPos(a)) - 7));
+  const sbuddyRate = L => L ? fin(L * .35 * 4 * Math.pow(2.3, Math.min(7, skyZ(Math.min(SG.best || 0, skyUse())))) * Math.sqrt(skyMult(Math.min(SG.best || 0, skyUse()))) * featherMult()) : 0;
+  const skyLuck = () => 1 + .12*SUL('sluck') + (isNight() ? .3 : 0);
+  const allSkyCaught = () => { const b = book(); return [].concat(...SKY).every(f => b[f.k]); };
+  const skyPick = a => { const z = skyZ(a), lk = skyLuck(), w8 = [10, 5, 2.2*lk, .7*lk], nb = 1 + .4*SUL('snew'), bk = book(), pool = [];
     for (const zz of [z, z - 1]) if (zz >= 0) SKY[zz].forEach((f, i) => pool.push({f, w:w8[i] * (zz == z ? 1 : .35) * (bk[f.k] ? 1 : nb)}));
     let S = pool.reduce((a2, p2) => a2 + p2.w, 0), x = Math.random()*S; for (const p2 of pool) { x -= p2.w; if (x <= 0) return p2.f; } return pool[0].f; };
   const skyBand = (r0, band) => { const a = alt + r0; if (a < 4) return; const z = skyZ(a), dn = weather == 'storm' ? 1.3 : weather == 'rain' ? 1.15 : 1;
     const n = (Math.random() < .85*dn ? 1 : 0) + (Math.random() < .35*dn ? 1 : 0);
-    for (let i = 0; i < n; i++) { const f = skyPick(a), dir = Math.random() < .5 ? 1 : -1; skyCr.push({f, x:20 + Math.random()*(W - 40), r:r0 + Math.random()*band, vx:dir*(30 + Math.random()*50 + z*6), ph:Math.random()*TAU, gold:Math.random()*100 < goldP(UL('gold'))}); }
-    if (z >= 3 && Math.random() < .14) skyCr.push({zap:true, x:Math.random()*W, r:r0 + Math.random()*band, vx:(Math.random() < .5 ? -1 : 1)*(18 + Math.random()*20), ph:Math.random()*TAU}); };
-  const startSky = () => { if (panel) closePanel(); skyMax = lineUse(); alt = 0; skyCr = []; caught = []; combo = 0; lastCatch = -9; shieldN = UL('shield'); skyHi = 6; skyLo = 0; lastSkyZ = -1; skyHY = 340; hx = tx != null ? tx : W/2;
+    for (let i = 0; i < n; i++) { const f = skyPick(a), dir = Math.random() < .5 ? 1 : -1; skyCr.push({f, x:20 + Math.random()*(W - 40), r:r0 + Math.random()*band, vx:dir*(30 + Math.random()*50 + Math.min(z, 10)*6), ph:Math.random()*TAU, gold:Math.random()*100 < goldP(SUL('sgold'))}); }
+    if (z >= 3 && z < 15 && Math.random() < .14) skyCr.push({zap:true, x:Math.random()*W, r:r0 + Math.random()*band, vx:(Math.random() < .5 ? -1 : 1)*(18 + Math.random()*20), ph:Math.random()*TAU}); };
+  const startSky = () => { if (panel) closePanel(); skyMax = skyUse(); alt = 0; skyCr = []; caught = []; combo = 0; lastCatch = -9; shieldN = SUL('srod'); skyHi = 6; skyLo = 0; lastSkyZ = -1; skyHY = 340; bT = 0; hx = tx != null ? tx : W/2;
     phase = 'skyup'; A.tone(420, .15, 'sine', .05); say('☁️ Up, up and away! Touch flying creatures to catch them', 2); refreshBar(); };
   const skyCatch = o => { const v = fin(skyVal(o.f, alt + o.r) * (o.gold ? 5 : 1)), p = fin(skyPts(o.f, alt + o.r) * (o.gold ? 2 : 1));
-    if (t - lastCatch < 1.6) combo++; else combo = 0; lastCatch = t; caught.push({f:o.f, v:v * (1 + combo*(.1 + .04*UL('combo'))), p, gold:o.gold, h:hitHook}); o.dead = true; hitHook = 0;
+    if (t - lastCatch < 1.6) combo++; else combo = 0; lastCatch = t; caught.push({f:o.f, v:fin(v * (1 + combo*(.1 + .04*SUL('scombo')))), p, gold:o.gold, h:hitHook}); o.dead = true; hitHook = 0;
     A.tone(620 + Math.min(10, combo)*60, .05, 'triangle', .04); if (o.f.r >= 3 || o.gold) A.sfx('coin'); };
-  const skyStep = dt => { const up = phase == 'skyup', full = caught.length >= capN();
-    const v = (up ? sinkEff() : reelEff() * (full ? 4 : 1)) * slowF(), room = up ? Math.max(0, skyMax - alt) : Math.max(0, alt), step = Math.min(v*dt, room);
+  // 🐦 BIRD!!: only in the Bwird Zone, only once every other sky creature is in your Sky Book, 10 times a second at 0.00000000000000000000001%
+  const spawnBIRD = () => { if (skyCr.some(o => !o.dead && o.f === BIRDMAX)) return; skyCr.push({f:BIRDMAX, x:W/2, r:phase == 'skyup' ? 40 : -40, vx:8, ph:0, gold:false}); say('🐦 BIRD!! — THE BIGGEST BIRD IN THE WORLD IS HERE!!!', 6); flash = 1; A.sfx('win'); };
+  const catchBIRD = o => { skyCatch(o); flash = 1; say('🐦🐦 YOU CAUGHT BIRD!! 🐦🐦', 8);
+    SG.feathers = Number.MAX_VALUE; SG.run = Number.MAX_VALUE; SG.tot = Number.MAX_VALUE; SUP.forEach(u => { SG.upg[u.k] = u.max != null ? u.max : 200; });
+    save(); try { api.jackpot && api.jackpot('🐦 BIRD!!'); } catch(e){} stat(api, 'skyBIRD', 1, 'add'); refreshBar(); };
+  const skyStep = dt => { const up = phase == 'skyup', full = caught.length >= skyCap();
+    const v = (up ? riseEff() : fallEff() * (full ? 4 : 1)) * slowF(), room = up ? Math.max(0, skyMax - alt) : Math.max(0, alt), step = Math.min(v*dt, room);
     visBoost = !up && full ? 4 : 1; const vis = Math.min(step, visV()*dt); alt = up ? alt + step : alt - step; skyScroll = (skyScroll + (up ? vis : -vis)) % 1e6;
     skyHY += ((up ? 340 : 240) - skyHY) * Math.min(1, dt*3);
     for (const o of skyCr) { o.r += up ? -vis : vis; o.x += o.vx*dt; if (o.x < -40) o.x = W + 40; if (o.x > W + 40) o.x = -40; }
     skyCr = skyCr.filter(o => !o.dead && Math.abs(o.r) < 260 && alt + o.r > 2);
     if (up) { skyHi -= vis; while (skyHi < 170) { skyBand(skyHi, 12); skyHi += 12; } } else { skyLo += vis; while (skyLo > -170) { skyBand(skyLo - 12, 12); skyLo -= 12; } }
     const z = skyZ(alt); if (z != lastSkyZ) { if (lastSkyZ >= 0) { zoneShow = (up ? '⬆ ' : '⬇ ') + SKYZ[z].n + ' · ' + fmt(SKYZ[z].a) + ' m'; zoneT = 2; A.sfx('blip'); } lastSkyZ = z; }
-    const mag = up ? 0 : 3*UL('magnet');
+    if (z == SKYZ.length - 1 && allSkyCaught()) { bT += dt; while (bT >= .1) { bT -= .1; if (Math.random() < 1e-12 && Math.random() < 1e-13) spawnBIRD(); } }
+    const mag = up ? 0 : 3*SUL('sgrab');
     for (const o of skyCr) { if (o.dead) continue; const sz = o.zap ? 26 : o.f.s; if (Math.abs(o.r*PXM) > sz*.6 + 10 + mag) continue;
+      if (o.f && o.f.special == 'birdmax') { if (nearHook(o.x, sz*.9 + 12)) catchBIRD(o); continue; }
       if (o.zap) { if (Math.abs(o.x - hx) > 34 || t - (o.hitT || -9) < 1.2) continue; o.hitT = t; flash = .5;
-        if (shieldN > 0) { shieldN--; A.tone(900, .06, 'sine', .04); say('🛡 Jelly Guard blocked the lightning!', 1.4); continue; }
+        if (shieldN > 0) { shieldN--; A.tone(900, .06, 'sine', .04); say('⚡ Your Lightning Rod caught the zap!', 1.4); continue; }
         let li = -1; for (let q = caught.length - 1; q >= 0; q--) { const kk = caught[q].f.k; if (book()[kk] || caught.findIndex(c2 => c2.f.k == kk) < q) { li = q; break; } }
         if (li < 0) { A.sfx('bad'); say('⚡ Zap! Your new creatures held on', 1.4); continue; } const lost = caught.splice(li, 1)[0]; A.sfx('bad'); say('⚡ Lightning! Your ' + lost.f.n + ' flew away', 1.8); continue; }
       if (full || !nearHook(o.x, sz + 12 + mag)) continue; skyCatch(o);
-      if (caught.length >= capN()) { say(up ? 'Hook full! Floating back down' : 'Hook full! Zooming down', 1.2); if (up) { phase = 'skydown'; refreshBar(); } break; } }
-    if (phase == 'skyup' && alt >= skyMax * (1 - 1e-12)) { phase = 'skydown'; say('Top of the line! Coming down: grab more on the way', 1.6); A.sfx('blip'); refreshBar(); }
-    if (alt > (G.skyBest || 0)) G.skyBest = alt;
-    if (phase == 'skydown' && alt <= 0) { alt = 0; skyCr = []; finishDive(); } };
+      if (caught.length >= skyCap()) { say(up ? 'Basket full! Floating back down' : 'Basket full! Zooming down', 1.2); if (up) { phase = 'skydown'; refreshBar(); } break; } }
+    if (phase == 'skyup' && alt >= skyMax * (1 - 1e-12)) { phase = 'skydown'; say('Top of the string! Coming down: grab more on the way', 1.6); A.sfx('blip'); refreshBar(); }
+    if (alt > (SG.best || 0)) SG.best = alt;
+    if (phase == 'skydown' && alt <= 0) { alt = 0; skyCr = []; finishSky(); } };
+  const finishSky = () => { phase = 'tally'; let fe = 0, pts = 0; const b = book(), news = [];
+    caught.forEach(x => { fe += x.v; pts += x.p; if (!b[x.f.k]) news.push(x.f.n); b[x.f.k] = (b[x.f.k]||0) + 1; stat(api,'skyCaught',1,'add'); });
+    fe = fin(fe * featherMult()); SG.feathers = fin(SG.feathers + fe); SG.run = fin(SG.run + fe); SG.tot = fin(SG.tot + fe);
+    score = fin(score + pts); api.score(score); tally = {coins:fe, cur:'🪶', pts, n:caught.length, news, list:caught.slice(0, 40), bounty:0, at:t, sky:true}; save(); refreshBar();
+    A.sfx(caught.length ? 'win' : 'blip'); if (news.length) setTimeout(() => A.sfx('coin'), 300); };
+  // 🎈 the sky's own upgrade shop (paid with 🪶 feathers)
+  const SUP = [
+    {k:'sline', n:'Longer String', d:L => 'String reaches ' + fmt(skyLineM(L)) + ' → ' + fmt(skyLineM(L+1)) + ' m up', b:10, gr:1.34},
+    {k:'snet', n:'Bigger Basket', d:L => 'Hold ' + (5+L) + ' → ' + (6+L) + ' creatures per trip', b:25, gr:1.45},
+    {k:'sval', n:'Feather Market', d:L => 'Creatures sell for ×' + fmt(marketM(L)) + ' → ×' + fmt(marketM(L+1)), b:40, gr:1.45},
+    {k:'sbig', n:'Bigger Balloon', d:L => 'Rise ' + fmt(riseV(L)) + ' → ' + fmt(riseV(L+1)) + ' m/s', b:20, gr:1.32},
+    {k:'schute', n:'Parachute', d:L => 'Come down ' + fmt(fallV(L)) + ' → ' + fmt(fallV(L+1)) + ' m/s', b:20, gr:1.32},
+    {k:'swing', n:'Kite Steering', d:L => 'Lure moves ' + (100+10*L) + '% → ' + (110+10*L) + '% as fast', b:25, gr:1.32, max:20},
+    {k:'sluck', n:'Lucky Seeds', d:L => 'Rare & Epic creatures +' + (12*L) + '% → +' + (12*L+12) + '%', b:50, gr:1.42},
+    {k:'sgrab', n:'Sticky Lure', d:L => 'Grab creatures from ' + (3*L) + ' → ' + (3*L+3) + ' px farther away (coming down)', b:80, gr:1.5, max:15},
+    {k:'srod', n:'Lightning Rod', d:L => 'Block ' + L + ' → ' + (L+1) + ' lightning zaps per trip', b:120, gr:1.55},
+    {k:'sgold', n:'Golden Seeds', d:L => 'Golden creatures (×5): ' + goldP(L).toFixed(1) + '% → ' + goldP(L+1).toFixed(1) + '%', b:150, gr:1.45, max:40},
+    {k:'scombo', n:'Flock Charm', d:L => 'Each creature in a row adds +' + (10+4*L) + '% → +' + (14+4*L) + '%', b:90, gr:1.45},
+    {k:'snew', n:'Fresh Birdseed', d:L => 'Creatures missing from your Sky Book show up ×' + (1+.4*L).toFixed(1) + ' → ×' + (1+.4*(L+1)).toFixed(1) + ' as often', b:120, gr:1.5, max:20},
+    {k:'sballoons', n:'Extra Balloons', d:L => L >= 4 ? 'Flying 5 lures side by side (max)' : 'Fly ' + (1+L) + ' → ' + (2+L) + ' lures side by side (they share your basket)', b:5000, gr:12, max:4},
+    {k:'srocket', n:'Rocket Balloon', d:L => 'String ×' + fmt(skySpoolM(L)) + ' → ×' + fmt(skySpoolM(L+1)) + ' as long (about 1 new sky every 4 levels)', b:2e4, gr:1.4, max:60},
+    {k:'sjet', n:'Jet Burner', d:L => 'Rise & fall ×' + fmt(Math.pow(2, L)) + ' → ×' + fmt(Math.pow(2, L+1)) + ' faster', b:1e4, gr:4, max:40},
+    {k:'sbuddy', n:'Bird Buddy', d:L => 'Earns ' + fmt(sbuddyRate(L)) + ' → ' + fmt(sbuddyRate(L+1)) + ' feathers/s for you', b:250, gr:1.42},
+    {k:'ssonar', n:'Bird Radar', d:L => ['Shows what each creature is worth', 'Creatures missing from your Sky Book sparkle', 'Maxed!'][Math.min(2, L)], b:400, gr:6, max:2}];
+  const scost = (u, L) => Math.ceil(Math.min(1e300, u.b * Math.pow(u.gr, L)));
+  const sbuy = (u, n) => { let k = 0; while (k < n && (u.max == null || SUL(u.k) < u.max) && SG.feathers >= scost(u, SUL(u.k))) { SG.feathers -= scost(u, SUL(u.k)); SG.upg[u.k] = SUL(u.k) + 1; k++; }
+    if (k) { A.sfx('coin'); save(); refreshBar(); } else A.sfx('bad'); drawPanel(); };
   const startReel = why => { if (phase == 'skyup') { phase = 'skydown'; if (why) say(why, 1.4); A.sfx('blip'); refreshBar(); return; } if (phase != 'drop') return; phase = 'reel'; combo = 0; lastCatch = -9; if (why) say(why, 1.6); A.sfx('blip'); refreshBar(); };
   const catchIt = o => { const v = fin(fishVal(o.f, AB(o.d)) * (o.gold ? 5 : 1)), p = fin(fishPts(o.f, AB(o.d)) * (o.gold ? 2 : 1));
     if (t - lastCatch < 1.6) combo++; else combo = 0; lastCatch = t; caught.push({f:o.f, v:v * (1 + combo*(.1 + .04*UL('combo'))), p, gold:o.gold, h:hitHook}); o.dead = true; hitHook = 0;
@@ -614,7 +675,7 @@ A.register('fishing', { mount(host, api){
   const reset = () => { if (__skip) { __skip = false; phase = 'surface'; preview(); return; } score = 0; api.score(0); phase = 'surface'; tally = null; caught = []; preview(); };
   const offK = A.keys(e => { if (panel && e.key == 'Escape') { closePanel(); return; } if (e.key == ' ' || e.key == 'Enter') { if (!panel) press(); }
     if ((e.key == 'q' || e.key == 'Q') && st == 'play' && (phase == 'drop' || phase == 'skyup') && !quiz) startReel(phase == 'skyup' ? 'Coming down!' : 'Coming up!');
-    if ((e.key == 'u' || e.key == 'U') && phase == 'surface' && st == 'play') openPanel('up'); if ((e.key == 'b' || e.key == 'B') && st == 'play') openPanel('book'); });
+    if ((e.key == 'u' || e.key == 'U') && phase == 'surface' && st == 'play') openPanel(inSky() ? 'sup' : 'up'); if ((e.key == 'b' || e.key == 'B') && st == 'play') openPanel(inSky() ? 'sbook' : 'book'); });
   const toX = e => { const r = c.getBoundingClientRect(); return (e.clientX - r.left) * W / r.width; };
   c.addEventListener('pointerdown', e => { ptrDown = true; tx = toX(e); try { c.setPointerCapture(e.pointerId); } catch(_){} if (st != 'play' || phase == 'surface' || phase == 'tally') press(); });
   c.addEventListener('pointermove', e => { if (e.pointerType == 'mouse' || ptrDown) tx = toX(e); });
@@ -623,7 +684,7 @@ A.register('fishing', { mount(host, api){
   // ---------- buttons + panels (shop, spots, book, pearls) ----------
   const bar = el('div', {display:'flex', gap:'6px', padding:'6px 0 0', flexWrap:'wrap', justifyContent:'center'}); wrap.appendChild(bar);
   const mk = (txt, fn, bg, fg) => { const b = el('button', {background:bg||'#015640', color:fg||'#fff', border:'none', borderRadius:'999px', padding:'8px 12px', font:'700 13px '+A.font, cursor:'pointer'}, txt); b.tabIndex = -1; b.onclick = e => { e.stopPropagation(); b.blur(); fn(); }; return b; };
-  const bUp = mk('🛒 Upgrades', () => openPanel('up')), bSpot = mk('🗺 Spots', () => openPanel('spot')), bBook = mk('📖 Fish Book', () => openPanel('book')), bPearl = mk('🦪 Pearls', () => openPanel('pearl')), bMix = mk('🎯 Bait mix', () => openPanel('mix')), bReel = mk('⏫ Come up now · Q', () => startReel(phase == 'skyup' ? 'Coming down!' : 'Coming up!'), '#FF4539'), bSlow = mk('🐢 Hold to slow · Space', () => {}, '#015640');
+  const bUp = mk('🛒 Upgrades', () => openPanel(inSky() ? 'sup' : 'up')), bSpot = mk('🗺 Spots', () => openPanel('spot')), bBook = mk('📖 Fish Book', () => openPanel(inSky() ? 'sbook' : 'book')), bPearl = mk('🦪 Pearls', () => openPanel('pearl')), bMix = mk('🎯 Bait mix', () => openPanel('mix')), bReel = mk('⏫ Come up now · Q', () => startReel(phase == 'skyup' ? 'Coming down!' : 'Coming up!'), '#FF4539'), bSlow = mk('🐢 Hold to slow · Space', () => {}, '#015640');
   bSlow.style.touchAction = 'none'; bSlow.addEventListener('pointerdown', e => { e.preventDefault(); slowHeld = true; try { bSlow.setPointerCapture(e.pointerId); } catch(_){} }); ['pointerup', 'pointercancel', 'pointerleave'].forEach(k => bSlow.addEventListener(k, () => { slowHeld = false; }));
   const bBoat = mk('⛵ Boat', () => openPanel('boat')), bSky = mk('☁️ Sky fishing', () => { G.skyMode = !G.skyMode; save(); refreshBar(); say(G.skyMode ? '☁️ Sky fishing! Your balloon lure floats UP into the sky' : '🌊 Back to fishing in the sea', 2); }, '#3f8fd8');
   [bUp, bSpot, bMix, bBook, bPearl, bBoat, bSky, bSlow, bReel].forEach(b => bar.appendChild(b));
@@ -649,17 +710,20 @@ A.register('fishing', { mount(host, api){
   const depCtl = control('📏 Depth', 'm', () => lineUse(), v => { G.lineCap = v; }, () => lineM(UL('line')));
   const sinkCtl = control('⬇ Sink', 'm/s', () => { const v = speedNow('sinkMS', sinkMax()); return v != null ? v : Math.min(sinkMax(), Math.max(20, lineUse() / 3)); }, v => { G.sinkMS = v; G.sinkPct = null; }, () => sinkMax());
   const reelCtl = control('⬆ Reel', 'm/s', () => { const v = speedNow('reelMS', reelMax()); return v != null ? v : Math.min(reelMax(), Math.max(20, lineUse() / 3)); }, v => { G.reelMS = v; G.reelPct = null; }, () => reelMax());
+  const sDepCtl = control('🎈 String', 'm', () => skyUse(), v => { SG.cap = v; }, () => skyLineM(SUL('sline')));
+  const sUpCtl = control('⬆ Rise', 'm/s', () => SG.upMS != null ? Math.min(riseV(SUL('sbig')), SG.upMS) : Math.min(riseV(SUL('sbig')), Math.max(14, skyUse() / 8)), v => { SG.upMS = v; }, () => riseV(SUL('sbig')));
+  const sDownCtl = control('⬇ Fall', 'm/s', () => SG.downMS != null ? Math.min(fallV(SUL('schute')), SG.downMS) : Math.min(fallV(SUL('schute')), Math.max(14, skyUse() / 8)), v => { SG.downMS = v; }, () => fallV(SUL('schute')));
   const sinkSl = sinkCtl, reelSl = reelCtl, depBox = depCtl.box;
-  const refreshMore = () => { try { [depCtl, sinkCtl, reelCtl].forEach(c2 => c2.show()); if (typeof skipTx != 'undefined') skipTx.textContent = skipPct() + '% · ' + fmt(Math.floor(lineUse() * skipPct() / 100)) + ' m'; } catch(e){} };
+  const refreshMore = () => { try { [depCtl, sinkCtl, reelCtl, sDepCtl, sUpCtl, sDownCtl].forEach(c2 => c2.show()); if (typeof skipTx != 'undefined') skipTx.textContent = skipPct() + '% · ' + fmt(Math.floor(lineUse() * skipPct() / 100)) + ' m'; } catch(e){} };
   // Ghost Lure: choose which fish your hook ignores on the way down (up to what your upgrade allows)
   const ghostBox = el('div', {display:'none', alignItems:'center', gap:'4px', background:'rgba(0,0,0,.35)', borderRadius:'999px', padding:'4px 8px', font:'700 13px '+A.font, color:'#e8f4ec', flexWrap:'wrap'});
   bar.appendChild(ghostBox);
   const drawGhost = () => { ghostBox.innerHTML = ''; ghostBox.appendChild(el('span', {padding:'0 4px'}, '👻 Ignore')); const mx = Math.min(3, UL('ghost')), cur = ghostTier();
     ['Off', 'Common', '≤ Uncommon', '≤ Rare'].slice(0, mx + 1).forEach((n, k) => { const b = mk(n, () => { G.ghostSel = k; save(); drawGhost(); }, cur == k ? '#D5F367' : 'transparent', cur == k ? '#015640' : '#e8f4ec'); b.style.padding = '4px 9px'; b.style.fontSize = '12px'; if (cur != k) b.style.border = '1.5px solid rgba(232,244,236,.35)'; ghostBox.appendChild(b); }); };
-  function refreshBar(){ const dive = st == 'play' && (phase == 'drop' || phase == 'reel' || skyPh()); [bUp, bSpot, bPearl, bMix, bBoat, bSky].forEach(b => b.style.display = dive ? 'none' : ''); bSky.textContent = G.skyMode ? '🌊 Fish the sea' : '☁️ Sky fishing'; bReel.style.display = st == 'play' && (phase == 'drop' || phase == 'skyup') ? '' : 'none'; bReel.textContent = phase == 'skyup' ? '⏬ Come down now · Q' : '⏫ Come up now · Q'; bSlow.style.display = dive ? '' : 'none'; if (!dive) slowHeld = false;
-    [sinkSl, reelSl].forEach(o => { o.box.style.display = dive ? 'none' : 'flex'; o.show(); }); depBox.style.display = dive ? 'none' : 'flex'; depCtl.show();
-    ghostBox.style.display = UL('ghost') > 0 && !dive ? 'flex' : 'none'; if (UL('ghost') > 0) drawGhost();
-    const sm = skipMax(); skipBox.style.display = sm > 0 && !dive ? 'flex' : 'none'; if (sm > 0) { skipIn.max = sm; skipIn.value = skipPct(); skipTx.textContent = skipPct() + '% · ' + fmt(Math.floor(lineUse() * skipPct() / 100)) + ' m'; } }
+  function refreshBar(){ const dive = st == 'play' && (phase == 'drop' || phase == 'reel' || skyPh()); [bUp, bSpot, bPearl, bMix, bBoat, bSky].forEach(b => b.style.display = dive ? 'none' : ''); [bSpot, bPearl, bMix].forEach(b => { if (inSky()) b.style.display = 'none'; }); bSky.textContent = G.skyMode ? '🌊 Fish the sea' : '☁️ Sky fishing'; bUp.textContent = inSky() ? '🎈 Sky Upgrades' : '🛒 Upgrades'; bBook.textContent = inSky() ? '🐦 Sky Book' : '📖 Fish Book'; bReel.style.display = st == 'play' && (phase == 'drop' || phase == 'skyup') ? '' : 'none'; bReel.textContent = phase == 'skyup' ? '⏬ Come down now · Q' : '⏫ Come up now · Q'; bSlow.style.display = dive ? '' : 'none'; if (!dive) slowHeld = false;
+    [sinkSl, reelSl, depCtl].forEach(o => { o.box.style.display = dive || inSky() ? 'none' : 'flex'; o.show(); }); [sDepCtl, sUpCtl, sDownCtl].forEach(o => { o.box.style.display = dive || !inSky() ? 'none' : 'flex'; o.show(); });
+    ghostBox.style.display = UL('ghost') > 0 && !dive && !inSky() ? 'flex' : 'none'; if (UL('ghost') > 0) drawGhost();
+    const sm = skipMax(); skipBox.style.display = sm > 0 && !dive && !inSky() ? 'flex' : 'none'; if (sm > 0) { skipIn.max = sm; skipIn.value = skipPct(); skipTx.textContent = skipPct() + '% · ' + fmt(Math.floor(lineUse() * skipPct() / 100)) + ' m'; } }
   function closePanel(){ if (panel) { panel.remove(); panel = null; } armPearl = false; try { refreshBar(); } catch(e){} }
   let bookJump = false;
   function openPanel(tab){ bookJump = tab == 'book'; if (st == 'play' && (phase == 'drop' || phase == 'reel' || skyPh())) return; panelTab = tab; closePanel();
@@ -667,9 +731,9 @@ A.register('fishing', { mount(host, api){
     panel.addEventListener('pointerdown', e => e.stopPropagation()); wrap.appendChild(panel); drawPanel(); }
   function drawPanel(){ if (!panel) return; const keep = panel.querySelector('.fl-body'), sc = keep ? keep.scrollTop : 0; panel.innerHTML = '';
     const top = el('div', {display:'flex', gap:'6px', alignItems:'center', marginBottom:'8px', flexWrap:'wrap'}); panel.appendChild(top);
-    [['up','🛒 Upgrades'],['spot','🗺 Spots'],['boat','⛵ Boat'],['mix','🎯 Mix'],['book','📖 Book'],['pearl','🦪 Pearls']].forEach(([k, n]) => { const b = mk(n, () => { panelTab = k; armPearl = false; bookJump = k == 'book'; drawPanel(); }, panelTab == k ? '#D5F367' : 'rgba(255,255,255,.12)', panelTab == k ? '#015640' : '#fff'); b.style.padding = '6px 10px'; top.appendChild(b); });
+    (inSky() ? [['sup','🎈 Sky Upgrades'],['sbook','🐦 Sky Book'],['boat','⛵ Boat']] : [['up','🛒 Upgrades'],['spot','🗺 Spots'],['boat','⛵ Boat'],['mix','🎯 Mix'],['book','📖 Book'],['pearl','🦪 Pearls']]).forEach(([k, n]) => { const b = mk(n, () => { panelTab = k; armPearl = false; bookJump = k == 'book'; drawPanel(); }, panelTab == k ? '#D5F367' : 'rgba(255,255,255,.12)', panelTab == k ? '#015640' : '#fff'); b.style.padding = '6px 10px'; top.appendChild(b); });
     const x = mk('✕', closePanel, 'rgba(255,255,255,.15)'); x.style.marginLeft = 'auto'; top.appendChild(x);
-    panel.appendChild(el('div', {font:'800 18px '+A.font, color:'#F9BF01', margin:'2px 0 8px'}, '🪙 ' + fmt(G.coins) + ' coins'));
+    panel.appendChild(el('div', {font:'800 18px '+A.font, color:panelTab[0] == 's' ? '#bfe9ff' : '#F9BF01', margin:'2px 0 8px'}, panelTab[0] == 's' ? '🪶 ' + fmt(SG.feathers) + ' feathers' : '🪙 ' + fmt(G.coins) + ' coins'));
     const body = el('div', {overflowY:'auto', flex:'1', display:'flex', flexDirection:'column', gap:'6px'}); body.className = 'fl-body'; panel.appendChild(body);
     const row = () => { const r = el('div', {display:'flex', alignItems:'center', gap:'8px', background:'rgba(255,255,255,.07)', borderRadius:'10px', padding:'8px 10px'}); body.appendChild(r); return r; };
     if (panelTab == 'up') UP.forEach(u => { const L = UL(u.k), maxed = u.max != null && L >= u.max, cst = cost(u, L), r = row();
@@ -677,6 +741,18 @@ A.register('fishing', { mount(host, api){
       if (maxed) { r.appendChild(el('div', {font:'700 12px '+A.font, color:'#D5F367'}, 'MAX')); return; }
       const can = G.coins >= cst, b1 = mk('🪙 ' + fmt(cst), () => buy(u, 1), can ? '#00B451' : 'rgba(255,255,255,.12)'); b1.style.opacity = can ? 1 : .55; r.appendChild(b1);
       const bm = mk('Max', () => buy(u, 999), can ? '#007a37' : 'rgba(255,255,255,.08)'); bm.style.opacity = can ? 1 : .45; bm.style.padding = '8px 9px'; r.appendChild(bm); });
+    if (panelTab == 'sup') SUP.forEach(u => { const L = SUL(u.k), maxed = u.max != null && L >= u.max, cst = scost(u, L), r = row();
+      const info = el('div', {flex:'1', minWidth:0}); info.appendChild(el('div', {font:'700 14px '+A.font}, u.n + ' · Lv ' + L)); info.appendChild(el('div', {font:'500 12px '+A.font, color:'#b9d9e6'}, u.d(L))); r.appendChild(info);
+      if (maxed) { r.appendChild(el('div', {font:'700 12px '+A.font, color:'#D5F367'}, 'MAX')); return; }
+      const can = SG.feathers >= cst, b1 = mk('🪶 ' + fmt(cst), () => sbuy(u, 1), can ? '#3f8fd8' : 'rgba(255,255,255,.12)'); b1.style.opacity = can ? 1 : .55; r.appendChild(b1);
+      const bm = mk('Max', () => sbuy(u, 999), can ? '#1d6fb8' : 'rgba(255,255,255,.08)'); bm.style.opacity = can ? 1 : .45; bm.style.padding = '8px 9px'; r.appendChild(bm); });
+    if (panelTab == 'sbook') { const b = book(), found = SKYALL.filter(f => b[f.k]).length;
+      body.appendChild(el('div', {font:'600 13px '+A.font, color:'#bfe9ff'}, found + ' of ' + SKYALL.length + ' found · Sky Book bonus ×' + skyBookBonus().toFixed(2) + ' feathers (+3% per full sky, +25% for all of them)'));
+      SKY.forEach((zr, z) => { const r = row(); r.style.flexWrap = 'wrap'; r.style.gap = '4px'; r.appendChild(el('div', {width:'100%', font:'600 11px '+A.font, color:z == SKYZ.length - 1 ? '#ff9ad5' : '#8fb9c9'}, SKYZ[z].n + ' · ' + fmt(SKYZ[z].a) + ' m up'));
+        zr.forEach(f => { const n = b[f.k] || 0, cell = el('div', {flex:'1 1 45%', display:'flex', alignItems:'center', gap:'6px', font:'600 12px '+A.font, color:n ? RC[f.r] : '#5d7d8a'});
+          if (n) { const im = el('img', {width:'46px', height:'30px', flexShrink:0}); im.src = fishIcon(f); cell.appendChild(im); } else cell.appendChild(el('div', {width:'46px', height:'30px', flexShrink:0, borderRadius:'8px', background:'rgba(255,255,255,.06)', textAlign:'center', lineHeight:'30px'}, '?'));
+          cell.appendChild(el('span', {}, n ? f.n + ' ×' + n : '??? (' + RN[f.r] + ')')); r.appendChild(cell); }); });
+      const rb = row(), nB = b[BIRDMAX.k] || 0, okB = allSkyCaught(); rb.appendChild(el('div', {font:'800 14px '+A.font, color:nB ? RC[9] : '#ff9ad5'}, nB ? '🐦 BIRD!! ×' + nB + ' · the biggest bird in the world' : '🐦 ??? · BIRD!! lives in the Bwird Zone (' + fmt(SKYZ[SKYZ.length - 1].a) + ' m up). ' + (okB ? 'You have every other sky creature, so it can appear now (10 times a second, 0.00000000000000000000001%).' : 'It only appears once every other sky creature is in your Sky Book.'))); }
     if (panelTab == 'boat') { const cur = G.boat || 0;
       body.appendChild(el('div', {font:'600 13px '+A.font, lineHeight:1.4, color:'#cfe3ec'}, 'Upgrade your boat one step at a time. Every boat keeps the bonuses shown, works for sea AND sky fishing, and looks different on the water.'));
       BOATS.forEach((T, i) => { const r = row(), im = el('img', {width:'96px', height:'84px', flexShrink:0}); im.src = boatIcon(i); r.appendChild(im); const info = el('div', {flex:'1', minWidth:0});
@@ -702,11 +778,6 @@ A.register('fishing', { mount(host, api){
       for (let q = 0; q < GUARD.length; q += 2) { const r = row(); r.style.flexWrap = 'wrap'; r.style.gap = '4px'; GUARD.slice(q, q + 2).forEach(f => { const n = b[f.k] || 0, cell = el('div', {flex:'1 1 45%', display:'flex', alignItems:'center', gap:'6px', font:'600 12px '+A.font, color:n ? RC[f.r] : '#5d7d8a'});
           if (n) { const im = el('img', {width:'46px', height:'30px', flexShrink:0}); im.src = fishIcon(f); cell.appendChild(im); } else cell.appendChild(el('div', {width:'46px', height:'30px', flexShrink:0, borderRadius:'8px', background:'rgba(255,255,255,.06)', textAlign:'center', lineHeight:'30px'}, '?'));
           cell.appendChild(el('span', {}, n ? f.n + ' ×' + n : '??? · ' + LAYERS[f.guard].n + ' (' + fmt(LAYERS[f.guard].d) + ' m+)')); r.appendChild(cell); }); }
-      const hs = el('div', {font:'800 15px '+A.font, marginTop:'6px', color:G.skyMode ? '#D5F367' : '#ffffff'}, '☁️ Sky creatures (sky fishing)' + (G.skyMode ? ' · you are here' : '')); hs.dataset.loc = 'sky'; body.appendChild(hs);
-      SKY.forEach((zr, z) => { const r = row(); r.style.flexWrap = 'wrap'; r.style.gap = '4px'; r.appendChild(el('div', {width:'100%', font:'600 11px '+A.font, color:'#8fb9c9'}, SKYZ[z].n + ' · ' + fmt(SKYZ[z].a) + ' m up'));
-        zr.forEach(f => { const n = b[f.k] || 0, cell = el('div', {flex:'1 1 45%', display:'flex', alignItems:'center', gap:'6px', font:'600 12px '+A.font, color:n ? RC[f.r] : '#5d7d8a'});
-          if (n) { const im = el('img', {width:'46px', height:'30px', flexShrink:0}); im.src = fishIcon(f); cell.appendChild(im); } else cell.appendChild(el('div', {width:'46px', height:'30px', flexShrink:0, borderRadius:'8px', background:'rgba(255,255,255,.06)', textAlign:'center', lineHeight:'30px'}, '?'));
-          cell.appendChild(el('span', {}, n ? f.n + ' ×' + n : '??? (' + RN[f.r] + ')')); r.appendChild(cell); }); });
       const r = row(); [BOOT, CHEST].forEach(f => { const cell = el('div', {flex:'1', display:'flex', alignItems:'center', gap:'6px', font:'600 12px '+A.font, color:b[f.k] ? RC[f.r] : '#5d7d8a'}); if (b[f.k]) { const im = el('img', {width:'46px', height:'30px'}); im.src = fishIcon(f); cell.appendChild(im); } cell.appendChild(el('span', {}, b[f.k] ? f.n + ' ×' + b[f.k] : '??? (' + RN[f.r] + ')')); r.appendChild(cell); }); }
     if (panelTab == 'mix') { const deep = Math.max(30, lineM(UL('line'))), WH = ['up to 250 m', 'up to 2,000 m', 'everywhere', 'everywhere', '250 m+', '2,000 m+', '5,000 m+', '10,000 m+'];
       const cur = mixOn() ? G.mix.slice() : null, vals = cur || [60, 30, 12, 5, 2, 1, 0, 0];
@@ -734,7 +805,7 @@ A.register('fishing', { mount(host, api){
       body.appendChild(el('div', {font:'500 12px '+A.font, color:'#8fb9c9', marginTop:'8px'}, 'All-time: ' + fmt(G.tot) + ' coins · ' + fmt(G.caught) + ' fish · ' + fmt(G.dives) + ' dives · deepest ever ' + fmt(G.deepest||0) + ' m')); }
     const nb = panel.querySelector('.fl-body'); if (nb) nb.scrollTop = sc;
     // the Fish Book opens at the spot you're fishing in
-    if (nb && panelTab == 'book' && bookJump) { bookJump = false; const hdr = nb.querySelector('[data-loc="' + (G.skyMode ? 'sky' : G.loc) + '"]'); if (hdr) nb.scrollTop = hdr.offsetTop - nb.offsetTop - 8; } }
+    if (nb && panelTab == 'book' && bookJump) { bookJump = false; const hdr = nb.querySelector('[data-loc="' + G.loc + '"]'); if (hdr) nb.scrollTop = hdr.offsetTop - nb.offsetTop - 8; } }
   const buy = (u, n) => { let k = 0; while (k < n && (u.max == null || UL(u.k) < u.max) && G.coins >= cost(u, UL(u.k))) { G.coins -= cost(u, UL(u.k)); G.upg[u.k] = UL(u.k) + 1; k++; }
     if (k) { A.sfx('coin'); save(); refreshBar(); } else A.sfx('bad'); drawPanel(); };
   const pearlsFor = () => G.run < 1e5 ? 0 : Math.floor(Math.sqrt(Math.min(G.run, 1e9) / 1e5)) + Math.floor(4*Math.log10(Math.max(1, G.run / 1e9)));
@@ -746,7 +817,11 @@ A.register('fishing', { mount(host, api){
   const sy = d => SURF + (d - camD) * PXM;
   const drawFish = (o, x, y) => { const f = o.f, s = f.s, dir = o.vx < 0 ? -1 : 1; g.save(); g.translate(x, y); g.scale(dir, 1);
     if (f.junk) { g.fillStyle = f.col; rr(g, -9, -10, 10, 16, 3); g.fill(); rr(g, -9, 2, 20, 8, 3); g.fill(); g.restore(); return; }
-    if (f.bird) { drawBird(f, s, o.ph); g.restore(); return; }
+    if (f.bird) { if (f.special == 'birdmax') { const hh = (t*140) % 360; f.look.col = 'hsl(' + hh + ',95%,60%)'; f.look.dark = 'hsl(' + ((hh + 180) % 360) + ',95%,45%)';
+        for (let k = 0; k < 5; k++) { g.strokeStyle = 'hsla(' + ((t*200 + k*72) % 360) + ',95%,60%,.8)'; g.lineWidth = 6; g.beginPath(); g.ellipse(0, 0, s*1.25 + k*14 + Math.sin(t*3 + k)*8, s*.8 + k*10, 0, 0, TAU); g.stroke(); }
+        g.save(); g.scale(o.vx < 0 ? -1 : 1, 1); g.font = '900 48px ' + A.font; g.textAlign = 'center'; g.lineWidth = 8; g.strokeStyle = '#121313'; g.strokeText('BIRD!!', 0, -s*.8); g.fillStyle = 'hsl(' + ((t*300) % 360) + ',95%,70%)'; g.fillText('BIRD!!', 0, -s*.8); g.restore(); }
+      else if (inSky() && SUL('ssonar') >= 2 && !book()[f.k] && !low()) { g.shadowColor = '#ffffff'; g.shadowBlur = 14 + 8*Math.sin(t*8); }
+      drawBird(f, s, o.ph); g.shadowBlur = 0; g.restore(); return; }
     if (f.chest) { g.fillStyle = '#8D5B1D'; rr(g, -14, -9, 28, 18, 3); g.fill(); g.fillStyle = '#F9BF01'; g.fillRect(-14, -2, 28, 3); g.fillRect(-2, -4, 4, 7); if (!low()) { g.fillStyle = 'rgba(255,233,120,' + (.4 + .3*Math.sin(t*4 + o.ph)) + ')'; g.beginPath(); g.arc(0, 0, 20, 0, TAU); g.fill(); } g.restore(); return; }
     if ((f.r >= 3 || o.gold) && !low()) { g.shadowColor = o.gold ? '#FFD700' : f.look.acc; g.shadowBlur = f.r >= 4 ? 16 : 10; }
     drawLook(f, s, o.ph, o.gold, low()); g.shadowBlur = 0;
@@ -792,7 +867,7 @@ A.register('fishing', { mount(host, api){
     if (L.k == 'vent') { g.fillStyle = '#3a2a2a'; g.beginPath(); g.moveTo(W - 160, yS); g.lineTo(W - 90, yS - 90); g.lineTo(W - 70, yS - 90); g.lineTo(W - 10, yS); g.fill(); g.fillStyle = 'rgba(255,120,40,' + (.6 + .3*Math.sin(t*3)) + ')'; g.beginPath(); g.ellipse(W - 80, yS - 92, 14, 6, 0, 0, TAU); g.fill(); }
     if (L.snow) { g.fillStyle = 'rgba(255,255,255,.85)'; for (let i = 0; i < 60; i++) g.fillRect((i*61 + t*20*(1 + i%3)) % W, ((i*37 + t*30*(1 + i%2)) % 260) + yS - 260, 2, 2); }
     if (L.ember) { g.fillStyle = 'rgba(255,140,60,.8)'; for (let i = 0; i < 30; i++) g.fillRect((i*61 + Math.sin(t + i)*20 + W) % W, yS - ((i*37 + t*40) % 260), 2, 3); } };
-  const drawBoat = (yS, To) => { const T = To || boatT(), bx = W/2, by = yS + (To ? 0 : wave(bx) - 4), tilt = To ? 0 : (wave(bx + 30) - wave(bx - 30)) / 60; g.save(); g.translate(bx, by); g.rotate(tilt);
+  const drawBoat = (yS, To) => { const T = To || boatT(), bx = W/2, by = yS + (To ? 0 : wave(bx) - 4), tilt = To ? 0 : (wave(bx + 30) - wave(bx - 30)) / 60, sc = 1 + .08*Math.max(0, BOATS.indexOf(T)); g.save(); g.translate(bx, by); g.rotate(tilt); g.scale(sc, sc);   // better boats are bigger
     // a hot-air balloon floats above the flying boats
     if (T.balloon) { g.strokeStyle = '#5a3412'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(12, -50); g.lineTo(-6, -114); g.moveTo(56, -50); g.lineTo(74, -114); g.stroke();
       for (let k = 0; k < 6; k++) { g.fillStyle = T.balloon[k % 2]; g.beginPath(); g.ellipse(34, -160, 48 - k*8, 54, 0, 0, TAU); g.fill(); } }
@@ -803,20 +878,26 @@ A.register('fishing', { mount(host, api){
     g.fillStyle = T.hull; g.beginPath(); g.moveTo(-74, -16); g.lineTo(74, -16); g.quadraticCurveTo(66, 10, 48, 14); g.lineTo(-48, 14); g.quadraticCurveTo(-66, 10, -74, -16); g.fill();
     g.fillStyle = T.trim; g.fillRect(-70, -16, 140, 7); g.fillStyle = mixHex(T.hull, '#000000', .3); if (!T.sub) for (let k = -60; k <= 60; k += 20) g.fillRect(k, -9, 2, 20);
     g.fillStyle = T.rim; g.fillRect(-74, -19, 148, 4);
+    const tier = BOATS.indexOf(T);
+    if (tier == 1 || tier == 4) { g.fillStyle = tier == 1 ? '#F9BF01' : '#64CDF5'; g.beginPath(); g.moveTo(-60, -2); g.lineTo(40, -2); g.lineTo(30, 4); g.lineTo(-60, 4); g.fill(); }
+    if (tier == 2) { g.strokeStyle = 'rgba(240,230,200,.8)'; g.lineWidth = 1; for (let k = 0; k < 5; k++) { g.beginPath(); g.moveTo(-74 + k*4, -18); g.lineTo(-90 + k*3, 6); g.stroke(); } g.beginPath(); g.moveTo(-90, -6); g.lineTo(-72, -6); g.stroke(); }
+    if (tier == 6) for (const px of [-40, -16, 8]) { g.fillStyle = '#121313'; g.beginPath(); g.arc(px, -2, 5, 0, TAU); g.fill(); g.fillStyle = '#4a4a4a'; g.fillRect(px - 2, -4, 10, 4); }
+    if (tier == 7) { [[-48, -150], [-66, -168]].forEach(([mx, top]) => { g.strokeStyle = '#8a6a10'; g.lineWidth = 3; g.beginPath(); g.moveTo(mx, -16); g.lineTo(mx, top); g.stroke(); g.fillStyle = T.sail; g.globalAlpha = .9; g.beginPath(); g.moveTo(mx - 3, top + 6); g.quadraticCurveTo(mx - 40 - Math.sin(t*2 + mx)*3, (top - 16)/2, mx - 3, -26); g.fill(); g.globalAlpha = 1; g.fillStyle = '#F9BF01'; g.beginPath(); g.moveTo(mx - 8, top); g.lineTo(mx - 4, top - 10); g.lineTo(mx, top - 2); g.lineTo(mx + 4, top - 10); g.lineTo(mx + 8, top); g.fill(); }); }
     if (T.sub) for (const px of [-48, -24, 0, 24, 48]) { g.fillStyle = '#4a4a4a'; g.beginPath(); g.arc(px, 0, 6, 0, TAU); g.fill(); g.fillStyle = '#8fd3ff'; g.beginPath(); g.arc(px, 0, 4, 0, TAU); g.fill(); }
     // cabin (the yacht has two decks)
     let poleTop = -56;
     if (T.yacht) { g.fillStyle = T.cabin; rr(g, -6, -40, 76, 24, 6); g.fill(); g.fillStyle = daylight() < .3 ? '#ffd76a' : '#8fd3ff'; g.fillRect(0, -34, 64, 7); g.fillStyle = T.cabin; rr(g, 12, -58, 44, 18, 5); g.fill(); g.fillStyle = T.roof; g.fillRect(8, -60, 52, 4); g.fillRect(-6, -42, 76, 3); poleTop = -60; }
     else { g.fillStyle = T.cabin; g.fillRect(14, -46, 40, 30); g.fillStyle = T.roof; g.beginPath(); g.moveTo(10, -46); g.lineTo(58, -46); g.lineTo(52, -56); g.lineTo(16, -56); g.fill();
       g.fillStyle = daylight() < .3 ? '#ffd76a' : '#8fd3ff'; g.fillRect(22, -40, 11, 10); g.fillRect(37, -40, 11, 10); }
-    if (T.sub) { g.fillStyle = '#4a4a4a'; g.fillRect(36, poleTop - 26, 5, 26); g.fillRect(36, poleTop - 26, 14, 5); }
+    if (T.sub) { g.fillStyle = '#4a4a4a'; g.fillRect(36, poleTop - 26, 5, 26); g.fillRect(36, poleTop - 26, 14, 5); g.fillStyle = '#c8961a'; g.beginPath(); g.moveTo(-74, -10); g.lineTo(-92, -24); g.lineTo(-92, 6); g.fill(); }
+    if (T.yacht) { g.strokeStyle = '#1d4f86'; g.lineWidth = 2; g.beginPath(); g.moveTo(34, -62); g.lineTo(34, -72); g.stroke(); g.fillStyle = '#ffffff'; g.beginPath(); g.arc(34, -74, 5, 0, TAU); g.fill(); g.save(); g.translate(34, -80); g.rotate(t*3); g.fillStyle = '#1d4f86'; g.fillRect(-9, -1.5, 18, 3); g.restore(); }
     g.strokeStyle = '#5a3412'; g.lineWidth = 2; g.beginPath(); g.moveTo(54, poleTop); g.lineTo(54, poleTop - 30); g.stroke(); g.fillStyle = T.flag; g.beginPath(); g.moveTo(54, poleTop - 30); g.lineTo(76 + Math.sin(t*6)*3, poleTop - 24); g.lineTo(54, poleTop - 18); g.fill();
     if (T.gold && !low()) for (let k = 0; k < 6; k++) { const a2 = .5 + .5*Math.sin(t*3 + k*1.7); g.fillStyle = 'rgba(255,250,200,' + a2 + ')'; g.beginPath(); g.arc(-60 + k*24, -24 + (k % 2)*30 - 8, 2 + a2*1.5, 0, TAU); g.fill(); }
     // the fisher
     g.fillStyle = '#00B451'; rr(g, -40, -46, 20, 30, 8); g.fill(); g.fillStyle = '#f2c9a0'; g.beginPath(); g.arc(-30, -54, 10, 0, TAU); g.fill();
     g.fillStyle = '#121313'; g.beginPath(); g.arc(-26, -55, 1.6, 0, TAU); g.fill(); g.fillStyle = '#F9BF01'; g.beginPath(); g.ellipse(-30, -62, 15, 4, 0, 0, TAU); g.fill(); rr(g, -38, -72, 16, 10, 4); g.fill();
     g.strokeStyle = '#6b4a2b'; g.lineWidth = 3; g.beginPath(); g.moveTo(-22, -38); g.lineTo(28, -96); g.stroke(); g.restore();
-    return {x: bx + 28 + tilt*-96, y: by - 96}; };
+    return {x: bx + (28 + tilt*-96)*sc, y: by - 96*sc}; };
   const puff = (x, y, r, col) => { g.fillStyle = col; g.beginPath(); g.arc(x, y, r, 0, TAU); g.arc(x + r*.9, y + r*.2, r*.75, 0, TAU); g.arc(x - r*.9, y + r*.25, r*.7, 0, TAU); g.arc(x + r*.3, y - r*.45, r*.7, 0, TAU); g.fill(); };
   const drawZap = (o, x, y) => { puff(x, y, 22, '#4a5068'); puff(x - 4, y - 4, 16, '#5a6280'); if (Math.sin(t*9 + o.ph) > .2) { g.strokeStyle = '#ffe94a'; g.lineWidth = 3; g.beginPath(); g.moveTo(x, y + 14); g.lineTo(x - 8, y + 28); g.lineTo(x + 2, y + 30); g.lineTo(x - 6, y + 46); g.stroke(); } };
   const drawSkyScene = () => { const z = skyZ(alt), Z = SKYZ[z], Z2 = SKYZ[Math.min(SKYZ.length - 1, z + 1)], fz = z < SKYZ.length - 1 ? Math.max(0, Math.min(1, (alt - Z.a) / (Z2.a - Z.a))) : 0;
@@ -830,13 +911,13 @@ A.register('fishing', { mount(host, api){
     let tip = {x: W/2 + 30, y: H + 20};
     if (gy < H + 160) { g.fillStyle = LOC().sea; g.fillRect(0, gy, W, Math.max(0, H - gy + 10)); tip = drawBoat(gy); }
     for (const o of skyCr) { const y = hy - o.r*PXM; if (y < -60 || y > H + 60) continue; if (o.zap) drawZap(o, o.x, y); else drawFish(o, o.x, y);
-      if (UL('sonar') >= 2 && !o.zap && Math.abs(y - hy) < 140) { g.fillStyle = 'rgba(255,255,255,.9)'; g.font = '700 11px '+A.font; g.textAlign = 'center'; g.fillText('🪙' + fmt(skyVal(o.f, alt + o.r) * (o.gold ? 5 : 1) * coinMult()), o.x, y - o.f.s - 6); } }
+      if (SUL('ssonar') >= 1 && !o.zap && Math.abs(y - hy) < 140) { g.fillStyle = 'rgba(255,255,255,.9)'; g.font = '700 11px '+A.font; g.textAlign = 'center'; g.fillText('🪶' + fmt(skyVal(o.f, alt + o.r) * (o.gold ? 5 : 1) * featherMult()), o.x, y - o.f.s - 6); } }
     hooksX().forEach((x2, k) => { g.strokeStyle = 'rgba(255,255,255,' + (k ? .5 : .8) + ')'; g.lineWidth = k ? 1 : 1.4; g.beginPath(); g.moveTo(tip.x, Math.min(H + 20, tip.y)); g.quadraticCurveTo((tip.x + x2)/2, Math.min(H + 20, tip.y) - 20, x2, hy + 8); g.stroke();
       g.strokeStyle = '#d8dde3'; g.lineWidth = k ? 2.2 : 3; g.beginPath(); g.moveTo(x2, hy - 6); g.lineTo(x2, hy + 6); g.arc(x2 - 5, hy + 6, 5, 0, Math.PI); g.stroke();
       g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 1; g.beginPath(); g.moveTo(x2, hy - 6); g.lineTo(x2, hy - 18); g.stroke();
       g.fillStyle = k ? '#FFB000' : '#FF4539'; g.beginPath(); g.ellipse(x2, hy - 30 + Math.sin(t*3 + k)*2, k ? 9 : 12, k ? 11 : 14, 0, 0, TAU); g.fill(); g.fillStyle = 'rgba(255,255,255,.5)'; g.beginPath(); g.ellipse(x2 - 4, hy - 35, 3, 4, 0, 0, TAU); g.fill(); });
     hangCatch(hy, true);
-    if (UL('magnet') && phase == 'skydown') { g.strokeStyle = 'rgba(213,243,103,.35)'; g.lineWidth = 1; g.beginPath(); g.arc(hx, hy, 20 + 3*UL('magnet'), 0, TAU); g.stroke(); } };
+    if (SUL('sgrab') && phase == 'skydown') { g.strokeStyle = 'rgba(213,243,103,.35)'; g.lineWidth = 1; g.beginPath(); g.arc(hx, hy, 20 + 3*SUL('sgrab'), 0, TAU); g.stroke(); } };
   const boatIc = {}; const boatIcon = i => { if (boatIc[i]) return boatIc[i]; const cv = document.createElement('canvas'); cv.width = 192; cv.height = 168; const g0 = g; try { g = cv.getContext('2d'); g.translate(96, 130); g.scale(.62, .62); g.translate(-W/2, 0); drawBoat(0, BOATS[i]); } catch(e) {} g = g0; return (boatIc[i] = cv.toDataURL()); };
   const drawWalls = (L, y0, dTop) => { if (low()) return; const nk = dark(Math.max(0, dTop) + 60), wc = base + dTop >= 2000 ? mixHex(LAYERS[layerIdx(base + dTop)].c, '#000000', .55) : mixHex(mixHex(L.sea, '#02040a', .55), '#02040a', nk*.8);
     for (const side of [0, 1]) { g.fillStyle = wc; g.beginPath(); const X = y => { const d = camD + (y - SURF)/PXM + side*977; return 26 + (nz(d) + 1) * 34 + Math.sin(d*.11)*6; };
@@ -934,10 +1015,10 @@ A.register('fishing', { mount(host, api){
     }
     if (flash > 0) { g.fillStyle = 'rgba(233,185,247,' + flash + ')'; g.fillRect(0, 0, W, H); }
     // HUD
-    g.font = '800 15px '+A.font; pill(10, 10, 190, 32, '🪙 ' + fmt(G.coins), '#F9BF01', 'left');
-    const dTxt = skyPh() ? '⬆ ' + fmt(alt) + ' / ' + fmt(skyMax) + ' m up' : (phase == 'surface' || phase == 'tally' ? (G.skyMode ? '☁️ ' : '📏 ') + fmt(lineUse()) + ' m line' + (lineUse() >= FLOOR ? ' (the very bottom!)' : '') : '⬇ ' + fmt(AB(hd)) + ' / ' + fmt(maxD) + ' m');
+    g.font = '800 15px '+A.font; pill(10, 10, 190, 32, inSky() ? '🪶 ' + fmt(SG.feathers) : '🪙 ' + fmt(G.coins), inSky() ? '#bfe9ff' : '#F9BF01', 'left');
+    const dTxt = skyPh() ? '⬆ ' + fmt(alt) + ' / ' + fmt(skyMax) + ' m up' : (phase == 'surface' || phase == 'tally') && inSky() ? '🎈 ' + fmt(skyUse()) + ' m string' : (phase == 'surface' || phase == 'tally' ? '📏 ' + fmt(lineUse()) + ' m line' + (lineUse() >= FLOOR ? ' (the very bottom!)' : '') : '⬇ ' + fmt(AB(hd)) + ' / ' + fmt(maxD) + ' m');
     g.font = '800 15px '+A.font; pill(W/2 - 150, 10, 300, 32, dTxt, '#fff');
-    g.font = '800 15px '+A.font; pill(W - 250, 10, 240, 32, '🐟 ' + caught.length + '/' + capN() + ' · ' + fmt(score) + ' pts', '#fff', 'right');
+    g.font = '800 15px '+A.font; pill(W - 250, 10, 240, 32, (inSky() ? '🐦 ' + caught.length + '/' + skyCap() : '🐟 ' + caught.length + '/' + capN()) + ' · ' + fmt(score) + ' pts', '#fff', 'right');
     g.font = '700 12px '+A.font; const dn = daylight(), clock = dn > .7 ? '☀️ Day' : dn > .25 ? (dayT() < .5 ? '🌤 Morning' : '🌇 Evening') : '🌙 Night · rare fish +30%';
     const wx = weather == 'storm' ? '⛈ Storm · +40% fish' : weather == 'rain' ? '🌧 Rain · +20% fish' : '';
     pill(10, 48, Math.max(120, g.measureText(clock + (wx ? '   ' + wx : '')).width + 26), 24, clock + (wx ? '   ' + wx : ''), '#cfe3ec', 'left');
@@ -951,10 +1032,10 @@ A.register('fishing', { mount(host, api){
       g.font = '500 13px '+A.font; g.fillStyle = '#cfe3d9'; g.fillText(G.skyMode ? 'Sky fishing · touch flying creatures · dodge ⚡ storm clouds · Q to come down' : 'Touch fish to hook them · hold Space to slow · Q to come up · ' + LOC().n, W/2, SURF + 124);
       if (bt && bt.length) { g.font = '700 13px '+A.font; const lines = bt.slice(0, 3).map(b => '📜 ' + b.n + ' ' + Math.min(b.have, b.need) + '/' + b.need + ' → 🪙' + fmt(b.reward)); const bw2 = Math.max(...lines.map(l => g.measureText(l).width)) + 30;
         g.fillStyle = 'rgba(0,0,0,.5)'; rr(g, 10, H - 30 - lines.length*20, bw2, lines.length*20 + 16, 12); g.fill(); g.fillStyle = '#F9BF01'; g.textAlign = 'left'; lines.forEach((l, i) => g.fillText(l, 24, H - 16 - (lines.length - 1 - i)*20 - 4)); } }
-    if (phase == 'tally' && tally) { const tw = 460, tx2 = W/2 - tw/2; g.fillStyle = 'rgba(1,40,30,.92)'; rr(g, tx2, 110, tw, 350, 18); g.fill(); g.strokeStyle = '#D5F367'; g.lineWidth = 2; g.stroke(); g.textAlign = 'center'; g.fillStyle = '#D5F367'; g.font = '800 24px '+A.font; g.fillText(tally.n ? 'Catch of the dive!' : 'Nothing this time', W/2, 148);
-      g.fillStyle = '#F9BF01'; g.font = '800 28px '+A.font; g.fillText('+🪙 ' + fmt(tally.coins), W/2, 188); g.fillStyle = '#fff'; g.font = '700 14px '+A.font; g.fillText('+' + fmt(tally.pts) + ' points · ' + tally.n + ' fish' + (tally.bounty ? ' · 📜 +' + fmt(tally.bounty) : ''), W/2, 214);
+    if (phase == 'tally' && tally) { const tw = 460, tx2 = W/2 - tw/2; g.fillStyle = 'rgba(1,40,30,.92)'; rr(g, tx2, 110, tw, 350, 18); g.fill(); g.strokeStyle = '#D5F367'; g.lineWidth = 2; g.stroke(); g.textAlign = 'center'; g.fillStyle = '#D5F367'; g.font = '800 24px '+A.font; g.fillText(tally.n ? (tally.sky ? 'Catch of the sky!' : 'Catch of the dive!') : 'Nothing this time', W/2, 148);
+      g.fillStyle = '#F9BF01'; g.font = '800 28px '+A.font; g.fillText('+' + (tally.cur || '🪙') + ' ' + fmt(tally.coins), W/2, 188); g.fillStyle = '#fff'; g.font = '700 14px '+A.font; g.fillText('+' + fmt(tally.pts) + ' points · ' + tally.n + ' fish' + (tally.bounty ? ' · 📜 +' + fmt(tally.bounty) : ''), W/2, 214);
       const cnt = {}; tally.list.forEach(x => { const k = x.f.n + (x.gold ? ' ✨' : ''); cnt[k] = (cnt[k]||0) + 1; }); g.font = '600 13px '+A.font; Object.entries(cnt).slice(0, 8).forEach(([n, k], i) => { g.fillStyle = '#e8f4ff'; g.fillText(n + (k > 1 ? ' ×' + k : ''), W/2, 242 + i*20); });
-      if (tally.news.length) { g.fillStyle = '#E9B9F7'; g.font = '700 13px '+A.font; g.fillText('📖 New in your Fish Book: ' + tally.news.slice(0, 2).join(', ') + (tally.news.length > 2 ? ' +' + (tally.news.length - 2) : ''), W/2, 410); }
+      if (tally.news.length) { g.fillStyle = '#E9B9F7'; g.font = '700 13px '+A.font; g.fillText((tally.sky ? '🐦 New in your Sky Book: ' : '📖 New in your Fish Book: ') + tally.news.slice(0, 2).join(', ') + (tally.news.length > 2 ? ' +' + (tally.news.length - 2) : ''), W/2, 410); }
       g.fillStyle = '#cfe3d9'; g.font = '600 12px '+A.font; g.fillText('Tap to keep fishing (closes by itself)', W/2, 440); }
     if (st == 'ready') A.overlayText(g, W, H, 'FISHING HOLE', __skip ? 'Saved trip · tap or press Space to continue' : 'Endless dive fishing · tap to start');
     if (st == 'over') A.overlayText(g, W, H, 'TICKETS CASHED IN!', fmt(score) + ' points · your coins & upgrades are saved · tap to fish on'); };
@@ -962,8 +1043,9 @@ A.register('fishing', { mount(host, api){
   // ---------- the loop ----------
   const offL = A.loop(dt => { t += dt; msgT = Math.max(0, msgT - dt); zoneT = Math.max(0, zoneT - dt); flash = Math.max(0, flash - dt*2); dt = Math.min(dt, .05);
     if (st == 'play' && !quiz) {
+      if (SUL('sbuddy') && !document.hidden) { const add = sbuddyRate(SUL('sbuddy')) * dt; SG.feathers = fin(SG.feathers + add); SG.run = fin(SG.run + add); SG.tot = fin(SG.tot + add); }
       if (UL('buddy') && !document.hidden) { const add = buddyRate(UL('buddy')) * dt; G.coins = fin(G.coins + add); G.run = fin(G.run + add); G.tot = fin(G.tot + add); buddyAcc += dt; if (buddyAcc > 20) { buddyAcc = 0; save(); } if (panel && panelTab != 'book' && Math.floor(t*2) != Math.floor((t - dt)*2)) { const p = panel.querySelector('div:nth-child(2)'); if (p) p.textContent = '🪙 ' + fmt(G.coins) + ' coins'; } }
-      const kx = (K.ArrowRight || K.d ? 1 : 0) - (K.ArrowLeft || K.a ? 1 : 0), sp = 640 * (1 + .1*UL('steer'));
+      const kx = (K.ArrowRight || K.d ? 1 : 0) - (K.ArrowLeft || K.a ? 1 : 0), sp = 640 * (1 + .1*(inSky() ? SUL('swing') : UL('steer')));
       if (kx) { tx = null; hx += kx * sp * dt; } else if (tx != null) { const dx = tx - hx; hx += Math.sign(dx) * Math.min(Math.abs(dx), sp*dt); } hx = clamp(hx, 14, W - 14);
       for (const o of fish) { if (o.dead) continue; const y = sy(o.d); if (y < -200 || y > H + 200) continue; o.x += o.vx * dt; if (o.x < -30) o.x = W + 30; if (o.x > W + 30) o.x = -30; }
       if (skyPh()) skyStep(dt);
@@ -1011,7 +1093,7 @@ A.register('fishing', { mount(host, api){
       if (G.coins > fair) G.coins = fair; if (G.run > fair) G.run = fair; if (G.tot > fair * 10) G.tot = fair * 10;
     } catch(e) { console.error('[fishing] rebalance failed', e); } G.bal = 2; save(); }
   refreshBar();
-  A._dbg = A._dbg || {}; A._dbg.fish = { G, sky: () => ({alt, skyMax, cr: skyCr.filter(o => !o.dead && !o.zap).map(o => ({x:o.x, r:o.r})), zaps: skyCr.filter(o => o.zap).length}), s: () => ({st, phase, hd: base + hd, maxD, base, caught:caught.length, score, fish:fish.length, camD}), press, setX: x => { tx = x; }, fishes: () => fish.filter(o => !o.dead).map(o => ({x:o.x, d:o.d, j:!!(o.jelly || o.pred)})), hx: () => hx, ohTest: d => ({chance: ohChance(d), txt: ohTxt(d)}), caughtNames: () => caught.map(c2 => c2.f.n), autoBuy: keys => { let n = 0, go = true; while (go && n < 50) { go = false; let best = null, bc = Infinity; for (const u of UP) { if (!keys.includes(u.k) || (u.max != null && UL(u.k) >= u.max)) continue; const c = cost(u, UL(u.k)); if (c < bc) { bc = c; best = u; } } if (best && G.coins >= bc) { G.coins -= bc; G.upg[best.k] = UL(best.k) + 1; n++; go = true; } } return n; }, bookCount: () => ALL.filter(f => book()[f.k]).length, fillBook: (skip, leave) => { let n = 0; LOCS.filter(o => o.k != skip).forEach(o => [].concat(...FISH[o.k]).concat(SPEC[o.k]).forEach(f => { if (n++ >= (leave == null ? 1e9 : leave)) return; book()[f.k] = 1; })); return n; }, spawnFISH: () => spawnFISH(), spawnOh: () => { const f = SPEC[G.loc][2]; fish.push({f, x:W/2, d:hd + 22, vx:14, ph:0, gold:false}); }, econ: () => { const keep = JSON.stringify(G.upg), out = []; const sp = UP.find(u => u.k == 'spool'); for (let k = 0; k <= 192; k += 12) { G.upg = {line:60, spool:k}; const d = lineM(60); out.push({k, line: d.toExponential(2), layer: zoneName(d), pos: +layerPos(d).toFixed(2), cost: cost(sp, k).toExponential(2), fish: fishVal(FISH.coast[7][3], d).toExponential(2)}); } G.upg = JSON.parse(keep); return out; }, newTest: (d, n) => { let k = 0; for (let i = 0; i < n; i++) { const f = pick(d); if (!f.junk && !f.chest && !book()[f.k]) k++; } return k / n; }, rarTest: (d, n) => { const c = {}; for (let k = 0; k < n; k++) { const f = pick(d); const nm = f.junk ? 'boot' : f.chest ? 'chest' : RN[f.r]; c[nm] = (c[nm]||0) + 1; } return {c, dens: +density(d).toFixed(2)}; }, gallery: () => ALL.map(f => ({n:f.n, sh:f.look ? f.look.shape : '', src:fishIcon(f)})) };
+  A._dbg = A._dbg || {}; A._dbg.fish = { G, SG, skyAll: () => SKYALL.length, spawnBIRD: () => spawnBIRD(), sky: () => ({alt, skyMax, cr: skyCr.filter(o => !o.dead && !o.zap).map(o => ({x:o.x, r:o.r})), zaps: skyCr.filter(o => o.zap).length}), s: () => ({st, phase, hd: base + hd, maxD, base, caught:caught.length, score, fish:fish.length, camD}), press, setX: x => { tx = x; }, fishes: () => fish.filter(o => !o.dead).map(o => ({x:o.x, d:o.d, j:!!(o.jelly || o.pred)})), hx: () => hx, ohTest: d => ({chance: ohChance(d), txt: ohTxt(d)}), caughtNames: () => caught.map(c2 => c2.f.n), autoBuy: keys => { let n = 0, go = true; while (go && n < 50) { go = false; let best = null, bc = Infinity; for (const u of UP) { if (!keys.includes(u.k) || (u.max != null && UL(u.k) >= u.max)) continue; const c = cost(u, UL(u.k)); if (c < bc) { bc = c; best = u; } } if (best && G.coins >= bc) { G.coins -= bc; G.upg[best.k] = UL(best.k) + 1; n++; go = true; } } return n; }, bookCount: () => ALL.filter(f => book()[f.k]).length, fillBook: (skip, leave) => { let n = 0; LOCS.filter(o => o.k != skip).forEach(o => [].concat(...FISH[o.k]).concat(SPEC[o.k]).forEach(f => { if (n++ >= (leave == null ? 1e9 : leave)) return; book()[f.k] = 1; })); return n; }, spawnFISH: () => spawnFISH(), spawnOh: () => { const f = SPEC[G.loc][2]; fish.push({f, x:W/2, d:hd + 22, vx:14, ph:0, gold:false}); }, econ: () => { const keep = JSON.stringify(G.upg), out = []; const sp = UP.find(u => u.k == 'spool'); for (let k = 0; k <= 192; k += 12) { G.upg = {line:60, spool:k}; const d = lineM(60); out.push({k, line: d.toExponential(2), layer: zoneName(d), pos: +layerPos(d).toFixed(2), cost: cost(sp, k).toExponential(2), fish: fishVal(FISH.coast[7][3], d).toExponential(2)}); } G.upg = JSON.parse(keep); return out; }, newTest: (d, n) => { let k = 0; for (let i = 0; i < n; i++) { const f = pick(d); if (!f.junk && !f.chest && !book()[f.k]) k++; } return k / n; }, rarTest: (d, n) => { const c = {}; for (let k = 0; k < n; k++) { const f = pick(d); const nm = f.junk ? 'boot' : f.chest ? 'chest' : RN[f.r]; c[nm] = (c[nm]||0) + 1; } return {c, dens: +density(d).toFixed(2)}; }, gallery: () => ALL.map(f => ({n:f.n, sh:f.look ? f.look.shape : '', src:fishIcon(f)})) };
   // ---- save & resume (Save & leave, reloads, closing the browser): coins & upgrades live in the game data; the trip's points here ----
   api.snap && api.snap(() => (st == 'play' && score > 0) ? {v:2, score} : null);
   { const R0 = api.resume; if (R0 && (R0.v == 1 || R0.v == 2)) { try { score = Math.max(0, fin(R0.score)); api.score(score); __skip = true; st = 'ready'; } catch(e) { console.error('[save] fishing resume failed', e); } } }
