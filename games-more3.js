@@ -429,7 +429,12 @@ A.register('snowball', { mount(host, api){
   const PUPS = [{k:'coat', n:'Warm Coat', d:'+1 max heart (never above 20)', b:20, max:10}, {k:'pockets', n:'Big Pockets', d:'Carry 2 more snowballs', b:15, max:5},
     {k:'arm', n:'Power Arm', d:'Snowballs hit 15% harder', b:25, max:10}, {k:'pack', n:'Quick Packing', d:'Pack big snowballs 12% faster', b:20, max:5},
     {k:'walls', n:'Thick Walls', d:'Your walls get +2 strength', b:20, max:5}, {k:'mitts', n:'Warm Mittens', d:'Campfires heal faster, more cocoa drops', b:20, max:5},
-    {k:'stash', n:'Snowflake Stash', d:'Start with 15 more ❄', b:15, max:10}, {k:'captain', n:'Team Captain', d:'Teammates start 1 level higher', b:30, max:4}];
+    {k:'stash', n:'Snowflake Stash', d:'Start with 15 more ❄', b:15, max:10}, {k:'captain', n:'Team Captain', d:'Teammates start 1 level higher', b:30, max:4},
+    {k:'boots', n:'Snow Boots', d:'Move 8% faster', b:15, max:5}, {k:'rollcd', n:'Quick Roll', d:'Dodge-roll comes back 10% sooner', b:20, max:5},
+    {k:'scoop', n:'Fast Scoop', d:'Scoop snowballs 12% faster', b:15, max:5}, {k:'crit', n:'Lucky Throw', d:'5% chance per level to hit for double', b:25, max:6},
+    {k:'magnet', n:'Snow Magnet', d:'Grab cocoa and power-ups from farther away', b:15, max:5}, {k:'turret', n:'Turret Training', d:'Your turrets throw 12% faster', b:25, max:5},
+    {k:'thermos', n:'Cocoa Thermos', d:'Heal 1 heart at the start of every wave', b:40, max:3}, {k:'shield', n:'Snow Shield', d:'Start every wave with a shield', b:60, max:1},
+    {k:'mates', n:'Snow Friends', d:'Start with one more teammate', b:50, max:2}];
   const pcost = u => Math.ceil(u.b * Math.pow(1.6, PU(u.k)));
   // ---------- seeded random (Daily Challenge uses the same seed for everyone) ----------
   let seed = 1; const R = () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let x = Math.imul(seed ^ seed >>> 15, 1 | seed); x = x + Math.imul(x ^ x >>> 7, 61 | x) ^ x; return ((x ^ x >>> 14) >>> 0) / 4294967296; };
@@ -468,6 +473,7 @@ A.register('snowball', { mount(host, api){
   const AR = () => ARENAS[arena % ARENAS.length];
   const armM = () => (1 + .15*PU('arm'));
   const maxAmmo = () => 10 + 2*PU('pockets');
+  const rollCD = () => 1.6 * (1 - .1*PU('rollcd'));
   const wallHp = k => (k == 'reinforced' ? 16 : k == 'ice' ? 10 : 6) + 2*PU('walls');
   // ---------- setup ----------
   const startGame = m => { mode = m || mode; seed = mode == 'daily' ? today() : (Math.random()*1e9)|0;
@@ -475,12 +481,13 @@ A.register('snowball', { mount(host, api){
     me = {x:300, y:PY, vx:0, hp, max:hp, inv:0, duck:false, roll:0, rollCd:0, rdir:1, freeze:0, ammo:maxAmmo(), throwT:0, hitT:0, face:1, scoop:0};
     balls = []; drops = []; builds = []; mates = []; fx = []; nums = []; score = 0; wave = 0; flakes = 20 + 15*PU('stash'); arena = mode == 'daily' ? today() % 4 : 0; pw = {icy:0, mega:0, rapid:0, shield:0}; boss = null; bossesBeat = 0; builtN = 0; combo = 0;
     walls = [{x:150, y:476, w:80, h:24, hp:wallHp('snow'), max:wallHp('snow'), mine:1, kind:'snow'}, {x:370, y:476, w:80, h:24, hp:wallHp('snow'), max:wallHp('snow'), mine:1, kind:'snow'}];
-    for (let i = 0; i < Math.min(3, A.U('mate')); i++) addMate('thrower');
+    for (let i = 0; i < Math.min(4, A.U('mate') + PU('mates')); i++) addMate(['thrower', 'builder', 'medic'][i % 3]);
     st = 'play'; nextWave(); api.score(0); };
   const addMate = role => { if (mates.length >= 4) return false; const lv = 1 + PU('captain'); mates.push({name:MATE_NAMES[(mates.length + wave) % MATE_NAMES.length], role, lv, xp:0, x:80 + mates.length*140, y:PY + 6, hp:2 + lv, max:2 + lv, ko:false, rev:0, cool:1 + Math.random(), tx:0, duck:false, job:0}); return true; };
   const spawn = (k, x, y) => { const T = TYPES[k], hp = T.hp + Math.floor(wave/6); foes.push({k, x: x == null ? 60 + R()*480 : x, y: y == null ? 40 + R()*140 : y, hp, max:hp, cool:1 + R()*2, tx:0, ty:0, rt:0, slow:0, kb:0, kx:0, duck:false, dt:0, act:0}); };
   const bossFor = wv => mode == 'rush' ? ['yeti', 'plow', 'witch', 'dragon'][(wv - 1) % 4] : wv % 20 == 0 ? 'dragon' : ['yeti', 'plow', 'witch'][(wv/5 - 1) % 3];
   const nextWave = () => { wave++; foes = []; balls = []; phase = 'fight'; waveHurt = false; haz = null; hazT = 4 + R()*4;
+    if (me && wave > 1 && PU('thermos')) me.hp = Math.min(me.max, me.hp + PU('thermos')); if (PU('shield')) pw.shield = 1;
     if (mode == 'endless' && (wave - 1) % 3 == 0 && wave > 1) { arena++; say('New arena: ' + AR().n + '! ' + AR().hz, 3.5); } else if (wave == 1) say(AR().n + ' · ' + AR().hz, 3);
     walls = walls.filter(W2 => W2.mine);   // enemy walls melt between waves
     // the enemy side always gets a little cover to hide behind
@@ -500,9 +507,9 @@ A.register('snowball', { mount(host, api){
   const nearestFoe = (x, y) => { let best = null, bd = 1e9; for (const f of foes) { const d = Math.hypot(f.x - x, f.y - y); if (d < bd) { bd = d; best = f; } } if (boss) { const d = Math.hypot(boss.x - x, boss.y - y); if (d < bd) best = boss; } return best; };
   const throwMine = () => { if (!me || me.ammo <= 0) { say('Out of snowballs! Stand on a ❄ snow pile or duck behind a wall to scoop more', 2); A.sfx('bad'); packing = false; packT = 0; return; }
     const p2 = Math.min(1, packT), small = packT < .12, nf = nearestFoe(me.x, me.y), tgt = mouseOn || aiming ? aim : nf ? {x:nf.x + Math.sign((nf.tx || nf.x) - nf.x)*20, y:nf.y} : {x:me.x, y:120};
-    const dmg = (small ? 1 : 1 + 2*p2) * armM() * (pw.mega > 0 ? 2 : 1), r = (small ? 5 : 5 + 5*p2) + (pw.mega > 0 ? 3 : 0), sp = small ? 760 : 640 - 220*p2;
+    const crit = Math.random() < .05*PU('crit'), dmg = (small ? 1 : 1 + 2*p2) * armM() * (pw.mega > 0 ? 2 : 1) * (crit ? 2 : 1), r = (small ? 5 : 5 + 5*p2) + (pw.mega > 0 ? 3 : 0), sp = small ? 760 : 640 - 220*p2;
     lob(me, tgt.x, Math.min(MID - 4, tgt.y), {mine:1, dmg, r, sp:sp * (pw.rapid > 0 ? 1.3 : 1), big:p2 >= .6 || pw.mega > 0, kind:pw.mega > 0 ? 'mega' : pw.icy > 0 ? 'icy' : 'n'});
-    me.ammo--; me.throwT = .22; me.duck = false; packing = false; packT = 0; A.tone(small ? 640 : 420, .05, 'triangle', .04); };
+    if (crit) addNum(me.x, me.y - 50, 'LUCKY ×2!', '#F9BF01'); me.ammo--; me.throwT = .22; me.duck = false; packing = false; packT = 0; A.tone(small ? 640 : 420, .05, 'triangle', .04); };
   // ---------- hurting ----------
   const hurtMe = (dmg, ice) => { if (!me || me.inv > 0 || me.roll > 0 || A.immortal) return; if (pw.shield > 0) { pw.shield = 0; me.inv = .6; A.tone(900,.1,'sine',.05); return; }
     me.hp -= dmg; me.inv = .8; me.hitT = .3; waveHurt = true; shake = Math.max(shake, .15); A.sfx('bad'); if (ice) { me.freeze = 1; say('🥶 Frozen for a moment!', 1.2); }
@@ -520,10 +527,14 @@ A.register('snowball', { mount(host, api){
   // ---------- build menu ----------
   const TOOLS = [{k:'wall', n:'Wall', e:'🧱', cost:10}, {k:'upgrade', n:'Upgrade wall', e:'⬆', cost:15}, {k:'fort', n:'Snow fort', e:'🏰', cost:40}, {k:'turret', n:'Turret', e:'🎯', cost:35},
     {k:'pit', n:'Trap pit', e:'🕳', cost:20}, {k:'ice', n:'Ice patch', e:'🧊', cost:15}, {k:'fire', n:'Campfire', e:'🔥', cost:40}, {k:'repair', n:'Repair all', e:'🔧', cost:0},
-    {k:'cocoa', n:'Warm Up +♥', e:'☕', cost:15}, {k:'mate', n:'Teammate', e:'🧒', cost:0}, {k:'role', n:'Mate role', e:'🔁', cost:0}, {k:'go', n:'Next wave', e:'▶', cost:0}];
-  const PLACE = ['wall', 'fort', 'turret', 'pit', 'ice', 'fire', 'upgrade'];
+    {k:'cocoa', n:'Warm Up +♥', e:'☕', cost:15}, {k:'mate', n:'Teammate', e:'🧒', cost:0}, {k:'role', n:'Mate role', e:'🔁', cost:0}, {k:'undo', n:'Undo (Z)', e:'↩', cost:0}, {k:'remove', n:'Remove', e:'🗑', cost:0}, {k:'go', n:'Next wave', e:'▶', cost:0}];
+  const PLACE = ['wall', 'fort', 'turret', 'pit', 'ice', 'fire', 'upgrade', 'remove']; let placed = [];   // what you built this break, newest last (for Undo)
   const toolCost = k => k == 'repair' ? walls.filter(W2 => W2.mine).reduce((a, W2) => a + Math.ceil(W2.max - W2.hp), 0) * 2 : k == 'mate' ? (mates.length >= 4 ? Infinity : 40 + mates.length*40) : (TOOLS.find(T2 => T2.k == k) || {cost:0}).cost;
-  const useTool = (k, x, y) => { if (k == 'go') { nextWave(); return; } const cost = toolCost(k);
+  const useTool = (k, x, y) => { if (k == 'go') { placed = []; nextWave(); return; } const cost = toolCost(k);
+    if (k == 'undo') { const last = placed.pop(); if (!last) return say('Nothing to undo'); if (last.up) { last.ref.kind = last.up.kind; last.ref.max = last.up.max; last.ref.hp = Math.min(last.ref.hp, last.ref.max); } else { walls = walls.filter(W2 => W2 !== last.ref); builds = builds.filter(B2 => B2 !== last.ref); } flakes += last.cost; A.sfx('blip'); say('↩ Undone · +' + last.cost + ' ❄ back', 1.4); return; }
+    if (k == 'remove') { y = y == null ? me.y - 60 : y; x = x == null ? me.x : x; const W2 = walls.find(W3 => W3.mine && x > W3.x - 10 && x < W3.x + W3.w + 10 && Math.abs(y - (W3.y + W3.h/2)) < 40), B2 = !W2 && builds.slice().sort((a, b) => Math.hypot(a.x - x, a.y - y) - Math.hypot(b.x - x, b.y - y)).find(B3 => Math.hypot(B3.x - x, B3.y - y) < 44);
+      const it = W2 || B2; if (!it) return say('Tap one of your walls or buildings to remove it'); const was = placed.find(p2 => p2.ref === it && !p2.up); const back = was ? was.cost : Math.floor(((TOOLS.find(T2 => T2.k == (W2 ? (W2.fort ? 'fort' : 'wall') : B2.k)) || {cost:10}).cost) / 2);
+      walls = walls.filter(W3 => W3 !== it); builds = builds.filter(B3 => B3 !== it); placed = placed.filter(p2 => p2.ref !== it); flakes += back; A.sfx('blip'); say('🗑 Removed · +' + back + ' ❄ back', 1.4); return; }
     if (k == 'role') { const m = mates.find(m2 => !m2.ko && m2.role == 'thrower') || mates[0]; if (!m) return say('Hire a teammate first'); const order = ['thrower', 'builder', 'medic']; m.role = order[(order.indexOf(m.role) + 1) % 3]; say(m.name + ' is now a ' + m.role, 1.6); return; }
     if (!isFinite(cost)) return say('Your team is full (4)!'); if (flakes < cost) { A.sfx('bad'); say('Need ' + cost + ' ❄'); return; }
     if (k == 'repair') { if (!cost) return say('Your walls are fine!'); walls.forEach(W2 => { if (W2.mine) W2.hp = W2.max; }); }
@@ -531,39 +542,41 @@ A.register('snowball', { mount(host, api){
     else if (k == 'mate') { const role = ['thrower', 'builder', 'medic'][mates.length % 3]; addMate(role); say('Hired ' + mates[mates.length - 1].name + ' the ' + role + '!', 2); }
     else { y = Math.max(MID + 30, Math.min(PY - 50, y)); x = Math.max(30, Math.min(570, x));
       if (k == 'upgrade') { const W2 = walls.find(W3 => W3.mine && x > W3.x - 10 && x < W3.x + W3.w + 10 && Math.abs(y - (W3.y + W3.h/2)) < 40); if (!W2) return say('Tap one of your walls to upgrade it'); if (W2.kind == 'reinforced') return say('That wall is already reinforced!');
-        W2.kind = W2.kind == 'snow' ? 'ice' : 'reinforced'; const m = wallHp(W2.kind); W2.max = W2.fort ? m*1.5 : m; W2.hp = W2.max; say('Upgraded to ' + (W2.kind == 'ice' ? 'an ice wall' : 'a reinforced wall') + '!', 1.6); }
-      else if (k == 'wall') walls.push({x:x - 40, y:y - 12, w:80, h:24, hp:wallHp('snow'), max:wallHp('snow'), mine:1, kind:'snow'});
-      else if (k == 'fort') walls.push({x:x - 60, y:y - 14, w:120, h:28, hp:wallHp('snow')*1.5, max:wallHp('snow')*1.5, mine:1, kind:'snow', fort:1});
-      else if (k == 'fire') { if (builds.some(b => b.k == 'fire')) return say('Only one campfire at a time'); builds.push({k, x, y:Math.max(y, PY - 60), hp:4}); }
-      else builds.push({k, x, y, hp:k == 'turret' ? 5 : 3, cool:1, r:k == 'pit' ? 26 : 40}); builtN++; stat(api, 'snowBuild', 1, 'add'); }
+        placed.push({ref:W2, cost, up:{kind:W2.kind, max:W2.max}}); W2.kind = W2.kind == 'snow' ? 'ice' : 'reinforced'; const m = wallHp(W2.kind); W2.max = W2.fort ? m*1.5 : m; W2.hp = W2.max; say('Upgraded to ' + (W2.kind == 'ice' ? 'an ice wall' : 'a reinforced wall') + '!', 1.6); }
+      else if (k == 'wall') { walls.push({x:x - 40, y:y - 12, w:80, h:24, hp:wallHp('snow'), max:wallHp('snow'), mine:1, kind:'snow'}); placed.push({ref:walls[walls.length - 1], cost}); }
+      else if (k == 'fort') { walls.push({x:x - 60, y:y - 14, w:120, h:28, hp:wallHp('snow')*1.5, max:wallHp('snow')*1.5, mine:1, kind:'snow', fort:1}); placed.push({ref:walls[walls.length - 1], cost}); }
+      else if (k == 'fire') { if (builds.some(b => b.k == 'fire')) return say('Only one campfire at a time · remove it to move it'); builds.push({k, x, y:Math.max(y, PY - 60), hp:4}); placed.push({ref:builds[builds.length - 1], cost}); }
+      else { builds.push({k, x, y, hp:k == 'turret' ? 5 : 3, cool:1, r:k == 'pit' ? 26 : 40}); placed.push({ref:builds[builds.length - 1], cost}); } builtN++; stat(api, 'snowBuild', 1, 'add'); }
     flakes -= cost; A.sfx('coin'); };
   // ---------- input ----------
   const inBar = q => q.y > BAR;
-  const barBtn = q => { const cols = phase == 'build' ? 6 : 5, row = phase == 'build' ? Math.floor((q.y - BAR) / 50) : 0, col = Math.floor(q.x / (600/cols)); return row*cols + col; };
+  const barBtn = q => { const cols = phase == 'build' ? 7 : 5, row = phase == 'build' ? Math.floor((q.y - BAR) / 50) : 0, col = Math.floor(q.x / (600/cols)); return row*cols + col; };
   const MENU = [['endless', '♾ Endless Waves'], ['rush', '👑 Boss Rush'], ['daily', '📅 Daily Challenge'], ['up', '🧊 Upgrades'], ['guide', '❓ How to play']];
   const menuHit = q => { for (let i = 0; i < MENU.length; i++) { const bx = 150, by = 250 + i*58; if (q.x > bx && q.x < bx + 300 && q.y > by && q.y < by + 48) return MENU[i][0]; } return null; };
-  const upHit = q => { for (let i = 0; i < PUPS.length; i++) { const by = 150 + i*52; if (q.x > 440 && q.x < 560 && q.y > by && q.y < by + 44) return PUPS[i]; } return q.y > 590 && q.y < 640 ? 'close' : null; };
+  const upBox = i => ({x:i < 9 ? 12 : 304, y:118 + (i % 9)*56}); const upHit = q => { for (let i = 0; i < PUPS.length; i++) { const B2 = upBox(i); if (q.x > B2.x && q.x < B2.x + 284 && q.y > B2.y && q.y < B2.y + 50) return PUPS[i]; } return q.y > 640 && q.y < 690 ? 'close' : null; };
   const onMenu = k => { if (k == 'guide') { guide = true; return; } if (k == 'up') { upOpen = true; return; } if (k) startGame(k); };
   const offK = A.keys(e => { if (guide) { guide = false; return; } if (upOpen) { if (e.key == 'Escape' || e.key == 'Enter' || e.key == ' ') upOpen = false; return; }
     if ((e.key == ' ' || e.key == 'Enter') && st != 'play' && !quiz) { if (__skip) { __skip = false; st = 'play'; return; } startGame(mode); return; } if (st != 'play') return;
     if (e.key == 'h' || e.key == 'H' || e.key == '?') { guide = true; return; }
-    if (phase == 'build') { const n = e.key == '0' ? 10 : +e.key; if (n >= 1 && n <= TOOLS.length) { tool = n - 1; if (!PLACE.includes(TOOLS[tool].k)) useTool(TOOLS[tool].k); } if (e.key == 'Enter') nextWave(); if (e.key == ' ' && PLACE.includes(TOOLS[tool].k)) useTool(TOOLS[tool].k, me.x, me.y - 70); return; }
-    if ((e.key == 'e' || e.key == 'E') && me.rollCd <= 0 && !me.freeze) { me.roll = .3; me.rollCd = 1.6; me.rdir = me.face; A.tone(300, .06, 'sine', .04); } });
+    if (phase == 'build') { if (e.key == 'z' || e.key == 'Z') { useTool('undo'); return; } const n = e.key == '0' ? 10 : +e.key; if (n >= 1 && n <= TOOLS.length) { tool = n - 1; if (!PLACE.includes(TOOLS[tool].k)) useTool(TOOLS[tool].k); } if (e.key == 'Enter') nextWave(); if (e.key == ' ' && PLACE.includes(TOOLS[tool].k)) useTool(TOOLS[tool].k, me.x, me.y - 70); return; }
+    if ((e.key == 'e' || e.key == 'E') && me.rollCd <= 0 && !me.freeze) { me.roll = .3; me.rollCd = rollCD(); me.rdir = me.face; A.tone(300, .06, 'sine', .04); } });
   let lastTapX = -99, lastTapT = -9;
   c.addEventListener('pointerdown', e => { const q = pt(c, e, w, h); aim = q; mouseOn = true;
     if (guide) { guide = false; return; } if (upOpen) { const u = upHit(q); if (u == 'close') upOpen = false; else if (u && (u.max == null || PU(u.k) < u.max) && PERM.cr >= pcost(u)) { PERM.cr -= pcost(u); PERM.up[u.k] = PU(u.k) + 1; savePerm(); A.sfx('coin'); } else if (u) A.sfx('bad'); return; }
     if (st != 'play') { if (quiz) return; if (__skip) { __skip = false; st = 'play'; return; } onMenu(menuHit(q) || (st == 'over' ? null : null)); return; }
     if (q.x > 548 && q.y < 44) { guide = true; return; }
     if (phase == 'build') { if (inBar(q)) { const i = barBtn(q); if (i < TOOLS.length) { tool = i; if (!PLACE.includes(TOOLS[i].k)) useTool(TOOLS[i].k); } return; } if (q.y > MID) useTool(TOOLS[tool].k, q.x, q.y); return; }
-    if (inBar(q)) { const i = barBtn(q); if (i == 0) touch.l = true; else if (i == 1) touch.r = true; else if (i == 2) touch.duck = true; else if (i == 3 && me.rollCd <= 0) { me.roll = .3; me.rollCd = 1.6; me.rdir = me.face; } else if (i == 4) guide = true; return; }
+    if (inBar(q)) { const i = barBtn(q); if (i == 0) touch.l = true; else if (i == 1) touch.r = true; else if (i == 2) touch.duck = true; else if (i == 3 && me.rollCd <= 0) { me.roll = .3; me.rollCd = rollCD(); me.rdir = me.face; } else if (i == 4) guide = true; return; }
     if (q.y < MID) { aiming = true; packing = true; packT = 0; return; }
     // tap your own side to walk there (double tap = dodge roll)
-    if (t - lastTapT < .3 && Math.abs(q.x - lastTapX) < 60 && me.rollCd <= 0) { me.roll = .3; me.rollCd = 1.6; me.rdir = q.x > me.x ? 1 : -1; } lastTapT = t; lastTapX = q.x; me.tx = q.x; });
-  c.addEventListener('pointermove', e => { const q = pt(c, e, w, h); if (q.y < MID || aiming) aim = q; mouseOn = true; if (e.buttons && st == 'play' && phase == 'fight' && q.y >= MID && !aiming && !inBar(q)) me.tx = q.x; });
+    if (t - lastTapT < .3 && Math.abs(q.x - lastTapX) < 60 && me.rollCd <= 0) { me.roll = .3; me.rollCd = rollCD(); me.rdir = q.x > me.x ? 1 : -1; } lastTapT = t; lastTapX = q.x; me.tx = q.x; me.ty = q.y; });
+  c.addEventListener('pointermove', e => { const q = pt(c, e, w, h); if (q.y < MID || aiming) aim = q; mouseOn = true; if (e.buttons && st == 'play' && phase == 'fight' && q.y >= MID && !aiming && !inBar(q)) { me.tx = q.x; me.ty = q.y; } });
   const pu = () => { touch.l = touch.r = touch.duck = false; if (aiming && packing && st == 'play' && phase == 'fight') throwMine(); aiming = false; };
   c.addEventListener('pointerup', pu); c.addEventListener('pointercancel', () => { touch.l = touch.r = touch.duck = false; aiming = false; packing = false; packT = 0; });
   c.addEventListener('pointerleave', () => { mouseOn = false; });
-  let spaceWas = false;
+  let spaceWas = false; const duckK = {};
+  const dkd = e => { if (['ShiftLeft', 'ShiftRight', 'KeyC'].includes(e.code)) duckK[e.code] = true; }, dku = e => { if (['ShiftLeft', 'ShiftRight', 'KeyC'].includes(e.code)) duckK[e.code] = false; }, dbl = () => { for (const k in duckK) duckK[k] = false; touch.l = touch.r = touch.duck = false; for (const k in K.k) K.k[k] = false; };
+  window.addEventListener('keydown', dkd); window.addEventListener('keyup', dku); window.addEventListener('blur', dbl);
   // ---------- helpers ----------
   const covering = (x, y) => walls.find(W2 => W2.mine && W2.hp > 0 && x > W2.x - 8 && x < W2.x + W2.w + 8 && W2.y < y && y - W2.y < 110);
   const enemyCover = f => walls.find(W2 => !W2.mine && W2.hp > 0 && f.x > W2.x - 6 && f.x < W2.x + W2.w + 6 && f.y < W2.y && W2.y - f.y < 40);
@@ -595,19 +608,26 @@ A.register('snowball', { mount(host, api){
     for (const p2 of prints) p2.t -= dt; prints = prints.filter(p2 => p2.t > 0);
     if (st == 'play' && !quiz && !guide) {
       // ----- you -----
-      const space = !!K.k[' ']; const duckKey = K.k.Shift || K.k.s || K.k.S || K.k.ArrowDown || touch.duck;
+      const space = !!K.k[' ']; const duckKey = duckK.ShiftLeft || duckK.ShiftRight || duckK.KeyC || touch.duck;
       me.inv = Math.max(0, me.inv - dt); me.throwT = Math.max(0, me.throwT - dt); me.hitT = Math.max(0, me.hitT - dt); me.rollCd = Math.max(0, me.rollCd - dt); me.freeze = Math.max(0, me.freeze - dt);
       for (const key in pw) pw[key] = Math.max(0, pw[key] - (key == 'shield' ? 0 : dt));
-      const mx = (K.k.ArrowRight || K.k.d || K.k.D || touch.r ? 1 : 0) - (K.k.ArrowLeft || K.k.a || K.k.A || touch.l ? 1 : 0);
-      let want = 0; if (mx) { want = mx; me.tx = null; } else if (me.tx != null) { const d = me.tx - me.x; want = Math.abs(d) < 6 ? 0 : Math.sign(d); if (!want) me.tx = null; }
-      if (want) me.face = want;
-      const spd = 220 * (1 + .05*A.U('boots')) * (me.duck ? .35 : 1) * (me.freeze > 0 ? 0 : 1);
-      if (me.roll > 0) { me.roll -= dt; me.vx = me.rdir * 420; } else { const k = AR().slip ? 3 : 14; me.vx += (want*spd - me.vx) * Math.min(1, k*dt); }
-      const ox = me.x; me.x = Math.max(16, Math.min(584, me.x + me.vx*dt)); if (Math.abs(me.x - ox) > .5 && Math.floor(t*8) != Math.floor((t - dt)*8)) prints.push({x:me.x, y:PY + 22, t:4});
+      const mx = (K.k.ArrowRight || K.k.d || K.k.D || touch.r ? 1 : 0) - (K.k.ArrowLeft || K.k.a || K.k.A || touch.l ? 1 : 0), my = (K.k.ArrowDown || K.k.s || K.k.S ? 1 : 0) - (K.k.ArrowUp || K.k.w || K.k.W ? 1 : 0);
+      let want = 0, wantY = 0; if (mx || my) { want = mx; wantY = my; me.tx = null; me.ty = null; }
+      else if (me.tx != null) { const d = me.tx - me.x, dy2 = (me.ty == null ? me.y : me.ty) - me.y, L2 = Math.hypot(d, dy2); if (L2 < 6) { me.tx = null; me.ty = null; } else { want = d / L2; wantY = dy2 / L2; } }
+      if (Math.abs(want) > .2) me.face = Math.sign(want);
+      const spd = 220 * (1 + .05*A.U('boots')) * (1 + .08*PU('boots')) * (me.duck ? .35 : 1) * (me.freeze > 0 ? 0 : 1);
+      me.vy = me.vy || 0; if (me.roll > 0) { me.roll -= dt; me.vx = me.rdir * 420; me.vy = 0; } else { const k = AR().slip ? 3 : 14; me.vx += (want*spd - me.vx) * Math.min(1, k*dt); me.vy += (wantY*spd - me.vy) * Math.min(1, k*dt); }
+      // walk anywhere on your half, but not through your own walls (bump off the edges instead of sticking)
+      const ox = me.x, oy = me.y, nx = Math.max(16, Math.min(584, me.x + me.vx*dt)), ny = Math.max(MID + 34, Math.min(PY + 14, me.y + me.vy*dt));
+      const blocked = (x, y) => walls.some(W2 => W2.mine && W2.hp > 0 && x > W2.x - 10 && x < W2.x + W2.w + 10 && y > W2.y - 6 && y < W2.y + W2.h + 18);
+      if (!blocked(nx, me.y)) me.x = nx; else me.vx = 0; if (!blocked(me.x, ny)) me.y = ny; else me.vy = 0;
+      if (blocked(me.x, me.y)) me.y = Math.min(PY + 14, me.y + 60*dt);   // never get stuck inside a wall
+      if (me.x <= 16 || me.x >= 584) me.vx = 0;
+      if (Math.hypot(me.x - ox, me.y - oy) > .5 && Math.floor(t*8) != Math.floor((t - dt)*8)) prints.push({x:me.x, y:me.y + 22, t:4});
       me.duck = !!duckKey && me.roll <= 0 && !(packing && aiming);
       // scoop more snow: from the snow piles, or while ducking behind a wall
-      me.scoop -= dt; const onPile = Math.abs(me.x - 60) < 34 || Math.abs(me.x - 540) < 34;
-      if ((onPile || (me.duck && covering(me.x, me.y))) && me.ammo < maxAmmo() && me.scoop <= 0) { me.ammo++; me.scoop = onPile ? .3 : .55; A.tone(220, .03, 'sine', .02); }
+      me.scoop -= dt; const onPile = Math.hypot(me.x - 60, me.y - PY - 10) < 42 || Math.hypot(me.x - 540, me.y - PY - 10) < 42;
+      if ((onPile || (me.duck && covering(me.x, me.y))) && me.ammo < maxAmmo() && me.scoop <= 0) { me.ammo++; me.scoop = (onPile ? .3 : .55) * (1 - .12*PU('scoop')); A.tone(220, .03, 'sine', .02); }
       if (phase == 'fight') {
         // packing with Space (aim with the mouse, or the nearest enemy)
         if (space && !spaceWas && !me.duck && me.freeze <= 0) { packing = true; packT = 0; }
@@ -615,15 +635,15 @@ A.register('snowball', { mount(host, api){
         if (packing && me.freeze <= 0) packT += dt / (.9 * Math.pow(.88, PU('pack')));
         // ----- teammates -----
         const target = nearestFoe(300, 150);
-        for (const m of mates) { if (m.ko) { if (Math.abs(me.x - m.x) < 34) { m.rev += dt; if (m.rev >= 1.5) { m.ko = false; m.hp = Math.ceil(m.max/2); say(m.name + ' is back up!', 1.5); A.sfx('coin'); } } else m.rev = Math.max(0, m.rev - dt*.5); continue; }
+        for (const m of mates) { if (m.ko) { if (Math.hypot(me.x - m.x, me.y - m.y) < 40) { m.rev += dt; if (m.rev >= 1.5) { m.ko = false; m.hp = Math.ceil(m.max/2); say(m.name + ' is back up!', 1.5); A.sfx('coin'); } } else m.rev = Math.max(0, m.rev - dt*.5); continue; }
           m.cool -= dt; m.job -= dt; const cov = covering(m.x, m.y); m.duck = !!cov && m.cool > .6;
           if (m.role == 'thrower' && target && m.cool <= 0) { m.cool = 1.8 / (1 + .2*(m.lv - 1)); lob(m, target.x + (Math.random() - .5)*30, target.y, {mine:1, sp:440, dmg:(.8 + .2*m.lv) * armM()}); }
           if (m.role == 'builder' && m.job <= 0) { m.job = 4 / m.lv; const W2 = weakestWall(); if (W2 && W2.hp < W2.max) { W2.hp = Math.min(W2.max, W2.hp + 1); addNum(W2.x + W2.w/2, W2.y - 8, '+🧱', '#2fa8e0'); } }
           if (m.role == 'medic' && m.job <= 0) { m.job = 11 - m.lv; if (me.hp < me.max) { me.hp++; addNum(me.x, me.y - 40, '+♥', '#00B451'); } }
           if (!m.tx || Math.random() < dt*.25) m.tx = 40 + Math.random()*520; m.x += Math.max(-60*dt, Math.min(60*dt, m.tx - m.x)); }
         // ----- your buildings -----
-        for (const B2 of builds) { if (B2.k == 'turret' && target) { B2.cool -= dt; if (B2.cool <= 0) { B2.cool = 1.4; lob(B2, target.x, target.y, {mine:1, sp:460, dmg:armM()}); } }
-          if (B2.k == 'fire' && Math.abs(me.x - B2.x) < 70) { B2.heal = (B2.heal || 0) + dt * (1 + .25*PU('mitts')); if (B2.heal >= 4) { B2.heal = 0; if (me.hp < me.max) { me.hp++; addNum(me.x, me.y - 40, '+♥', '#FF8A3C'); A.tone(700, .08, 'sine', .04); } } } }
+        for (const B2 of builds) { if (B2.k == 'turret' && target) { B2.cool -= dt; if (B2.cool <= 0) { B2.cool = 1.4 * (1 - .12*PU('turret')); lob(B2, target.x, target.y, {mine:1, sp:460, dmg:armM()}); } }
+          if (B2.k == 'fire' && Math.hypot(me.x - B2.x, (me.y - B2.y)*1.6) < 80) { B2.heal = (B2.heal || 0) + dt * (1 + .25*PU('mitts')); if (B2.heal >= 4) { B2.heal = 0; if (me.hp < me.max) { me.hp++; addNum(me.x, me.y - 40, '+♥', '#FF8A3C'); A.tone(700, .08, 'sine', .04); } } } }
         // ----- enemies -----
         const AIc = 1 + wave*.04;
         for (const f of foes) { const T = TYPES[f.k], spd2 = T.sp * (f.slow > 0 ? .4 : 1); f.slow = Math.max(0, f.slow - dt); f.kb = Math.max(0, f.kb - dt); f.rt -= dt; f.act -= dt;
@@ -680,7 +700,7 @@ A.register('snowball', { mount(host, api){
           if (Math.abs(me.x - b.x) < 16 + b.r && Math.abs(me.y - 14 - b.y) < 24) { if (me.duck && covering(me.x, me.y)) continue; b.life = 0; splat(b.x, b.y, 8); hurtMe(b.dmg, b.ice); } }
         balls = balls.filter(b => b.life > 0 && (b.lob || (b.x > -20 && b.x < w + 20 && b.y > -20 && b.y < FIELD + 20)));
         foes = foes.filter(f => !f.dead); walls = walls.filter(W2 => W2.hp > 0); builds = builds.filter(B2 => B2.hp > 0);
-        for (const d of drops) { d.life -= dt; if (d.y < PY + 10) d.y += d.vy*dt; if (Math.abs(d.x - me.x) < 26 && d.y > PY - 30) { d.life = 0;
+        for (const d of drops) { d.life -= dt; if (d.y < (d.ty || (d.ty = MID + 60 + Math.random()*(PY - MID - 60)))) d.y += d.vy*dt; if (Math.hypot(d.x - me.x, d.y - me.y) < 34 + 12*PU('magnet')) { d.life = 0;
             if (d.k == 'cocoa') { if (me.hp < me.max) me.hp++; addNum(me.x, me.y - 40, '☕ +♥', '#8D5B1D'); } else if (d.k == 'shield') pw.shield = 1; else pw[d.k] = 10;
             A.sfx('coin'); if (d.k != 'cocoa') say({icy:'❄ Icy snowballs: hits slow enemies!', mega:'💥 Mega snowballs: big splash!', rapid:'⚡ Rapid throws!', shield:'🛡 Shield: blocks the next hit'}[d.k], 1.6); } } drops = drops.filter(d => d.life > 0);
         if (!foes.length && !boss) { score += 200*wave; flakes += 15 + wave*2; if (!waveHurt) { score += 300; flakes += 10; stat(api, 'snowPerfect', 1, 'add'); say('✨ PERFECT wave ' + wave + '! No hits taken · +300', 3); } else say('Wave ' + wave + ' cleared! Build, heal and hire before the next one.', 3);
@@ -715,7 +735,7 @@ A.register('snowball', { mount(host, api){
       if (W2.fort) { g.fillStyle = 'rgba(255,255,255,.85)'; g.beginPath(); g.moveTo(W2.x - 6, W2.y - 26); g.lineTo(W2.x + W2.w + 6, W2.y - 26); g.lineTo(W2.x + W2.w - 4, W2.y - 40); g.lineTo(W2.x + 4, W2.y - 40); g.fill(); g.strokeStyle = '#9ec4e8'; g.stroke(); [W2.x + 4, W2.x + W2.w - 10].forEach(x => { g.fillStyle = '#ffffff'; g.fillRect(x, W2.y - 26, 6, 26); }); } }
     for (const B2 of builds) { if (B2.k == 'turret') { g.fillStyle = '#ffffff'; rr(g, B2.x - 14, B2.y - 22, 28, 30, 8); g.fill(); g.strokeStyle = '#9ec4e8'; g.lineWidth = 2; g.stroke(); g.fillStyle = '#14204a'; g.beginPath(); g.arc(B2.x, B2.y - 12, 7, 0, TAU); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(B2.x, B2.y - 14, 3, 0, TAU); g.fill(); }
       if (B2.k == 'fire') { g.fillStyle = '#6b4a2b'; g.fillRect(B2.x - 16, B2.y + 4, 32, 6); for (let k2 = 0; k2 < 3; k2++) { const fl = Math.sin(t*12 + k2)*3; g.fillStyle = ['#FF4539', '#ff8a3c', '#F9BF01'][k2]; g.beginPath(); g.moveTo(B2.x - 12 + k2*4, B2.y + 4); g.quadraticCurveTo(B2.x, B2.y - 28 + k2*7 + fl, B2.x + 12 - k2*4, B2.y + 4); g.fill(); }
-        if (Math.abs(me.x - B2.x) < 70 && st == 'play') { g.strokeStyle = 'rgba(255,138,60,.4)'; g.lineWidth = 2; g.beginPath(); g.ellipse(B2.x, B2.y + 6, 70, 18, 0, 0, TAU); g.stroke(); } } }
+        if (Math.hypot(me.x - B2.x, (me.y - B2.y)*1.6) < 80 && st == 'play') { g.strokeStyle = 'rgba(255,138,60,.4)'; g.lineWidth = 2; g.beginPath(); g.ellipse(B2.x, B2.y + 6, 70, 18, 0, 0, TAU); g.stroke(); } } }
     for (const d of drops) { g.font = '22px '+A.font; g.textAlign = 'center'; g.globalAlpha = d.life < 2 ? .5 + .5*Math.sin(t*20) : 1; g.fillText({cocoa:'☕', icy:'❄', mega:'💥', rapid:'⚡', shield:'🛡'}[d.k], d.x, d.y + Math.sin(t*4)*3); g.globalAlpha = 1; }
     // ----- characters: bigger, with wind-up, throw, duck, hit and cheer poses -----
     const kid = (x, y, col, o) => { o = o || {}; const s2 = (o.big ? 1.6 : 1.25) * (o.duck ? .7 : 1), dy = o.duck ? 10 : 0, cheer = o.cheer && Math.sin(t*10) > 0;
@@ -776,23 +796,24 @@ A.register('snowball', { mount(host, api){
     g.fillStyle = '#14204a'; g.beginPath(); g.arc(574, 22, 15, 0, TAU); g.fill(); g.fillStyle = '#fff'; g.font = '800 16px '+A.font; g.textAlign = 'center'; g.fillText('?', 574, 28);
     // ----- bottom bar: touch controls in a fight, the build menu between waves -----
     g.fillStyle = '#14204a'; g.fillRect(0, BAR, w, h - BAR);
-    if (st == 'play' && phase == 'build') { const cols = 6; TOOLS.forEach((T2, i) => { const x = (i % cols)*w/cols, y = BAR + Math.floor(i/cols)*50, cost = toolCost(T2.k), can = ['go', 'role'].includes(T2.k) || flakes >= cost;
+    if (st == 'play' && phase == 'build') { const cols = 7; TOOLS.forEach((T2, i) => { const x = (i % cols)*w/cols, y = BAR + Math.floor(i/cols)*50, cost = toolCost(T2.k), can = ['go', 'role', 'undo', 'remove'].includes(T2.k) || flakes >= cost;
         g.fillStyle = tool == i ? '#D5F367' : can ? 'rgba(255,255,255,.18)' : 'rgba(255,255,255,.06)'; rr(g, x + 3, y + 4, w/cols - 6, 42, 9); g.fill(); g.fillStyle = tool == i ? '#14204a' : '#fff'; g.textAlign = 'center';
-        g.font = '15px '+A.font; g.fillText(T2.e, x + w/cols/2, y + 22); g.font = '700 10px '+A.font; g.fillText(T2.n + (T2.k == 'go' || T2.k == 'role' ? '' : isFinite(cost) ? ' · ' + cost + '❄' : ' · full'), x + w/cols/2, y + 38); });
-      g.fillStyle = '#14204a'; g.font = '700 13px '+A.font; g.textAlign = 'center'; g.fillText(PLACE.includes(TOOLS[tool].k) ? 'BUILD TIME · tap your side to place ' + TOOLS[tool].e + ' ' + TOOLS[tool].n : 'BUILD TIME · pick something below, then ▶ Next wave', 300, MID + 40); }
+        g.font = '15px '+A.font; g.fillText(T2.e, x + w/cols/2, y + 22); g.font = '700 10px '+A.font; g.fillText(T2.n + (['go', 'role', 'undo', 'remove'].includes(T2.k) ? '' : isFinite(cost) ? ' · ' + cost + '❄' : ' · full'), x + w/cols/2, y + 38); });
+      g.fillStyle = '#14204a'; g.font = '700 13px '+A.font; g.textAlign = 'center'; g.fillText(PLACE.includes(TOOLS[tool].k) ? (TOOLS[tool].k == 'remove' ? 'BUILD TIME · tap one of your walls or buildings to remove it (refund)' : 'BUILD TIME · tap your side to place ' + TOOLS[tool].e + ' ' + TOOLS[tool].n + ' · Z undoes') : 'BUILD TIME · pick something below, then ▶ Next wave', 300, MID + 40); }
     else if (st == 'play') { const L = [['◀', touch.l], ['▶', touch.r], ['🦆 Duck', touch.duck || me.duck], ['🤸 Roll', me.roll > 0], ['❓ Help', false]]; L.forEach(([tx2, on], i) => { const x = i*w/5; g.fillStyle = on ? '#D5F367' : 'rgba(255,255,255,.16)'; rr(g, x + 5, BAR + 12, w/5 - 10, 76, 14); g.fill(); g.fillStyle = on ? '#14204a' : '#fff'; g.font = '800 18px '+A.font; g.textAlign = 'center'; g.fillText(tx2, x + w/10, BAR + 58); }); }
     if (msgT > 0 && st == 'play') { g.fillStyle = 'rgba(20,32,74,.85)'; rr(g, 30, MID - 22, w - 60, 40, 12); g.fill(); g.fillStyle = '#fff'; g.font = '700 14px '+A.font; g.textAlign = 'center'; g.fillText(msg, 300, MID + 3); }
     // ----- menus -----
     if (st != 'play') { g.fillStyle = 'rgba(20,32,74,.8)'; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; g.textAlign = 'center'; g.font = '900 34px '+A.font; g.fillText(st == 'over' ? 'SNOWED UNDER' : 'SNOWBALL SHOWDOWN', 300, 130);
       g.font = '600 15px '+A.font; g.fillStyle = '#cfe3f5'; g.fillText(st == 'over' ? A.fmt(score||0) + ' points · wave ' + wave + (msgT > 0 ? ' · ' + msg : '') : __skip ? 'Saved game · tap anywhere or press Space to keep going' : 'Best wave ' + PERM.best + ' · 🧊 ' + PERM.cr + ' ice crystals', 300, 170);
       if (!__skip) MENU.forEach(([k, n], i) => { const by = 250 + i*58; g.fillStyle = k == mode && st == 'over' ? '#D5F367' : k == 'up' ? '#64CDF5' : k == 'guide' ? 'rgba(255,255,255,.2)' : '#ffffff'; rr(g, 150, by, 300, 48, 14); g.fill(); g.fillStyle = '#14204a'; g.font = '800 18px '+A.font; g.fillText(n, 300, by + 31); }); }
-    if (upOpen) { g.fillStyle = 'rgba(10,20,50,.95)'; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; g.textAlign = 'center'; g.font = '900 26px '+A.font; g.fillText('🧊 Permanent upgrades', 300, 70); g.font = '600 14px '+A.font; g.fillStyle = '#9fe8ff'; g.fillText('You have ' + PERM.cr + ' ice crystals · earn them every game (more for later waves and bosses)', 300, 100);
-      PUPS.forEach((u, i) => { const by = 150 + i*52, L = PU(u.k), mx2 = L >= u.max, cst = pcost(u); g.fillStyle = 'rgba(255,255,255,.08)'; rr(g, 30, by, 540, 44, 10); g.fill(); g.textAlign = 'left'; g.fillStyle = '#fff'; g.font = '800 15px '+A.font; g.fillText(u.n + ' · Lv ' + L + '/' + u.max, 44, by + 19); g.font = '500 12px '+A.font; g.fillStyle = '#cfe3f5'; g.fillText(u.d, 44, by + 36);
-        g.fillStyle = mx2 ? 'rgba(255,255,255,.1)' : PERM.cr >= cst ? '#00B451' : 'rgba(255,255,255,.18)'; rr(g, 440, by + 4, 120, 36, 10); g.fill(); g.fillStyle = '#fff'; g.textAlign = 'center'; g.font = '800 14px '+A.font; g.fillText(mx2 ? 'MAX' : '🧊 ' + cst, 500, by + 27); });
-      g.fillStyle = '#ffffff'; rr(g, 200, 594, 200, 44, 12); g.fill(); g.fillStyle = '#14204a'; g.font = '800 16px '+A.font; g.fillText('Done', 300, 622); }
+    if (upOpen) { g.fillStyle = 'rgba(10,20,50,.95)'; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; g.textAlign = 'center'; g.font = '900 26px '+A.font; g.fillText('🧊 Permanent upgrades', 300, 70); g.font = '600 14px '+A.font; g.fillStyle = '#9fe8ff'; g.fillText('You have ' + PERM.cr + ' ice crystals · tap an upgrade to buy it · earn crystals every game', 300, 96);
+      PUPS.forEach((u, i) => { const B2 = upBox(i), L = PU(u.k), mx2 = L >= u.max, cst = pcost(u), can = !mx2 && PERM.cr >= cst; g.fillStyle = can ? 'rgba(0,180,81,.22)' : 'rgba(255,255,255,.08)'; rr(g, B2.x, B2.y, 284, 50, 10); g.fill();
+        g.textAlign = 'left'; g.fillStyle = '#fff'; g.font = '800 13px '+A.font; g.fillText(u.n + ' · ' + L + '/' + u.max, B2.x + 10, B2.y + 18); g.font = '500 11px '+A.font; g.fillStyle = '#cfe3f5'; g.fillText(u.d, B2.x + 10, B2.y + 36);
+        g.textAlign = 'right'; g.font = '800 13px '+A.font; g.fillStyle = mx2 ? '#D5F367' : can ? '#7fe08a' : '#9fb8d0'; g.fillText(mx2 ? 'MAX' : '🧊 ' + cst, B2.x + 274, B2.y + 18); });
+      g.fillStyle = '#ffffff'; rr(g, 200, 644, 200, 44, 12); g.fill(); g.fillStyle = '#14204a'; g.textAlign = 'center'; g.font = '800 16px '+A.font; g.fillText('Done', 300, 672); }
     if (guide) { g.fillStyle = 'rgba(10,20,50,.95)'; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; g.textAlign = 'left'; g.font = '900 26px '+A.font; g.fillText('❓ How to play', 30, 60);
-      [['🎯', 'Aim at the top half and HOLD to pack a bigger snowball, let go to throw. Quick taps = small fast ones.'], ['🧱', 'Your snowballs fly OVER your own walls. Enemy snowballs hit your walls.'], ['🦆', 'Duck (Shift / S / Duck button) behind a wall: straight throws can’t hit you.'],
-       ['⚪', 'You carry 10 snowballs. Scoop more on the ❄ piles or while ducking behind a wall.'], ['🤸', 'Move with A/D or ◀ ▶. Dodge-roll with E, the Roll button, or double-tap.'], ['☕', 'Heal: cocoa drops, ☕ Warm Up between waves, or stand near your 🔥 campfire.'],
+      [['🎯', 'Aim at the top half and HOLD to pack a bigger snowball, let go to throw. Quick taps = small fast ones.'], ['🧱', 'Your snowballs fly OVER your own walls. Enemy snowballs hit your walls.'], ['🦆', 'Duck (Shift, C or the Duck button) behind a wall: straight throws can’t hit you.'],
+       ['⚪', 'You carry 10 snowballs. Scoop more on the ❄ piles or while ducking behind a wall.'], ['🤸', 'Move anywhere on your side with WASD / arrows, or tap where to walk. Dodge-roll with E, Roll, or double-tap.'], ['☕', 'Heal: cocoa drops, ☕ Warm Up between waves, or stand near your 🔥 campfire.'],
        ['🏰', 'Between waves build walls, forts (roof stops catapults), turrets, trap pits, ice and a campfire.'], ['🧒', 'Teammates: throwers, builders (fix walls) and medics. Stand next to a knocked-out one to help them up.'], ['👑', 'Bosses every 5 waves (the Frost Dragon every 20). Each has 3 phases.']]
         .forEach(([e2, tx2], i) => { const y = 110 + i*58; g.font = '28px '+A.font; g.fillText(e2, 30, y + 14); g.fillStyle = '#e8f4ff'; g.font = '600 14px '+A.font; const words = tx2.split(' '); let line = '', ly = y; words.forEach(wd => { if (g.measureText(line + wd).width > 480) { g.fillText(line, 80, ly); line = ''; ly += 18; } line += wd + ' '; }); g.fillText(line, 80, ly); g.fillStyle = '#fff'; });
       g.textAlign = 'center'; g.font = '700 15px '+A.font; g.fillStyle = '#D5F367'; g.fillText('Tap anywhere to close', 300, 680); } });
@@ -810,7 +831,7 @@ A.register('snowball', { mount(host, api){
       else { startGame('endless'); score = R0.score || 0; wave = R0.wave || 1; flakes = R0.flakes || 20; arena = R0.arena || 0; phase = 'build'; foes = []; boss = null; if (R0.me) { me.hp = R0.me.hp; me.max = R0.me.max; } }
       me.ammo = me.ammo == null ? maxAmmo() : me.ammo; me.y = PY; balls = []; api.score(score); __skip = true; st = 'ready'; } catch(e) { console.error('[save] snowball resume failed', e); } } }
   A._dbg = A._dbg || {}; A._dbg.snow = () => ({me, foes, boss, wave, phase, walls, builds, mates, flakes, st, mode, balls, PERM, set:o => { if (o.wave != null) wave = o.wave; if (o.flakes != null) flakes = o.flakes; }, nextWave, useTool, startGame, throwAt:(x, y, p) => { aim = {x, y}; packT = p || 0; mouseOn = true; throwMine(); }});
-  return () => { offK(); offL(); K.off(); if (A.admins) delete A.admins.snowball; };
+  return () => { offK(); offL(); K.off(); window.removeEventListener('keydown', dkd); window.removeEventListener('keyup', dku); window.removeEventListener('blur', dbl); if (A.admins) delete A.admins.snowball; };
 }});
 
 // =====================================================================================================
