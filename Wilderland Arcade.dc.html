@@ -1065,7 +1065,7 @@ const ZONES = [
   {k:'commons',  n:'Wilderland Commons', e:'🌱', col:'#00B451', tint:'rgba(0,180,81,.14)',    ids:['farm','fishing']}];
 const ZONE_OF = {}; ZONES.forEach(Z => Z.ids.forEach(id => { ZONE_OF[id] = Z.k; })); GAMES.forEach(g => { if (!ZONE_OF[g.id]) { ZONE_OF[g.id] = 'classic'; ZONES[0].ids.push(g.id); } });
 const ZIX = k => ZONES.findIndex(Z => Z.k == k);
-GAMES.sort((a,b) => ZIX(ZONE_OF[a.id]) - ZIX(ZONE_OF[b.id]) || a.title.localeCompare(b.title, 'en', {numeric:true}));   // zone by zone, A–Z inside each zone
+GAMES.sort((a,b) => a.title.localeCompare(b.title, 'en', {numeric:true}));   // every list of games is A–Z by its full name; the floor places each one in its zone (A–Z inside the zone)
 const WIN_GAMES = ['connect4','tictactoe'];   // no real score: their cabinets count wins instead
 const cabFs = n => n.length <= 11 ? 13 : n.length <= 14 ? 11.5 : n.length <= 17 ? 10 : 9.5;
 // Animations switch (saved per device). Off = static icons, no CSS motion, games draw fewer effects.
@@ -1840,7 +1840,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048').sort((a,b) => a.key0.localeCompare(b.key0, 'en', {numeric:true})); return GAMES.indexOf(DG[h % DG.length]); };   // same order as the old A–Z floor, so the daily game never jumps
-const BUILD = '2026-12-07c';
+const BUILD = '2026-12-07d';
 const SCRIPTS = ['arcade-core.js','music.js','prizes-more.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js','games-secrets.js','games-more.js','games-more2.js','games-more3.js','snow-world.js'];
 const fmt = n => fmtN(Math.round(n));
 
