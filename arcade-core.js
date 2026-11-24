@@ -44,7 +44,7 @@ A.solved = p => p.kind=='spell' ? 'The word is “'+p.word+'”' : p.q.replace('
 A.qText = p => p.kind=='math' ? p.q+' = ?' : p.q;
 A.learnOn = () => !!(A.edu && A.edu.on);
 A.U = k => (A.upg && A.upg[k]) || 0; // Upgrade Workshop level for the current game
-// Lives never go over 20 in any game. A life gained past 20 pays a small ticket bonus instead.
+// Lives never go over 50 in any game. A life gained past 50 pays a small ticket bonus instead.
 // Dramatic music: games report each frame whether you're down to your last life (danger) or fighting a boss.
 // The music engine only switches when the answer changes.
 A.mood = fn => { let o; try { o = fn(); } catch(e) { return; } const d = !!(o && o.danger), b = !!(o && o.boss); if (d === A._mDanger && b === A._mBoss) return; A._mDanger = d; A._mBoss = b; try { window.WLMusic && window.WLMusic.flags({danger:d, boss:b}); } catch(e){} };
