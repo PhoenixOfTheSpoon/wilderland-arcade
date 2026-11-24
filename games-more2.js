@@ -433,8 +433,9 @@ A.register('fishing', { mount(host, api){
   const capN = () => 5 + UL('hook') + A.U('bait');
   const luck = () => 1 + .12*UL('luck') + .15*A.U('lure') + (UL('sonar') >= 3 ? .15 : 0) + (isNight() ? .3 : 0);
   function buddyRate(L) { const z = zoneOf(G.best||0); return L ? L * .35 * 4 * Math.pow(2.3, z) * LOC().mult * coinMult() : 0; }
-  const fishVal = (f, d) => f.guard != null ? 4 * Math.pow(2.3, 7) * 30 * LOC().mult * depthMult(d) : f.special ? 4 * Math.pow(2.3, zoneOf(d)) * ({dang:500, godly:60, ohdang:1e6, fishmax:1e9})[f.special] * LOC().mult * depthMult(d) : f.chest ? 60 * Math.pow(2.3, zoneOf(d)) * LOC().mult * depthMult(d) * (1 + .2*UL('chest')) : f.junk ? 1 : 4 * Math.pow(2.3, f.z) * [1, 2, 4, 9][f.i] * LOC().mult * depthMult(d);
-  const fishPts = (f, d) => f.guard != null ? 900 + 60*f.guard + 25*layerOf(d) : f.special ? (f.special == 'fishmax' ? 9e15 : f.special == 'ohdang' ? 100000 + 1000*zoneOf(d) : f.special == 'dang' ? 1500 + 80*zoneOf(d) : 400 + 30*zoneOf(d)) + 25*layerOf(d) : f.junk ? 2 : f.chest ? 150 + 20*zoneOf(d) : Math.round((10 + 14*f.z) * [1, 1.6, 2.6, 4.5][f.i] + 25*layerOf(d));
+  const fishVal = (f, d) => fin(fishVal0(f, d)), fishPts = (f, d) => fin(fishPts0(f, d));   // never ∞, however deep
+  const fishVal0 = (f, d) => f.guard != null ? 4 * Math.pow(2.3, 7) * 30 * LOC().mult * depthMult(d) : f.special ? 4 * Math.pow(2.3, zoneOf(d)) * ({dang:500, godly:60, ohdang:1e6, fishmax:1e9})[f.special] * LOC().mult * depthMult(d) : f.chest ? 60 * Math.pow(2.3, zoneOf(d)) * LOC().mult * depthMult(d) * (1 + .2*UL('chest')) : f.junk ? 1 : 4 * Math.pow(2.3, f.z) * [1, 2, 4, 9][f.i] * LOC().mult * depthMult(d);
+  const fishPts0 = (f, d) => f.guard != null ? 900 + 60*f.guard + 25*layerOf(d) : f.special ? (f.special == 'fishmax' ? 9e15 : f.special == 'ohdang' ? 100000 + 1000*zoneOf(d) : f.special == 'dang' ? 1500 + 80*zoneOf(d) : 400 + 30*zoneOf(d)) + 25*layerOf(d) : f.junk ? 2 : f.chest ? 150 + 20*zoneOf(d) : Math.round((10 + 14*f.z) * [1, 1.6, 2.6, 4.5][f.i] + 25*layerOf(d));
 
   // ---------- time of day (a 5-minute day) & weather ----------
   const DAYLEN = 300; const dayT = () => ((Date.now()/1000) % DAYLEN) / DAYLEN;
@@ -504,7 +505,7 @@ A.register('fishing', { mount(host, api){
   const startDive = () => { ohT = 0; genUp = -1; base = 0; if (panel) closePanel(); maxD = lineUse(); skipD = Math.floor(maxD * skipPct() / 100); fish = fish.filter(o => !o.dead && !o.pred); genTo = Math.max(1, skipD, genTo || 0);   // the fish under the boat stay caught = []; ghostN = UL('ghost'); shieldN = UL('shield');
     combo = 0; hd = skipD; if (hd > 1e8) rebase(); hx = tx != null ? tx : W/2; phase = 'drop'; lastZone = -1; A.tone(300, .15, 'sine', .05); if (skipD) say('Express drop to '+fmt(skipD)+' m', 1.2); refreshBar(); };
   const startReel = why => { if (phase != 'drop') return; phase = 'reel'; combo = 0; lastCatch = -9; if (why) say(why, 1.6); A.sfx('blip'); refreshBar(); };
-  const catchIt = o => { const v = fishVal(o.f, AB(o.d)) * (o.gold ? 5 : 1), p = fishPts(o.f, AB(o.d)) * (o.gold ? 2 : 1);
+  const catchIt = o => { const v = fin(fishVal(o.f, AB(o.d)) * (o.gold ? 5 : 1)), p = fin(fishPts(o.f, AB(o.d)) * (o.gold ? 2 : 1));
     if (t - lastCatch < 1.6) combo++; else combo = 0; lastCatch = t; caught.push({f:o.f, v:v * (1 + combo*(.1 + .04*UL('combo'))), p, gold:o.gold}); o.dead = true;
     A.tone(500 + Math.min(10, combo)*60, .05, 'square', .04); if (o.f.r >= 3 || o.gold) A.sfx('coin'); };
   const finishDive = () => { fish = fish.filter(o => !o.dead && o.d >= 1); phase = 'tally'; let coins = 0, pts = 0; const b = book(), news = [];
@@ -823,7 +824,8 @@ A.register('fishing', { mount(host, api){
       if (kx) { tx = null; hx += kx * sp * dt; } else if (tx != null) { const dx = tx - hx; hx += Math.sign(dx) * Math.min(Math.abs(dx), sp*dt); } hx = clamp(hx, 14, W - 14);
       for (const o of fish) { if (o.dead) continue; const y = sy(o.d); if (y < -200 || y > H + 200) continue; o.x += o.vx * dt; if (o.x < -30) o.x = W + 30; if (o.x > W + 30) o.x = -30; }
       const prevD = hd;
-      const move = (v, dir) => { if (base > 0 || hd > 1e8 || hd + v*dt > 1e7) { if (!base) rebase(); const step = v*dt, rel = Math.min(step, visV()*dt); base += step - rel; hd += dir*rel; return prevD; } hd += dir*v*dt; return ride(prevD, dir, dt); };
+      const move = (v, dir) => { const room = dir > 0 ? Math.max(0, maxD - AB(hd)) : Math.max(0, AB(hd)), step = Math.min(v*dt, room);
+        if (base !== 0 || hd > 1e8 || hd + step > 1e7) { if (!base) rebase(); const rel = Math.min(step, visV()*dt); base += dir*(step - rel); hd += dir*rel; return prevD; } hd += dir*step; return ride(prevD, dir, dt); };
       const prevA = AB(prevD);
       if (phase == 'drop') { visBoost = 1; const pD = move(sinkEff() * slowF(), 1); gen(hd + 160); const hA = AB(hd);
         const z = zoneOf(hA); if (z != lastZone) { if (lastZone >= 0 || z > 0) { zoneShow = zoneName(hA) + ' · ' + fmt(hA >= 2000 ? LAYERS[layerIdx(hA)].d : ZONES[z].d) + ' m'; zoneT = 2; } lastZone = z; }
@@ -831,8 +833,8 @@ A.register('fishing', { mount(host, api){
         for (const o of fish) { if (o.dead || o.jelly || o.pred || o.passed || o.f.special == 'ohdang' || o.f.special == 'fishmax') continue; if (o.d < pD - 3 || o.d > hd + 3) continue; if (Math.abs(o.x - hx) < o.f.s + 11) {
             if (ghosty(o)) { o.passed = true; continue; }
             o.passed = true; if (caught.length < capN()) { catchIt(o); say('Hooked ' + (/^[AEIOU]/i.test(o.f.n) ? 'an ' : 'a ') + o.f.n + ' on the way down' + (caught.length >= capN() ? ' · hook full!' : ''), 1.2); } } }
-        if (phase == 'drop' && AB(hd) >= maxD) { hd = maxD - base; startReel('End of the line! Reel up and grab fish'); } }
-      else if (phase == 'reel') { const full = caught.length >= capN(), turbo = full || AB(hd) < skipD ? 4 : 1; visBoost = full ? 4 : 1; const pD = move(reelEff() * turbo * slowF(), -1); if (base > 0 && genUp < 0) genUp = hd - 60; if (genUp >= 0) genAbove(hd - 160);
+        if (phase == 'drop' && AB(hd) >= maxD * (1 - 1e-12)) { hd = maxD - base; startReel('End of the line! Reel up and grab fish'); } }
+      else if (phase == 'reel') { const full = caught.length >= capN(), turbo = full || AB(hd) < skipD ? 4 : 1; visBoost = full ? 4 : 1; const pD = move(reelEff() * turbo * slowF(), -1); if (base !== 0 && genUp < 0) genUp = hd - 60; if (genUp >= 0) genAbove(hd - 160);
         if (!full) for (const o of fish) { if (o.dead) continue; if (o.d > pD + 4 || o.d < hd - 4) continue; const rad = o.jelly ? 20 : o.pred ? 26 : o.f.s + 14 + 3*UL('magnet');
           if (Math.abs(o.x - hx) < rad && Math.abs(o.d*PXM - hd*PXM) < rad + Math.abs(pD - hd)*PXM) {
             if (o.jelly || o.pred) { const who = o.pred ? 'barracuda' : 'jellyfish'; if (o.pred) o.vx *= -1.4; else o.dead = true; if (o.pred && t - (o.hitT || -9) < 1.2) continue; o.hitT = t; if (shieldN > 0) { shieldN--; A.tone(900, .06, 'sine', .04); say(o.pred ? 'Jelly Guard scared off the barracuda!' : 'Jelly Guard blocked a sting!', 1.2); continue; } if (!caught.length) { A.sfx('bad'); continue; }
@@ -841,7 +843,7 @@ A.register('fishing', { mount(host, api){
               if (li < 0) { A.tone(900, .06, 'sine', .04); say('The ' + who + ' couldn’t grab your new fish!', 1.4); continue; }
               const lost = caught[li]; A.sfx('bad'); quiz = learn2(host, api, (o.pred ? 'A BARRACUDA BIT YOUR LINE' : 'A JELLYFISH STUNG YOUR LINE') + '! ANSWER TO KEEP YOUR ' + lost.f.n.toUpperCase(), () => { quiz = false; say('You held on to the ' + lost.f.n + '!', 1.6); }, () => { quiz = false; const j2 = caught.indexOf(lost); if (j2 >= 0) caught.splice(j2, 1); say('Ouch! A ' + who + ' knocked off your ' + lost.f.n, 1.8); }); if (quiz) break; continue; }
             catchIt(o); if (caught.length >= capN()) { say('Hook full! Zooming up', 1.2); break; } } }
-        if (base > 0 && AB(hd) < 1e8) unbase(); if (AB(hd) <= 0) { unbase(); hd = 0; finishDive(); } }
+        if (base !== 0 && AB(hd) < 1e8) unbase(); if (AB(hd) <= 0) { unbase(); hd = 0; finishDive(); } }
       if (phase == 'drop' || phase == 'reel') {
         // 🌈 OH DANG!!!!: every 10 s of diving, a chance of depth × 0.00001% per 100,000 m (1 million m = 0.0001% … 1 trillion m = 100%)
         if (G.loc == 'fwish') { fT += dt; while (fT >= .1) { fT -= .1; if (Math.random() < 1e-12 && Math.random() < 1e-13) spawnFISH(); } }
@@ -850,7 +852,7 @@ A.register('fishing', { mount(host, api){
         // it can always be hooked, even with a full hook
         for (const o of fish) { if (o.dead || o.jelly || o.pred || !o.f || (o.f.special != 'ohdang' && o.f.special != 'fishmax')) continue; if (Math.abs(o.x - hx) < o.f.s*(o.f.special == 'fishmax' ? .9 : 1) + 12 && Math.abs(o.d - hd)*PXM < o.f.s*.6 + 12) { if (o.f.special == 'fishmax') { catchFISH(o); continue; } catchIt(o); say('🌈🌈 YOU CAUGHT ' + o.f.n.toUpperCase() + '!!! 🌈🌈', 5); flash = 1; } }
         const hA2 = AB(hd); if (hA2 > G.best) G.best = hA2; if (hA2 > (G.deepest||0)) { G.deepest = hA2; stat(api,'fishDepth',Math.floor(hA2),'max'); }
-        if (base > 0 && (hd > 1e7 || hd < 500)) rebase(); }
+        if (base !== 0 && (hd > 1e7 || hd < 500)) rebase(); }
       if (combo && t - lastCatch > 1.6) combo = 0; }
     const want = phase == 'drop' ? hd - (230 - SURF)/PXM : phase == 'reel' ? hd - (440 - SURF)/PXM : 0;
     // the catch card closes by itself after 5 s (or tap to close it sooner)
