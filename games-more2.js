@@ -368,17 +368,108 @@ A.register('fishing', { mount(host, api){
         g.globalAlpha = 1; } }
     if (L.crown) { g.fillStyle = '#FFD700'; const cx = L.shape == 'star' ? 0 : s*.45, cy = L.shape == 'star' ? -s*1.05 : -s*.62; g.beginPath(); g.moveTo(cx - s*.22, cy); g.lineTo(cx - s*.22, cy - s*.22); g.lineTo(cx - s*.1, cy - s*.1); g.lineTo(cx, cy - s*.28); g.lineTo(cx + s*.1, cy - s*.1); g.lineTo(cx + s*.22, cy - s*.22); g.lineTo(cx + s*.22, cy); g.fill(); } };
   // small pictures for the Fish Book
-  const drawBird = (f, s, ph) => { const C = f.look, fl = Math.sin(t*10 + ph), col = C.col, dk2 = C.dark || mixHex(col, '#000000', .35);
-    g.fillStyle = dk2; g.beginPath(); g.moveTo(-s*.7, 0); g.lineTo(-s*1.15, -s*.3); g.lineTo(-s*1.1, s*.25); g.fill();
-    g.fillStyle = col; g.beginPath(); g.ellipse(0, 0, s*.75, s*.42, 0, 0, TAU); g.fill();
-    g.fillStyle = C.belly || mixHex(col, '#ffffff', .45); g.beginPath(); g.ellipse(s*.05, s*.14, s*.5, s*.22, 0, 0, TAU); g.fill();
-    g.fillStyle = col; g.beginPath(); g.arc(s*.62, -s*.18, s*.3, 0, TAU); g.fill();
-    g.fillStyle = '#F9A01B'; g.beginPath(); g.moveTo(s*.88, -s*.24); g.lineTo(s*1.2, -s*.12); g.lineTo(s*.88, -s*.04); g.fill();
-    g.fillStyle = '#fff'; g.beginPath(); g.arc(s*.7, -s*.25, s*.11, 0, TAU); g.fill(); g.fillStyle = '#121313'; g.beginPath(); g.arc(s*.73, -s*.25, s*.055, 0, TAU); g.fill();
-    g.fillStyle = dk2; g.beginPath(); g.moveTo(-s*.3, -s*.08); g.quadraticCurveTo(-s*.1, -s*(.25 + .95*fl), s*.32, -s*(.12 + .75*fl)); g.lineTo(s*.25, -s*.02); g.fill(); };
+  // ---------- birds: 14 body types (songbird, raptor, owl, parrot, toucan, gull, pelican, swan, crane, goose, phoenix, griffin, moth, every-bird) plus traits from the name ----------
+  const toRGB = c => { if (c[0] == '#') return [1, 3, 5].map(i => parseInt(c.slice(i, i+2), 16)); const m = (c.match(/[\d.]+/g) || [0, 0, 0]).map(Number);
+    if (/^hsl/.test(c)) { const [h, s0, l0] = m, S = s0/100, L = l0/100, kk = n => (n + h/30) % 12, a = S*Math.min(L, 1 - L), f2 = n => L - a*Math.max(-1, Math.min(kk(n) - 3, 9 - kk(n), 1)); return [f2(0), f2(8), f2(4)].map(v => Math.round(v*255)); } return m.slice(0, 3); };
+  const mixC = (a, b, k) => { const A1 = toRGB(a), B1 = toRGB(b); return 'rgb(' + A1.map((v, i) => Math.round(v + (B1[i] - v)*k)).join(',') + ')'; };   // works with hsl() colors too
+  const BT = {}, RBW = ['#FF4539', '#ff8a3c', '#F9BF01', '#00B451', '#64CDF5', '#8a4be0'];
+  const birdKind = n => { if (BT[n]) return BT[n]; const N = n.toLowerCase(), has = (...w) => w.some(x => N.includes(x));
+    const type = has('owl') ? 'owl' : has('phoenix', 'thunderbird', 'bird!!') ? 'phoenix' : has('moth') ? 'moth' : has('griffin') ? 'griffin' : has('eagle', 'hawk', 'condor', 'falcon') ? 'raptor' : has('toucan') ? 'toucan'
+      : has('parrot', 'lorikeet', 'macaw') ? 'parrot' : has('pelican') ? 'pelican' : has('gull', 'petrel', 'albatross') ? 'sea' : has('swan') ? 'swan' : has('crane', 'heron') ? 'crane' : has('goose') ? 'goose' : has('every') ? 'every' : 'song';
+    return (BT[n] = {type, crest:has('jay', 'cardinal', 'every', 'thunder', 'bwird', 'warp'), fork:has('swallow', 'petrel'), gear:has('gear', 'tick-tock', 'clock'), crystal:has('crystal', 'glass', 'prism'),
+      rainbow:has('rainbow', 'prism', 'every', 'bird!!', 'aurora'), stars:has('star', 'galaxy', 'cosmic', 'nebula', 'moon', 'lunar'), sleepy:has('sleepy', 'dream'), trail:has('meteor') ? 'fire' : has('comet') ? 'ice' : '',
+      warp:has('warp', 'portal', 'wormhole'), storm:has('storm', 'thunder'), snowy:has('snowy'), jay:has('jay'), robin:has('robin'), bwird:has('bwird'), gold:has('golden')}); };
+  const eyeB = (x, y, r, sleepy, glow) => { if (sleepy) { g.strokeStyle = '#121313'; g.lineWidth = Math.max(1.2, r*.45); g.beginPath(); g.arc(x, y - r*.2, r*.8, .15*Math.PI, .85*Math.PI); g.stroke(); return; }
+    g.fillStyle = glow ? '#fff6b0' : '#ffffff'; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); g.fillStyle = glow ? '#FF4539' : '#121313'; g.beginPath(); g.arc(x + r*.25, y, r*.58, 0, TAU); g.fill();
+    g.fillStyle = '#ffffff'; g.beginPath(); g.arc(x + r*.42, y - r*.32, r*.22, 0, TAU); g.fill(); };
+  // a wing from the shoulder (x, y): span, width, flap -1..1; style: round, broad (finger feathers), long (gull), flame
+  const wingB = (x, y, span, w, fl, col, style, tipCol) => { const tipX = x - span*.55, tipY = y - span*(.25 + .7*fl); g.fillStyle = col; g.beginPath(); g.moveTo(x + w*.45, y);
+    g.quadraticCurveTo(x + w*.1, tipY*.35 + y*.65 - w*.4, tipX, tipY);
+    if (style == 'broad') { for (let k = 1; k <= 3; k++) { const q = k/4; g.lineTo(tipX + span*.12*q + w*.15, tipY + (y - tipY)*q*.7 + w*.15); g.lineTo(tipX + span*.14*q, tipY + (y - tipY)*q*.75 + w*.32); } }
+    g.quadraticCurveTo(x - w*.5, y + w*.25, x - w*.6, y + w*.1); g.closePath(); g.fill();
+    if (tipCol) { g.fillStyle = tipCol; g.beginPath(); g.moveTo(tipX, tipY); g.lineTo(tipX + span*.18, tipY + (y - tipY)*.25 + w*.2); g.lineTo(tipX + span*.05, tipY + (y - tipY)*.35 + w*.35); g.closePath(); g.fill(); }
+    if (style == 'flame') { for (let k = 0; k < 3; k++) { const fx = tipX + span*.1*k, fy = tipY + (y - tipY)*.2*k; g.fillStyle = [ '#F9BF01', '#ff8a3c', '#FF4539'][k]; g.beginPath(); g.moveTo(fx, fy); g.quadraticCurveTo(fx - w*.6, fy - w*(.6 + .3*Math.sin(t*12 + k)), fx - w*.9, fy + w*.1); g.quadraticCurveTo(fx - w*.2, fy + w*.2, fx + w*.3, fy + w*.3); g.fill(); } } };
+  const drawBird = (f, s, ph) => { const C = f.look, K = birdKind(f.n), fl = Math.sin(t*10 + ph), col = C.col, dk = C.dark || mixC(col, '#000000', .35), bel = C.belly || mixC(col, '#ffffff', .45), acc = C.acc || '#F9BF01', T = K.type;
+    const glow = K.storm || T == 'phoenix' || K.bwird, rb = k => C.rainbow || K.rainbow ? RBW[(k + Math.floor(t*6)) % 6] : null;
+    // trail behind fast cosmic birds
+    if (K.trail) { const gr = g.createLinearGradient(-s*3, 0, -s*.5, 0); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(1, K.trail == 'fire' ? 'rgba(255,138,60,.85)' : 'rgba(160,230,255,.85)'); g.fillStyle = gr; g.beginPath(); g.moveTo(-s*.5, -s*.35); g.lineTo(-s*3, -s*.1 + Math.sin(t*9)*s*.1); g.lineTo(-s*3, s*.1); g.lineTo(-s*.5, s*.35); g.fill(); }
+    if (K.warp) { g.strokeStyle = 'rgba(180,120,255,.6)'; g.lineWidth = Math.max(1.5, s*.08); for (let k = 0; k < 3; k++) { g.beginPath(); g.arc(-s*.1, 0, s*(.9 + k*.25), t*3 + k*2, t*3 + k*2 + 1.6); g.stroke(); } }
+    if (K.crystal) g.globalAlpha *= .85;
+    // ---- MOTH ----
+    if (T == 'moth') { const wf = .6 + .4*Math.abs(fl); for (const sg of [-1, 1]) { g.save(); g.scale(1, sg); g.fillStyle = sg < 0 ? col : dk; g.beginPath(); g.moveTo(0, 0); g.bezierCurveTo(-s*.2, -s*1.3*wf, -s*1.2, -s*1.2*wf, -s*.9, -s*.15); g.closePath(); g.fill();
+        g.fillStyle = acc; g.beginPath(); g.arc(-s*.55, -s*.6*wf, s*.18, 0, TAU); g.fill(); g.fillStyle = '#121313'; g.beginPath(); g.arc(-s*.55, -s*.6*wf, s*.08, 0, TAU); g.fill();
+        g.fillStyle = bel; g.beginPath(); g.moveTo(-s*.2, s*.05); g.bezierCurveTo(-s*.6, s*.5*wf, -s*1.2, s*.45*wf, -s*1.1, s*.12); g.closePath(); g.fill(); g.restore(); }
+      g.fillStyle = '#e8e0f0'; g.beginPath(); g.ellipse(-s*.1, 0, s*.5, s*.16, 0, 0, TAU); g.fill(); g.strokeStyle = '#e8e0f0'; g.lineWidth = Math.max(1, s*.05); g.beginPath(); g.moveTo(s*.35, -s*.05); g.quadraticCurveTo(s*.6, -s*.4, s*.75, -s*.35); g.moveTo(s*.35, s*.02); g.quadraticCurveTo(s*.65, -s*.2, s*.8, -s*.1); g.stroke();
+      eyeB(s*.38, -s*.02, s*.07, false, false); g.globalAlpha = 1; return; }
+    // ---- OWL (round, upright, face disc, big eyes, ear tufts) ----
+    if (T == 'owl') { wingB(-s*.1, -s*.05, s*.9, s*.45, fl*.6, dk, 'round');
+      g.fillStyle = K.snowy ? '#f4f8ff' : col; g.beginPath(); g.ellipse(0, s*.05, s*.6, s*.72, 0, 0, TAU); g.fill(); g.fillStyle = bel; g.beginPath(); g.ellipse(s*.05, s*.25, s*.4, s*.45, 0, 0, TAU); g.fill();
+      if (K.snowy) { g.fillStyle = '#8a8e94'; for (let k = 0; k < 7; k++) { g.beginPath(); g.arc(-s*.3 + (k % 4)*s*.2, s*.05 + Math.floor(k/4)*s*.3, s*.04, 0, TAU); g.fill(); } }
+      g.fillStyle = K.snowy ? '#f4f8ff' : dk; g.beginPath(); g.moveTo(-s*.4, -s*.48); g.lineTo(-s*.5, -s*.9); g.lineTo(-s*.12, -s*.58); g.fill(); g.beginPath(); g.moveTo(s*.4, -s*.48); g.lineTo(s*.5, -s*.9); g.lineTo(s*.12, -s*.58); g.fill();
+      g.fillStyle = mixC(bel, '#ffffff', .4); g.beginPath(); g.arc(-s*.2, -s*.35, s*.25, 0, TAU); g.arc(s*.2, -s*.35, s*.25, 0, TAU); g.fill();
+      g.fillStyle = '#F9BF01'; g.beginPath(); g.arc(-s*.2, -s*.35, s*.16, 0, TAU); g.arc(s*.2, -s*.35, s*.16, 0, TAU); g.fill(); if (!K.sleepy) { g.fillStyle = '#121313'; g.beginPath(); g.arc(-s*.18, -s*.35, s*.09, 0, TAU); g.arc(s*.22, -s*.35, s*.09, 0, TAU); g.fill(); } else { eyeB(-s*.2, -s*.35, s*.16, true); eyeB(s*.2, -s*.35, s*.16, true); }
+      g.fillStyle = '#c87a1a'; g.beginPath(); g.moveTo(-s*.06, -s*.22); g.lineTo(s*.06, -s*.22); g.lineTo(0, -s*.08); g.fill();
+      if (K.bwird) { g.fillStyle = '#F9BF01'; g.font = '900 ' + Math.round(s*.4) + 'px ' + A.font; g.textAlign = 'center'; g.fillText('★', 0, s*.4); }
+      g.globalAlpha = 1; return; }
+    // ---- body plan for everyone else ----
+    const P = {song:{bw:.62, bh:.48, hr:.32, hx:.55, hy:-.24, beak:'cone', tail:K.fork ? 'fork' : 'short', wing:'round'}, raptor:{bw:.8, bh:.38, hr:.27, hx:.72, hy:-.16, beak:'hook', tail:'wedge', wing:'broad'},
+      griffin:{bw:.85, bh:.42, hr:.28, hx:.78, hy:-.22, beak:'hook', tail:'lion', wing:'broad', legs:'lion'}, parrot:{bw:.6, bh:.42, hr:.32, hx:.55, hy:-.26, beak:'big', tail:'long2', wing:'round'}, toucan:{bw:.6, bh:.45, hr:.3, hx:.5, hy:-.25, beak:'banana', tail:'short', wing:'round'},
+      sea:{bw:.7, bh:.3, hr:.24, hx:.68, hy:-.12, beak:'thin', tail:K.fork ? 'fork' : 'short', wing:'long'}, pelican:{bw:.75, bh:.38, hr:.25, hx:.68, hy:-.2, beak:'pouch', tail:'short', wing:'long'},
+      swan:{bw:.75, bh:.4, hr:.18, hx:1.0, hy:-.78, beak:'cone', tail:'short', wing:'round', neck:'s'}, crane:{bw:.55, bh:.28, hr:.16, hx:1.05, hy:-.5, beak:'long', tail:'short', wing:'long', neck:'long', legs:'long'},
+      goose:{bw:.72, bh:.4, hr:.2, hx:.88, hy:-.45, beak:'cone', tail:'short', wing:'long', neck:'mid'}, phoenix:{bw:.62, bh:.42, hr:.3, hx:.6, hy:-.26, beak:'hook', tail:'flame', wing:'flame'},
+      every:{bw:.65, bh:.45, hr:.3, hx:.58, hy:-.25, beak:'big', tail:'flame', wing:'broad'}}[T] || {bw:.62, bh:.48, hr:.32, hx:.55, hy:-.24, beak:'cone', tail:'short', wing:'round'};
+    const body = K.gold ? '#d8a010' : K.snowy ? '#f4f8ff' : (T == 'sea' && !K.storm) ? '#f4f8ff' : (T == 'swan' && !rb(0)) ? (K.sleepy ? '#e8e0ff' : '#ffffff') : T == 'pelican' ? '#f4f0e8' : col;
+    const wingCol = T == 'sea' ? (K.storm ? dk : '#9aa4b0') : T == 'swan' || T == 'pelican' ? mixC(body, '#9ec4e8', .25) : dk;
+    // back wing (far side)
+    if (P.wing != 'round') wingB(-s*.05, -s*.05, s*(P.wing == 'long' ? 1.45 : 1.25), s*.42, -fl*.5, mixC(wingCol, '#000000', .25), P.wing == 'flame' ? 'broad' : P.wing);
+    // legs and tails
+    if (P.legs == 'long') { g.strokeStyle = '#3a2a2a'; g.lineWidth = Math.max(1.2, s*.05); g.beginPath(); g.moveTo(-s*.2, s*.18); g.lineTo(-s*1.5, s*.32); g.moveTo(-s*.1, s*.2); g.lineTo(-s*1.45, s*.42); g.stroke(); }
+    if (P.legs == 'lion') { g.fillStyle = mixC(col, '#c8964a', .6); g.beginPath(); g.ellipse(-s*.65, s*.05, s*.45, s*.3, 0, 0, TAU); g.fill(); g.fillRect(-s*.9, s*.15, s*.12, s*.35); g.fillRect(-s*.55, s*.15, s*.12, s*.35); }
+    const tl = P.tail; g.fillStyle = dk;
+    if (tl == 'short') { g.beginPath(); g.moveTo(-s*P.bw*.85, -s*.06); g.lineTo(-s*(P.bw + .45), -s*.28); g.lineTo(-s*(P.bw + .4), s*.2); g.fill(); }
+    else if (tl == 'wedge') { g.beginPath(); g.moveTo(-s*P.bw*.8, -s*.12); g.lineTo(-s*(P.bw + .55), -s*.3); g.lineTo(-s*(P.bw + .55), s*.3); g.lineTo(-s*P.bw*.8, s*.12); g.fill(); }
+    else if (tl == 'fork') { g.beginPath(); g.moveTo(-s*P.bw*.8, -s*.08); g.lineTo(-s*(P.bw + .9), -s*.42); g.lineTo(-s*(P.bw + .35), 0); g.lineTo(-s*(P.bw + .9), s*.42); g.lineTo(-s*P.bw*.8, s*.08); g.fill(); }
+    else if (tl == 'long2') { for (const [dy, cc] of [[-.12, acc], [.1, dk]]) { g.fillStyle = cc; g.beginPath(); g.moveTo(-s*P.bw*.8, s*dy*.4); g.quadraticCurveTo(-s*1.3, s*(dy + Math.sin(t*5 + ph)*.05), -s*1.75, s*dy*1.6); g.lineTo(-s*1.6, s*(dy*1.6 + .1)); g.quadraticCurveTo(-s*1.2, s*(dy + .12), -s*P.bw*.8, s*(dy*.4 + .12)); g.fill(); } }
+    else if (tl == 'lion') { g.strokeStyle = mixC(col, '#c8964a', .6); g.lineWidth = Math.max(1.5, s*.07); g.beginPath(); g.moveTo(-s*1.05, s*.05); g.quadraticCurveTo(-s*1.5, -s*.3 + Math.sin(t*4)*s*.15, -s*1.65, -s*.05); g.stroke(); g.fillStyle = dk; g.beginPath(); g.arc(-s*1.68, -s*.05, s*.12, 0, TAU); g.fill(); }
+    else if (tl == 'flame') { for (let k = 0; k < 5; k++) { const a = (k - 2)*.22, L2 = s*(1.4 + .25*Math.sin(t*7 + k)); g.fillStyle = rb(k) || [acc, '#F9BF01', '#ff8a3c', '#FF4539', '#F9BF01'][k]; g.beginPath(); g.moveTo(-s*P.bw*.75, 0); g.quadraticCurveTo(-s*P.bw - L2*.5, -s*.35 + a*s, -s*P.bw - L2, a*s*1.6 + Math.sin(t*9 + k)*s*.1); g.quadraticCurveTo(-s*P.bw - L2*.4, s*.2 + a*s, -s*P.bw*.75, s*.1); g.fill(); } }
+    // neck
+    if (P.neck) { g.strokeStyle = P.neck == 'mid' ? '#2a2a2a' : body; g.lineWidth = s*(P.neck == 's' ? .2 : P.neck == 'mid' ? .22 : .14); g.lineCap = 'round'; g.beginPath(); g.moveTo(s*.45, -s*.05);
+      if (P.neck == 's') g.bezierCurveTo(s*1.1, s*.05, s*.55, -s*.7, s*P.hx, s*P.hy); else g.quadraticCurveTo(s*(P.hx*.8), s*(-.05), s*P.hx, s*P.hy); g.stroke(); g.lineCap = 'butt'; }
+    // body + belly + patterns
+    g.fillStyle = rb(0) ? (C.rainbow ? col : body) : body; g.beginPath(); g.ellipse(0, 0, s*P.bw, s*P.bh, 0, 0, TAU); g.fill();
+    if (rb(0)) { for (let k = 0; k < 6; k++) { g.fillStyle = rb(k); g.globalAlpha *= .85; g.beginPath(); g.ellipse(-s*.1 + k*s*.04, -s*P.bh*.6 + k*s*P.bh*.22, s*P.bw*.7, s*P.bh*.14, 0, 0, TAU); g.fill(); g.globalAlpha /= .85; } }
+    g.fillStyle = K.robin ? '#FF6a3c' : K.jay ? '#ffffff' : bel; g.beginPath(); g.ellipse(s*.12, s*P.bh*.35, s*P.bw*.62, s*P.bh*.5, 0, 0, TAU); g.fill();
+    if (K.stars) { g.fillStyle = '#ffffff'; for (let k = 0; k < 7; k++) { const sx = -s*P.bw*.7 + (k*0.37 % 1)*s*P.bw*1.3, sy = -s*P.bh*.5 + ((k*0.61) % 1)*s*P.bh; g.globalAlpha = .5 + .5*Math.sin(t*5 + k); g.fillRect(sx, sy, Math.max(1, s*.05), Math.max(1, s*.05)); } g.globalAlpha = K.crystal ? .85 : 1; }
+    if (K.crystal) { g.strokeStyle = 'rgba(255,255,255,.85)'; g.lineWidth = Math.max(1, s*.04); g.beginPath(); g.moveTo(-s*P.bw*.6, -s*P.bh*.2); g.lineTo(-s*.1, -s*P.bh*.8); g.lineTo(s*P.bw*.5, -s*P.bh*.1); g.lineTo(-s*.1, s*P.bh*.6); g.closePath(); g.stroke(); }
+    if (K.gear) { g.fillStyle = '#c9a04a'; g.save(); g.translate(-s*.15, s*.02); g.rotate(t*2); for (let k = 0; k < 8; k++) { g.rotate(TAU/8); g.fillRect(-s*.04, -s*.24, s*.08, s*.08); } g.beginPath(); g.arc(0, 0, s*.18, 0, TAU); g.fill(); g.fillStyle = '#6a4a1a'; g.beginPath(); g.arc(0, 0, s*.07, 0, TAU); g.fill(); g.restore(); }
+    if (K.storm) { g.strokeStyle = '#F9BF01'; g.lineWidth = Math.max(1.2, s*.06); g.beginPath(); g.moveTo(-s*.35, -s*.2); g.lineTo(-s*.15, 0); g.lineTo(-s*.3, s*.02); g.lineTo(-s*.05, s*.22); g.stroke(); }
+    // head
+    g.fillStyle = P.neck == 'mid' ? '#2a2a2a' : (T == 'sea' || T == 'swan' || T == 'pelican' || K.snowy) ? body : (K.jay ? '#3f6fd8' : col); g.beginPath(); g.arc(s*P.hx, s*P.hy, s*P.hr, 0, TAU); g.fill();
+    if (P.neck == 'mid') { g.fillStyle = '#ffffff'; g.beginPath(); g.ellipse(s*(P.hx - .02), s*(P.hy + .1), s*.12, s*.07, .3, 0, TAU); g.fill(); }
+    if (T == 'crane') { g.fillStyle = '#FF4539'; g.beginPath(); g.arc(s*P.hx, s*(P.hy - P.hr*.6), s*P.hr*.5, 0, TAU); g.fill(); }
+    if (T == 'raptor' || T == 'griffin') { g.fillStyle = K.gold ? '#f4d070' : (K.bwird ? '#ffffff' : bel); g.beginPath(); g.arc(s*(P.hx + .02), s*(P.hy - .02), s*P.hr*.9, Math.PI*1.05, Math.PI*.15); g.fill(); }
+    if (K.crest || T == 'phoenix' || T == 'every') { for (let k = 0; k < 3; k++) { g.fillStyle = rb(k + 2) || (T == 'phoenix' ? ['#F9BF01', '#ff8a3c', '#FF4539'][k] : K.jay ? '#3f6fd8' : acc); g.beginPath(); g.moveTo(s*(P.hx - P.hr*.5 + k*P.hr*.25), s*(P.hy - P.hr*.6)); g.lineTo(s*(P.hx - P.hr*1.4 + k*P.hr*.2), s*(P.hy - P.hr*(2 - k*.25) + Math.sin(t*8 + k)*.05)); g.lineTo(s*(P.hx - P.hr*.1 + k*P.hr*.25), s*(P.hy - P.hr*.7)); g.fill(); } }
+    // beaks
+    const bx = s*(P.hx + P.hr*.85), by = s*(P.hy + P.hr*.05), B = P.beak, bk = T == 'swan' ? '#ff8a3c' : T == 'goose' || T == 'crane' ? '#3a3a3a' : '#F9A01B';
+    g.fillStyle = bk; g.beginPath();
+    if (B == 'cone') { g.moveTo(bx - s*.04, by - s*.08); g.lineTo(bx + s*.3, by); g.lineTo(bx - s*.04, by + s*.08); }
+    else if (B == 'hook') { g.fillStyle = '#F9BF01'; g.moveTo(bx - s*.05, by - s*.1); g.quadraticCurveTo(bx + s*.32, by - s*.12, bx + s*.3, by + s*.12); g.quadraticCurveTo(bx + s*.18, by + s*.02, bx - s*.05, by + s*.08); }
+    else if (B == 'big') { g.fillStyle = T == 'every' ? '#F9BF01' : '#2a2a2a'; g.moveTo(bx - s*.08, by - s*.16); g.quadraticCurveTo(bx + s*.42, by - s*.2, bx + s*.3, by + s*.2); g.quadraticCurveTo(bx + s*.12, by + s*.12, bx - s*.08, by + s*.12); }
+    else if (B == 'banana') { const gb = g.createLinearGradient(bx, 0, bx + s*.95, 0); gb.addColorStop(0, '#9fe07a'); gb.addColorStop(.45, '#F9BF01'); gb.addColorStop(.85, '#ff8a3c'); gb.addColorStop(1, '#121313'); g.fillStyle = gb; g.moveTo(bx - s*.1, by - s*.2); g.quadraticCurveTo(bx + s*.6, by - s*.28, bx + s*.98, by + s*.05); g.quadraticCurveTo(bx + s*.55, by + s*.1, bx - s*.1, by + s*.14); }
+    else if (B == 'thin') { g.fillStyle = T == 'sea' && !K.storm ? '#F9BF01' : '#2a2a2a'; g.moveTo(bx - s*.04, by - s*.05); g.lineTo(bx + s*.4, by + s*.02); g.lineTo(bx - s*.04, by + s*.06); }
+    else if (B == 'long') { g.moveTo(bx - s*.04, by - s*.04); g.lineTo(bx + s*.55, by + s*.02); g.lineTo(bx - s*.04, by + s*.05); }
+    else if (B == 'pouch') { g.fillStyle = '#F9BF01'; g.moveTo(bx - s*.05, by - s*.06); g.lineTo(bx + s*.75, by); g.lineTo(bx + s*.7, by + s*.05); g.quadraticCurveTo(bx + s*.3, by + s*.45, bx - s*.05, by + s*.12); }
+    g.closePath(); g.fill(); if (T == 'swan') { g.fillStyle = '#121313'; g.beginPath(); g.arc(bx - s*.02, by - s*.02, s*.06, 0, TAU); g.fill(); }
+    eyeB(s*(P.hx + P.hr*.3), s*(P.hy - P.hr*.2), s*Math.max(.07, P.hr*.3), K.sleepy, glow);
+    if (T == 'raptor' || T == 'griffin') { g.strokeStyle = '#121313'; g.lineWidth = Math.max(1, s*.04); g.beginPath(); g.moveTo(s*(P.hx + P.hr*.05), s*(P.hy - P.hr*.6)); g.lineTo(s*(P.hx + P.hr*.6), s*(P.hy - P.hr*.4)); g.stroke(); }
+    if (K.sleepy) { g.fillStyle = '#ffffff'; g.font = '800 ' + Math.max(8, Math.round(s*.35)) + 'px ' + A.font; g.textAlign = 'left'; g.fillText('z', s*(P.hx + .25), s*(P.hy - .45) - Math.abs(Math.sin(t*2))*s*.15); }
+    if (K.bwird) { g.fillStyle = '#F9BF01'; g.font = '900 ' + Math.round(s*.36) + 'px ' + A.font; g.textAlign = 'center'; g.fillText('★', -s*.1, s*.12); }
+    // near wing
+    wingB(-s*.05, -s*.1, s*(P.wing == 'long' ? 1.45 : P.wing == 'round' ? .95 : 1.25), s*(P.wing == 'round' ? .5 : .45), fl, rb(4) || wingCol, P.wing, T == 'sea' && !K.storm ? '#121313' : T == 'parrot' ? acc : null);
+    g.globalAlpha = 1; };
   const iconCache = {}; const fishIcon = f => { if (iconCache[f.k]) return iconCache[f.k]; const cv = document.createElement('canvas'); cv.width = 112; cv.height = 72; const g0 = g; try { g = cv.getContext('2d'); g.translate(56, 36);
       if (f.junk) { g.fillStyle = f.col; rr(g, -14, -18, 16, 26, 4); g.fill(); rr(g, -14, 2, 32, 12, 4); g.fill(); } else if (f.chest) { g.fillStyle = '#8D5B1D'; rr(g, -22, -14, 44, 28, 4); g.fill(); g.fillStyle = '#F9BF01'; g.fillRect(-22, -3, 44, 5); }
-      else if (f.bird) drawBird(f, 26, 0);
+      else if (f.bird) { g.save(); g.translate(8, 6); drawBird(f, 22, .7 - t*10); g.restore(); }   // wings up in the picture, tails fit
       else { const sz = ['eel', 'dragon'].includes(f.look.shape) ? 16 : ['whale', 'sword', 'shark'].includes(f.look.shape) ? 22 : ['seahorse', 'octo', 'crab', 'star', 'angler', 'puffer'].includes(f.look.shape) ? 24 : 27; drawLook(f, sz, 0, false, false); } } catch(e) {} g = g0; return (iconCache[f.k] = cv.toDataURL()); };
   const FISH = {}; LOCS.forEach(L => { FISH[L.k] = L.fish.map((row, z) => row.split('|').map((it, i) => { const p = it.split(':'), n = p[1] || p[0], k = p[1] ? p[0] : L.k+'-'+z+'-'+i;
     return {k, n, z, i, loc:L.k, r:Math.min(5, i + (z >= 4 ? 1 : 0) + (z >= 7 ? 1 : 0)), look:mkLook(n, z, i), get col(){ return this.look.col; }, s:0}; })); });
@@ -1215,7 +1306,7 @@ A.register('fishing', { mount(host, api){
       if (G.coins > fair) G.coins = fair; if (G.run > fair) G.run = fair; if (G.tot > fair * 10) G.tot = fair * 10;
     } catch(e) { console.error('[fishing] rebalance failed', e); } G.bal = 2; save(); }
   refreshBar();
-  A._dbg = A._dbg || {}; A._dbg.fish = { encyclo: () => { const it = f => ({n:f.n, r:RN[f.r], c:RC[f.r], src:fishIcon(f)});
+  A._dbg = A._dbg || {}; A._dbg.fish = { birdPic: (s0) => SKYALL.filter(f => f.bird).map(f => { const cv = document.createElement('canvas'); cv.width = s0*5; cv.height = s0*3.2; const g0 = g; try { g = cv.getContext('2d'); g.translate(s0*2.6, s0*1.7); drawBird(f, s0, .7 - t*10); } catch(e) { console.error(e); } g = g0; return {n:f.n, src:cv.toDataURL()}; }), encyclo: () => { const it = f => ({n:f.n, r:RN[f.r], c:RC[f.r], src:fishIcon(f)});
       const big = f => { const cv = document.createElement('canvas'); cv.width = 760; cv.height = 520; const g0 = g; try { g = cv.getContext('2d'); g.translate(380, 300); drawFish({f, vx:1, ph:0, gold:false}, 0, 0); } catch(e) {} g = g0; return cv.toDataURL(); };
       const fishG = LOCS.map(L => ({g:L.n, items:[].concat(...FISH[L.k]).concat(SPEC[L.k].filter(f => f.special != 'fishmax')).map(it)}));
       fishG.push({g:'Deep layer guardians', items:GUARD.map(it)}, {g:'Secret fish', items:Object.values(SECRET).map(it)}, {g:'Fishing Planet', items:PFISH.map(it)}, {g:'Junk & treasure', items:[BOOT, CHEST].map(it)});
