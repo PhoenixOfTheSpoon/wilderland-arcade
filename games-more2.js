@@ -921,13 +921,13 @@ A.register('platformer', { mount(host, api){
     ['                                        ','     o o           o o o                ','    =====         =======       o o     ','               M               =====    ','  P      ^^         ^     ^^         F  ','======  ====      ====   ====   ======= ','======        ==                =======','======  ^^    ==  ^^  ==  ^^  ==  =====','======================================','======================================'],
     ['                                        ','                                        ','                                        ','                                        ','                                        ','  P                                     ','                                        ','                                        ','========================================','========================================'],
   ];
-  let st = 'ready', lvl = 0, map, p, coins, score, lives, cam, movers, boss, t = 0, quiz = false, total = 0;
+  let st = 'ready', lvl = 0, map, p, coins, score, lives, cam, movers, boss, t = 0, quiz = false, total = 0, keepHp = null;
   const load = () => { const L = LEVELS[lvl % LEVELS.length]; map = L.map(r => r.split('')); movers = []; boss = null; coins = 0;
     map.forEach((row, y) => row.forEach((ch, x) => { if (ch == 'P') { p = {x:x*T, y:y*T, vx:0, vy:0, on:false, face:1, inv:1}; row[x] = ' '; } if (ch == 'M') { movers.push({x:x*T, y:y*T, w:T*3, ox:x*T, dir:1}); row[x] = ' '; } }));
-    if (lvl % 5 == 4) boss = {x:28*T, y:7*T - 40, w:56, h:56, vx:-90, hp:3 + Math.floor(lvl/5), max:3 + Math.floor(lvl/5), inv:0, vy:0}; cam = 0; };
+    if (lvl % 5 == 4) { const mx = A.D(2, 3, 4) + Math.floor(lvl/10); boss = {x:28*T, y:8*T - 56, w:56, h:56, vx:-70, hp:mx, max:mx, inv:0, vy:0, jt:2.5, warn:0, stun:0}; if (keepHp && keepHp.lvl == lvl) boss.hp = Math.max(1, keepHp.hp); } keepHp = null; cam = 0; };
   const reset = () => { if (__skip) { __skip = false; return; } lvl = 0; score = 0; lives = A.lives(A.D(5,3,2) + A.U('life')); total = 0; load(); api.score(0); };
   const solid = (x, y) => { const cx = Math.floor(x / T), cy = Math.floor(y / T); if (cy < 0) return false; if (cy >= map.length) return false; return (map[cy][cx] || ' ') == '='; };
-  const die = () => { if (A.immortal) { p.inv = 1; return; } const lose = () => { lives--; A.sfx('bad'); if (lives <= 0) { st = 'over'; A.sfx('over'); stat(api,'platLevel',lvl+1,'max'); api.over(score); } else load(); };
+  const die = () => { if (A.immortal) { p.inv = 1; return; } const lose = () => { lives--; A.sfx('bad'); if (lives <= 0) { st = 'over'; A.sfx('over'); stat(api,'platLevel',lvl+1,'max'); api.over(score); } else { if (boss) keepHp = {lvl, hp:boss.hp}; load(); } };
     quiz = learn2(host, api, 'OUCH! ANSWER TO TRY AGAIN FROM HERE', () => { quiz = false; p.inv = 2; p.vy = -500; }, () => { quiz = false; lose(); }); };
   const win = () => { score += 500 + coins*10; total++; api.score(score); A.sfx('win'); lvl++; load(); };
   const offK = A.keys(e => { if ((e.key == ' ' || e.key == 'Enter') && st != 'play') { reset(); st = 'play'; } });
@@ -942,15 +942,25 @@ A.register('platformer', { mount(host, api){
       for (const m of movers) { m.x += m.dir*70*dt; if (Math.abs(m.x - m.ox) > T*3) m.dir *= -1; }
       // move x
       p.x += p.vx*dt; const pw = 20, ph = 26; if (solid(p.x, p.y+2) || solid(p.x, p.y+ph-2)) { p.x = (Math.floor(p.x/T)+1)*T; p.vx = 0; } if (solid(p.x+pw, p.y+2) || solid(p.x+pw, p.y+ph-2)) { p.x = Math.floor((p.x+pw)/T)*T - pw - .01; p.vx = 0; }
-      p.y += p.vy*dt; p.on = false; if (p.vy > 0 && (solid(p.x+2, p.y+ph) || solid(p.x+pw-2, p.y+ph))) { p.y = Math.floor((p.y+ph)/T)*T - ph; p.vy = 0; p.on = true; } if (p.vy < 0 && (solid(p.x+2, p.y) || solid(p.x+pw-2, p.y))) { p.y = (Math.floor(p.y/T)+1)*T; p.vy = 0; }
+      const py0 = p.y; p.y += p.vy*dt; p.on = false; if (p.vy > 0 && (solid(p.x+2, p.y+ph) || solid(p.x+pw-2, p.y+ph))) { p.y = Math.floor((p.y+ph)/T)*T - ph; p.vy = 0; p.on = true; } if (p.vy < 0 && (solid(p.x+2, p.y) || solid(p.x+pw-2, p.y))) { p.y = (Math.floor(p.y/T)+1)*T; p.vy = 0; }
       for (const m of movers) if (p.vy >= 0 && p.x+pw > m.x && p.x < m.x+m.w && p.y+ph >= m.y && p.y+ph <= m.y+14) { p.y = m.y - ph; p.vy = 0; p.on = true; p.x += m.dir*70*dt; }
       p.x = clamp(p.x, 0, map[0].length*T - pw);
       const cx = Math.floor((p.x+pw/2)/T), cy = Math.floor((p.y+ph/2)/T), ch = (map[cy]||[])[cx];
       if (ch == 'o') { map[cy][cx] = ' '; coins++; score += 10; api.score(score); A.sfx('coin'); }
       if (ch == '^' && p.inv <= 0) die(); if (ch == 'F' && !boss) win();
       if (p.y > map.length*T + 40) die();
-      if (boss) { const B = boss; B.inv = Math.max(0, B.inv - dt); B.x += B.vx*dt; if (B.x < 3*T || B.x > 36*T) B.vx *= -1; B.vy += 1500*dt; B.y += B.vy*dt; if (B.y > 8*T - B.h) { B.y = 8*T - B.h; B.vy = Math.random() < .02 ? -600 : 0; }
-        if (p.x+pw > B.x && p.x < B.x+B.w && p.y+ph > B.y && p.y < B.y+B.h) { if (p.vy > 0 && p.y+ph - B.y < 20 && B.inv <= 0) { B.hp--; B.inv = .8; p.vy = -520; A.sfx('hit'); score += 200; api.score(score); if (B.hp <= 0) { boss = null; score += 1500; A.sfx('win'); stat(api,'platBoss',1,'add'); } } else if (p.inv <= 0) die(); } }
+      if (boss) { const B = boss; B.inv = Math.max(0, B.inv - dt); B.stun = Math.max(0, B.stun - dt);
+        // walks back and forth (a little faster each time you stomp him), and shakes for half a second before every jump so you can see it coming
+        const sp = 70 + 18*(B.max - B.hp); if (B.stun <= 0 && B.warn <= 0) { B.x += Math.sign(B.vx || -1)*sp*dt; }
+        if (B.x < 3*T) { B.x = 3*T; B.vx = 1; } if (B.x > 36*T) { B.x = 36*T; B.vx = -1; }
+        B.vy += 1500*dt; B.y += B.vy*dt; const onG = B.y >= 8*T - B.h; if (onG) { B.y = 8*T - B.h; B.vy = 0; }
+        if (onG && B.stun <= 0) { if (B.warn > 0) { B.warn -= dt; if (B.warn <= 0) { B.vy = -480; B.vx = p.x > B.x ? 1 : -1; } } else { B.jt -= dt; if (B.jt <= 0) { B.warn = .5; B.jt = 2.6 + Math.random()*1.4; } } }
+        const over = p.x+pw > B.x && p.x < B.x+B.w && p.y+ph > B.y && p.y < B.y+B.h;
+        if (over) { const fromAbove = p.vy >= 0 && py0 + ph <= B.y + 12;
+          if (fromAbove) { p.y = B.y - ph; p.vy = -540; p.inv = Math.max(p.inv, .35);
+            if (B.inv <= 0) { B.hp--; B.inv = .9; B.stun = .7; B.warn = 0; A.sfx('hit'); score += 200; api.score(score); if (B.hp <= 0) { boss = null; score += 1500; A.sfx('win'); stat(api,'platBoss',1,'add'); } } }
+          // bumping his side only hurts if you're really inside him (a few pixels of forgiveness), and never while he's dazed
+          else if (p.inv <= 0 && B.stun <= 0 && p.x+pw > B.x+6 && p.x < B.x+B.w-6 && p.y+ph > B.y+8) die(); } }
       if (!boss && lvl % 5 == 4) win();
       cam = clamp(p.x - w/2, 0, map[0].length*T - w); }
     sky(g, w, h, '#a0e0ff', '#e0fff0'); g.save(); g.translate(-Math.round(cam||0), 0);
@@ -960,8 +970,10 @@ A.register('platformer', { mount(host, api){
       else if (ch == '^') { g.fillStyle = '#c9ccd1'; g.beginPath(); for (let k = 0; k < 3; k++) { g.moveTo(X + k*T/3, Y+T); g.lineTo(X + k*T/3 + T/6, Y+8); g.lineTo(X + (k+1)*T/3, Y+T); } g.fill(); }
       else if (ch == 'F') { g.fillStyle = '#6b4a2b'; g.fillRect(X+12, Y-30, 4, 58); g.fillStyle = boss ? '#999' : '#FF4539'; g.beginPath(); g.moveTo(X+16, Y-30); g.lineTo(X+36, Y-22); g.lineTo(X+16, Y-14); g.fill(); } }));
     if (movers) for (const m of movers) { g.fillStyle = '#b48cff'; rr(g, m.x, m.y, m.w, 12, 6); g.fill(); }
-    if (boss) { const B = boss; g.globalAlpha = B.inv > 0 && Math.sin(t*30) > 0 ? .4 : 1; g.fillStyle = '#6a3a8a'; rr(g, B.x, B.y, B.w, B.h, 14); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(B.x+16, B.y+20, 7, 0, TAU); g.arc(B.x+40, B.y+20, 7, 0, TAU); g.fill(); g.fillStyle = '#121313'; g.beginPath(); g.arc(B.x+16 + Math.sign(B.vx)*2, B.y+20, 3, 0, TAU); g.arc(B.x+40 + Math.sign(B.vx)*2, B.y+20, 3, 0, TAU); g.fill(); g.globalAlpha = 1;
-      g.fillStyle = '#F9BF01'; g.beginPath(); g.moveTo(B.x+8, B.y); g.lineTo(B.x+16, B.y-14); g.lineTo(B.x+28, B.y-4); g.lineTo(B.x+40, B.y-14); g.lineTo(B.x+48, B.y); g.fill(); }
+    if (boss) { const B = boss; g.save(); if (B.warn > 0) g.translate(Math.sin(t*60)*3, 0); g.globalAlpha = B.inv > 0 && Math.sin(t*30) > 0 ? .4 : 1; g.fillStyle = '#6a3a8a'; rr(g, B.x, B.y, B.w, B.h, 14); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(B.x+16, B.y+20, 7, 0, TAU); g.arc(B.x+40, B.y+20, 7, 0, TAU); g.fill(); g.fillStyle = '#121313'; g.beginPath(); g.arc(B.x+16 + Math.sign(B.vx)*2, B.y+20, 3, 0, TAU); g.arc(B.x+40 + Math.sign(B.vx)*2, B.y+20, 3, 0, TAU); g.fill(); g.globalAlpha = 1;
+      g.fillStyle = '#F9BF01'; g.beginPath(); g.moveTo(B.x+8, B.y); g.lineTo(B.x+16, B.y-14); g.lineTo(B.x+28, B.y-4); g.lineTo(B.x+40, B.y-14); g.lineTo(B.x+48, B.y); g.fill();
+      if (B.stun > 0) { g.fillStyle = '#F9BF01'; g.font = '700 14px '+A.font; g.textAlign = 'center'; for (let k = 0; k < 3; k++) g.fillText('★', B.x + B.w/2 + Math.cos(t*6 + k*2.1)*22, B.y - 20 + Math.sin(t*6 + k*2.1)*6); }
+      if (B.warn > 0) { g.fillStyle = '#FF4539'; g.font = '800 18px '+A.font; g.textAlign = 'center'; g.fillText('!', B.x + B.w/2, B.y - 22); } g.restore(); }
     if (p && !(p.inv > 0 && Math.sin(t*25) > 0)) { g.fillStyle = '#00B451'; rr(g, p.x, p.y, 20, 26, 8); g.fill(); g.fillStyle = '#D5F367'; rr(g, p.x+3, p.y+12, 14, 8, 4); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(p.x+10 + p.face*4, p.y+7, 4, 0, TAU); g.fill(); g.fillStyle = '#121313'; g.beginPath(); g.arc(p.x+11 + p.face*5, p.y+7, 2, 0, TAU); g.fill(); }
     g.restore();
     g.fillStyle = '#121313'; g.font = '700 16px '+A.font; g.textAlign = 'left'; g.fillText('Level '+(lvl+1)+'  ·  '+A.fmt(score||0), 12, 22); g.textAlign = 'right'; g.fillText('❤'.repeat(clamp(lives||0,0,8)), w-12, 22);
@@ -970,6 +982,7 @@ A.register('platformer', { mount(host, api){
     if (st == 'over') A.overlayText(g, w, h, 'GAME OVER', A.fmt(score||0)+' points · level '+(lvl+1)+' · tap to try again'); });
   reset(); st = 'ready';
   // ---- save & resume (Save & leave, reloads, closing the browser) ----
+  A._dbg = A._dbg || {}; A._dbg.plat = { s: () => ({st, lvl, lives, quiz:!!quiz, p:p && {x:p.x, y:p.y, vy:p.vy, on:p.on}, boss:boss && {x:boss.x, y:boss.y, hp:boss.hp, warn:boss.warn, stun:boss.stun}}), go: n => { lvl = n; load(); } };
   api.snap && api.snap(() => (st == 'play' || st == 'quiz') ? {v:1, lvl, score, lives, total} : null);
   { const R0 = api.resume; if (R0 && R0.v == 1) { try { ({lvl, score, lives, total} = R0); load(); api.score(score); __skip = true; st = 'ready'; } catch(e) { console.error('[save] platformer resume failed', e); } } }
   return () => { offK(); offL(); K.off(); };
