@@ -638,18 +638,26 @@ A.register('snowball', { mount(host, api){
       PERM.codes[hx] = 1; PERM.cr += RW.cr || 0; PERM.bank += RW.bank || 0; PERM.frost += RW.frost || 0; savePerm(); A.sfx('win'); show('🎉 +' + (RW.cr || 0) + ' ice crystals, +' + (RW.bank || 0) + ' banked snowflakes for ' + RW.n + '!'); setTimeout(() => panelEl && openPanel('loadout'), 1800); } catch(e) { show('Could not check the code here. Try again.'); } };
   const inBar = q => q.y > BAR;
   const barBtn = q => { const cols = phase == 'build' ? 7 : 5, row = phase == 'build' ? Math.floor((q.y - BAR) / 50) : 0, col = Math.floor(q.x / (600/cols)); return row*cols + col; };
-  const MENU = [['endless', '♾ Endless Waves'], ['rush', '👑 Boss Rush'], ['daily', '📅 Daily Challenge'], ['class', '🎽 Class & skills'], ['loadout', '🎒 Loadout & gear'], ['up', '🧊 Upgrades'], ['guide', '❓ How to play']];
-  const menuHit = q => { for (let i = 0; i < MENU.length; i++) { const bx = 150, by = 214 + i*56; if (q.x > bx && q.x < bx + 300 && q.y > by && q.y < by + 48) return MENU[i][0]; } return null; };
+  const MENU = [['world', '🗺 Kingdom Quest · open world'], ['endless', '♾ Endless Waves'], ['rush', '👑 Boss Rush'], ['daily', '📅 Daily Challenge'], ['class', '🎽 Class & skills'], ['loadout', '🎒 Loadout & gear'], ['up', '🧊 Upgrades'], ['guide', '❓ How to play']];
+  const menuHit = q => { for (let i = 0; i < MENU.length; i++) { const bx = 150, by = 210 + i*54; if (q.x > bx && q.x < bx + 300 && q.y > by && q.y < by + 48) return MENU[i][0]; } return null; };
   const upBox = i => ({x:i < 9 ? 12 : 304, y:118 + (i % 9)*56}); const upHit = q => { for (let i = 0; i < PUPS.length; i++) { const B2 = upBox(i); if (q.x > B2.x && q.x < B2.x + 284 && q.y > B2.y && q.y < B2.y + 50) return PUPS[i]; } return q.y > 640 && q.y < 690 ? 'close' : null; };
-  const onMenu = k => { if (k == 'guide') { guide = true; return; } if (k == 'up') { upOpen = true; return; } if (k == 'class' || k == 'loadout') { openPanel(k); return; } if (k) startGame(k); };
-  const offK = A.keys(e => { if (guide) { guide = false; return; } if (upOpen) { if (e.key == 'Escape' || e.key == 'Enter' || e.key == ' ') upOpen = false; return; }
+  // ---------- Kingdom Quest: the open world lives in snow-world.js and borrows this canvas, your class and your gear ----------
+  let wm = null;
+  const openWorld = () => { if (!A.snowWorld) { say('The Snow Kingdom is still loading, try again in a second'); return; } closePanelS();
+    wm = A.snowWorld({host, api, c, K, PERM, savePerm, stat:(k2, v, m2) => stat(api, k2, v, m2), learn2:(t2, y2, n2) => learn2(host, api, t2, y2, n2), PU,
+      maxHp:() => A.lives(A.D(6,5,4) + A.U('life') + PU('coat') + (CL().hp || 0) + skR(PERM.cls, 2) + (eqd('hat') ? Math.max(1, Math.round(gStat('hat')*.8)) : 0)),
+      maxAmmo, armM, CL, abCd, gStat, makeGear, lv:() => clsLv(PERM.cls), addXp:n => { PERM.cx[PERM.cls] = clsXp(PERM.cls) + n; stat(api, 'snowClass_' + PERM.cls, clsLv(PERM.cls), 'max'); }, crit:() => PU('crit'), ballK:() => PERM.ball,
+      spd:() => (1 + .05*A.U('boots')) * (1 + .08*PU('boots')) * (1 + .05*gStat('boots')) * (CL().slow || 1), scoop:() => 1 + .12*PU('scoop'), exit:() => { wm = null; st = 'ready'; mode = 'endless'; }});
+    st = 'world'; mode = 'world'; A.sfx('win'); };
+  const onMenu = k => { if (k == 'world') { openWorld(); return; } if (k == 'guide') { guide = true; return; } if (k == 'up') { upOpen = true; return; } if (k == 'class' || k == 'loadout') { openPanel(k); return; } if (k) startGame(k); };
+  const offK = A.keys(e => { if (wm) { wm.key(e); return; } if (guide) { guide = false; return; } if (upOpen) { if (e.key == 'Escape' || e.key == 'Enter' || e.key == ' ') upOpen = false; return; }
     if ((e.key == ' ' || e.key == 'Enter') && st != 'play' && !quiz) { if (__skip) { __skip = false; st = 'play'; return; } startGame(mode); return; } if (st != 'play') return;
     if (e.key == 'h' || e.key == 'H' || e.key == '?') { guide = true; return; }
     if (phase == 'build') { if (e.key == 'z' || e.key == 'Z') { useTool('undo'); return; } const n = e.key == '0' ? 10 : +e.key; if (n >= 1 && n <= TOOLS.length) { tool = n - 1; if (!PLACE.includes(TOOLS[tool].k)) useTool(TOOLS[tool].k); } if (e.key == 'Enter') nextWave(); if (e.key == ' ' && PLACE.includes(TOOLS[tool].k)) useTool(TOOLS[tool].k, me.x, me.y - 70); return; }
     if (['q', 'Q', 'f', 'F'].includes(e.key)) { useAbility(); return; }
     if ((e.key == 'e' || e.key == 'E') && me.rollCd <= 0 && !me.freeze) { me.roll = .3; me.rollCd = rollCD(); me.rdir = me.face; A.tone(300, .06, 'sine', .04); } });
   let lastTapX = -99, lastTapT = -9;
-  c.addEventListener('pointerdown', e => { const q = pt(c, e, w, h); aim = q; mouseOn = true;
+  c.addEventListener('pointerdown', e => { const q = pt(c, e, w, h); if (wm) { wm.down(q, e); return; } aim = q; mouseOn = true;
     if (guide) { guide = false; return; } if (upOpen) { const u = upHit(q); if (u == 'close') upOpen = false; else if (u && (u.max == null || PU(u.k) < u.max) && PERM.cr >= pcost(u)) { PERM.cr -= pcost(u); PERM.up[u.k] = PU(u.k) + 1; savePerm(); A.sfx('coin'); } else if (u) A.sfx('bad'); return; }
     if (st != 'play') { if (quiz) return; if (__skip) { __skip = false; st = 'play'; return; } onMenu(menuHit(q) || (st == 'over' ? null : null)); return; }
     if (q.x > 548 && q.y < 44) { guide = true; return; }
@@ -658,9 +666,9 @@ A.register('snowball', { mount(host, api){
     if (q.y < MID) { aiming = true; packing = true; packT = 0; return; }
     // tap your own side to walk there (double tap = dodge roll)
     if (t - lastTapT < .3 && Math.abs(q.x - lastTapX) < 60 && me.rollCd <= 0) { me.roll = .3; me.rollCd = rollCD(); me.rdir = q.x > me.x ? 1 : -1; } lastTapT = t; lastTapX = q.x; me.tx = q.x; me.ty = q.y; });
-  c.addEventListener('pointermove', e => { const q = pt(c, e, w, h); if (q.y < MID || aiming) aim = q; mouseOn = true; if (e.buttons && st == 'play' && phase == 'fight' && q.y >= MID && !aiming && !inBar(q)) { me.tx = q.x; me.ty = q.y; } });
+  c.addEventListener('pointermove', e => { const q = pt(c, e, w, h); if (wm) { wm.move(q, e); return; } if (q.y < MID || aiming) aim = q; mouseOn = true; if (e.buttons && st == 'play' && phase == 'fight' && q.y >= MID && !aiming && !inBar(q)) { me.tx = q.x; me.ty = q.y; } });
   const pu = () => { touch.l = touch.r = touch.duck = false; if (aiming && packing && st == 'play' && phase == 'fight') throwMine(); aiming = false; };
-  c.addEventListener('pointerup', pu); c.addEventListener('pointercancel', () => { touch.l = touch.r = touch.duck = false; aiming = false; packing = false; packT = 0; });
+  c.addEventListener('pointerup', e => { if (wm) { wm.up(e); return; } pu(); }); c.addEventListener('pointercancel', e => { if (wm) { wm.up(e); return; } touch.l = touch.r = touch.duck = false; aiming = false; packing = false; packT = 0; });
   c.addEventListener('pointerleave', () => { mouseOn = false; });
   let spaceWas = false; const duckK = {};
   const dkd = e => { if (['ShiftLeft', 'ShiftRight', 'KeyC'].includes(e.code)) duckK[e.code] = true; }, dku = e => { if (['ShiftLeft', 'ShiftRight', 'KeyC'].includes(e.code)) duckK[e.code] = false; }, dbl = () => { for (const k in duckK) duckK[k] = false; touch.l = touch.r = touch.duck = false; for (const k in K.k) K.k[k] = false; };
@@ -690,7 +698,7 @@ A.register('snowball', { mount(host, api){
     const W2 = inWall(x, y, true); if (W2) W2.hp -= b.dmg; };
   const hurtMate = m => { if (m.ko) return; m.hp--; if (m.hp <= 0) { m.ko = true; m.rev = 0; say(m.name + ' is knocked out! Stand next to them to help them up', 2.4); } };
   // ---------- main loop ----------
-  const offL = A.loop(dt => { A.mood(() => ({danger: st=="play" && me && me.hp==1, boss: st=="play" && !!boss})); t += dt; dt = Math.min(dt, .033); msgT = Math.max(0, msgT - dt); shake = Math.max(0, shake - dt); white = Math.max(0, white - dt); cheerT = Math.max(0, cheerT - dt);
+  const offL = A.loop(dt => { if (wm) { wm.frame(Math.min(dt, .033)); return; } A.mood(() => ({danger: st=="play" && me && me.hp==1, boss: st=="play" && !!boss})); t += dt; dt = Math.min(dt, .033); msgT = Math.max(0, msgT - dt); shake = Math.max(0, shake - dt); white = Math.max(0, white - dt); cheerT = Math.max(0, cheerT - dt);
     for (const f of snow) { f.y += 24*f.s*dt; f.x += (AR().wind ? 50*Math.sin(t*.4) : Math.sin(t + f.y*.02)*6)*dt; if (f.y > FIELD) f.y = 0; if (f.x > w) f.x = 0; if (f.x < 0) f.x = w; }
     for (const p2 of fx) { p2.x += p2.vx*dt; p2.y += p2.vy*dt; p2.vy += 300*dt; p2.t -= dt; } fx = fx.filter(p2 => p2.t > 0);
     for (const n of nums) { n.y -= 30*dt; n.t -= dt; } nums = nums.filter(n => n.t > 0);
@@ -772,6 +780,7 @@ A.register('snowball', { mount(host, api){
               if (ph >= 2) for (let k2 = 0; k2 < ph; k2++) lob(B, 80 + Math.random()*440, PY - Math.random()*60, {mine:0, sp:250, dmg:2, r:10}); } }
           else { B.x += Math.sin(t*.7)*80*dt*(ph == 3 ? 1.6 : 1); if (B.cool <= 0) { B.cool = A.D(2.2, 1.8, 1.4) / (1 + .2*(ph - 1)); const fan = ph >= 2 ? 3 : 2; for (let k2 = -fan; k2 <= fan; k2++) straight(B, me.x + k2*50, me.y, {sp:260, r:8, dmg:k2 == 0 ? 2 : 1});
               if (ph == 3) for (let k2 = 0; k2 < 2; k2++) lob(B, me.x + (k2 ? 60 : -60), me.y, {mine:0, sp:240, dmg:2, r:10}); if (Math.random() < .3 && foes.length < 6) { spawn('golem', B.x, B.y + 40); say('The Yeti King calls a snow golem!'); } } } }
+        if (boss) { boss.x = Math.max(70, Math.min(530, boss.x)); boss.y = Math.max(60, Math.min(MID - 60, boss.y)); }   // bosses never wander off the screen
         // ----- arena hazards -----
         hazT -= dt; if (hazT <= 0) { hazT = AR().aval ? 16 : AR().icicles ? 5 : 999;
           if (AR().icicles) haz = {k:'icicle', x:40 + R()*520, y:R() < .6 ? PY : 60 + R()*200, t:1.2};
@@ -903,7 +912,7 @@ A.register('snowball', { mount(host, api){
     if (st != 'play') { g.fillStyle = 'rgba(20,32,74,.8)'; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; g.textAlign = 'center'; g.font = '900 34px '+A.font; g.fillText(st == 'over' ? 'SNOWED UNDER' : 'SNOWBALL SHOWDOWN', 300, 130);
       g.font = '600 15px '+A.font; g.fillStyle = '#cfe3f5'; g.fillText(st == 'over' ? A.fmt(score||0) + ' points · wave ' + wave + (msgT > 0 ? ' · ' + msg : '') : __skip ? 'Saved game · tap anywhere or press Space to keep going' : 'Best wave ' + PERM.best + ' · 🧊 ' + PERM.cr + ' ice crystals', 300, 170);
       g.font = '700 14px '+A.font; g.fillStyle = '#D5F367'; if (!__skip) g.fillText(CL().e + ' ' + CL().n + ' · level ' + clsLv(PERM.cls) + ' · ' + (BALLS[PERM.ball] || BALLS.snow).e + ' ' + (BALLS[PERM.ball] || BALLS.snow).n + ' · ❄ ' + PERM.frost + ' Frost Crystals', 300, 196);
-      if (!__skip) MENU.forEach(([k, n], i) => { const by = 214 + i*56; g.fillStyle = k == mode && st == 'over' ? '#D5F367' : k == 'up' ? '#64CDF5' : k == 'class' || k == 'loadout' ? '#ffe9a0' : k == 'guide' ? 'rgba(255,255,255,.2)' : '#ffffff'; rr(g, 150, by, 300, 48, 14); g.fill(); g.fillStyle = '#14204a'; g.font = '800 18px '+A.font; g.fillText(n, 300, by + 31); }); }
+      if (!__skip) MENU.forEach(([k, n], i) => { const by = 210 + i*54; g.fillStyle = k == mode && st == 'over' ? '#D5F367' : k == 'world' ? '#ffd08a' : k == 'up' ? '#64CDF5' : k == 'class' || k == 'loadout' ? '#ffe9a0' : k == 'guide' ? 'rgba(255,255,255,.2)' : '#ffffff'; rr(g, 150, by, 300, 48, 14); g.fill(); g.fillStyle = '#14204a'; g.font = '800 18px '+A.font; g.fillText(n, 300, by + 31); }); }
     if (upOpen) { g.fillStyle = 'rgba(10,20,50,.95)'; g.fillRect(0, 0, w, h); g.fillStyle = '#fff'; g.textAlign = 'center'; g.font = '900 26px '+A.font; g.fillText('🧊 Permanent upgrades', 300, 70); g.font = '600 14px '+A.font; g.fillStyle = '#9fe8ff'; g.fillText('You have ' + PERM.cr + ' ice crystals · tap an upgrade to buy it · earn crystals every game', 300, 96);
       PUPS.forEach((u, i) => { const B2 = upBox(i), L = PU(u.k), mx2 = L >= u.max, cst = pcost(u), can = !mx2 && PERM.cr >= cst; g.fillStyle = can ? 'rgba(0,180,81,.22)' : 'rgba(255,255,255,.08)'; rr(g, B2.x, B2.y, 284, 50, 10); g.fill();
         g.textAlign = 'left'; g.fillStyle = '#fff'; g.font = '800 13px '+A.font; g.fillText(u.n + ' · ' + L + '/' + u.max, B2.x + 10, B2.y + 18); g.font = '500 11px '+A.font; g.fillStyle = '#cfe3f5'; g.fillText(u.d, B2.x + 10, B2.y + 36);
@@ -923,15 +932,18 @@ A.register('snowball', { mount(host, api){
     {label:'Spawn boss', run:() => { if (st != 'play') startGame(mode); const k = ['yeti', 'plow', 'witch', 'dragon'][Math.floor(Math.random()*4)], B = BOSSES[k]; boss = {k, n:B.n, x:300, y:k == 'dragon' ? 118 : 100, hp:B.hp, max:B.hp, cool:2, vx:90, charge:0, col:B.col, ph:1, tp:0, kb:0}; phase = 'fight'; say(B.n + ' appears!', 2); }},
     {label:'Add ice crystals', num:100, min:1, run:n => { PERM.cr += Math.floor(n); savePerm(); }},
     {label:'Add Frost Crystals', num:100, min:1, run:n => { PERM.frost += Math.floor(n); savePerm(); }},
-    {label:'Give gear (rarity 0-5)', num:4, min:0, max:5, run:n => { makeGear(Math.floor(n)); }}];
+    {label:'Give gear (rarity 0-5)', num:4, min:0, max:5, run:n => { makeGear(Math.floor(n)); }},
+    {label:'Kingdom: reveal whole map', run:() => { if (!wm) openWorld(); wm && wm.admin.reveal(); }},
+    {label:'Kingdom: give runes + free Mau Mau', run:() => { if (!wm) openWorld(); wm && wm.admin.quest(); }},
+    {label:'Kingdom: teleport (1 camp 2 forest 3 lake 4 caves 5 pass 6 castle)', num:1, min:1, max:6, run:n => { if (!wm) openWorld(); wm && wm.admin.tp(['camp', 'forest', 'lake', 'caves', 'pass', 'castle'][Math.floor(n) - 1]); }}];
   // ---- save & resume (old v2 saves still load) ----
   api.snap && api.snap(() => (st == 'play') ? {v:3, mode, seed, me, foes, walls, builds, mates, drops, score, wave, flakes, boss, phase, arena, pw, bossesBeat} : null);
   { const R0 = api.resume; if (R0 && (R0.v == 2 || R0.v == 3)) { try {
       if (R0.v == 3) ({mode, seed, me, foes, walls, builds, mates, drops, score, wave, flakes, boss, phase, arena, pw, bossesBeat} = R0);
       else { startGame('endless'); score = R0.score || 0; wave = R0.wave || 1; flakes = R0.flakes || 20; arena = R0.arena || 0; phase = 'build'; foes = []; boss = null; if (R0.me) { me.hp = R0.me.hp; me.max = R0.me.max; } }
       me.ammo = me.ammo == null ? maxAmmo() : me.ammo; me.y = PY; balls = []; api.score(score); __skip = true; st = 'ready'; } catch(e) { console.error('[save] snowball resume failed', e); } } }
-  A._dbg = A._dbg || {}; A._dbg.snow = () => ({PERM, useAbility, makeGear, openPanel, CLS_K, me, foes, boss, wave, phase, walls, builds, mates, flakes, st, mode, balls, PERM, set:o => { if (o.wave != null) wave = o.wave; if (o.flakes != null) flakes = o.flakes; }, nextWave, useTool, startGame, throwAt:(x, y, p) => { aim = {x, y}; packT = p || 0; mouseOn = true; throwMine(); }});
-  return () => { closePanelS(); offK(); offL(); K.off(); window.removeEventListener('keydown', dkd); window.removeEventListener('keyup', dku); window.removeEventListener('blur', dbl); if (A.admins) delete A.admins.snowball; if (A.onCash) delete A.onCash.snowball; };
+  A._dbg = A._dbg || {}; A._dbg.snow = () => ({wm:() => wm, openWorld, PERM, useAbility, makeGear, openPanel, CLS_K, me, foes, boss, wave, phase, walls, builds, mates, flakes, st, mode, balls, PERM, set:o => { if (o.wave != null) wave = o.wave; if (o.flakes != null) flakes = o.flakes; }, nextWave, useTool, startGame, throwAt:(x, y, p) => { aim = {x, y}; packT = p || 0; mouseOn = true; throwMine(); }});
+  return () => { if (wm) { wm.close(); wm = null; } closePanelS(); offK(); offL(); K.off(); window.removeEventListener('keydown', dkd); window.removeEventListener('keyup', dku); window.removeEventListener('blur', dbl); if (A.admins) delete A.admins.snowball; if (A.onCash) delete A.onCash.snowball; };
 }});
 
 // =====================================================================================================
