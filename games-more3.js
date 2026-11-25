@@ -3,7 +3,7 @@
 const A = window.Arcade, C = A.C, TAU = Math.PI*2;
 const rr = (g,x,y,w,h,r) => { g.beginPath(); if (g.roundRect) g.roundRect(x,y,w,h,r); else g.rect(x,y,w,h); };
 const stat = (api,k,v,m) => { try { api.stat && api.stat(k,v,m); } catch(e){} };
-const pt = (c, e, w, h) => { const r = c.getBoundingClientRect(); return {x:(e.clientX-r.left)*w/r.width, y:(e.clientY-r.top)*h/r.height}; };
+const pt = (c, e, w, h) => { const r = c.getBoundingClientRect(); w = c._lw || w; h = c._lh || h; return {x:(e.clientX-r.left)*w/r.width, y:(e.clientY-r.top)*h/r.height}; };
 const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
 const learn2 = (host, api, title, yes, no) => { if (!A.learnOn || !A.learnOn()) { no(); return false; } A.quiz(host, title, ok => { try { api.edu && api.edu(ok); } catch(e){} ok ? yes() : no(); }); return true; };
 const keysDown = () => { const k = {}; const d = e => { k[e.key] = true; }, u = e => { k[e.key] = false; }; window.addEventListener('keydown', d); window.addEventListener('keyup', u); return {k, off:() => { window.removeEventListener('keydown', d); window.removeEventListener('keyup', u); }}; };
@@ -648,7 +648,7 @@ A.register('snowball', { mount(host, api){
   let wm = null;
   const openWorld = () => { if (!A.snowWorld) { say('The Snow Kingdom is still loading, try again in a second'); return; } closePanelS();
     wm = A.snowWorld({host, api, c, K, PERM, savePerm, stat:(k2, v, m2) => stat(api, k2, v, m2), learn2:(t2, y2, n2) => learn2(host, api, t2, y2, n2), PU,
-      maxHp:() => A.lives(A.D(6,5,4) + A.U('life') + PU('coat') + (CL().hp || 0) + skR(PERM.cls, 2) + (eqd('hat') ? Math.max(1, Math.round(gStat('hat')*.8)) : 0)),
+      maxHp:() => Math.max(1, Math.floor(A.D(6,5,4) + A.U('life') + PU('coat') + (CL().hp || 0) + skR(PERM.cls, 2) + (eqd('hat') ? Math.max(1, Math.round(gStat('hat')*.8)) : 0))),   // no heart cap in the Snow Kingdom
       maxAmmo, armM, CL, abCd, gStat, makeGear, lv:() => clsLv(PERM.cls), addXp:n => { PERM.cx[PERM.cls] = clsXp(PERM.cls) + n; stat(api, 'snowClass_' + PERM.cls, clsLv(PERM.cls), 'max'); }, crit:() => PU('crit'), ballK:() => PERM.ball,
       spd:() => (1 + .05*A.U('boots')) * (1 + .08*PU('boots')) * (1 + .05*gStat('boots')) * (CL().slow || 1), scoop:() => 1 + .12*PU('scoop'), mates:() => ({n:Math.min(4, A.U('mate') + PU('mates')), lv:1 + PU('captain'), names:MATE_NAMES}), exit:() => { wm = null; st = 'ready'; mode = 'endless'; }});
     st = 'world'; mode = 'world'; A.sfx('win'); };
