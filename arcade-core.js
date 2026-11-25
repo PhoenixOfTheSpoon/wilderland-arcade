@@ -62,7 +62,7 @@ A.quiz = (host, title, cb) => { const p = A.problem(), E = A.el;
   o.appendChild(row); host.appendChild(o); return o; };
 let ctx = null; A.muted = false;
 const tone = (f, d, type='square', v=0.06, when=0) => {
-  if (A.muted) return;
+  if (A.muted) return; if (A.sfxVol != null) { if (A.sfxVol <= 0) return; v *= A.sfxVol; }
   try {
     ctx = ctx || new (window.AudioContext||window.webkitAudioContext)();
     const o = ctx.createOscillator(), g = ctx.createGain(), t = ctx.currentTime + when;

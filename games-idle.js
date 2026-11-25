@@ -168,7 +168,7 @@ const qN = cap => { const q = getQ(); return q === 'max' ? cap : Math.min(cap, q
 // how many levels of an upgrade you can afford right now (and their total cost)
 const plan = (costFn, L, max, bank) => { let n = 0, tot = 0; const want = qN(5000); while (n < want && L+n < max) { const c = Math.min(1e300, Math.ceil(costFn(L+n))); if (tot + c > bank) break; tot += c; n++; } return {n, tot}; };
 const fmt = n => { n = Math.max(0, n); if (!isFinite(n)) return '∞'; if (n < 10 && n % 1) return n.toFixed(1); if (n < 1000) return String(Math.floor(n));
-  const u = ['K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc','UDc','DDc','TDc']; if (n >= 1e45) return n.toExponential(2).replace('e+','e');
+  const u = ['K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc','UDc','DDc','TDc']; if (n >= 1e45 || (n >= 1e4 && window.WLP && window.WLP.sci && window.WLP.sci())) return n.toExponential(2).replace('e+','e');
   let i = -1; while (n >= 1000 && i < u.length-1) { n /= 1000; i++; } return (n < 10 ? n.toFixed(2) : n < 100 ? n.toFixed(1) : Math.floor(n)) + u[i]; };
 const sec = s => s >= 1 ? s.toFixed(s >= 10 ? 0 : 1)+' s' : s.toFixed(2)+' s';
 const hash = (a, b) => { let h = (a*374761393 + b*668265263) | 0; h = (h ^ (h >>> 13)) * 1274126177; return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };

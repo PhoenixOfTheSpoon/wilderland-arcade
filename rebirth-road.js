@@ -9,7 +9,7 @@
 const R = {};
 const fmt = n => window.WLP ? window.WLP.fmt(n) : String(Math.round(n));
 const rbOf = P => (P && P.rebirths) || 0;
-const reduced = () => { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.classList.contains('wl-lowfx') || localStorage.getItem('wl-perf') == '1'; } catch(e) { return false; } };
+const reduced = () => { try { return window.matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.classList.contains('wl-lowfx') || localStorage.getItem('wl-arcade-lowfx') == '1'; } catch(e) { return false; } };
 const el = (tag, a, ...kids) => { const n = document.createElement(tag); a = a || {};
   Object.keys(a).forEach(k => { const v = a[k]; if (v == null || v === false) return; if (k == 'style' && typeof v == 'object') Object.assign(n.style, v); else if (k == 'cls') n.className = v; else if (k.slice(0,2) == 'on') n[k] = v; else if (k == 'html') n.innerHTML = v; else n.setAttribute(k, v); });
   kids.flat().forEach(c => { if (c == null || c === false) return; n.appendChild(typeof c == 'object' ? c : document.createTextNode(String(c))); }); return n; };
@@ -192,7 +192,7 @@ const refresh = () => { if (ov && ov._render) ov._render(); };
 R.isOpen = () => !!ov;
 R.close = () => { if (!ov) return; ov.remove(); ov = null; document.removeEventListener('keydown', escK, true); };
 const escK = e => { if (e.key == 'Escape' && ov && !document.querySelector('.wlr-pop')) { e.stopPropagation(); e.preventDefault(); R.close(); } };
-R.open = t => { if (!api) return; ensureCss(); if (t) tab = t; if (ov) { refresh(); return; }
+R.open = t => { if (!api) return; ensureCss(); if (t) tab = t; { const P = api.P(); if (((P.road||{}).seen||0) !== rbOf(P)) api.setP({road:{...(P.road||{}), seen:rbOf(P)}}); } if (ov) { refresh(); return; }
   ov = el('div', {cls:'wlr-ov'}); const box = el('div', {cls:'wlr'}); ov.appendChild(box); document.body.appendChild(ov); document.addEventListener('keydown', escK, true);
   ov.addEventListener('click', e => { if (e.target === ov) R.close(); });
   let lastRb = -1, scrolled = false;

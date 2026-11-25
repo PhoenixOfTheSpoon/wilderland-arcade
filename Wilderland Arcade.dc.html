@@ -26,6 +26,7 @@ button:focus-visible{outline:3px solid #D5F367;outline-offset:2px;}
 @keyframes wlIn{from{opacity:0}to{opacity:1}}
 @keyframes wlRise{from{opacity:0;transform:translateY(14px) scale(.97)}to{opacity:1;transform:none}}
 div[style*="position:fixed; inset:0"]{animation:wlIn .22s ease-out;}
+.wl-fullwrap{animation:none !important;}
 div[style*="position:fixed; inset:0"] > div[style*="border-radius:20px"]{animation:wlRise .28s cubic-bezier(.2,.9,.3,1.2);}
 /* every big panel (shop, prizes, leaderboard, achievements, pets, learning…) opens full screen */
 .wl-fullwrap{padding:0 !important; align-items:stretch !important; justify-content:stretch !important;}
@@ -67,7 +68,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
       <button onClick="{{ openAv }}" title="Your avatar" style="background:#D5F367; color:#015640; border:none; border-radius:999px; padding:6px 12px 6px 8px; font-weight:800; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:6px;"><img src="{{ avImg }}" alt="" style="width:24px; height:24px; margin:-3px 0;">AVATAR</button>
       <button onClick="{{ openAccount }}" title="Your account" style="background:{{ acctHeadBg }}; color:{{ acctHeadFg }}; border:1.5px solid #D5F367; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ acctHeadLabel }}</button>
       <sc-if value="{{ rbReady }}" hint-placeholder-val="{{ false }}"><button onClick="{{ rebirthNow }}" style="background:#F9BF01; color:#121313; border:none; border-radius:999px; padding:8px 14px; font-weight:800; font-size:13px; cursor:pointer; white-space:nowrap;">⭐ REBIRTH NOW</button></sc-if>
-      <button onClick="{{ openMenu }}" aria-label="Menu" aria-expanded="{{ menuOn }}" style="background:#0b2e24; color:#D5F367; border:1.5px solid #D5F367; border-radius:999px; padding:8px 16px; font-weight:800; font-size:14px; cursor:pointer; white-space:nowrap;">☰ Menu</button>
+      <button onClick="{{ openMenu }}" aria-label="Menu" aria-expanded="{{ menuOn }}" style="background:#0b2e24; color:#D5F367; border:1.5px solid #D5F367; border-radius:999px; padding:8px 16px; font-weight:800; font-size:14px; cursor:pointer; white-space:nowrap;">☰ Menu<span style="display:{{ menuDot }}; width:9px; height:9px; border-radius:50%; background:#FF4539; margin-left:6px; vertical-align:middle; box-shadow:0 0 0 2px #0b2e24;"></span></button>
     </div>
   </header>
   <sc-if value="{{ menuOn }}" hint-placeholder-val="{{ false }}">
@@ -87,7 +88,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
   </sc-if>
   <sc-if value="{{ arcEvOn }}" hint-placeholder-val="{{ false }}"><div onClick="{{ goCal }}" style="cursor:pointer; background:linear-gradient(90deg,#EA55AB,#F9BF01); color:#121313; font-weight:800; font-size:14px; text-align:center; padding:8px 12px; letter-spacing:.02em;">🕹️ {{ arcEvText }} <span style="font-weight:600; font-size:12px;">· from the Wilderland Calendar</span></div></sc-if>
   <div onClick="{{ openRebirth }}" title="{{ rbLabel }} · tap for the Rebirth Road (R)" style="cursor:pointer; background:#0b2e24; padding:6px 16px; display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(213,243,103,.2);">
-    <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:#F9BF01; white-space:nowrap;">⭐<span style="display:{{ rbWordDisp }};"> NEXT REBIRTH</span></div>
+    <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:#F9BF01; white-space:nowrap;">⭐<span style="display:{{ rbWordDisp }};"> NEXT REBIRTH</span><span title="New on the Rebirth Road" style="display:{{ roadDot }}; width:8px; height:8px; border-radius:50%; background:#FF4539; margin-left:5px; vertical-align:middle;"></span></div>
     <div style="flex:1; height:10px; border-radius:999px; background:rgba(255,255,255,.1); overflow:hidden;"><div style="height:100%; width:{{ rbPct }}; background:linear-gradient(90deg,#00B451,#D5F367,#F9BF01); border-radius:999px; transition:width .4s;"></div></div>
     <div style="font-size:11px; font-weight:700; color:#EDE9D8; white-space:nowrap; font-variant-numeric:tabular-nums; min-width:0; overflow:hidden; text-overflow:ellipsis; flex-shrink:1; max-width:62%;">{{ rbShort }}</div>
   </div>
@@ -292,7 +293,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
 
     <aside style="display:flex; flex-direction:column; gap:16px; min-width:0; flex:1 1 300px; max-width:100%; position:{{ asidePos }}; top:12px; align-self:flex-start; max-height:{{ asideMaxH }}; overflow-y:auto; scrollbar-width:thin;">
       <div style="display:flex; gap:4px; flex-wrap:wrap; background:#121313; border-radius:16px; padding:6px; border:1.5px solid rgba(213,243,103,.25);">
-        <sc-for list="{{ sideTabs }}" as="stb" hint-placeholder-count="6"><button onClick="{{ stb.go }}" style="flex:1 1 auto; border:none; border-radius:999px; padding:7px 9px; font-weight:800; font-size:12px; cursor:pointer; white-space:nowrap; background:{{ stb.bg }}; color:{{ stb.fg }};">{{ stb.n }}</button></sc-for>
+        <sc-for list="{{ sideTabs }}" as="stb" hint-placeholder-count="6"><button onClick="{{ stb.go }}" style="flex:1 1 auto; border:none; border-radius:999px; padding:7px 9px; font-weight:800; font-size:12px; cursor:pointer; white-space:nowrap; background:{{ stb.bg }}; color:{{ stb.fg }};">{{ stb.n }}<span style="display:{{ stb.dot }}; width:7px; height:7px; border-radius:50%; background:#FF4539; margin-left:4px; vertical-align:middle;"></span></button></sc-for>
       </div>
       <sc-if value="{{ tabProfile }}" hint-placeholder-val="{{ true }}">
       <section style="background:#121313; border-radius:16px; padding:14px 16px; display:flex; align-items:center; gap:12px; border:1.5px solid rgba(213,243,103,.35);">
@@ -1845,8 +1846,8 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048').sort((a,b) => a.key0.localeCompare(b.key0, 'en', {numeric:true})); return GAMES.indexOf(DG[h % DG.length]); };   // same order as the old A–Z floor, so the daily game never jumps
-const BUILD = '2026-12-08b';
-const SCRIPTS = ['arcade-core.js','music.js','prizes-more.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','rebirth-road.js','wonders.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js','games-secrets.js','games-more.js','games-more2.js','games-more3.js','snow-world.js'];
+const BUILD = '2026-12-08c';
+const SCRIPTS = ['arcade-core.js','music.js','prizes-more.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','rebirth-road.js','wonders.js','qol.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js','games-secrets.js','games-more.js','games-more2.js','games-more3.js','snow-world.js'];
 const fmt = n => fmtN(Math.round(n));
 
 class Component extends DCLogic {
@@ -2074,10 +2075,12 @@ class Component extends DCLogic {
     if (window.WLC && !this._calLoad) { this._calLoad = true; window.WLC.load().then(()=>this.forceUpdate()); }
     if (this.state.prizesOpen && this.pzRef.current && !this._pzOff && window.WLP) { const P0 = () => this.P;
       this._pzOff = window.WLP.mount(this.pzRef.current, { P:P0, setP:pt=>this.setP(pt), toast:t=>this.toast(t), sfx:n=>window.Arcade && window.Arcade.sfx(n), admin:()=>!!this.state.admin, log:(k,t)=>this.logAct(k,t), lowFx:()=>LOWFX, tab:(t=>{ this._pzTab = null; return t; })(this._pzTab),
-        games:()=>GAMES, icon:id=>ICON(id), autoRb:()=>this.P.autoRb !== false, setAutoRb:on=>{ this.setP({autoRb:on}); if (on) setTimeout(()=>this.checkRebirth(), 50); }, rebirthNow:()=>this.checkRebirth(true), upgrades:()=>this.upgData(), buyUpg:(g,k,n)=>this.buyUpg(g,k,n), upgPlan:(g,k,n)=>this.upgPlan(g,k,n), cats:()=>this.multCats(), avatar:el=>window.WLAV ? window.WLAV.mount(el, this.avApi()) : null, openAv:()=>{ this.setState({prizesOpen:false}); setTimeout(()=>this.setState({avOpen:true}), 30); }, classicArt: Object.fromEntries(PRIZES.map(pz=>[pz.id, PZ(pz.art)])) }); }
+        games:()=>GAMES, icon:id=>ICON(id), autoRb:()=>this.P.autoRb !== false, setAutoRb:on=>{ this.setP({autoRb:on}); if (on) setTimeout(()=>this.checkRebirth(), 50); }, rebirthNow:()=>this.checkRebirth(true), upgrades:()=>this.upgData(), buyUpg:(g,k,n)=>this.buyUpg(g,k,n), upgPlan:(g,k,n)=>this.upgPlan(g,k,n), undoMark:(prev,label,refund)=>this.undoMark(prev,label,refund), buyAllUpg:()=>this.buyAllUpg(), cats:()=>this.multCats(), avatar:el=>window.WLAV ? window.WLAV.mount(el, this.avApi()) : null, openAv:()=>{ this.setState({prizesOpen:false}); setTimeout(()=>this.setState({avOpen:true}), 30); }, classicArt: Object.fromEntries(PRIZES.map(pz=>[pz.id, PZ(pz.art)])) }); }
     if (window.WLE && !this._econAttached) { this._econAttached = true; window.WLE.attach(this.econApi()); }
     if (window.WLR && !this._roadAttached) { this._roadAttached = true; window.WLR.attach(this.roadApi()); this._abT = setInterval(()=>this.autoBuyTick(), 3000); }
     if (window.WLW && !this._wwAttached) { this._wwAttached = true; window.WLW.attach(this.roadApi()); }
+    if (window.WLQ && !this._wnT) { this._wnT = 1; try { if (localStorage.getItem('wl-anim') == 'off') document.documentElement.classList.add('wl-noanim'); } catch(e){}
+      const tryWN = () => { if (this.state.game || this.state.authOpen || document.querySelector('.wlr-pop,.wlw-pop,.wle-celebrate')) { setTimeout(tryWN, 4000); return; } window.WLQ.whatsNew(); }; setTimeout(tryWN, 7000); }
     if (window.WLE && window.WLP && this._welcomeFor !== this.profKey()) { this._welcomeFor = this.profKey(); setTimeout(()=>this.migrateEcon(), 600); }
     if (!this.state.prizesOpen && this._pzOff) { try { this._pzOff(); } catch(e){} this._pzOff = null; }
     if (this._fx !== LOWFX) { this._fx = LOWFX; applyLowFx(LOWFX); if (window.Arcade) window.Arcade.lowFx = LOWFX; }
@@ -2270,6 +2273,23 @@ class Component extends DCLogic {
   roadApi(){ return { P:()=>this.P, setP:pt=>this.setP(pt), toast:t=>this.toast(t), sfx:n=>window.Arcade && window.Arcade.sfx(n), admin:()=>!!this.state.admin, ready:()=>!!this.ready && !this.state.authOpen,
     busy:()=>!!this.state.game || !!this.state.calOpen, upg:()=>UPG, avImg:()=>avSVG(this.P.avatar, (this.P.ach||[]).length, {noPet:true}), openRebirthTab:()=>{ window.WLR.close(); this._pzTab = 'rebirth'; this.setState({prizesOpen:true}); } }; }
   // Rebirth Road auto-buy: every few seconds, buy the cheapest Upgrade Workshop levels you can afford (up to a quarter of your tickets at a time)
+  undoMark(prev, label, refund){ if (this.state.admin || !window.WLQ) return; window.WLQ.mark(this.roadApi(), prev, label, refund||0); }
+  // 🛒 Buy all affordable in the Workshop: the cheapest level you can afford, again and again, on every machine
+  buyAllUpg(){ const P = this.P; if (this.state.admin) { this.toast('ADMIN MODE · SHOPPING DISABLED'); return 0; } let tix = P.tickets||0, spent = 0, n = 0; const upg = {...(P.upg||{})};
+    while (n < 5000) { let best = null; Object.keys(UPG).forEach(g => (UPG[g]||[]).forEach(u => { const lv = ((upg[g]||{})[u.k])|0; if (lv >= upgMax(u)) return; const c = upgCost(u, lv); if (c <= tix && (!best || c < best.c)) best = {g, u, lv, c}; }));
+      if (!best) break; upg[best.g] = {...(upg[best.g]||{}), [best.u.k]:best.lv + 1}; tix -= best.c; spent += best.c; n++; }
+    if (!n) return 0; this.undoMark({upg:P.upg||{}}, n+' Workshop levels', spent);
+    this.setP({tickets:P.tickets - spent, upg, stats:{...P.stats, sum:{...P.stats.sum, upgrades:(P.stats.sum.upgrades||0) + n}}}); window.Arcade && window.Arcade.sfx('win'); this.toast('BOUGHT '+n+' WORKSHOP LEVEL'+(n>1?'S':'')+' · '+fmtN(spent)+' TICKETS'); return n; }
+  anim(){ try { if (document.documentElement.classList.contains('wl-noanim')) return 'off'; } catch(e){} return LOWFX ? 'reduced' : 'full'; }
+  setAnim(k){ LOWFX = k != 'full'; try { localStorage.setItem('wl-arcade-lowfx', LOWFX?'1':'0'); localStorage.setItem('wl-anim', k); } catch(e){} applyLowFx(LOWFX); if (window.Arcade) window.Arcade.lowFx = LOWFX; document.documentElement.classList.toggle('wl-noanim', k == 'off'); this.setState({ftick:Date.now()}); }
+  openSettings(){ if (!window.WLQ) return; window.WLQ.settings({...this.roadApi(), anim:()=>this.anim(), setAnim:k=>this.setAnim(k), refresh:()=>this.forceUpdate(), notif:()=>this.notifMode(), toggleNotif:()=>this.renderVals().toggleNotif(), keys:()=>this.hotkeyHelp()}); }
+  // notification dots: something new on the Rebirth Road, Challenges ready to claim, a Wilderland Wonder you can afford, new achievements
+  dots(){ const P = this.P, now = Date.now(); if (this._dotsC && now - this._dotsC.t < 1500 && this._dotsC.P === P) return this._dotsC.v;
+    const R2 = window.WLR, W2 = window.WLW, rb = P.rebirths||0, road = !!R2 && (R2.pending(P).length > 0 || rb > ((P.road||{}).seen||0) && R2.prev(P) > ((P.road||{}).seen||0));
+    const C = P.chal||{}, quest = ['d','w'].some(w => ((C[w]||{}).list||[]).some(x => x.prog >= x.n && !x.claimed));
+    const free = Math.max(0, (P.stars||0) - (P.starsSpent||0)), shop = quest || (!!W2 && [...W2.LIST, ...W2.FOUNDER].some(it => { const L = (P.wonders||{})[it.id]|0; return !it.pin && L < W2.maxL(it) && (!it.founder || W2.founderOk(P)) && free >= W2.cost(it, L); }));
+    const achLv = window.WLA ? window.WLA.level(P) : 0, ach = achLv > (P.achSeen|0);
+    const v = {road, quest, shop, ach, any: road || quest || shop || ach}; this._dotsC = {t:now, P, v}; return v; }
   autoBuyTick(){ const R2 = window.WLR, P = this.P; if (!R2 || this.state.admin || !R2.autobuyOn(P) || !(P.tickets > 0)) return;
     let budget = P.tickets * .25, spent = 0, n = 0; const upg = {...(P.upg||{})};
     while (n < 30) { let best = null; Object.keys(UPG).forEach(g => (UPG[g]||[]).forEach(u => { const lv = ((upg[g]||{})[u.k])|0; if (lv >= upgMax(u)) return; const c = upgCost(u, lv); if (c <= budget && (!best || c < best.c)) best = {g, u, lv, c}; }));
@@ -2375,7 +2395,7 @@ class Component extends DCLogic {
   buyUpg(gid, k, n){ if (this.state.admin) { this.toast('ADMIN MODE · SHOPPING DISABLED'); return 0; } const pl = this.upgPlan(gid, k, n || 1), u = pl.u; if (!u) return 0;
     if (pl.cur >= upgMax(u)) return 0;
     if (!pl.cnt) { window.Arcade && window.Arcade.sfx('bad'); this.toast('NEED '+fmtN(pl.next-this.P.tickets)+' MORE TICKETS'); return 0; }
-    const P = this.P, upg = {...(P.upg||{})}; upg[gid] = {...(upg[gid]||{}), [k]:pl.cur+pl.cnt};
+    const P = this.P, upg = {...(P.upg||{})}; upg[gid] = {...(upg[gid]||{}), [k]:pl.cur+pl.cnt}; this.undoMark({upg:P.upg||{}}, u.n+(pl.cnt>1?' ×'+pl.cnt:''), pl.cost);
     this.setP({tickets:P.tickets-pl.cost, upg, stats:{...P.stats, sum:{...P.stats.sum, upgrades:(P.stats.sum.upgrades||0)+pl.cnt}}}); window.Arcade && window.Arcade.sfx('coin');
     if (!window.WLP || window.WLP.popsOn(this.P)) this.toast(u.n.toUpperCase()+' · LEVEL '+(pl.cur+pl.cnt)+(pl.cnt>1?' (+'+pl.cnt+')':'')); return pl.cnt; }
   cashOutGame(){ const g = this.state.game; if (!g || g=='idle' || g=='secrets') return; const sc = this.state.liveScore || 0;
@@ -2596,7 +2616,8 @@ class Component extends DCLogic {
       showCash: !!s.game && s.game!='idle' && s.game!='secrets', cashOutGame: ()=>this.cashOutGame(), cashLabel: s.admin ? 'Cash out · (admin)' : 'Cash out · '+fmtN(s.liveScore||0),
       
       openExp: ()=>{ this.keys = {}; this._pzTab = 'exp'; this.setState({prizesOpen:true}); },
-      openRebirth: ()=>{ this.keys = {}; if (window.WLR) { window.WLR.open('road'); return; } this._pzTab = 'rebirth'; this.setState({prizesOpen:true}); }, openSongs: ()=>{ this.keys = {}; if (window.WLR) window.WLR.open('music'); },
+      menuDot: this.dots().any ? 'inline-block' : 'none', roadDot: this.dots().road ? 'inline-block' : 'none',
+      openRebirth: ()=>{ this.keys = {}; if (window.WLR) { this.setP({road:{...(this.P.road||{}), seen:this.P.rebirths||0}}); window.WLR.open('road'); return; } this._pzTab = 'rebirth'; this.setState({prizesOpen:true}); }, openSongs: ()=>{ this.keys = {}; if (window.WLR) window.WLR.open('music'); },
       rbPct: window.WLP ? Math.min(100, (P.tickets||0)/window.WLP.rebirthNeed(P)*100).toFixed(1)+'%' : '0%', ...(() => { const M2 = window.WLMusic, ns = M2 && M2.nextSong && M2.nextSong(); if (M2 && !M2.onUnlock) M2.onUnlock = names => { this.toast('🎵 NEW SONG UNLOCKED: ' + names.join(', ').toUpperCase() + ' · PICK IT WITH THE 🎵 MUSIC BUTTON IN SETTINGS', true); try { window.Arcade && window.Arcade.sfx('win'); } catch(e){} };
         if (!ns) return {songOn:false, songPct:'0%', songShort:''}; const fr = window.WLP ? Math.min(.999, (P.tickets||0)/window.WLP.rebirthNeed(P)) : 0, rb = (P.rebirths||0) + fr;
         return {songOn:true, songPct:Math.max(0, Math.min(100, (rb - ns.prev)/(ns.need - ns.prev)*100)).toFixed(1)+'%', songShort:ns.n + ' · ' + (P.rebirths||0) + ' / ' + ns.need + ' rebirths'}; })(),
@@ -2632,7 +2653,7 @@ class Component extends DCLogic {
       achCount, achTotal: achTot, achPct: Math.round(achCount/achTot*100), achRef: this.achRef, avRef: this.avRef, homeRef: this.homeRef, calRef: this.calRef,
       tierCounts: WA ? [0,1,2,3,4].map(t=>({c:WA.TIERS[t].c, label:WA.TIERS[t].n+' '+WA.list().filter(f=>(atM[f.id]|0)>t).length+'/'+WA.list().filter(f=>f.goals.length>t).length})) : [],
       nextAch: achNear.slice(0,3),
-      openAch: ()=>{ this.keys = {}; this.setState({achOpen:true}); }, closeAch: ()=>this.setState({achOpen:false}), achOpen: s.achOpen,
+      openAch: ()=>{ this.keys = {}; this.setP({achSeen:window.WLA ? window.WLA.level(this.P) : 0}); this.setState({achOpen:true}); }, closeAch: ()=>this.setState({achOpen:false}), achOpen: s.achOpen,
       // account
       acctHeadLabel: s.account ? '● '+(me?me.name:s.account) : 'SIGN UP / LOG IN', acctHeadBg: s.account ? 'transparent' : '#D5F367', acctHeadFg: s.account ? '#D5F367' : '#015640',
       acctInitial: s.account ? ((me&&me.name)||s.account)[0].toUpperCase() : '?', acctAvatarBg: s.account ? '#D5F367' : '#EDE9D8',
@@ -2804,7 +2825,7 @@ class Component extends DCLogic {
           expCount: exO+' / '+EX.length+' built',
           expAll: EX.map(x => { const L = (P.exp||{})[x.k]||0; return L ? {key:x.k, e:x.e, n:x.n, sub:'Level '+L, cls:'wl-bob', bg:'radial-gradient(circle at 35% 30%, #2a7a5a, #0b2e24)', bs:'solid', bd:'#D5F367', op:1, flt:'none', locked:false, buy:null}
             : {key:x.k, e:x.e, n:x.n, sub:fmtN(window.WLE.expCost(x, 0))+' 🎟', cls:'', bg:'transparent', bs:'dashed', bd:'rgba(213,243,103,.55)', op:.8, flt:'grayscale(1) opacity(.45)', locked:true, buy:() => this.openExpItem(x.n)}; }),
-          sideTabs: TABS.map(([k, n]) => ({key:k, n, bg: tab==k ? '#D5F367' : 'transparent', fg: tab==k ? '#015640' : '#EDE9D8', go: () => { try { localStorage.setItem('wl-side-tab', k); } catch(e){} this.setState({sideTab:k}); }})),
+          sideTabs: TABS.map(([k, n]) => ({key:k, n, dot: (k=='ach' && this.dots().ach) || (k=='today' && this.dots().quest) ? 'inline-block' : 'none', bg: tab==k ? '#D5F367' : 'transparent', fg: tab==k ? '#015640' : '#EDE9D8', go: () => { try { localStorage.setItem('wl-side-tab', k); } catch(e){} if (k=='ach' && window.WLA) this.setP({achSeen:window.WLA.level(this.P)}); this.setState({sideTab:k}); }})),
           asidePos: narrow ? 'static' : 'sticky', asideMaxH: narrow ? 'none' : 'calc(100vh - 24px)', tabProfile: tab=='profile', tabToday: tab=='today', tabLb: tab=='lb', tabLearn: tab=='learn', tabAch: tab=='ach', tabScores: tab=='scores',
           hsQ: s.hsQ||'', inHsQ: e => this.setState({hsQ:String(e.target.value||'').slice(0, 40)}),
           hsZones: ZONES.map(Z => { const rows = zpl(Z).filter(g => !hq || g.title.toLowerCase().includes(hq)).map(g => ({key:g.id, title:g.title, color:g.color, best:bestOf(g), bestLbl:lblOf(g)})), open = hq ? rows.length > 0 : !!(s.hsOpen||{})[Z.k];
@@ -2824,8 +2845,12 @@ class Component extends DCLogic {
       H('YOU'), I('acct', '👤', s.account ? 'Account' : 'Sign up / Log in', go('openAccount'), s.account ? {val:'logged in', valFg:'#D5F367'} : null), I('uname', '🏷️', 'Username', go('openUname'), {val: this.P.username ? '@'+this.P.username : 'create one', valFg:'#F9BF01'}), I('av', '🎨', 'Avatar', go('openAv')),
       H('LEARNING'), I('edu', '🎓', 'Learn mode', stay('toggleEdu'), onv(this.eduOn() ? 'ON' : 'OFF', this.eduOn())),
       H('REBIRTH'), I('autorb', '♻️', 'Auto rebirth', stay('toggleAutoRb'), onv(autoOn ? 'ON' : 'OFF', autoOn), true), ...(R0.rbReady ? [I('rbnow', '⭐', 'Rebirth now', go('rebirthNow'), null, true)] : []),
+      H('PROGRESS'), I('road', '🛣️', 'Rebirth Road', ()=>{ this.setState({menuOpen:false}); this.setP({road:{...(this.P.road||{}), seen:this.P.rebirths||0}}); window.WLR && window.WLR.open('road'); }, this.dots().road ? {val:'● NEW', valFg:'#FF4539'} : {val:'R', valFg:'#9fb8ad'}),
+        I('shopm', '🎁', 'Prize Counter & Wonders', ()=>{ this.setState({menuOpen:false}); this.openShopTab(this.dots().quest ? 'chal' : this.dots().shop ? 'wild' : 'shop'); }, this.dots().quest ? {val:'● CLAIM', valFg:'#FF4539'} : this.dots().shop ? {val:'● NEW', valFg:'#FF4539'} : {val:'P', valFg:'#9fb8ad'}),
+        I('wshop', '🔧', 'Upgrade Workshop', ()=>{ this.setState({menuOpen:false}); this.openShopTab('upg'); }, {val:'U', valFg:'#9fb8ad'}),
+        I('achm', '⭐', 'Achievements', ()=>{ this.setState({menuOpen:false}); this.setP({achSeen:window.WLA ? window.WLA.level(this.P) : 0}); this.setState({achOpen:true}); }, this.dots().ach ? {val:'● NEW', valFg:'#FF4539'} : null),
       H('PLAY TOGETHER'), I('chat', '💬', 'Chat', go('openChat'), {val:'T', valFg:'#9fb8ad'}), I('sug', '💡', 'Suggest an idea', go('openSug')),
-      H('SETTINGS'), I('sound', s.muted ? '🔇' : '🔊', 'Sound', stay('toggleSound'), onv(s.muted ? 'OFF' : 'ON', !s.muted)), I('music', '🎵', 'Music', stay('toggleMusic'), onv(musicNow.replace(/^MUSIC\s*·?\s*/i, '') || 'ON', !/off/i.test(musicNow))), I('grid', '▦', 'Classic grid', stay('toggleGrid'), onv(s.gridMode ? 'ON' : 'OFF', !!s.gridMode)), I('mnext', '⏭', /^PLAYLIST/.test(musicNow) ? 'Next song' : 'Wilderland Playlist', stay('nextSong'), onv(/^PLAYLIST/.test(musicNow) ? (window.WLMusic.songs ? window.WLMusic.songs().length : 18) + ' songs' : 'PLAY', true)), I('mcredit', '🎼', 'Music credits', ()=>{ const L = window.WLMusic && window.WLMusic.locked ? window.WLMusic.locked() : []; this.toast((window.WLMusic && window.WLMusic.allCredits ? window.WLMusic.allCredits() : 'Kevin MacLeod (incompetech.com)') + (L.length ? ' · 🔒 ' + L.join(' · ') : '')); }),
+      H('SETTINGS'), I('settings', '⚙️', 'Settings panel', ()=>{ this.setState({menuOpen:false}); this.openSettings(); }, {val:'numbers · volume', valFg:'#9fb8ad'}, true), I('wnew', '🆕', 'What’s new', ()=>{ this.setState({menuOpen:false}); window.WLQ && window.WLQ.whatsNew(true); }), I('keys', '⌨️', 'Hotkeys', ()=>{ this.setState({menuOpen:false}); this.hotkeyHelp(); }, {val:'?', valFg:'#9fb8ad'}), I('sound', s.muted ? '🔇' : '🔊', 'Sound', stay('toggleSound'), onv(s.muted ? 'OFF' : 'ON', !s.muted)), I('music', '🎵', 'Music', stay('toggleMusic'), onv(musicNow.replace(/^MUSIC\s*·?\s*/i, '') || 'ON', !/off/i.test(musicNow))), I('grid', '▦', 'Classic grid', stay('toggleGrid'), onv(s.gridMode ? 'ON' : 'OFF', !!s.gridMode)), I('mnext', '⏭', /^PLAYLIST/.test(musicNow) ? 'Next song' : 'Wilderland Playlist', stay('nextSong'), onv(/^PLAYLIST/.test(musicNow) ? (window.WLMusic.songs ? window.WLMusic.songs().length : 18) + ' songs' : 'PLAY', true)), I('mcredit', '🎼', 'Music credits', ()=>{ const L = window.WLMusic && window.WLMusic.locked ? window.WLMusic.locked() : []; this.toast((window.WLMusic && window.WLMusic.allCredits ? window.WLMusic.allCredits() : 'Kevin MacLeod (incompetech.com)') + (L.length ? ' · 🔒 ' + L.join(' · ') : '')); }),
         I('notif', '🔔', 'Notifications', stay('toggleNotif'), onv({all:'ALL', few:'FEW', off:'OFF'}[notifM] || 'ALL', notifM != 'off')), I('fx', '🐢', 'Performance mode', stay('toggleFx'), onv(LOWFX ? 'ON' : 'OFF', LOWFX)),
         I('fs', '⛶', 'Full screen', go('siteFsBtn'), {val:'Y', valFg:'#9fb8ad'}),
       H('ADMIN'), I('code', s.admin ? '🛠️' : '🔑', s.admin ? 'Admin tools' : 'Enter a code', go('openCode'), s.admin ? {val:'∞', valFg:'#F9BF01'} : null)];

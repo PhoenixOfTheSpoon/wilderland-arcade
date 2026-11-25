@@ -9,10 +9,11 @@ const W = {};
 
 // ---------------- numbers ----------------
 const SUF = ['K','M','B','T','Qa','Qi','Sx','Sp','Oc','No','Dc'];
+W.sci = () => { try { return localStorage.getItem('wl-numfmt') == 'sci'; } catch(e) { return false; } };
 W.fmt = n => { n = Number(n); if (n !== n) n = 0; const neg = n < 0; n = Math.abs(n); let out;
   if (!isFinite(n)) out = '∞';
   else if (n < 10000) out = (n % 1 && n < 100 ? String(+n.toFixed(n < 10 ? 2 : 1)) : String(Math.round(n))).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-  else if (n >= 1e36) out = n.toExponential(2).replace('e+','e');
+  else if (n >= 1e36 || (n >= 1e4 && W.sci && W.sci())) out = n.toExponential(2).replace('e+','e');
   else { let i = -1; while (n >= 1000 && i < SUF.length-1) { n /= 1000; i++; } out = (n < 10 ? n.toFixed(2) : n < 100 ? n.toFixed(1) : Math.floor(n)) + SUF[i]; }
   return (neg?'-':'') + out; };
 const nice = x => { x = Number(x); if (x !== x) return 0; if (!(x < 1e300)) return 1e300; if (x < 100) return Math.round(x); const p = Math.pow(10, Math.floor(Math.log10(x)) - 1); return Math.min(1e300, Math.round(x / p) * p); };
@@ -476,7 +477,8 @@ W.reveal = (it, label, low, sfx, opts) => { ensureCss(); sfx = sfx || (n => wind
 W.mount = (root, api) => {
   ensureCss(); build(api.classicArt);
   const games = api.games();
-  let bumpK = null, expN = 1; let tab = api.tab || 'shop', colF = 'featured', thF = 'all', doneF = 'all', rarF = -1, affordOnly = false, live = true, q = '', upgF = 'all', catF = 'all', avOff = null;
+  let bumpK = null, expN = 1; const MEM = (() => { try { return JSON.parse(localStorage.getItem('wl-pz-mem')) || {}; } catch(e) { return {}; } })();
+  let tab = api.tab || MEM.tab || 'shop', colF = MEM.colF || 'featured', thF = MEM.thF || 'all', doneF = MEM.doneF || 'all', rarF = MEM.rarF != null ? MEM.rarF : -1, affordOnly = !!MEM.affordOnly, live = true, q = '', upgF = MEM.upgF || 'all', catF = MEM.catF || 'all', avOff = null;
   const wrap = E('div', {cls:'wlp'+(api.lowFx()?' wlp-low':'')}); root.appendChild(wrap);
   const P = () => api.P();
   const set = patch => { api.setP(patch); };
@@ -508,8 +510,10 @@ W.mount = (root, api) => {
     const prizes = {...(p.prizes||{}), [it.id]: ((p.prizes||{})[it.id]||0)+n};
     let pp = {...p, prizes}, ch = {}; for (let i = 0; i < Math.min(n, 200); i++) { const c = W.onBuy(pp); if (!c) break; pp = {...pp, ...c}; ch = c; }
     if (isStar(it)) { if (freeStars(p) < cost) { api.sfx('bad'); api.toast('NEED '+(cost - freeStars(p))+' MORE GOLDEN STARS'); return; }
+      if (api.undoMark) api.undoMark({prizes:p.prizes||{}, chal:p.chal, starsSpent:p.starsSpent||0, exp:p.exp, upg:p.upg}, it.n, 0);
       set({starsSpent:(p.starsSpent||0)+cost, prizes, ...ch}); const hd = W.applyHead(P()); if (hd) set(hd); reveal(it, lbl); const pk = W.perkOf(it); if (pk) api.toast('PERMANENT POWER · '+pk.t.toUpperCase()); if (api.log) api.log('star', 'bought '+(n>1?n+'× ':'')+it.n+' for '+cost+' ⭐'); checkCols(); render(); return; }
     if ((p.tickets||0) < cost) { api.sfx('bad'); api.toast('NEED '+W.fmt(cost - p.tickets)+' MORE TICKETS'); return; }
+    if (api.undoMark) api.undoMark({prizes:p.prizes||{}, chal:p.chal}, (n > 1 ? n+'× ' : '')+it.n, cost);
     set({tickets:p.tickets-cost, prizes, ...ch}); reveal(it, lbl); if (api.log && it.r >= 4) api.log('prize', 'bought '+(n>1?n+'× ':'')+it.n+' ('+R[it.r].n+')'); checkCols(); render(); };
 
   const head = E('div'); const body = E('div'); wrap.append(head, body);
@@ -526,7 +530,7 @@ W.mount = (root, api) => {
     if (window.WLE && window.WLE.rainVis) opt.appendChild(E('button', {cls:'wlp-chip'+(window.WLE.rainVis()?' on':''), title:'Show or hide the falling tickets during Ticket Rain (you still get every ticket)', onclick:()=>{ window.WLE.setRainVis(!window.WLE.rainVis()); api.toast(window.WLE.rainVis() ? 'TICKET RAIN: FALLING TICKETS SHOWN' : 'TICKET RAIN: HIDDEN · YOU STILL GET EVERY TICKET'); render(); }}, window.WLE.rainVis() ? '🎟 Rain visuals on' : '🙈 Rain visuals off'));
     const tb = E('div', {cls:'wlp-tabs'}); tabs.forEach(([id,t]) => tb.appendChild(E('button', {cls:'wlp-tab'+(tab==id?' on':''), onclick:()=>{ tab = id; render(); }}, t)));
     const sr = E('input', {type:'search', placeholder:'🔍 Search upgrades and prizes…', 'aria-label':'Search the shop', value:q, style:{flex:'1 1 220px', minWidth:0, font:'600 14px inherit', fontFamily:'inherit', border:'1.5px solid #015640', borderRadius:'999px', padding:'7px 14px', background:'#fff'}});
-    sr.addEventListener('keydown', e => e.stopPropagation()); sr.addEventListener('input', () => { q = sr.value; if (!['upg','shop','wild'].includes(tab)) tab = 'shop'; renderBody(); setTimeout(()=>{ try { const x = head.querySelector('input[type=search]'); x.focus(); x.setSelectionRange(q.length, q.length); } catch(e){} }, 0); });
+    sr.addEventListener('keydown', e => e.stopPropagation()); sr.addEventListener('input', () => { q = sr.value; if (!['upg','shop','wild','trophy'].includes(tab)) tab = 'shop'; renderBody(); setTimeout(()=>{ try { const x = head.querySelector('input[type=search]'); x.focus(); x.setSelectionRange(q.length, q.length); } catch(e){} }, 0); });
     opt.insertBefore(sr, opt.firstChild);
     head.append(top, opt, tb); };
   const match = (...t) => !q.trim() || t.join(' ').toLowerCase().includes(q.trim().toLowerCase());
@@ -543,6 +547,16 @@ W.mount = (root, api) => {
     const pk = star && W.perkOf(it); if (pk) card.appendChild(E('div', {cls:'wlp-perk'+(own?' on':''), title:'Permanent — survives every Rebirth'}, (own?'✅ ':'✨ ')+pk.t));
     if (!can) b.disabled = true; card.appendChild(b); return card; };
 
+  // 🛒 Buy all affordable: one of every unowned ticket prize you can afford in the current filters, cheapest first
+  const buyAllPrizes = () => { const p = P(); if (api.admin()) return api.toast('ADMIN MODE · SHOPPING DISABLED'); const need = W.rebirthNeed(p);
+    const thOf = id => { const C = COLS.find(c => c.id==id); return C ? C.th : ''; };
+    const cand = CAT.filter(it => !isStar(it) && !it.repeat && !(p.prizes||{})[it.id] && (!it.season || it.season === seasonNow()) && (colF=='featured' ? (thF=='all' || thOf(it.col)==thF) : it.col===colF) && (rarF<0 || it.r===rarF) && priceOf(it,p) < need).sort((a, b) => priceOf(a,p) - priceOf(b,p));
+    let tix = p.tickets||0, cost = 0; const prizes = {...(p.prizes||{})}; let n = 0, pp = {...p};
+    for (const it of cand) { const c = priceOf(it, p); if (c > tix) break; tix -= c; cost += c; prizes[it.id] = 1; n++; pp = {...pp, prizes}; const ch = W.onBuy(pp); if (ch) pp = {...pp, ...ch}; }
+    if (!n) { api.sfx('bad'); api.toast('NOTHING NEW YOU CAN AFFORD HERE'); return; }
+    if (api.undoMark) api.undoMark({prizes:p.prizes||{}, chal:p.chal}, n+' prizes', cost);
+    set({tickets:(p.tickets||0) - cost, prizes, ...(pp.chal ? {chal:pp.chal} : {})}); api.sfx('win'); api.toast('BOUGHT '+n+' PRIZE'+(n>1?'S':'')+' · '+W.fmt(cost)+' TICKETS'); checkCols(); render(); };
+  let shopTok = 0;
   const shop = () => { const p = P(), box = E('div');
     // featured
     const pool = CAT.filter(it => !isStar(it) && (!it.season || it.season === seasonNow()));
@@ -565,12 +579,16 @@ W.mount = (root, api) => {
     rch.appendChild(E('button', {cls:'wlp-chip'+(rarF<0?' on':''), onclick:()=>{ rarF = -1; render(); }}, 'Any rarity'));
     R.forEach((r,i) => rch.appendChild(E('button', {cls:'wlp-chip'+(rarF==i?' on':''), style:{borderColor:r.rainbow?'#ff5fd2':r.c}, onclick:()=>{ rarF = i; render(); }}, r.n)));
     rch.appendChild(E('button', {cls:'wlp-chip'+(affordOnly?' on':''), onclick:()=>{ affordOnly = !affordOnly; render(); }}, 'Can afford'));
+    rch.appendChild(E('button', {cls:'wlp-chip', style:{background:'#F9BF01', borderColor:'#F9BF01', color:'#121313'}, title:'Buys one of every prize you don’t own yet that you can afford, cheapest first (tickets only)', onclick:()=>buyAllPrizes()}, '🛒 Buy all affordable'));
     box.appendChild(rch);
     const grid = E('div', {cls:'wlp-grid'});
     const thOf = id => { const C = COLS.find(c => c.id==id); return C ? C.th : ''; };
     let list = CAT.filter(it => (colF=='featured' ? (thF=='all' || thOf(it.col)==thF) : it.col===colF) && (rarF<0 || it.r===rarF) && (!affordOnly || (isStar(it) ? freeStars(p) >= starPrice(it,p) : priceOf(it,p) <= (p.tickets||0))) && match(it.n, it.d, R[it.r].n));
     list.sort((a,b) => priceOf(a,p)-priceOf(b,p));
-    list.forEach(it => grid.appendChild(prizeCard(it)));
+    // big lists load instantly: the first cards now, the rest a chunk at a time in the background
+    const tok = (shopTok = (shopTok||0) + 1); list.slice(0, 60).forEach(it => grid.appendChild(prizeCard(it)));
+    const more = i => { if (!live || tok !== shopTok || i >= list.length || !grid.isConnected && i > 60) return; const fr = document.createDocumentFragment(); list.slice(i, i + 120).forEach(it => fr.appendChild(prizeCard(it))); grid.appendChild(fr); requestAnimationFrame(() => more(i + 120)); };
+    if (list.length > 60) requestAnimationFrame(() => more(60));
     if (!list.length) grid.appendChild(E('div', {cls:'wlp-small'}, 'Nothing here yet. Keep playing!'));
     box.appendChild(grid); return box; };
 
@@ -595,7 +613,7 @@ W.mount = (root, api) => {
     const fr2b = E('div', {style:{display:'flex', gap:'5px', flexWrap:'wrap', margin:'0 0 10px'}});
     [['all','All'],['done','🏆 Complete'],['part','In progress'],['none','Not started']].forEach(([id,n]) => fr2b.appendChild(E('button', {cls:'wlp-chip'+(doneF==id?' on':''), onclick:()=>{ doneF = id; renderBody(); }}, n)));
     box.appendChild(fr2b);
-    st = st.filter(c => { const C = COLS.find(x=>x.id==c.id); return (thF=='all' || C.th==thF) && (doneF=='all' || (doneF=='done' ? c.done : doneF=='none' ? c.own==0 : (!c.done && c.own>0))); });
+    st = st.filter(c => { const C = COLS.find(x=>x.id==c.id); return (thF=='all' || C.th==thF) && (doneF=='all' || (doneF=='done' ? c.done : doneF=='none' ? c.own==0 : (!c.done && c.own>0))) && (!q.trim() || match(c.n, CAT.filter(it => it.col===c.id).map(it => it.n).join(' '))); });
     if (!st.length) box.appendChild(E('div', {cls:'wlp-small'}, 'No sets match these filters.'));
     st.forEach(c => { const C = COLS.find(x=>x.id==c.id), items = CAT.filter(it=>it.col===c.id && !it.repeat).sort((a,b)=>a.r-b.r);
       const sec = E('div', {style:{background:'linear-gradient(#3b2614,#2a1b0e)', borderRadius:'14px', padding:'10px 12px', marginBottom:'10px', boxShadow:'inset 0 0 0 3px #5a3a1c'}});
@@ -632,12 +650,13 @@ W.mount = (root, api) => {
       return E('div', {cls:'wlp-row', style:{marginBottom:'6px'}}, E('div', {style:{flex:1, minWidth:0}}, E('div', {style:{fontWeight:700, color:'#015640'}}, n+'  ', E('span', {style:{fontSize:'11px', color:'#8a8a8a'}}, 'level '+l+(max<999?' / '+max:''))), E('div', {cls:'wlp-small'}, d), E('div', {style:{fontSize:'12px', fontWeight:700, color:'#AB2372'}}, 'Now: '+now+(maxed?'':'  →  Next: '+next))), b); };
     MSHOP.forEach(m => { const l = lv(p,m.k); box.appendChild(up(m.n, m.d, l, m.max, m.cost(l), l ? m.show(l) : (m.k=='global'?'×1':'off'), m.show(l+1), () => {
       const pp = P(), L = lv(pp,m.k), pl = lvPlan(m.cost, L, m.max, pp.tickets||0); if (api.admin()) return api.toast('ADMIN MODE · SHOPPING DISABLED'); if (!pl.n) return api.sfx('bad');
+      if (api.undoMark) api.undoMark({mult:pp.mult||{}}, m.n+' +'+pl.n, pl.cost);
       set({tickets:pp.tickets-pl.cost, mult:{...(pp.mult||{}), [m.k]:L+pl.n}}); api.sfx('coin'); if (pl.n > 1) api.toast(m.n.toUpperCase()+' +'+pl.n+' LEVELS'); render(); }, m.cost)); });
     box.appendChild(E('div', {cls:'wlp-h'}, 'MACHINE MULTIPLIERS · ×0.2 MORE PER LEVEL'));
     box.appendChild(qtyRow('levels at once'));
     games.filter(g=>g.id!='2048').forEach(g => { const l = glv(p,g.id); box.appendChild(up(g.title, 'Only for '+g.title, l, GAME_UP.max, GAME_UP.cost(l), '×'+GAME_UP.eff(l).toFixed(1), '×'+GAME_UP.eff(l+1).toFixed(1), () => {
       const pp = P(), L = glv(pp,g.id), pl = lvPlan(GAME_UP.cost, L, GAME_UP.max, pp.tickets||0); if (api.admin()) return api.toast('ADMIN MODE · SHOPPING DISABLED'); if (!pl.n) return api.sfx('bad');
-      const m = {...(pp.mult||{})}; m.game = {...(m.game||{}), [g.id]:L+pl.n}; set({tickets:pp.tickets-pl.cost, mult:m}); api.sfx('coin'); if (pl.n > 1) api.toast(g.title.toUpperCase()+' MULTIPLIER +'+pl.n+' LEVELS'); render(); }, GAME_UP.cost)); });
+      const m = {...(pp.mult||{})}; m.game = {...(m.game||{}), [g.id]:L+pl.n}; if (api.undoMark) api.undoMark({mult:pp.mult||{}}, g.title+' multiplier +'+pl.n, pl.cost); set({tickets:pp.tickets-pl.cost, mult:m}); api.sfx('coin'); if (pl.n > 1) api.toast(g.title.toUpperCase()+' MULTIPLIER +'+pl.n+' LEVELS'); render(); }, GAME_UP.cost)); });
     return box; };
 
   const chal = () => { const p = P(), box = E('div'), C = p.chal||{};
@@ -648,8 +667,15 @@ W.mount = (root, api) => {
         const rw = x.rw.k=='tix' ? W.fmt(x.rw.v)+' 🎟' : (CAPS.find(c=>c.id==x.rw.v)||CAPS[0]).n;
         const b = E('button', {cls:'wlp-buy', style:{width:'auto', minWidth:'120px'}, onclick:()=>claim(s===C.d?'d':'w', i)}, x.claimed ? 'Claimed ✓' : done ? 'Claim '+rw : rw); if (x.claimed || !done) b.disabled = true;
         box.appendChild(E('div', {cls:'wlp-row', style:{marginBottom:'6px'}}, E('div', {style:{flex:1, minWidth:0}}, E('div', {style:{fontWeight:700, color:'#015640'}}, ty.txt(x.n, x.gn, x.tg)), E('div', {cls:'wlp-bar', style:{marginTop:'5px'}}, E('div', {style:{width:pct+'%', background:done?'#00B451':'#F9BF01'}})), E('div', {cls:'wlp-small'}, W.fmt(x.prog)+' / '+W.fmt(x.n))), b)); }); };
+    const ready = ['d','w'].flatMap(w => ((C[w]||{}).list||[]).map((x, i) => ({w, i, x})).filter(o => o.x.prog >= o.x.n && !o.x.claimed));
+    if (ready.length) box.appendChild(E('button', {cls:'wlp-buy', style:{width:'auto', margin:'10px 0 0', padding:'10px 18px'}, onclick:()=>claimAll()}, '🎁 Claim all ('+ready.length+')'));
     sec('TODAY’S CHALLENGES', C.d, 'New ones every day at midnight.'); sec('THIS WEEK’S CHALLENGES', C.w, 'Bigger goals, bigger rewards. New ones every week.');
     return box; };
+  const claimAll = () => { let p = P(), tix = 0, caps = []; const C = {...(p.chal||{})};
+    ['d','w'].forEach(w => { const s = C[w]; if (!s) return; C[w] = {...s, list:s.list.map(x => { if (x.claimed || x.prog < x.n) return x; if (x.rw.k == 'tix') tix += x.rw.v; else caps.push(x.rw.v); return {...x, claimed:true}; })}; });
+    if (!tix && !caps.length) return; set({chal:C, ...(tix && !api.admin() ? {tickets:(p.tickets||0)+tix, earned:(p.earned||0)+tix} : {})}); api.sfx('win');
+    api.toast('CHALLENGES CLAIMED'+(tix ? ' · +'+W.fmt(tix)+' TICKETS' : '')+(caps.length ? ' · '+caps.length+' CAPSULE'+(caps.length>1?'S':'') : ''));
+    caps.forEach((id, k) => setTimeout(() => openCap(CAPS.find(c=>c.id==id)||CAPS[0], true), k * 900)); render(); };
   const claim = (which, i) => { const p = P(), C = p.chal; const s = C && C[which]; if (!s) return; const x = s.list[i]; if (!x || x.claimed || x.prog < x.n) return;
     const list = s.list.map((y,j) => j==i ? {...y, claimed:true} : y); const chal2 = {...C, [which]:{...s, list}};
     if (x.rw.k=='tix') { if (!api.admin()) set({chal:chal2, tickets:(p.tickets||0)+x.rw.v, earned:(p.earned||0)+x.rw.v}); else set({chal:chal2}); api.sfx('win'); api.toast('CHALLENGE COMPLETE · +'+W.fmt(x.rw.v)+' TICKETS'); render(); }
@@ -721,7 +747,7 @@ W.mount = (root, api) => {
     const info = g => { const open = g.ups.filter(u => u.lv < u.max); return {lv:g.ups.reduce((x, u) => x + u.lv, 0), can:open.filter(u => tix >= u.cost).length, cheap:open.length ? Math.min(...open.map(u => u.cost)) : Infinity}; };
     box.appendChild(E('div', {cls:'wlp-box'}, E('div', {style:{fontWeight:800, fontSize:'18px', color:'#015640'}}, '🔧 Upgrades · '+W.fmt(data.reduce((a, g) => a + info(g).lv, 0))+' levels owned'),
       E('div', {cls:'wlp-small'}, 'Tap a machine to see its upgrades. Paid in tickets, they reset on Rebirth. Pick ×1 / ×10 / ×100 / Max to buy many levels at once.')));
-    box.appendChild(qtyRow('levels at once'));
+    const qr = qtyRow('levels at once'); if (api.buyAllUpg) qr.appendChild(E('button', {cls:'wlp-chip', style:{background:'#F9BF01', borderColor:'#F9BF01', color:'#121313', marginLeft:'6px'}, title:'Keeps buying the cheapest upgrade level you can afford, on every machine', onclick:() => { const n = api.buyAllUpg(); if (!n) { api.sfx('bad'); api.toast('NOTHING YOU CAN AFFORD RIGHT NOW'); } renderHead(); renderBody(); }}, '🛒 Buy all affordable')); box.appendChild(qr);
     // arrange the machines
     const SORTS = [['az', 'A–Z'], ['lv', 'Most upgraded'], ['cheap', 'Cheapest next'], ['can', 'Most I can buy'], ['mine', '✋ My order']];
     const ar = E('div', {style:{display:'flex', gap:'5px', flexWrap:'wrap', alignItems:'center', margin:'4px 0 8px'}}, E('span', {style:{fontSize:'12px', fontWeight:800, color:'#015640'}}, 'ARRANGE'));
@@ -755,11 +781,11 @@ W.mount = (root, api) => {
       const ug = E('div', {style:{display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(240px,1fr))', gap:'8px', marginBottom:'10px'}});
       ups.forEach(u => { shown++; const maxed = u.lv >= u.max, pl = api.upgPlan ? api.upgPlan(g.id, u.k, qN()) : {cnt:1, cost:u.cost}, n = Math.max(1, pl.cnt), cost = pl.cnt ? pl.cost : u.cost, can = !maxed && pl.cnt > 0;
         const b = E('button', {cls:'wlp-buy', style:{marginTop:'auto'}, onclick:() => { if (api.admin()) return api.toast('ADMIN MODE · SHOPPING DISABLED'); const got = api.buyUpg(g.id, u.k, qN()); if (got) { api.sfx('coin'); } renderHead(); renderBody(); }},
-          maxed ? (u.one ? 'OWNED' : 'MAXED') : (n > 1 ? '×'+n+' · ' : '')+W.fmt(cost)+' 🎟'); if (!can) b.disabled = true;
+          maxed ? (u.one ? 'OWNED' : 'MAXED') : (can ? '✓ ' : '')+(n > 1 ? '×'+n+' · ' : '')+W.fmt(cost)+' 🎟'); if (!can) b.disabled = true;
         const pips = E('div', {style:{display:'flex', gap:'2px', marginTop:'2px'}}); if (u.cap || u.one) for (let i = 0; i < Math.min(10, u.one ? 1 : u.cap); i++) pips.appendChild(E('div', {style:{width:'12px', height:'5px', borderRadius:'3px', background: i < Math.min(u.lv, u.cap||1) ? '#F9BF01' : '#d9d3bd'}}));
         ug.appendChild(E('div', {style:{background:can ? '#ffffff' : '#f6f3e8', border:can ? '2px solid #00B451' : '1.5px solid #e0d9c0', borderRadius:'12px', padding:'10px 12px', display:'flex', flexDirection:'column', gap:'4px', minHeight:'118px', boxSizing:'border-box'}},
           E('div', {style:{fontWeight:800, color:'#015640', fontSize:'14px'}}, u.n, E('span', {style:{fontSize:'11px', color:'#8a8a8a', fontWeight:700}}, '  '+(u.one ? (u.lv ? 'unlocked' : 'locked') : 'level '+W.fmt(u.lv)+(u.max < 1e9 ? ' / '+u.max : '')))),
-          E('div', {cls:'wlp-small'}, u.d+(u.cap && u.lv >= u.cap ? ' · effect maxed, each level now +2% tickets' : '')), pips, b)); });
+          E('div', {cls:'wlp-small'}, u.d+(u.cap && u.lv >= u.cap ? ' · effect maxed, each level now +2% tickets' : '')), maxed ? null : E('div', {style:{fontSize:'11px', fontWeight:700, color:'#AB2372'}}, 'Next: level '+W.fmt(u.lv + n)+(u.one ? ' (unlock)' : '')+' · '+W.fmt(cost)+' 🎟'), pips, b)); });
       box.appendChild(ug); });
     if (!shown) box.appendChild(E('div', {cls:'wlp-small'}, affordOnly ? 'Nothing you can afford here yet.' : 'No upgrades match.'));
     return box; };
@@ -781,7 +807,8 @@ W.mount = (root, api) => {
     const exp = () => window.WLE ? window.WLE.expPanel(eapi(bumpK)) : E('div', null, 'Loading…');
     const prestige = () => window.WLE ? window.WLE.ptPanel(eapi()) : E('div', null, 'Loading…');
     body.appendChild(({upg, shop, avatar, wild, trophy, mult, chal, caps, exp, rebirth, prestige, stats}[tab] || shop)()); bumpK = null; };
-  const render = () => { if (!live) return; renderHead(); renderBody(); };
+  const remember = () => { try { localStorage.setItem('wl-pz-mem', JSON.stringify({tab, colF, thF, doneF, rarF, affordOnly, catF, upgF})); } catch(e) {} };
+  const render = () => { if (!live) return; remember(); renderHead(); renderBody(); };
   render();
   checkCols();
   return () => { live = false; if (avOff) { try { avOff(); } catch(e){} } wrap.remove(); };

@@ -216,10 +216,10 @@ A.pump = () => { if (showing || !Q.length || !host || host.busy()) return; showi
   pop.onclick = done; setTimeout(done, 3800); };
 
 // ---------- the Achievements page ----------
-A.mount = (root, api) => { ensureCss(); let cat = api.cat || 'All', sort = 'default';
+A.mount = (root, api) => { ensureCss(); const mem = (() => { try { return JSON.parse(localStorage.getItem('wl-ach-mem')) || {}; } catch(e) { return {}; } })(); let cat = api.cat || mem.cat || 'All', sort = mem.sort || 'default', aq = '';
   const wrap = E('div', {cls:'wla'}); root.appendChild(wrap);
   const P = () => api.P();
-  const render = () => { wrap.innerHTML = ''; const p = P(), at = p.at||{}, lvl = A.level(p), tot = A.total(), pct = Math.round(lvl/tot*100);
+  const render = () => { try { localStorage.setItem('wl-ach-mem', JSON.stringify({cat, sort})); } catch(e) {} wrap.innerHTML = ''; const p = P(), at = p.at||{}, lvl = A.level(p), tot = A.total(), pct = Math.round(lvl/tot*100);
     // header: completion, bonus, title, showcase
     const titles = A.titles(p), cur = A.title(p);
     const sel = E('select', {style:{fontFamily:'inherit', fontSize:'13px', fontWeight:'700', borderRadius:'10px', padding:'6px 8px', border:'1.5px solid #015640', color:'#015640', maxWidth:'100%'}, 'aria-label':'Title shown under your name', onchange:e => { api.setP({title:e.target.value}); api.sfx('blip'); render(); }},
@@ -243,8 +243,11 @@ A.mount = (root, api) => { ensureCss(); let cat = api.cat || 'All', sort = 'defa
     const so = E('select', {style:{fontFamily:'inherit', fontSize:'12px', fontWeight:'700', borderRadius:'999px', padding:'6px 10px', border:'1.5px solid #015640', color:'#015640', marginLeft:'auto'}, 'aria-label':'Sort', onchange:e => { sort = e.target.value; render(); }},
       ...[['default','Sort: by category'],['close','Sort: closest to unlocking'],['tier','Sort: highest tier first'],['name','Sort: A–Z']].map(([v,l]) => { const o = E('option', {value:v}, l); if (v==sort) o.selected = true; return o; }));
     bar.appendChild(so); wrap.appendChild(bar);
+    const sr = E('input', {type:'search', placeholder:'🔍 Search achievements…', 'aria-label':'Search achievements', value:aq, style:{width:'100%', font:'600 14px inherit', fontFamily:'inherit', border:'1.5px solid #015640', borderRadius:'999px', padding:'7px 14px', marginBottom:'8px', boxSizing:'border-box'}});
+    sr.addEventListener('keydown', e => e.stopPropagation()); sr.addEventListener('input', () => { aq = sr.value; render(); setTimeout(() => { const x = wrap.querySelector('input[type=search]'); if (x) { x.focus(); x.setSelectionRange(aq.length, aq.length); } }, 0); }); wrap.appendChild(sr);
     let list = FAM.filter(f => cat=='All' || f.cat==cat || (cat=='Unlocked' && at[f.id]) || (cat=='In progress' && !f.secret && (at[f.id]|0) < f.goals.length && A.tierOf(p,f).v > 0));
     const prog = f => { const t = at[f.id]|0; if (t >= f.goals.length) return 2; const {v} = A.tierOf(p,f), prev = t ? f.goals[t-1] : 0; return Math.max(0, Math.min(1, (v-prev)/Math.max(1e-9, f.goals[t]-prev))); };
+    if (aq.trim()) { const qq = aq.trim().toLowerCase(); list = list.filter(f => !(f.secret && !at[f.id]) && (f.name+' '+f.cat+' '+f.goals.map(g => { try { return f.desc(g); } catch(e) { return ''; } }).join(' ')+' '+Object.values(f.titles||{}).join(' ')).toLowerCase().includes(qq)); }
     if (sort=='close') list = list.slice().sort((a,b) => { const pa = prog(a), pb = prog(b); return (pa>=2?-1:pa) < (pb>=2?-1:pb) ? 1 : -1; });
     if (sort=='tier') list = list.slice().sort((a,b) => (at[b.id]|0) - (at[a.id]|0));
     if (sort=='name') list = list.slice().sort((a,b) => a.name.localeCompare(b.name));
