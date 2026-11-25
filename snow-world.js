@@ -16,7 +16,7 @@ const LM = {camp:{x:50, y:86}, forest:{x:16, y:62}, lake:{x:80, y:67}, caves:{x:
 const WAYS = {camp:{x:55, y:84, n:'Camp Cocoa'}, forest:{x:22, y:66, n:'Frostpine Forest'}, lake:{x:64, y:64, n:'Glimmer Lake'}, caves:{x:22, y:24, n:'Crystal Caves'}, pass:{x:44, y:31, n:'Howling Pass'}, castle:{x:83, y:35, n:'Shadow Castle Gate'},
   village:{x:30, y:110, n:'Frostpine Village'}, aurora:{x:62, y:116, n:'Aurora Fields'}, coast:{x:40, y:126, n:'Shipwreck Coast'}, ruins:{x:84, y:116, n:'Ice Giant Ruins'}, yeti:{x:112, y:112, n:'Yeti Mountains'},
   hollow:{x:106, y:82, n:'Spirit Hollow', spirit:1}, oldroad:{x:108, y:50, n:'The Old Road', spirit:1}, shrine:{x:118, y:38, n:'The Driveway Shrine', spirit:1}, hall:{x:127, y:74, n:'The Hall of Paws', spirit:1}, peak:{x:130, y:22, n:'Storm Peak', spirit:1}};
-const regionAt = (x, y) => { if (y >= N0) { if (x >= N0) return 'yeti'; if (y >= 127) return 'coast'; if (x < 42) return 'village'; if (x >= 74) return 'ruins'; return 'aurora'; }
+const regionAt = (x, y) => { if (x >= N) return 'raid'; if (y >= N0) { if (x >= N0) return 'yeti'; if (y >= 127) return 'coast'; if (x < 42) return 'village'; if (x >= 74) return 'ruins'; return 'aurora'; }
   if (x >= N0) { if (y < 22) return 'peak'; if (y < 42) return 'shrine'; if (y < 56) return 'oldroad'; if (y >= 56 && y < 78 && x >= 116) return 'hall'; return 'hollow'; }
   if (Math.hypot(x - 50, y - 86) < 8) return 'camp'; if (x >= 70 && y <= 34) return 'castle'; if (x < 34 && y < 40) return 'caves'; if (x < 36) return 'forest'; if (x > 62 && y > 44) return 'lake'; if (y < 44) return 'pass'; return 'meadow'; };
 const REG = {camp:{n:'Camp Cocoa', tier:0, pool:[]}, meadow:{n:'Snowy Meadows', tier:1, pool:['pup', 'pup', 'goon']}, forest:{n:'Frostpine Forest', tier:2, pool:['pup', 'goon', 'bat']},
@@ -25,7 +25,7 @@ const REG = {camp:{n:'Camp Cocoa', tier:0, pool:[]}, meadow:{n:'Snowy Meadows', 
   village:{n:'Frostpine Village', tier:1, pool:['pup', 'goon'], mood:'calm'}, aurora:{n:'Aurora Fields', tier:3, pool:['bat', 'imp', 'goon']}, coast:{n:'Frozen Shipwreck Coast', tier:3, pool:['goon', 'golem', 'bat']},
   ruins:{n:'Ice Giant Ruins', tier:4, pool:['golem', 'golem', 'hound']}, yeti:{n:'Yeti Mountains', tier:5, pool:['golem', 'hound', 'yeti']},
   hollow:{n:'Spirit Hollow', tier:4, pool:['wisp', 'wisp', 'stormling'], haunt:1}, oldroad:{n:'The Old Road', tier:4, pool:['wisp'], haunt:1, quiet:1}, shrine:{n:'The Driveway Shrine', tier:4, pool:['wisp', 'stormling'], haunt:1},
-  hall:{n:'The Hall of Paws', tier:0, pool:[], safe:1}, peak:{n:'Chao Chao’s Storm Peak', tier:5, pool:['stormling', 'wisp', 'stormling'], haunt:2}};
+  hall:{n:'The Hall of Paws', tier:0, pool:[], safe:1}, raid:{n:'Raid Dungeon', tier:5, pool:[], safe:1, haunt:1}, peak:{n:'Chao Chao’s Storm Peak', tier:5, pool:['stormling', 'wisp', 'stormling'], haunt:2}};
 const FOE = {
   pup:{n:'Hex Pup', hp:2, sp:125, melee:1, r:13, pts:30},
   goon:{n:'Snow Goon', hp:3, sp:60, shoot:2.2, r:15, pts:40},
@@ -148,11 +148,11 @@ A.snowWorld = function(X) {
   const CAMPX = px({x:50, y:88}), FIRE = px({x:50, y:86}), PIP = px({x:46, y:84}), TENT = px({x:54, y:89}), THRONE = px({x:50, y:82});
   const LAIR = {grumble:px(LM.forest), icefang:px(LM.lake), crystal:px(LM.caves), rufus:px(LM.pass), loki:px(LM.castle)};
   const MAUCAGE = {x:LAIR.rufus.x, y:LAIR.rufus.y - 84}, BAUCAGE = {x:LAIR.loki.x, y:LAIR.loki.y - 120};
-  const tileAt = (tx, ty) => tx < 0 || ty < 0 || tx >= N || ty >= N ? ROCK : M[ty*N + tx];
+  const tileAt = (tx, ty) => tx < 0 || ty < 0 || ty >= N ? ROCK : tx >= N ? (tx < N + 40 ? RM[ty*40 + tx - N] : ROCK) : M[ty*N + tx];
   const runesN = () => ['forest', 'lake', 'caves'].filter(k => W.runes[k]).length;
   const gateOpen = () => runesN() >= 3 && !!W.mau;
   const spiritsOpen = () => (W.sp|0) >= 1;
-  const solidAt = (x, y) => { const tx = Math.floor(x/TS), ty = Math.floor(y/TS), v = tileAt(tx, ty); return v == GATE ? (regionAt(tx, ty) == 'shrine' ? !((W.sp|0) >= 3 || (W.lan|0) >= 3) : !gateOpen()) : v == VEIL ? !spiritsOpen() : !!SOLID[v] || v == HOLE; };
+  const solidAt = (x, y) => { const tx = Math.floor(x/TS), ty = Math.floor(y/TS), v = tileAt(tx, ty); return v == 16 ? !(raid && raid.open >= ((ty % 28) >= 18 ? 2 : 1)) : v == GATE ? (regionAt(tx, ty) == 'shrine' ? !((W.sp|0) >= 3 || (W.lan|0) >= 3) : !gateOpen()) : v == VEIL ? !spiritsOpen() : !!SOLID[v] || v == HOLE; };
   const blocked = (x, y, r) => solidAt(x - r, y - r) || solidAt(x + r, y - r) || solidAt(x - r, y + r) || solidAt(x + r, y + r);
   const regAt = (x, y) => regionAt(Math.floor(x/TS), Math.floor(y/TS));
   const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -179,7 +179,7 @@ A.snowWorld = function(X) {
   // hidden snacks all over the kingdom: only Mau Mau can sniff them out
   const SNACKS = (() => { const out = []; let sd = 77; const rnd = () => (sd = (sd*16807) % 2147483647) / 2147483647; for (let k = 0; out.length < 36 && k < 4000; k++) { const x = 4 + Math.floor(rnd()*(N - 8)), y = 4 + Math.floor(rnd()*(N - 8)), v = tileAt(x, y); if (SOLID[v] || v == HOLE || regionAt(x, y) == 'camp' || out.some(o => Math.hypot(o.tx - x, o.ty - y) < 7)) continue; out.push({id:out.length, tx:x, ty:y, x:(x + .5)*TS, y:(y + .5)*TS, e:['🐟', '🍗', '🧀', '🥛'][out.length % 4]}); } return out; })();
   const feedMau = () => { if (!W.mau) { say('Free Royal Guard Mau Mau first. He’s caged at Howling Pass', 2.4); return; } if ((W.treats||0) <= 0) { say('🐟 No treats! Chests, enemies and Mau Mau’s nose (“!”) find more', 2.6); mauSay('Was that... a no-snack button?', 2.2); A.sfx('bad'); return; }
-    W.treats--; mau.st2 = 'dance'; mau.stT = 2.8; buffT = 20; p.hp = Math.min(p.max, p.hp + 2); mates.forEach(m => { if (!m.ko) m.hp = m.max; }); splat(mau.x, mau.y - 10, 18, '#F9BF01'); A.sfx('win');
+    W.treats--; mau.st2 = 'dance'; mau.stT = 2.8; buffT = 20 + 5*RL('pantry'); p.hp = Math.min(p.max, p.hp + 2); mates.forEach(m => { if (!m.ko) m.hp = m.max; }); splat(mau.x, mau.y - 10, 18, '#F9BF01'); A.sfx('win');
     mauSay(['Om nom nom! ROYAL POWER!', 'This fish was guarded... into my belly.', 'Royal Guard rule #1: never skip lunch!', 'Mmm! The team feels STRONGER!'][Math.floor(Math.random()*4)], 3); say('🐟 Mau Mau ate a treat! The team hits harder for 20 seconds, +♥', 2.6); X.stat('snowFeed', 1, 'add'); save(); };
   // teammates from your upgrades (Upgrade Workshop teammates + Snow Friends, levelled by Team Captain) come along too
   const MI = X.mates ? X.mates() : {n:0, lv:1, names:[]}, ROLES = ['thrower', 'builder', 'medic'], RCOL = {thrower:'#2fa8e0', builder:'#64CDF5', medic:'#ff9ad5'}, RE = {thrower:'🎯', builder:'🔨', medic:'➕'};
@@ -195,7 +195,7 @@ A.snowWorld = function(X) {
   const say = (s2, d = 2.6) => { msg = s2; msgT = d; };
   const addNum = (x, y, txt, col) => { if (nums.length < 40) nums.push({x, y, txt, col:col || '#14204a', t:1}); };
   const splat = (x, y, n, col) => { const k = low() ? Math.ceil(n/3) : n; for (let i = 0; i < k; i++) fx.push({x, y, vx:(Math.random() - .5)*170, vy:(Math.random() - .5)*170, t:.35 + Math.random()*.3, col:col || '#ffffff', r:1.5 + Math.random()*2.5}); };
-  const give = o => { if (o.flakes) PERM.bank += Math.round(o.flakes * (1 + .1*X.PU('flakes'))); if (o.frost) PERM.frost += o.frost; if (o.xp) X.addXp(o.xp); if (o.score) { score += o.score; api.score(score); } let it = null; if (o.gear != null) it = X.makeGear(o.gear); return it; };
+  const give = o => { if (o.flakes) PERM.bank += Math.round(o.flakes * (1 + .1*X.PU('flakes')) * (1 + .1*((W.base && W.base.rooms.trophy)|0))); if (o.frost) PERM.frost += o.frost; if (o.xp) { X.addXp(o.xp); W.kxp = (W.kxp||0) + o.xp; } if (o.score) { score += o.score; api.score(score); } let it = null; if (o.gear != null) it = X.makeGear(o.gear); return it; };
   // ---------- talking ----------
   const talk = (lines, done) => { dlg = {lines, i:0, done}; A.sfx('blip'); };
   const nextLine = () => { if (!dlg) return; dlg.i++; A.sfx('blip'); if (dlg.i >= dlg.lines.length) { const d = dlg.done; dlg = null; d && d(); } };
@@ -235,11 +235,13 @@ A.snowWorld = function(X) {
     if (W.loki && !W.bau) L.push({x:BAUCAGE.x, y:BAUCAGE.y, n:'Free', f:freeBau});
     if (W.bau) L.push({x:THRONE.x, y:THRONE.y, n:'Talk', f:talkBau});
     if (W.mau) L.push({x:mau.x, y:mau.y, n:'Talk', f:talkMau, quiet:1});   // tap Mau Mau to chat; he follows you, so no pop-up label
-    return storyThings(L); };
+    return p3Things(storyThings(L)); };
   const nearThing = () => { let best = null, bd = 74; for (const T2 of things()) { if (T2.quiet) continue; const d = dist(T2, p); if (d < bd) { bd = d; best = T2; } } return best; };
   const use = () => { if (dlg) return nextLine(); const T2 = nearThing(); if (T2) T2.f(); };
   // ---------- the quest arrow ----------
-  const goal = () => { if (!W.met) return {x:PIP.x, y:PIP.y, n:'Talk to Old Pip at Camp Cocoa'};
+  const goal = () => { if (raid) { const f = raid.open == 0 ? 'Floor 1: step on the rune plates in order (' + raid.step + '/4)' : raid.open == 1 ? 'Floor 2: defeat the guardian' : 'Floor 3: defeat ' + BOSS[raid.R.boss].n.toLowerCase().replace(/\b\w/g, m => m.toUpperCase()); const tg = raid.open == 0 ? rpx(raid.plates[raid.order[raid.step]].x, raid.plates[raid.order[raid.step]].y) : raid.open == 1 ? rpx(20, 14) : rpx(20, 23); return {...tg, n:'⚔ ' + raid.R.n + ' · ' + f}; }
+    if (siege) return {x:BELL.x, y:BELL.y, n:siege.phase == 'build' ? '⚔ Siege: build snow turrets at the glowing spots (' + Math.ceil(siege.t) + ' s)' : '⚔ Siege: protect the village bell · wave ' + siege.wave + '/5 · bell ' + Math.ceil(siege.hp) + '/' + siege.max};
+    if (!W.met) return {x:PIP.x, y:PIP.y, n:'Talk to Old Pip at Camp Cocoa'};
     if (W.bau) return storyGoal();
     if (W.loki) return {x:BAUCAGE.x, y:BAUCAGE.y, n:'Open Lord Emperor Bau Bau’s cage'};
     if (gateOpen()) return {x:LAIR.loki.x, y:LAIR.loki.y, n:'Storm the Shadow Castle and defeat Loki the Evil Sorcerer'};
@@ -247,7 +249,7 @@ A.snowWorld = function(X) {
     [['grumble', 'forest'], ['icefang', 'lake'], ['crystal', 'caves']].forEach(([b, r]) => { if (!W.runes[r]) left.push({...LAIR[b], n:'Win the ' + RUNE_N[r] + ' Moon Rune (' + runesN() + '/3) in ' + REG[r].n}); });
     left.sort((a, b) => dist(a, p) - dist(b, p)); return left[0]; };
   // ---------- throwing ----------
-  const shot = (from, ang, sp, o) => { if (balls.length > 260) return; balls.push({x:from.x, y:from.y, vx:Math.cos(ang)*sp, vy:Math.sin(ang)*sp, mine:0, dmg:o.dmg || 1, r:o.r || 7, life:o.life || 3.5, col:o.col || '#ffffff', hex:o.hex}); };
+  const shot = (from, ang, sp, o) => { if (balls.length > 260) return; if (raid) { const m2 = raid.mods.find(q => q.shot); if (m2) sp *= m2.shot; } balls.push({x:from.x, y:from.y, vx:Math.cos(ang)*sp, vy:Math.sin(ang)*sp, mine:0, dmg:o.dmg || 1, r:o.r || 7, life:o.life || 3.5, col:o.col || '#ffffff', hex:o.hex}); };
   const throwAt = (wx, wy, pk) => { const k = X.ballK(), cost = k == 'boulder' ? 3 : 1; if (p.ammo < cost) { if (msgT <= 0) say('Out of snowballs! They come back by themselves in a moment', 1.6); A.sfx('bad'); return; }
     const ang = Math.atan2(wy - (p.y - 10), wx - p.x), sn = X.CL().snipe || 1, crit = Math.random() < .05*X.crit() ? 2 : 1;
     let dmg = X.armM() * (1 + pk) * (pk > .5 ? sn : 1) * crit * (p.eye > 0 ? 2 : 1) * (buffT > 0 ? 1.25 : 1), r = 5 + pk*4, sp = 520 + (sn > 1 ? 120 : 0);
@@ -269,30 +271,31 @@ A.snowWorld = function(X) {
   const killFoe = f => { f.dead = 1; const F = FOE[f.k]; splat(f.x, f.y, 14, f.k == 'imp' || f.k == 'pup' || f.k == 'clone' ? '#c08aff' : '#ffffff'); if (F.decoy) addNum(f.x, f.y - 30, 'Fake-out!', '#2f8ad8'); if (F.clone) return;
     const fl = Math.round((3 + Math.random()*5) * f.tier); give({flakes:fl, xp:2, score:F.pts*f.tier}); addNum(f.x, f.y - 44, '+' + fl + ' ❄', '#2f8ad8'); W.kills = (W.kills || 0) + 1; X.stat('snowWorldKills', 1, 'add');
     if (Math.random() < .09) drops.push({x:f.x, y:f.y, k:'cocoa', life:15}); else if (W.mau && Math.random() < .05) drops.push({x:f.x, y:f.y, k:'fish', life:18}); };
-  const hurtMe = dmg => { if (p.inv > 0 || p.shieldT > 0 || A.immortal || dead > 0 || quiz) return; if (Math.random() < .06*X.PU('armor')) { p.inv = .4; addNum(p.x, p.y - 40, 'Shrugged off!', '#2f8ad8'); return; } p.hp -= dmg; p.inv = .9; p.hitT = .3; A.sfx('bad'); splat(p.x, p.y - 10, 8, '#e8f4ff');
+  const hurtMe = dmg => { if (p.inv > 0 || p.shieldT > 0 || A.immortal || dead > 0 || quiz) return; if (raid && raid.mods.some(m2 => m2.dmg)) dmg *= 2; shakeV = Math.max(shakeV, 4); if (Math.random() < .06*X.PU('armor')) { p.inv = .4; addNum(p.x, p.y - 40, 'Shrugged off!', '#2f8ad8'); return; } p.hp -= dmg; p.inv = .9; p.hitT = .3; A.sfx('bad'); splat(p.x, p.y - 10, 8, '#e8f4ff');
     if (p.hp <= 0) { p.hp = 0; W.deaths = (W.deaths || 0) + 1; quiz = true;
       if (!X.learn2('SNOWED UNDER! ANSWER RIGHT TO GET BACK UP RIGHT HERE', () => { quiz = false; p.hp = Math.ceil(p.max/2); p.inv = 2.5; say('Back on your feet!', 1.6); }, () => { quiz = false; dead = 1.8; say('❄ Snowed under! Waking up at Camp Cocoa...', 2.4); A.sfx('over'); })) quiz = false; } };
-  const respawn = () => { tornado = null; sticks = []; p.stick = 0; p.x = CAMPX.x; p.y = CAMPX.y; p.vx = p.vy = 0; p.hp = p.max; p.inv = 2.5; p.ammo = X.maxAmmo(); foes = []; balls = []; if (boss) { boss = null; } mau.x = p.x - 40; mau.y = p.y + 10; mates.forEach(m => { m.ko = 0; m.hp = m.max; }); mateHome(); save(); say('🏕 Back at Camp Cocoa. Everything you found is safe!', 3); };
+  const respawn = () => { if (siege) siegeEnd(false); raid = null; riding = false; tornado = null; sticks = []; p.stick = 0; p.x = CAMPX.x; p.y = CAMPX.y; p.vx = p.vy = 0; p.hp = p.max; p.inv = 2.5; p.ammo = X.maxAmmo(); foes = []; balls = []; if (boss) { boss = null; } mau.x = p.x - 40; mau.y = p.y + 10; mates.forEach(m => { m.ko = 0; m.hp = m.max; }); mateHome(); save(); say('🏕 Back at Camp Cocoa. Everything you found is safe!', 3); };
   // ---------- bosses ----------
   const bossDone = k => k == 'loki' ? (W.loki > 0 && !lokiReady) : (BOSS[k].ai || k == 'chao') ? storyDone(k) : !!W.down[k];
   const phOf = (hp, max, np) => Math.min(np, 1 + Math.floor((1 - Math.max(0, hp)/max) * np));
   const spawnBoss = k => { W.bhp = W.bhp || {}; const B = BOSS[k], H = LAIR[k], hp = B.hp * A.D(.8, 1, 1.2) * (1 + .05*(X.lv() - 1)) * (k == 'loki' && W.loki ? 1.15 : 1);
     const left = W.bhp[k] != null ? Math.max(1, Math.min(hp, W.bhp[k])) : hp;
     const np = B.phases || 3; boss = {k, n:B.n, x:H.x, y:H.y - 40, hx:H.x, hy:H.y, hp:left, max:hp, r:B.r, phases:np, ph:phOf(left, hp, np), cd:2, t:0, st:'walk', a:0, sum:6, tp:4, ring:3, rock:3, flash:0, talk:B.intro, talkT:4.5, castT:0};
-    if (k == 'loki') { boss.phn = LOKI_PH[boss.ph]; sticks = []; if (W.loki) boss.talk = 'Loki: “Back for more? Wonderful! I do love an audience.”'; }
+    if (k == 'loki' || k == 'loki2') { boss.phn = LOKI_PH[boss.ph]; sticks = []; if (W.loki) boss.talk = 'Loki: “Back for more? Wonderful! I do love an audience.”'; }
     if (left < hp) { say('💪 ' + BOSS[k].n.toLowerCase().replace(/\b\w/g, m => m.toUpperCase()) + ' is still hurt from last time!', 2.6); } A.sfx('bad'); };
   const hurtBoss = dmg => { const B = boss; if (!B) return; if (B.fetch && B.fetch.t > 0) dmg *= 2; B.hp -= dmg; W.bhp = W.bhp || {}; W.bhp[B.k] = Math.max(0, B.hp); B.flash = .1; addNum(B.x + (Math.random() - .5)*30, B.y - B.r - 10, '-' + Math.round(dmg*10)/10, '#FF4539');
     if (B.fetch && B.fetch.t > 0) dmg *= 1;   // (fetching doubles damage, applied by the caller below)
     const ph = phOf(B.hp, B.max, B.phases || 3);
-    if (ph > B.ph) { B.ph = ph; A.sfx('bad'); if (B.k == 'loki') { B.phn = LOKI_PH[ph]; B.talk = ['', '', 'Loki: “Shadows, my darlings! Fetch!”', 'Loki: “Let’s make it a little... breezier! AWOOOO!”', 'Loki: “ENOUGH! Now you’ll see REAL magic!” *his golden coat blazes*'][ph]; B.talkT = 3.2; if (ph == 4) { spawnFoe('clone', B.hx - 160, B.hy + 40); spawnFoe('clone', B.hx + 160, B.hy + 40); } if (ph == 3) tornado = {x:B.x, y:B.y + 60, r:46, t:0, life:10}; if (B.hp <= 0) bossDown(B); return; }
+    if (ph > B.ph) { B.ph = ph; A.sfx('bad'); if (B.k == 'loki' || B.k == 'loki2') { B.phn = LOKI_PH[ph]; B.talk = ['', '', 'Loki: “Shadows, my darlings! Fetch!”', 'Loki: “Let’s make it a little... breezier! AWOOOO!”', 'Loki: “ENOUGH! Now you’ll see REAL magic!” *his golden coat blazes*'][ph]; B.talkT = 3.2; if (ph == 4) { spawnFoe('clone', B.hx - 160, B.hy + 40); spawnFoe('clone', B.hx + 160, B.hy + 40); } if (ph == 3) tornado = {x:B.x, y:B.y + 60, r:46, t:0, life:10}; if (B.hp <= 0) bossDown(B); return; }
       const lines = {loki:['', '', '', '', ''], rufus:['', '', 'Rufus: “Grr... I’m just getting warmed up!”', 'Rufus: “Boss Loki will be SO mad at me!”'],
         grumble:['', '', 'Grumblebark: “Hrrm! Bats, help me!”', 'Grumblebark: “You... are... annoying!”'], icefang:['', '', 'Icefang: “Arr, now ye’ve done it!”', 'Icefang: “Full speed ahead!”'], crystal:['', '', 'Crystal Golem: “...CRACK... ANGRY...”', 'Crystal Golem: “...SHATTER... EVERYTHING...”']}[B.k];
       if (lines && lines[ph]) { B.talk = lines[ph]; B.talkT = 3; } }
     if (B.hp <= 0) bossDown(B); };
   const bossDown = B => { boss = null; if (W.bhp) delete W.bhp[B.k]; balls = balls.filter(b => b.mine); foes = foes.filter(f => !FOE[f.k].clone);
+    if (raidBossDown(B)) { cheerT = 2.5; shakeV = 8; save(); return; }
     if (B.k == 'chao') { chaoFade = {x:B.x, y:B.y, t:5}; A.tone(440, 1.2, 'sine', .03); X.stat('snowGuard', 1, 'add'); save(); return; }
     splat(B.x, B.y, 40, '#ffe9a0'); A.sfx('win'); X.stat('snowGuard', 1, 'add');
-    if (BOSS[B.k].ai) { storyBossDown(B); save(); return; }
+    cheerT = 2.5; shakeV = 8; if (BOSS[B.k].ai) { if (B.k == 'snowking') { W.down.snowking = 1; give({frost:20, xp:80}); say('👑 The Siege King melts away!', 2.6); save(); return; } storyBossDown(B); save(); return; }
     if (B.k == 'loki') { const first = !W.loki; W.loki = (W.loki || 0) + 1; lokiReady = false; X.stat('snowLoki', 1, 'add');
       const it = give(first ? {frost:40 + X.PU('frost'), flakes:600, xp:120, score:4000, gear:3} : {frost:15 + X.PU('frost'), flakes:250, xp:60, score:1500, gear:Math.random() < .4 ? 2 : null});
       tornado = null; sticks = [];
@@ -325,7 +328,7 @@ A.snowWorld = function(X) {
       B.tp -= dt; if (B.tp <= 0) { B.tp = 5; for (let k2 = 0; k2 < 8; k2++) { const a = Math.random()*TAU, nx = p.x + Math.cos(a)*220, ny = p.y + Math.sin(a)*220; if (!blocked(nx, ny, 18) && Math.hypot(nx - B.hx, ny - B.hy) < 300) { splat(B.x, B.y, 12, '#c08aff'); B.x = nx; B.y = ny; splat(B.x, B.y, 12, '#c08aff'); break; } } }
       if (ph >= 2) { B.sum -= dt; if (B.sum <= 0) { B.sum = 9; if (foes.length < 10) { spawnFoe('pup', B.x - 50, B.y); spawnFoe('pup', B.x + 50, B.y); } } }
       if (ph >= 3) { B.ring -= dt; if (B.ring <= 0) { B.ring = 4; for (let i = 0; i < 12; i++) shot(B, i/12*TAU, 150, {r:7, col:'#c04ae0', hex:1}); } } }
-    else if (B.k == 'loki') { B.castT = Math.max(0, B.castT - dt); const rage = ph >= 4 ? 1.5 : 1;
+    else if (B.k == 'loki' || B.k == 'loki2') { B.castT = Math.max(0, B.castT - dt); const rage = ph >= 4 ? 1.5 : 1;
       // he can't resist a thrown stick: he runs to it, stops attacking and takes double damage
       if (B.fetch && B.fetch.t > 0) { B.fetch.t -= dt; const fd = Math.hypot(B.fetch.x - B.x, B.fetch.y - B.y); if (fd > 8) { B.x += (B.fetch.x - B.x)/fd*Math.min(fd, 260*dt); B.y += (B.fetch.y - B.y)/fd*Math.min(fd, 260*dt); } if (B.fetch.t <= 0) { B.talk = 'Loki: “...Where was I? Oh yes. EVIL.”'; B.talkT = 2.2; } }
       else { B.x += Math.sin(B.t*1.3)*30*dt*rage; B.y += Math.cos(B.t*1.1)*20*dt*rage;
@@ -446,7 +449,7 @@ A.snowWorld = function(X) {
     if (C2.rock) { B.rock -= dt; if (B.rock <= 0) { B.rock = C2.rock; shot(B, ang, 210, {r:13, dmg:2, col:'#c8d8e8'}); } }
     if (C2.burst && ph >= 2) { B.tp -= dt; if (B.tp <= 0) { B.tp = .2; B.a += .45; shot(B, B.a, 160, {r:7, col:B.col || '#c9a0ff'}); } }
     if (C2.spiral && ph >= 2) { B.tp2 = (B.tp2 || 0) - dt; if (B.tp2 <= 0) { B.tp2 = .16; B.a += .34; shot(B, B.a, 140, {r:6, col:'#ff9ad5'}); shot(B, B.a + Math.PI, 140, {r:6, col:'#9fe8ff'}); } }
-    if (C2.summon && ph >= 2) { B.sum -= dt; if (B.sum <= 0) { B.sum = C2.summonT || 9; for (let i = 0; i < 2 && foes.length < 10; i++) spawnFoe(C2.summon, B.x + (i ? 60 : -60), B.y + 40); } }
+    if (C2.summon && ph >= 2) { B.sum -= dt; if (B.sum <= 0) { B.sum = C2.summonT || 9; for (let i = 0; i < (raid && raid.mods.some(m2 => m2.swarm) ? 4 : 2) && foes.length < 12; i++) spawnFoe(C2.summon, B.x + (i ? 60 : -60), B.y + 40); } }
     if (C2.dash && B.cd2 == null) B.cd2 = 4; if (C2.dash) { B.cd2 -= dt; if (B.cd2 <= 0) { B.cd2 = 4.5 / sp1; B.st = 'wind'; B.wt = .7; B.da = ang; } }
     if (C2.fade) B.fadeA = .35 + .3*Math.sin(B.t*1.5); };
   // CHAO CHAO, THE FALLEN: erratic teleports, fake-outs, splitting into shadow copies, screaming storms
@@ -469,9 +472,9 @@ A.snowWorld = function(X) {
     if (rg2 == 'peak' && sp < 5 && p.y < 21*TS) { p.y = 21*TS + 4; p.vy = 0; if (msgT <= 0) say('🌩️ The storm on Storm Peak pushes you back. ' + (sp < 4 ? 'You’re not ready yet.' : 'Find Chao Chao’s three memories first.'), 2.6); }
     // Bau Bau in your party
     if (W.party.bau) { const tx = p.x + Math.cos(p.face + 2.3)*56, ty = p.y + Math.sin(p.face + 2.3)*56, dm = Math.hypot(tx - bauF.x, ty - bauF.y); if (dm > 600) { bauF.x = tx; bauF.y = ty; } else if (dm > 12) { const s2 = Math.min(dm*3.4, 270); bauF.x += (tx - bauF.x)/dm*s2*dt; bauF.y += (ty - bauF.y)/dm*s2*dt; bauF.walk += dt; } else bauF.walk = 0;
-      bauF.cool -= dt; if (bauF.cool <= 0) { let tg = boss && dist(boss, bauF) < 340 ? boss : null; if (!tg) { let bd = 300; for (const f of foes) { const d3 = dist(f, bauF); if (d3 < bd) { bd = d3; tg = f; } } } if (tg) { bauF.cool = 1.3; const a = Math.atan2(tg.y - bauF.y, tg.x - bauF.x); balls.push({x:bauF.x, y:bauF.y - 10, vx:Math.cos(a)*460, vy:Math.sin(a)*460, mine:1, dmg:X.armM()*.8, r:5, life:.9, hits:[], col:'#fff3e0'}); } else bauF.cool = .3; } }
+      bauF.cool -= dt; if (bauF.cool <= 0) { let tg = boss && dist(boss, bauF) < 340 ? boss : null; if (!tg) { let bd = 300; for (const f of foes) { const d3 = dist(f, bauF); if (d3 < bd) { bd = d3; tg = f; } } } if (tg) { bauF.cool = 1.3; const a = Math.atan2(tg.y - bauF.y, tg.x - bauF.x); balls.push({x:bauF.x, y:bauF.y - 10, vx:Math.cos(a)*460, vy:Math.sin(a)*460, mine:1, dmg:X.armM()*.8, r:5, life:.9, hits:[], col:'#fff3e0', team:1}); } else bauF.cool = .3; } }
     // spirit companions and Minccino's blessing
-    const healer = W.comp == 'minc' || (W.bless && sp < 6); if (healer) { comp.healT -= dt; if (comp.healT <= 0) { comp.healT = W.comp == 'minc' ? 14 : 20; if (p.hp < p.max) { p.hp++; addNum(p.x, p.y - 44, '💙 +♥', '#2f8ad8'); } mates.forEach(m => { if (!m.ko && m.hp < m.max) m.hp++; }); } }
+    const healer = W.comp == 'minc' || (W.bless && sp < 6); if (healer) { comp.healT -= dt; if (comp.healT <= 0) { comp.healT = (W.comp == 'minc' ? 14 : 20) * (1 - .2*RL('shrine')); if (p.hp < p.max) { p.hp++; addNum(p.x, p.y - 44, '💙 +♥', '#2f8ad8'); } mates.forEach(m => { if (!m.ko && m.hp < m.max) m.hp++; }); } }
     if (W.comp && sp >= 6) { const tx = p.x + 40, ty = p.y - 30, dm = Math.hypot(tx - comp.x, ty - comp.y); if (dm > 500) { comp.x = tx; comp.y = ty; } else { comp.x += (tx - comp.x)*Math.min(1, dt*3); comp.y += (ty - comp.y)*Math.min(1, dt*3); } }
     if (W.comp == 'mow') TREAS.forEach(q => { if (!W.small[q.i] && dist(q, p) < 34) { W.small[q.i] = 1; const n = Object.keys(W.small).length; addNum(q.x, q.y - 20, '+ ' + q.e, '#c4601a'); A.sfx('coin'); give({flakes:150, frost:3}); if (n >= 10) { give({frost:50, xp:100}); say('🔔 Little Mow found all 10 small treasures! +50 Frost Crystals', 4); } save(); } });
     if (chaoFade) { chaoFade.t -= dt; if (chaoFade.t < 2.6 && !chaoFade.told) { chaoFade.told = 1; endStory(); } if (chaoFade.t <= 0) chaoFade = null; }
@@ -495,9 +498,180 @@ A.snowWorld = function(X) {
     // Mau Mau stands watch at the Hall of Paws entrance after the story
     if ((W.sp|0) >= 6) { const H2 = L2('hall'), gx = H2.x, gy = 71.5*TS; if (onScreen(gx, gy)) ents.push({y:gy, d:() => SC.mau(g, gx - 60, gy, {st:Math.sin(t*.4) > .9 ? 'salute' : 'stand', s:.95}, t)}); } };
   const compHint = (mx, my, sc2) => { if (W.comp != 'mow') return; g.fillStyle = '#F9BF01'; chests.forEach(ch => { if (!W.chests[ch.id] && dist(ch, p) < 900) { g.fillRect(mx + ch.x/TS*sc2 - 1, my + ch.y/TS*sc2 - 1, 2, 2); } }); };
+  // =====================================================================================================
+  // ICE FORT (base tiers + rooms), VILLAGE SIEGE, RAID DUNGEONS, MOUNTS, SKILLS, VILLAGE SHOP, PANELS
+  // =====================================================================================================
+  const TIER_N = ['Snow Camp', 'Ice Fort', 'Frost Keep', 'Crystal Castle'], TIER_COST = [null, {frost:40, flakes:2000}, {frost:120, flakes:8000}, {frost:300, flakes:25000}];
+  const ROOMS = [
+    {id:'barracks', e:'🛏️', n:'Barracks', d:lv => 'Teammates fight at +' + lv + ' level' + (lv == 1 ? '' : 's')},
+    {id:'guard', e:'🛡️', n:'Royal Guard Post', d:lv => 'Mau Mau hits ' + (100 + 25*lv) + '% as hard and charges ' + lv + ' s sooner'},
+    {id:'forge', e:'⚒️', n:'Forge', d:lv => '+' + (8*lv) + '% snowball damage · craft gear up to rarity ' + Math.min(5, 1 + lv)},
+    {id:'kitchen', e:'☕', n:'Cocoa Kitchen', d:lv => '+' + lv + ' max heart' + (lv == 1 ? '' : 's') + ' · the campfire heals faster'},
+    {id:'pantry', e:'🐟', n:'Mau Mau’s Pantry', d:lv => '+' + lv + ' treat' + (lv == 1 ? '' : 's') + ' every time you rest at camp (every 5 min) · treats last ' + (20 + 5*lv) + ' s'},
+    {id:'trophy', e:'🏆', n:'Trophy Hall', d:lv => '+' + (10*lv) + '% snowflakes from everything'},
+    {id:'shrine', e:'🕯️', n:'Spirit Shrine', d:lv => 'Spirit companions and blessings heal ' + (lv*20) + '% faster', need:() => (W.sp|0) >= 6, needTxt:'Finish Spirits of the Snow'},
+    {id:'yard', e:'🎯', n:'Training Yard', d:lv => '+' + (2*lv) + ' snowballs you can carry'},
+    {id:'defenses', e:'🏰', n:'Defenses', d:lv => lv + ' free snow turret' + (lv == 1 ? '' : 's') + ' in sieges · village bell +' + (25*lv) + '% sturdier'}];
+  W.base = W.base || {tier:0, rooms:{}}; W.base.rooms = W.base.rooms || {}; W.sk = W.sk || {}; W.kxp = W.kxp || 0; W.mounts = W.mounts || {}; W.village = W.village|0; W.raids = W.raids || {};
+  const RL = id => W.base.rooms[id]|0;
+  const roomCost = (id, lv) => ({frost:Math.round(8*(lv + 1)*(1 + W.base.tier*.6) + (id == 'shrine' ? 20 : 0)), flakes:Math.round(400*(lv + 1)*(W.base.tier + 1))});
+  const canPay = c => PERM.frost >= (c.frost||0) && PERM.bank >= (c.flakes||0), pay = c => { PERM.frost -= (c.frost||0); PERM.bank -= (c.flakes||0); };
+  const costTxt = c => [c.frost ? c.frost + ' 🔷' : '', c.flakes ? A.fmt(c.flakes) + ' ❄' : ''].filter(Boolean).join(' + ');
+  // kingdom level + skill tree (hearts keep growing: +1 every 3 levels, and the Heart skill)
+  const SK = [{id:'dmg', e:'💥', n:'Strong Arm', d:r => '+' + (8*r) + '% snowball damage'}, {id:'hp', e:'❤️', n:'Big Heart', d:r => '+' + r + ' max heart' + (r == 1 ? '' : 's')}, {id:'spd', e:'👟', n:'Quick Feet', d:r => '+' + (6*r) + '% walking speed'},
+    {id:'ammo', e:'⚪', n:'Deep Pockets', d:r => '+' + (2*r) + ' snowballs'}, {id:'crit', e:'🍀', n:'Lucky Shot', d:r => '+' + (4*r) + '% critical hits'}];
+  const kLv = () => Math.floor(Math.sqrt(W.kxp/30)) + 1, kPts = () => kLv() - 1 - SK.reduce((a, s) => a + (W.sk[s.id]|0), 0);
+  { const a0 = X.armM, m0 = X.maxAmmo, s0 = X.spd, h0 = X.maxHp, c0 = X.crit, g0 = X.give;
+    X.armM = () => a0() * (1 + .08*(W.sk.dmg|0)) * (1 + .08*RL('forge'));
+    X.maxAmmo = () => m0() + 2*(W.sk.ammo|0) + 2*RL('yard');
+    X.spd = () => s0() * (1 + .06*(W.sk.spd|0)) * mountMul();
+    X.maxHp = () => h0() + (W.sk.hp|0) + RL('kitchen') + Math.floor((kLv() - 1)/3) + (W.extraHp|0);
+    X.crit = () => c0() + (W.sk.crit|0); }
+  const refreshMax = () => { const m2 = X.maxHp(); if (m2 > p.max) p.hp += m2 - p.max; p.max = m2; };
+  // mounts: sled, reindeer, snowmobile (V to hop on or off)
+  const MOUNTS = [{id:'sled', e:'🛷', n:'Sled', mul:1.4}, {id:'reindeer', e:'🦌', n:'Reindeer', mul:1.65}, {id:'snowmobile', e:'🏍️', n:'Snowmobile', mul:1.95}];
+  let riding = false;
+  const mountMul = () => riding && W.mount && !raid ? (MOUNTS.find(m => m.id == W.mount) || {mul:1}).mul : 1;
+  const toggleMount = () => { if (!W.mount) { say('🛷 No mount yet: buy a sled, reindeer or snowmobile at the Frostpine Village shop', 2.8); return; } if (raid) { say('No mounts in raid dungeons', 1.6); return; } riding = !riding; A.sfx('blip'); say(riding ? (MOUNTS.find(m => m.id == W.mount).e + ' Riding! (V to hop off)') : 'Hopped off', 1.4); };
+  // ---------- panels (Ice Fort, skills, shop, raid board) ----------
+  let panel = null, pnR = [], pnPage = 0;
+  const openPanelUI = build => { panel = build; pnPage = 0; A.sfx('blip'); };
+  const drawPanel = () => { const P2 = panel(); pnR = []; const PW = Math.min(620, VW - 30), PX = VW/2 - PW/2, fit = Math.max(1, Math.floor((VH - 40 - 104)/48)), pages = Math.ceil(P2.rows.length/fit); pnPage = Math.min(pnPage, pages - 1); const rows = P2.rows.slice(pnPage*fit, pnPage*fit + fit), PH = 104 + rows.length*48 + (pages > 1 ? 40 : 0), PY = Math.max(10, (VH - PH)/2);
+    g.fillStyle = 'rgba(10,16,36,.6)'; g.fillRect(0, 0, VW, VH); g.fillStyle = '#fff'; rr(g, PX, PY, PW, PH, 18); g.fill(); g.strokeStyle = '#64CDF5'; g.lineWidth = 3; rr(g, PX, PY, PW, PH, 18); g.stroke();
+    g.fillStyle = '#14204a'; g.font = '900 20px ' + A.font; g.textAlign = 'left'; g.fillText(P2.title, PX + 18, PY + 32); g.font = '600 12px ' + A.font; g.fillStyle = '#4a4a6a'; wrapClip(P2.sub || '', PX + 18, PY + 52, PW - 120);
+    g.fillStyle = '#14204a'; rr(g, PX + PW - 96, PY + 14, 80, 30, 15); g.fill(); g.fillStyle = '#fff'; g.font = '800 13px ' + A.font; g.textAlign = 'center'; g.fillText('✕ Close', PX + PW - 56, PY + 34); pnR.push({x:PX + PW - 96, y:PY + 14, w:80, h:30, fn:() => { panel = null; }});
+    if (pages > 1) { const by = PY + PH - 44; [[-1, '◀ Back', PX + 20], [1, 'More ▶', PX + PW - 130]].forEach(([d2, tx, bx]) => { const on = d2 < 0 ? pnPage > 0 : pnPage < pages - 1; g.fillStyle = on ? '#14204a' : '#c8ccd4'; rr(g, bx, by, 110, 32, 16); g.fill(); g.fillStyle = '#fff'; g.font = '800 13px ' + A.font; g.textAlign = 'center'; g.fillText(tx, bx + 55, by + 21); if (on) pnR.push({x:bx, y:by, w:110, h:32, fn:() => { pnPage += d2; }}); }); g.fillStyle = '#4a4a6a'; g.font = '700 12px ' + A.font; g.textAlign = 'center'; g.fillText('Page ' + (pnPage + 1) + ' / ' + pages, PX + PW/2, by + 21); }
+    let y = PY + 70; rows.forEach(r2 => { g.fillStyle = r2.ok === false ? '#f2f2f2' : '#f3f8ff'; rr(g, PX + 12, y, PW - 24, 42, 10); g.fill(); g.font = '20px ' + A.font; g.textAlign = 'center'; g.fillStyle = '#14204a'; g.fillText(r2.e || '', PX + 34, y + 28);
+      g.textAlign = 'left'; g.font = '800 13px ' + A.font; wrapClip(r2.n, PX + 54, y + 18, PW - 230); g.font = '600 11px ' + A.font; g.fillStyle = '#4a4a6a'; wrapClip(r2.d || '', PX + 54, y + 34, PW - 230);
+      if (r2.btn) { const bw = 150, bx = PX + PW - bw - 20; g.fillStyle = r2.ok ? '#00B451' : '#c8ccd4'; rr(g, bx, y + 7, bw, 28, 14); g.fill(); g.fillStyle = '#fff'; g.font = '800 11px ' + A.font; g.textAlign = 'center'; wrapClip(r2.btn, bx + bw/2, y + 25, bw - 10); if (r2.ok) pnR.push({x:bx, y:y + 7, w:bw, h:28, fn:r2.fn}); }
+      y += 48; }); };
+  const panelDown = q => { for (const r2 of pnR) if (q.x >= r2.x && q.x <= r2.x + r2.w && q.y >= r2.y && q.y <= r2.y + r2.h) { r2.fn(); return; } };
+  const fortPanel = () => openPanelUI(() => { const T = W.base.tier, nx = TIER_COST[T + 1];
+    return {title:'🏰 ' + TIER_N[T] + ' · your base', sub:'Rooms give bonuses all over the Snow Kingdom. Each tier lets rooms grow one level more. You have ' + PERM.frost + ' 🔷 and ' + A.fmt(PERM.bank) + ' ❄.',
+      rows:[...(nx ? [{e:'⬆️', n:'Upgrade to ' + TIER_N[T + 1], d:'Bigger walls, taller towers, rooms can reach level ' + (T + 2), btn:costTxt(nx), ok:canPay(nx), fn:() => { pay(nx); W.base.tier++; X.stat('snowFort', W.base.tier, 'max'); save(); A.sfx('win'); say('🏰 Your base is now a ' + TIER_N[W.base.tier] + '!', 3); }}] : [{e:'💎', n:'Crystal Castle', d:'Your base is fully upgraded', btn:''}]),
+        ...ROOMS.map(r0 => { const lv = RL(r0.id), max = T + 1, c = roomCost(r0.id, lv), locked = r0.need && !r0.need();
+          return {e:r0.e, n:r0.n + ' · Lv ' + lv + '/' + max, d:(lv ? r0.d(lv) : 'Not built') + (lv < max && !locked ? ' → next: ' + r0.d(lv + 1) : ''), btn:locked ? '🔒 ' + r0.needTxt : lv >= max ? (lv >= 4 ? 'MAX' : 'Needs a bigger base') : (lv ? 'Upgrade · ' : 'Build · ') + costTxt(c), ok:!locked && lv < max && canPay(c), fn:() => { pay(c); W.base.rooms[r0.id] = lv + 1; refreshMax(); save(); A.sfx('coin'); }}; }),
+        {e:'📈', n:'Skills · kingdom level ' + kLv(), d:kPts() + ' skill point' + (kPts() == 1 ? '' : 's') + ' to spend (or press K)', btn:'Open skills', ok:true, fn:() => skillPanel()},
+        {e:'🔨', n:'Craft gear at the Forge', d:'Rarity up to ' + Math.min(5, 1 + RL('forge')) + ' · needs a Forge', btn:'Craft · 25 🔷', ok:RL('forge') > 0 && PERM.frost >= 25, fn:() => { PERM.frost -= 25; const it = give({gear:Math.min(5, Math.floor(Math.random()*(1 + RL('forge'))) + 1)}); save(); say('🔨 Crafted: ' + (it ? it.name : 'gear'), 2.6); }}]}; });
+  const skillPanel = () => openPanelUI(() => ({title:'📈 Level ' + kLv() + ' · ' + kPts() + ' skill point' + (kPts() == 1 ? '' : 's'), sub:'Earn kingdom XP from enemies, bosses, raids and quests. Every 3 levels also gives +1 max heart. Next level at ' + A.fmt(30*kLv()*kLv()) + ' XP (you have ' + A.fmt(W.kxp) + ').',
+    rows:SK.map(s2 => { const r = W.sk[s2.id]|0; return {e:s2.e, n:s2.n + ' · rank ' + r + '/5', d:(r ? s2.d(r) : 'Not learned') + (r < 5 ? ' → ' + s2.d(r + 1) : ''), btn:r >= 5 ? 'MAX' : 'Learn · 1 point', ok:r < 5 && kPts() > 0, fn:() => { W.sk[s2.id] = r + 1; refreshMax(); save(); A.sfx('coin'); }}; })}));
+  const SHOP = [{e:'🐟', n:'Bag of 5 treats', d:'For Royal Guard Mau Mau', c:{flakes:250}, fn:() => { W.treats = (W.treats||0) + 5; }},
+    {e:'☕', n:'Cocoa (full heal)', d:'Heals you and your team right now', c:{flakes:120}, fn:() => { p.hp = p.max; mates.forEach(m => { m.ko = 0; m.hp = m.max; }); }},
+    {e:'🛷', n:'Sled', d:'Ride ×1.4 speed (V)', c:{flakes:1500}, own:'sled'}, {e:'🦌', n:'Reindeer', d:'Ride ×1.65 speed (V) · village level 1', c:{frost:40}, own:'reindeer', lv:1},
+    {e:'🏍️', n:'Snowmobile', d:'Ride ×1.95 speed (V) · village level 2', c:{frost:150}, own:'snowmobile', lv:2},
+    {e:'🛡️', n:'Royal Guard armor piece', d:'Rare gear · village level 1', c:{frost:60}, lv:1, fn:() => { const it = give({gear:4}); say('🛡️ ' + (it ? it.name : 'Royal Guard armor'), 2.4); }},
+    {e:'🧣', n:'Spirit scarf (cosmetic gear)', d:'Legendary gear · village level 3', c:{frost:160}, lv:3, fn:() => { const it = give({gear:5}); say('🧣 ' + (it ? it.name : 'Spirit scarf'), 2.4); }}];
+  const shopPanel = () => openPanelUI(() => ({title:'🏪 Frostpine Village Shop · village level ' + W.village, sub:'Defend the village from sieges to grow it and unlock more. You have ' + PERM.frost + ' 🔷 and ' + A.fmt(PERM.bank) + ' ❄.',
+    rows:SHOP.map(it => { const owned = it.own && W.mounts[it.own], locked = (it.lv||0) > W.village; return {e:it.e, n:it.n, d:it.d, btn:owned ? (W.mount == it.own && riding ? 'Hop off (V)' : 'Ride (V)') : locked ? '🔒 Village level ' + it.lv : costTxt(it.c), ok:owned ? true : !locked && canPay(it.c),
+      fn:() => { if (owned) { if (W.mount == it.own && riding) riding = false; else { W.mount = it.own; riding = true; } save(); A.sfx('blip'); return; } pay(it.c); if (it.own) { W.mounts[it.own] = 1; W.mount = it.own; riding = true; } if (it.fn) it.fn(); save(); A.sfx('coin'); }}; })}));
+  // ---------- VILLAGE SIEGE ----------
+  const BELL = {x:28.5*TS, y:115.5*TS}, TSPOT = [[-140, -60], [140, -60], [-140, 90], [140, 90]].map(([a, b]) => ({x:BELL.x + a, y:BELL.y + b}));
+  let siege = null;
+  Object.assign(FOE, {catapult:{n:'Snow Catapult', hp:8, sp:40, r:20, pts:90, siege:1, lob:1}, ram:{n:'Ice Ram', hp:7, sp:120, r:20, pts:80, siege:1, ram:1}, snowman:{n:'Giant Snowman', hp:22, sp:45, r:26, pts:150, siege:1, melee:2, big:1}});
+  BOSS.snowking = {n:'THE SNOWMAN SIEGE KING', hp:240, r:36, intro:'The Snowman Siege King: “Your little bell will be MINE! Catapults, FIRE!”', ai:{walk:35, spread:2, ring:4.5, summon:'ram', summonT:8}};
+  const startSiege = () => { if (siege) return; const hpMax = Math.round(60*(1 + .25*RL('defenses'))); siege = {phase:'build', t:20, wave:0, hp:hpMax, max:hpMax, turrets:TSPOT.slice(0, RL('defenses')).map(s2 => ({...s2, cool:1})), guards:[{x:BELL.x - 60, y:BELL.y + 40, cool:1}, {x:BELL.x + 60, y:BELL.y + 40, cool:1.5}]};
+    foes = []; talk([[...MAUF, 'ROYAL GUARD! Frostpine Village is under siege! Protect the village bell!', 'angry'], [...MAUF, 'You have 20 seconds to build snow turrets at the glowing spots. Then hold them off for 5 waves!', 'angry']]); };
+  const siegeEnd = win => { const S2 = siege; siege = null; foes = foes.filter(f => !FOE[f.k].siege); if (win) { W.village = Math.min(5, W.village + 1); W.siegeWins = (W.siegeWins|0) + 1; const it = give({frost:30 + 10*W.village, flakes:800 + 300*W.village, xp:120, gear:Math.random() < .5 ? 3 : 4}); X.stat('snowSiege', 1, 'add'); save(); A.sfx('win');
+      talk([[...MAUF, 'VICTORY! The bell still rings! Frostpine Village is safe!', 'happy'], [...NAR, 'Frostpine Village grew to level ' + W.village + '! The shop has new things. +' + (30 + 10*W.village) + ' Frost Crystals' + (it ? ' · ' + it.name : ''), '']]); }
+    else { say('🔔 The bell fell... The village is fine, and you can try again any time', 3.5); save(); } };
+  const siegeUpdate = dt => { if (!siege) return; const S2 = siege;
+    if (dist(p, BELL) > 1300) { siegeEnd(false); return; }
+    if (S2.phase == 'build') { S2.t -= dt; if (S2.t <= 0) { S2.phase = 'fight'; S2.wave = 0; S2.t = 1; } return; }
+    S2.t -= dt; const alive = foes.filter(f => f.sw).length;
+    if (S2.t <= 0 && alive == 0 && !boss) { if (S2.wave >= 5) { siegeEnd(true); return; } S2.wave++; S2.t = 2; say('⚔ Siege wave ' + S2.wave + ' of 5!', 2.2);
+      const n = 3 + S2.wave*2; for (let i = 0; i < n; i++) { const a = -Math.PI/2 + (Math.random() - .5)*2.2, r = 620 + Math.random()*120, k = ['goon', 'ram', 'pup', 'catapult', 'snowman'][i % (S2.wave >= 3 ? 5 : S2.wave >= 2 ? 4 : 3)]; spawnFoe(k, BELL.x + Math.cos(a)*r, BELL.y + Math.sin(a)*r); const f = foes[foes.length - 1]; if (f) { f.sw = 1; f.hurt = 99; } }
+      if (S2.wave == 5) { LAIR.snowking = {x:BELL.x, y:BELL.y - 330}; spawnBoss('snowking'); } }
+    for (const T of [...S2.turrets, ...S2.guards]) { T.cool -= dt; if (T.cool > 0) continue; let tg = null, bd = T.guard ? 320 : 380; for (const f of foes) { const d3 = dist(f, T); if (d3 < bd) { bd = d3; tg = f; } } if (!tg && boss && dist(boss, T) < 380) tg = boss;
+      if (tg) { T.cool = S2.guards.includes(T) ? 1.4 : 1; const a = Math.atan2(tg.y - T.y, tg.x - T.x); balls.push({x:T.x, y:T.y - 14, vx:Math.cos(a)*480, vy:Math.sin(a)*480, mine:1, dmg:X.armM()*.7, r:6, life:1, hits:[], col:'#e8f8ff', team:1}); } else T.cool = .3; }
+    if (S2.hp <= 0) siegeEnd(false); };
+  const bellHit = n => { if (!siege) return; siege.hp = Math.max(0, siege.hp - n); siege.hitT = .3; };
+  // ---------- RAID DUNGEONS (party of 4: you + up to 3 teammates) ----------
+  const RW = 40, RAIDS = [
+    {id:'catacombs', n:'The Frozen Catacombs', e:'⚰️', col:'#5a6a8a', mini:'r_knight', boss:'r_warden'},
+    {id:'labyrinth', n:'The Spirit Labyrinth', e:'🌀', col:'#3a5a8a', mini:'r_lantern', boss:'r_queen', need:() => (W.sp|0) >= 2},
+    {id:'citadel', n:'Storm Peak Citadel', e:'🌩️', col:'#4a4a6a', mini:'r_sentinel', boss:'r_titan', need:() => (W.sp|0) >= 5},
+    {id:'vault', n:'The Yeti King’s Vault', e:'🏔', col:'#6a8aa0', mini:'r_vgolem', boss:'r_yeti', need:() => !!W.down.yeti},
+    {id:'library', n:'Loki’s Sunken Library', e:'📚', col:'#3a2a5a', mini:'r_book', boss:'loki2', need:() => !!W.bau}];
+  Object.assign(BOSS, {
+    r_knight:{n:'FROSTBONE KNIGHT', hp:160, r:26, intro:'The Frostbone Knight raises a frozen shield.', ai:{walk:70, spread:1.8, dash:1}}, r_warden:{n:'THE FROST WARDEN', hp:420, r:36, phases:3, intro:'The Frost Warden: “None may wake the catacombs.”', ai:{walk:35, ring:3.4, summon:'bat', summonT:8, spiral:1, spread:2.4}},
+    r_lantern:{n:'THE LOST LANTERN', hp:170, r:28, intro:'A lantern drifts closer, flickering angrily.', ai:{walk:60, ring:3, fade:1}}, r_queen:{n:'THE WISP QUEEN', hp:440, r:32, phases:3, intro:'The Wisp Queen: “Stay... stay in my maze forever...”', ai:{walk:50, summon:'wisp', summonT:7, spiral:1, spread:2, fade:1}},
+    r_sentinel:{n:'STORM SENTINEL', hp:180, r:30, intro:'A sentinel made of thunderclouds.', ai:{walk:40, rock:2.4, burst:1}}, r_titan:{n:'THE STORM TITAN', hp:480, r:42, phases:3, intro:'The Storm Titan: “I AM THE THUNDER!”', ai:{walk:30, ring:3, rock:2.6, summon:'stormling', summonT:9, burst:1}},
+    r_vgolem:{n:'VAULT GOLEM', hp:190, r:34, intro:'A golem made of gold coins and ice.', ai:{walk:30, rock:2, ring:4}}, r_yeti:{n:'THE GOLDEN YETI KING', hp:500, r:42, phases:3, intro:'The Golden Yeti King: “MY GOLD! MY MOUNTAIN! MY VAULT! ROOOAR!”', ai:{walk:60, rock:1.8, dash:1, summon:'yeti', summonT:9, ring:4}},
+    r_book:{n:'LIVING SPELLBOOK', hp:170, r:26, intro:'A spellbook flaps open and starts reading YOU.', ai:{walk:55, spread:1.6, burst:1}}, loki2:{n:'EMPOWERED LOKI', hp:600, r:32, phases:4, intro:'Loki: “Welcome to my library! I’ve been studying. A LOT. And there are no sticks down here!”'}});
+  const MODS = [{n:'Slippery Floors', d:'the floors are icy', ice:1}, {n:'Swarming Minions', d:'bosses call twice as many helpers', swarm:1}, {n:'Hard Hitters', d:'enemies hit twice as hard', dmg:2}, {n:'Speedy Snowballs', d:'enemy snowballs fly faster', shot:1.35}, {n:'Treasure Week', d:'double raid loot', loot:2}];
+  const weekNo = () => Math.floor((Date.now() + 4*864e5) / (7*864e5)), weekMods = () => { const w = weekNo(); return [MODS[w % MODS.length], MODS[(w*3 + 1) % MODS.length]].filter((m, i, a) => a.indexOf(m) == i); };
+  if (W.raidW != weekNo()) { W.raidW = weekNo(); W.raidClr = {}; }   // weekly raid reset
+  let raid = null; const RM = new Uint8Array(RW*N);
+  { const set2 = (x, y, v) => { if (x >= 0 && y >= 0 && x < RW && y < N) RM[y*RW + x] = v; }; RM.fill(WALL);
+    RAIDS.forEach((R0, r) => { const y0 = r*28; for (const [a, b] of [[1, 8], [10, 17], [19, 26]]) for (let y = y0 + a; y <= y0 + b; y++) for (let x = 1; x <= RW - 2; x++) set2(x, y, FLOOR); for (const dy of [9, 18]) for (let x = 18; x <= 21; x++) set2(x, y0 + dy, 16);
+      for (let k = 0; k < 6; k++) { const px2 = 6 + (k*5 + r*3) % 28, py2 = y0 + 11 + (k*3) % 6; set2(px2, py2, ROCK); } }); }
+  const RDOOR = 16; SOLID[RDOOR] = 1; MINI[RDOOR] = '#7a5ab0';
+  const raidY0 = () => raid ? raid.r*28 : 0, rpx = (x, y) => ({x:(N + x + .5)*TS, y:(raidY0() + y + .5)*TS});
+  const PLATE_E = ['❄', '🔥', '🌙', '⭐'];
+  const enterRaid = R0 => { const r = RAIDS.indexOf(R0); raid = {R:R0, r, mods:weekMods(), open:0, order:[0, 1, 2, 3].sort(() => Math.random() - .5), step:0, mini:0, bossOn:0, loot:0, plates:[[8, 3], [16, 6], [24, 3], [32, 6]].map(([x, y], i) => ({i, x, y}))};
+    const st = rpx(3, 4); p.x = st.x; p.y = st.y; p.vx = p.vy = 0; riding = false; foes = []; balls = []; boss = null; tornado = null; mateHome(); mau.x = p.x - 40; mau.y = p.y + 10; bauF.x = p.x - 30; bauF.y = p.y + 30;
+    for (let i = 0; i < 3; i++) { const q = rpx(14 + i*7, 5); spawnFoe(['bat', 'imp', 'golem'][i], q.x, q.y); }
+    talk([[...NAR, R0.e + ' ' + R0.n + ' · this week: ' + raid.mods.map(m => m.n + ' (' + m.d + ')').join(' · '), ''], [...NAR, 'Floor 1: step on the rune plates in the order shown on the wall. Floor 2: a guardian. Floor 3: the raid boss.', '']]); };
+  const leaveRaid = msg2 => { raid = null; boss = null; foes = []; balls = []; respawn(); if (msg2) say(msg2, 3); };
+  const raidTile = (tx, ty) => RM[ty*RW + (tx - N)];
+  const raidUpdate = dt => { if (!raid) return; const ry = Math.floor(p.y/TS) - raidY0();
+    if (raid.open == 0) for (const pl of raid.plates) { const q = rpx(pl.x, pl.y); if (dist(q, p) < 30 && raid.lastPlate !== pl.i) { raid.lastPlate = pl.i; if (raid.order[raid.step] == pl.i) { raid.step++; A.sfx('coin'); splat(q.x, q.y, 10, '#9fe8ff'); if (raid.step >= 4) { raid.open = 1; A.sfx('win'); say('🚪 The rune door opens! Floor 2', 2.6); } } else { raid.step = 0; A.sfx('bad'); say('✖ Wrong rune! The plates reset… and something woke up', 2.4); for (let i = 0; i < 2; i++) { const s2 = rpx(10 + i*20, 4); spawnFoe('imp', s2.x, s2.y); } } } }
+    if (raid.lastPlate != null && raid.plates.every(pl => dist(rpx(pl.x, pl.y), p) > 40)) raid.lastPlate = null;
+    if (ry >= 10 && ry <= 17 && !raid.mini) { raid.mini = 1; LAIR[raid.R.mini] = rpx(20, 14); spawnBoss(raid.R.mini); }
+    if (ry >= 19 && !raid.bossOn) { raid.bossOn = 1; LAIR[raid.R.boss] = rpx(20, 23); spawnBoss(raid.R.boss); if (raid.R.boss == 'loki2') sticks = []; } };
+  const raidBossDown = B => { if (!raid) return false; if (B.k == raid.R.mini) { raid.open = 2; give({frost:15, flakes:400, xp:120}); say('🚪 The guardian falls! The way down opens · Floor 3', 3); return true; }
+    if (B.k == raid.R.boss) { raid.loot = 1; const first = !W.raidClr[raid.R.id], mul = raid.mods.some(m => m.loot) ? 2 : 1; W.raidClr[raid.R.id] = 1; W.raids[raid.R.id] = (W.raids[raid.R.id]|0) + 1; X.stat('snowRaids', 1, 'add');
+      const it = give({frost:(first ? 80 : 25)*mul, flakes:(first ? 3000 : 800)*mul, xp:300, score:8000, gear:first ? 5 : 4}); W.treats = (W.treats||0) + 5*mul; save(); A.sfx('win');
+      talk([[...NAR, '🏆 ' + raid.R.n + ' cleared!' + (first ? ' (first clear this week!)' : ''), ''], [...NAR, 'Loot: +' + (first ? 80 : 25)*mul + ' Frost Crystals, +' + A.fmt((first ? 3000 : 800)*mul) + ' snowflakes, +' + 5*mul + ' Mau Mau treats' + (it ? ', ' + it.name : '') + '. Raid title progress: ' + (W.raids[raid.R.id]) + ' clear' + (W.raids[raid.R.id] == 1 ? '' : 's') + '.', '']], () => leaveRaid('🏕 Back at Camp Cocoa with your raid loot!')); return true; }
+    return false; };
+  const raidPanel = () => openPanelUI(() => ({title:'⚔️ Raid Board · weekly raids', sub:'Party of 4: you, your teammates, Mau Mau and Bau Bau. This week: ' + weekMods().map(m => m.n).join(' + ') + '. First clear each week gives the big loot.',
+    rows:RAIDS.map(R0 => { const ok = !R0.need || R0.need(); return {e:R0.e, n:R0.n + (W.raidClr[R0.id] ? ' ✓ cleared this week' : ''), d:ok ? 'Boss: ' + BOSS[R0.boss].n.toLowerCase().replace(/\b\w/g, m => m.toUpperCase()) + ' · cleared ' + (W.raids[R0.id]|0) + '×' : '🔒 ' + {labyrinth:'Reach Spirits of the Snow chapter 2', citadel:'Reach chapter 5', vault:'Beat the Yeti King', library:'Rescue Bau Bau'}[R0.id], btn:ok ? 'Enter raid' : 'Locked', ok, fn:() => { panel = null; enterRaid(R0); }}; })}));
+  // where the base, raid board, shop and siege bell are
+  const FORT = {x:57.5*TS, y:93.6*TS}, BOARD = {x:44.5*TS, y:90.5*TS};
+  const p3Things = L => { L.push({x:FORT.x, y:FORT.y, n:'Ice Fort', f:fortPanel}); L.push({x:BOARD.x, y:BOARD.y, n:'Raids', f:raidPanel});
+    L.push({x:24.5*TS, y:113.5*TS, n:'Shop', f:shopPanel}); if (!siege) L.push({x:BELL.x, y:BELL.y, n:'Defend', f:startSiege});
+    if (siege && siege.phase == 'build') TSPOT.forEach(s2 => { if (!siege.turrets.some(T => T.x == s2.x && T.y == s2.y)) L.push({x:s2.x, y:s2.y, n:'Build 120 ❄', f:() => { if (PERM.bank < 120) { say('Need 120 snowflakes', 1.6); A.sfx('bad'); return; } PERM.bank -= 120; siege.turrets.push({...s2, cool:1}); A.sfx('coin'); }}); });
+    if (raid && raid.open == 0) L.push({x:rpx(2, 2).x, y:rpx(2, 2).y, n:'Leave raid', f:() => leaveRaid('🏕 You left the raid')});
+    return L; };
+  const p3Update = dt => { siegeUpdate(dt); raidUpdate(dt);
+    // pantry: treats when you rest at camp
+    if (RL('pantry') && dist(p, FIRE) < 200 && Date.now() - (W.pantryAt||0) > 5*60e3) { W.pantryAt = Date.now(); W.treats = (W.treats||0) + RL('pantry'); addNum(p.x, p.y - 40, '+' + RL('pantry') + ' 🐟 from the pantry', '#c4601a'); save(); }
+    // level ups
+    const lv = kLv(); if (lv > (W.klv || 1)) { W.klv = lv; X.stat('snowKLv', lv, 'max'); refreshMax(); say('📈 Kingdom level ' + lv + '! +1 skill point (K)' + ((lv - 1) % 3 == 0 ? ' · +1 max heart' : ''), 3); A.sfx('win'); save(); } };
+  const p3Draw = () => {
+    // the Ice Fort: bigger and fancier every tier
+    if (onScreen(FORT.x, FORT.y, 200)) { const T = W.base.tier, s2 = 1 + T*.25, fx = FORT.x, fy = FORT.y + 20; g.save(); g.translate(fx, fy); g.scale(s2, s2);
+      g.fillStyle = 'rgba(0,0,0,.15)'; g.beginPath(); g.ellipse(0, 4, 52, 10, 0, 0, TAU); g.fill(); g.fillStyle = T >= 3 ? '#cfeaff' : '#e8f4ff'; rr(g, -44, -40, 88, 44, 6); g.fill(); g.strokeStyle = '#9ec4e8'; g.lineWidth = 2; rr(g, -44, -40, 88, 44, 6); g.stroke();
+      for (let i = -44; i < 44; i += 12) { g.fillStyle = T >= 3 ? '#cfeaff' : '#e8f4ff'; g.fillRect(i, -48, 8, 9); }
+      const tw = T + 1; for (let i = 0; i < Math.min(4, tw); i++) { const tx2 = [-50, 50, -26, 26][i]; g.fillStyle = T >= 3 ? '#b8e0ff' : '#dcecfa'; rr(g, tx2 - 9, -62 - i*4, 18, 66 + i*4, 4); g.fill(); g.fillStyle = T >= 2 ? '#64CDF5' : '#9ec4e8'; g.beginPath(); g.moveTo(tx2 - 11, -62 - i*4); g.lineTo(tx2, -78 - i*6); g.lineTo(tx2 + 11, -62 - i*4); g.fill();
+        g.strokeStyle = '#8D5B1D'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(tx2, -78 - i*6); g.lineTo(tx2, -92 - i*6); g.stroke(); g.fillStyle = ['#00B451', '#2f5fd0', '#c8102e', '#F9BF01'][i]; g.beginPath(); g.moveTo(tx2, -92 - i*6); g.lineTo(tx2 + 10 + Math.sin(t*4 + i)*2, -88 - i*6); g.lineTo(tx2, -84 - i*6); g.fill(); }
+      g.fillStyle = '#5a7aa0'; g.beginPath(); g.arc(0, 4, 12, Math.PI, 0); g.fill(); if (T >= 3 && !low()) { g.fillStyle = 'rgba(160,220,255,' + (.25 + .15*Math.sin(t*2)) + ')'; g.beginPath(); g.arc(0, -40, 70, 0, TAU); g.fill(); }
+      g.restore(); g.fillStyle = '#14204a'; g.font = '800 10px ' + A.font; g.textAlign = 'center'; g.fillText(TIER_N[T], fx, fy + 18); }
+    if (onScreen(BOARD.x, BOARD.y)) { g.fillStyle = '#8D5B1D'; g.fillRect(BOARD.x - 2, BOARD.y - 30, 4, 34); g.fillStyle = '#c8a070'; rr(g, BOARD.x - 22, BOARD.y - 50, 44, 26, 4); g.fill(); g.fillStyle = '#14204a'; g.font = '800 9px ' + A.font; g.textAlign = 'center'; g.fillText('⚔ RAIDS', BOARD.x, BOARD.y - 33); }
+    // village bell, turrets, guards, siege bar; the village grows with every siege won
+    if (onScreen(BELL.x, BELL.y, 300)) { g.fillStyle = '#8D5B1D'; g.fillRect(BELL.x - 22, BELL.y - 40, 4, 44); g.fillRect(BELL.x + 18, BELL.y - 40, 4, 44); g.fillRect(BELL.x - 24, BELL.y - 44, 48, 6); const sw2 = siege && siege.hitT > 0 ? Math.sin(t*40)*.3 : Math.sin(t*1.5)*.05;
+      g.save(); g.translate(BELL.x, BELL.y - 38); g.rotate(sw2); g.fillStyle = '#F9BF01'; g.beginPath(); g.moveTo(-12, 22); g.quadraticCurveTo(-12, 0, 0, 0); g.quadraticCurveTo(12, 0, 12, 22); g.closePath(); g.fill(); g.restore();
+      for (let i = 0; i < W.village; i++) { const bx = BELL.x - 160 + i*80, by = BELL.y - 120; g.fillStyle = '#8D5B1D'; g.fillRect(bx, by, 3, 40); g.fillStyle = ['#c8102e', '#2f5fd0', '#00B451', '#F9BF01', '#EA55AB'][i]; g.beginPath(); g.moveTo(bx + 3, by); g.lineTo(bx + 22, by + 6); g.lineTo(bx + 3, by + 12); g.fill(); }
+      if (siege) { if (siege.phase == 'build') TSPOT.forEach(s2 => { if (!siege.turrets.some(T => T.x == s2.x)) { g.strokeStyle = 'rgba(100,205,245,' + (.5 + .3*Math.sin(t*5)) + ')'; g.lineWidth = 3; g.beginPath(); g.arc(s2.x, s2.y, 22, 0, TAU); g.stroke(); } });
+        siege.turrets.forEach(T => { g.fillStyle = '#e8f4ff'; rr(g, T.x - 14, T.y - 24, 28, 28, 6); g.fill(); g.strokeStyle = '#9ec4e8'; g.stroke(); g.fillStyle = '#5a7aa0'; g.fillRect(T.x - 3, T.y - 32, 6, 10); });
+        siege.guards.forEach(G => penguin(G.x, G.y));
+        const bw = 160; g.fillStyle = 'rgba(0,0,0,.3)'; rr(g, BELL.x - bw/2, BELL.y + 12, bw, 10, 5); g.fill(); g.fillStyle = siege.hp < siege.max/3 ? '#FF4539' : '#00B451'; rr(g, BELL.x - bw/2, BELL.y + 12, bw*siege.hp/siege.max, 10, 5); g.fill(); } }
+    // raid wing: rune plates, the order on the wall, loot
+    if (raid) { raid.plates.forEach(pl => { const q = rpx(pl.x, pl.y), lit = raid.open > 0 || raid.order.indexOf(pl.i) < raid.step; g.fillStyle = lit ? 'rgba(159,232,255,.85)' : 'rgba(80,90,130,.85)'; rr(g, q.x - 20, q.y - 14, 40, 28, 8); g.fill(); g.font = '18px ' + A.font; g.textAlign = 'center'; g.fillText(PLATE_E[pl.i], q.x, q.y + 6); });
+      if (raid.open == 0) { const q = rpx(20, 1.4); g.fillStyle = 'rgba(20,32,74,.85)'; rr(g, q.x - 120, q.y - 16, 240, 30, 10); g.fill(); g.fillStyle = '#fff'; g.font = '800 13px ' + A.font; g.textAlign = 'center'; g.fillText('RUNE ORDER: ' + raid.order.map(i => PLATE_E[i]).join('  ') + '   (' + raid.step + '/4)', q.x, q.y + 4); } }
+    // your mount
+    if (riding && W.mount && dead <= 0) { const m = W.mount; g.save(); g.translate(p.x, p.y + 10); if (m == 'sled') { g.fillStyle = '#a0522d'; rr(g, -18, 0, 36, 8, 3); g.fill(); g.strokeStyle = '#5a3a1a'; g.lineWidth = 2; g.beginPath(); g.moveTo(-20, 10); g.lineTo(22, 10); g.quadraticCurveTo(28, 10, 26, 4); g.stroke(); }
+      else if (m == 'reindeer') { g.fillStyle = '#a0703a'; g.beginPath(); g.ellipse(0, 4, 20, 9, 0, 0, TAU); g.fill(); g.fillRect(-14, 8, 4, 10); g.fillRect(10, 8, 4, 10); g.beginPath(); g.ellipse(20, -6, 7, 6, 0, 0, TAU); g.fill(); g.strokeStyle = '#6a4a2a'; g.lineWidth = 2; g.beginPath(); g.moveTo(20, -12); g.lineTo(16, -24); g.moveTo(22, -12); g.lineTo(28, -24); g.stroke(); g.fillStyle = '#FF4539'; g.beginPath(); g.arc(27, -6, 2.5, 0, TAU); g.fill(); }
+      else { g.fillStyle = '#c8102e'; rr(g, -20, -4, 40, 14, 6); g.fill(); g.fillStyle = '#14204a'; g.fillRect(-22, 10, 44, 3); g.fillStyle = '#ffe066'; g.beginPath(); g.arc(20, 2, 3, 0, TAU); g.fill(); }
+      g.restore(); } };
+  refreshMax(); p.hp = p.max; mates.forEach(m => { m.lv += RL('barracks'); m.max += RL('barracks'); m.hp = m.max; });
+  const roll = () => { if ((p.rollCd||0) > 0 || dead > 0) return; const kk = K.k; let mx = ((kk.ArrowRight || kk.d || kk.D) ? 1 : 0) - ((kk.ArrowLeft || kk.a || kk.A) ? 1 : 0), my = ((kk.ArrowDown || kk.s || kk.S) ? 1 : 0) - ((kk.ArrowUp || kk.w || kk.W) ? 1 : 0); const a = mx || my ? Math.atan2(my, mx) : p.face;
+    p.roll = .26; p.rollCd = 1; p.vx = Math.cos(a)*640; p.vy = Math.sin(a)*640; p.inv = Math.max(p.inv, .32); A.tone(260, .06, 'triangle', .03); };
+  let holdMates = false, cheerT = 0, shakeV = 0;
   // ---------- map / fast travel ----------
-  const openMap = tr => { mapOpen = true; travel = !!tr; A.sfx('blip'); };
+  const openMap = tr => { if (raid) { say('🗺 No map down here! Finish the raid, or leave from the entrance on floor 1', 2.4); return; } mapOpen = true; travel = !!tr; A.sfx('blip'); };
   const MAPR = {x:20, y:66, s:5.6};
+  let regB = null; const regExplored = () => { if (!regB) { regB = []; for (let i = 0; i < FB*FB; i++) regB.push(regionAt((i % FB)*2 + 1, Math.floor(i/FB)*2 + 1)); } const o = {}; for (let i = 0; i < regB.length; i++) { const k = regB[i]; if (!REG[k]) continue; const e3 = o[k] || (o[k] = {seen:0, all:0}); e3.all++; if (fog[i]) e3.seen++; } return o; };
   const mapDown = q => { if (q.y > 650 && q.y < 700) { if (q.x < VW/2) { mapOpen = false; travel = false; } else { close(); X.exit(); } return; }
     if (travel) for (const k in WAYS) { if (!W.ways[k]) continue; const sx = MAPR.x + (WAYS[k].x + .5)*MAPR.s, sy = MAPR.y + (WAYS[k].y + .5)*MAPR.s; if (Math.hypot(q.x - sx, q.y - sy) < 24) { const w2 = px(WAYS[k]); p.x = w2.x; p.y = w2.y + 40; p.vx = p.vy = 0; foes = []; balls = []; if (boss) boss = null; mateHome(); mapOpen = false; travel = false; A.sfx('win'); say('✨ Whoosh! ' + WAYS[k].n, 2); save(); return; } } };
   const toWorld = q => ({x:q.x + cam.x, y:q.y + cam.y});
@@ -506,31 +680,31 @@ A.snowWorld = function(X) {
   let hudR = null, mmR = null, btnR = [];
   const inR = (q, r2) => r2 && q.x >= r2.x && q.x <= r2.x + r2.w && q.y >= r2.y && q.y <= r2.y + r2.h;
   const down = (q, e) => { if (e && e.pointerType) { const was = touchUI; touchUI = e.pointerType == 'touch' || e.pointerType == 'pen'; if (was != touchUI) layout(); }
-    mouseIn = true; aim = q; if (quiz) return; if (mapOpen) return mapDown(q); if (dlg) return nextLine(); if (dead > 0) return;
+    mouseIn = true; aim = q; if (quiz) return; if (panel) { panelDown(q); return; } if (mapOpen) return mapDown(q); if (dlg) return nextLine(); if (dead > 0) return;
     if (inR(q, hudR)) { W.hudMin = W.hudMin ? 0 : 1; A.sfx('blip'); return; } if (inR(q, mmR)) { openMap(false); return; }
-    for (const b of btnR) if (inR(q, b)) { if (b.id == 'ab') useAbility(); else if (b.id == 'use') use(); else if (b.id == 'feed') feedMau(); else openMap(false); return; }
+    for (const b of btnR) if (inR(q, b)) { if (b.id == 'ride') { toggleMount(); return; } if (b.id == 'roll') { roll(); return; } if (b.id == 'skills') { skillPanel(); return; } if (b.id == 'ab') useAbility(); else if (b.id == 'use') use(); else if (b.id == 'feed') feedMau(); else openMap(false); return; }
     if (touchUI && q.y > BAR) { const i = Math.floor(q.x/(VW/BTN.length)); if (i < 4) pads.set(e.pointerId, ['l', 'u', 'd', 'r'][i]); else if (i == 4) useAbility(); else if (i == 5) use(); else if (i == 6) feedMau(); else openMap(false); return; }
     const wq = toWorld(q); if (!boss) for (const T2 of things()) if (Math.hypot(T2.x - wq.x, T2.y - wq.y) < 30 && dist(T2, p) < 110) { T2.f(); return; }
     charge = {id:e.pointerId, t:0}; };
   const move = (q, e) => { if (e && e.pointerType == 'mouse' && touchUI && !e.buttons) { touchUI = false; layout(); } mouseIn = q.y < BAR; if (!charge || charge.id == e.pointerId) aim = q; };
   const up = e => { pads.delete(e.pointerId); if (charge && charge.id == e.pointerId) { const pk = Math.min(1, charge.t); charge = null; if (!dlg && !mapOpen && !quiz && dead <= 0) { const wa = toWorld(aim); throwAt(wa.x, wa.y, pk > .25 ? pk : 0); } } };
-  const key = e => { const k = e.key; if (quiz) return;
+  const key = e => { const k = e.key; if (quiz) return; if (panel) { if (k == 'Escape' || k == 'e' || k == 'E' || k == 'Enter' || k == 'k' || k == 'K') panel = null; return; }
     if (mapOpen) { if (k == 'm' || k == 'M' || k == 'Enter' || k == ' ') { mapOpen = false; travel = false; } return; }
     if (dlg) { if (k == ' ' || k == 'Enter' || k == 'e' || k == 'E') nextLine(); return; }
-    if (k == 'm' || k == 'M') openMap(false); else if (k == 'e' || k == 'E' || k == 'Enter') use(); else if (k == ' ' || k == 'q' || k == 'Q') useAbility(); else if (k == 'g' || k == 'G') feedMau(); else if (k == 'h' || k == 'H') { W.hudMin = W.hudMin ? 0 : 1; }
+    if (k == 'm' || k == 'M') openMap(false); else if (k == 'e' || k == 'E' || k == 'Enter') use(); else if (k == ' ' || k == 'q' || k == 'Q') useAbility(); else if (k == 'g' || k == 'G') feedMau(); else if (k == 'v' || k == 'V') toggleMount(); else if (k == 'k' || k == 'K') skillPanel(); else if (k == 'Shift') roll(); else if (k == 'c' || k == 'C') { holdMates = !holdMates; say(holdMates ? '✋ Teammates: hold this position (C to follow)' : '👣 Teammates: follow me', 1.8); } else if (k == 'h' || k == 'H') { W.hudMin = W.hudMin ? 0 : 1; }
     else if ((k == 'f' || k == 'F') && dead <= 0) { const wa = mouseIn ? toWorld(aim) : {x:p.x + Math.cos(p.face)*300, y:p.y + Math.sin(p.face)*300}; throwAt(wa.x, wa.y, 0); } };
   // ---------- update ----------
   const update = dt => { t += dt; msgT = Math.max(0, msgT - dt);
     for (const f2 of fx) { f2.x += f2.vx*dt; f2.y += f2.vy*dt; f2.t -= dt; } fx = fx.filter(f2 => f2.t > 0);
     for (const n of nums) { n.y -= 30*dt; n.t -= dt; } nums = nums.filter(n => n.t > 0);
-    if (quiz || dlg || mapOpen) return;
+    if (quiz || dlg || mapOpen || panel) return;
     if (dead > 0) { dead -= dt; if (dead <= 0) respawn(); return; }
     if (charge) charge.t += dt * (1 + .12*(X.PU ? X.PU('pack') : 0)) * (X.CL().pack || 1);
     // move
     const kk = K.k; let mx = ((kk.ArrowRight || kk.d || kk.D || pad('r')) ? 1 : 0) - ((kk.ArrowLeft || kk.a || kk.A || pad('l')) ? 1 : 0), my = ((kk.ArrowDown || kk.s || kk.S || pad('d')) ? 1 : 0) - ((kk.ArrowUp || kk.w || kk.W || pad('u')) ? 1 : 0);
     const L = Math.hypot(mx, my); if (L) { mx /= L; my /= L; if (!charge) p.face = Math.atan2(my, mx); p.walk += dt; }
     const tl = tileAt(Math.floor(p.x/TS), Math.floor(p.y/TS)), spd = 215 * X.spd() * (tl == PATH || tl == CAMP || tl == FLOOR ? 1.2 : tl == DEEP ? .62 : 1) * (charge ? .6 : 1), k2 = tl == ICE ? 2.2 + .8*X.gStat('boots') : 14;
-    p.vx += (mx*spd - p.vx) * Math.min(1, k2*dt); p.vy += (my*spd - p.vy) * Math.min(1, k2*dt);
+    const k3 = raid && raid.mods.some(m2 => m2.ice) ? Math.min(k2, 2.4) : k2; if (!(p.roll > 0)) { p.vx += (mx*spd - p.vx) * Math.min(1, k3*dt); p.vy += (my*spd - p.vy) * Math.min(1, k3*dt); } else splat(p.x, p.y + 10, 1, '#ffffff');
     const nx = p.x + p.vx*dt, ny = p.y + p.vy*dt; if (!blocked(nx, p.y, 12)) p.x = nx; else p.vx = 0; if (!blocked(p.x, ny, 12)) p.y = ny; else p.vy = 0;
     if (!gateOpen() && Math.abs(p.x - (83.5*TS)) < 90 && Math.abs(p.y - 31*TS) < 40) { gateT -= dt; if (gateT <= 0) { gateT = 4; say('🔒 The gate is sealed: ' + runesN() + '/3 Moon Runes' + (W.mau ? '' : ' · Royal Guard Mau Mau has the key') , 3); } }
     // timers, ammo, healing
@@ -539,7 +713,7 @@ A.snowWorld = function(X) {
     if (X.PU('regen') && p.hp < p.max) { p.regT = (p.regT || 0) + dt; if (p.regT >= 40 - 5*X.PU('regen')) { p.regT = 0; p.hp++; addNum(p.x, p.y - 40, '☕ +♥', '#8D5B1D'); } }
     if (dist(p, FIRE) < 110 && p.hp < p.max) { healT -= dt; if (healT <= 0) { healT = 1; p.hp++; addNum(p.x, p.y - 40, '+♥', '#FF4539'); } }
     for (const d2 of drops) { d2.life -= dt; if (dist(d2, p) < 34) { d2.life = 0; if (d2.k == 'fish') { W.treats = (W.treats||0) + 1; addNum(p.x, p.y - 40, '+1 🐟 treat', '#c4601a'); } else { p.hp = Math.min(p.max, p.hp + 1); addNum(p.x, p.y - 40, '☕ +♥', '#8D5B1D'); } A.sfx('coin'); } } drops = drops.filter(d2 => d2.life > 0);
-    storyUpdate(dt);
+    storyUpdate(dt); p3Update(dt);
     blizT -= dt; if (blizT <= 0) { if (blizzard > 0) { blizzard = 0; blizT = 150 + Math.random()*200; } else { blizzard = 40 + Math.random()*30; blizT = blizzard; } } if (blizzard > 0) blizzard = Math.max(.01, blizzard - dt);
     // where am I
     const rg = regAt(p.x, p.y); if (rg != lastReg) { if (lastReg) say('📍 ' + REG[rg].n, 2); const md = REG[rg].haunt ? 'story' : REG[rg].mood || 'action'; if (md != regMood && window.WLMusic && window.WLMusic.mood) { regMood = md; try { window.WLMusic.mood(md); } catch(e){} } if (rg != 'castle' && W.bau) lokiReady = true; lastReg = rg; }
@@ -556,11 +730,12 @@ A.snowWorld = function(X) {
     // Loki's minions roam the land (never inside camp)
     spawnT -= dt; const cap = A.D(6, 8, 10); if (spawnT <= 0 && rg != 'camp' && !REG[rg].safe) { spawnT = 1.1; if (foes.length < cap && !boss) for (let k3 = 0; k3 < 6; k3++) { const a = Math.random()*TAU, r2 = 430 + Math.random()*260, sx = p.x + Math.cos(a)*r2, sy = p.y + Math.sin(a)*r2, rr2 = regAt(sx, sy);
         if (sx < TS*2 || sy < TS*2 || sx > WORLD - TS*2 || sy > WORLD - TS*2 || rr2 == 'camp' || REG[rr2].safe || (rr2 == 'oldroad' && Math.random() < .5) || blocked(sx, sy, 16) || (!spiritsOpen() && Math.floor(sx/TS) >= N0 && sy < N0*TS) || Math.hypot(sx - FIRE.x, sy - FIRE.y) < 600) continue; const pool = REG[rr2].pool; spawnFoe(pool[Math.floor(Math.random()*pool.length)], sx, sy); break; } }
-    for (const f of foes) { const F = FOE[f.k], d = dist(f, p), ang = Math.atan2(p.y - f.y, p.x - f.x); f.flash = Math.max(0, (f.flash || 0) - dt); f.hurt = Math.max(0, f.hurt - dt); f.flap += dt*12; f.cool -= dt;
+    for (const f of foes) { const F = FOE[f.k], TG = siege && F.siege && dist(f, p) > 120 ? BELL : p, d = dist(f, TG), ang = Math.atan2(TG.y - f.y, TG.x - f.x); f.flash = Math.max(0, (f.flash || 0) - dt); f.hurt = Math.max(0, f.hurt - dt); f.flap += dt*12; f.cool -= dt;
       if (d > 1150 && !F.clone) { f.dead = 1; continue; }
       if (f.kb > 0) { f.kb -= dt; const nx2 = f.x + f.kbx*dt, ny2 = f.y + f.kby*dt; if (F.fly || !blocked(nx2, ny2, 10)) { f.x = nx2; f.y = ny2; } }
       if (f.stun > 0) { f.stun -= dt; continue; }
-      const aggro = (d < (F.fly ? 340 : 300) || f.hurt > 0) && dist(p, FIRE) > 400; let vx = 0, vy = 0;
+      const aggro = ((d < (F.fly ? 340 : 300) || f.hurt > 0) && dist(p, FIRE) > 400) || (siege && f.sw); let vx = 0, vy = 0;
+      if (F.lob && siege) { if (d > 380) { vx = Math.cos(ang); vy = Math.sin(ang); } f.cool -= 0; if (f.cool <= 0 && d < 460) { f.cool = 3.2; shot(f, ang, 170, {r:13, dmg:2, col:'#e8f4ff', life:3}); } }
       if (F.clone) { f.x += Math.sin(t*2 + f.flap)*20*dt; }
       else if (aggro) { if (F.shoot) { const want = d > 250 ? 1 : d < 160 ? -1 : 0, pa = ang + Math.PI/2; vx = Math.cos(ang)*want + Math.cos(pa)*f.dir*.6; vy = Math.sin(ang)*want + Math.sin(pa)*f.dir*.6; if (Math.random() < dt*.4) f.dir *= -1; }
         else { vx = Math.cos(ang); vy = Math.sin(ang); if (F.fly) { vx += Math.cos(t*5 + f.flap)*.6; vy += Math.sin(t*4 + f.flap)*.6; } } }
@@ -568,7 +743,9 @@ A.snowWorld = function(X) {
       const sp2 = F.sp * (f.slow > 0 ? .5 : 1); f.slow = Math.max(0, (f.slow || 0) - dt); const nx2 = f.x + vx*sp2*dt, ny2 = f.y + vy*sp2*dt;
       const inCamp = (x, y) => Math.hypot(x - FIRE.x, y - FIRE.y) < 8*TS;
       if (F.fly || !blocked(nx2, f.y, 10)) { if (!inCamp(nx2, f.y)) f.x = nx2; } else { f.wt = 0; f.dir *= -1; } if (F.fly || !blocked(f.x, ny2, 10)) { if (!inCamp(f.x, ny2)) f.y = ny2; } else f.wt = 0;
-      if (F.melee && d < F.r + 14 && f.cool <= 0) { f.cool = 1; hurtMe(F.melee); f.kbx = -Math.cos(ang)*200; f.kby = -Math.sin(ang)*200; f.kb = .25; }
+      if (F.ram && siege && d < F.r + 20) { bellHit(4); f.dead = 1; splat(f.x, f.y, 16, '#bfe9ff'); shakeV = 5; continue; }
+      if (F.melee && TG === BELL && d < F.r + 20 && f.cool <= 0) { f.cool = 1.2; bellHit(F.melee); }
+      else if (F.melee && d < F.r + 14 && f.cool <= 0) { f.cool = 1; hurtMe(F.melee); f.kbx = -Math.cos(ang)*200; f.kby = -Math.sin(ang)*200; f.kb = .25; }
       if (F.shoot && (aggro || F.clone) && f.cool <= 0 && d < 380) { f.cool = F.shoot * (.8 + Math.random()*.4) * A.D(1.3, 1, .8); if (F.hex) for (let i = -1; i <= 1; i++) shot(f, ang + i*.22, 230, {r:6, col:'#c04ae0', hex:1}); else shot(f, ang, F.big ? 220 : 270, {r:F.big ? 11 : 6, dmg:F.big ? 2 : 1}); } }
     foes = foes.filter(f => !f.dead);
     // ROYAL GUARD MAU MAU: follows you, throws, Shield Belly, Spear Charge, Snack Break, sniffs out snacks, naps when you stand still
@@ -583,7 +760,7 @@ A.snowWorld = function(X) {
         if (dm > 600) { mau.x = tx; mau.y = ty; } else if (dm > 14 && (mau.idle < 7 || dm > 160)) { const s2 = Math.min(dm*3.6, 280); mau.x += (tx - mau.x)/dm*s2*dt; mau.y += (ty - mau.y)/dm*s2*dt; mau.walk += dt; } }
       // Spear Charge at the nearest enemy
       if (mau.chargeCd <= 0 && !mau.dash) { let tg = null, bd = 230; for (const f of foes) { const d3 = dist(f, mau); if (d3 < bd && !FOE[f.k].clone) { bd = d3; tg = f; } } if (!tg && boss && dist(boss, mau) < 260) tg = boss;
-        if (tg) { mau.dash = {a:Math.atan2(tg.y - mau.y, tg.x - mau.x), t:.42, hit:[]}; mau.chargeCd = 7; mauSay('SPEAR CHARGE! For the Emperor!', 1.6); A.tone(300, .12, 'sawtooth', .04); } else mau.chargeCd = .5; }
+        if (tg) { mau.dash = {a:Math.atan2(tg.y - mau.y, tg.x - mau.x), t:.42, hit:[]}; mau.chargeCd = 7 - RL('guard'); mauSay('SPEAR CHARGE! For the Emperor!', 1.6); A.tone(300, .12, 'sawtooth', .04); } else mau.chargeCd = .5; }
       // Snack Break: when you're hurt, he eats a treat to heal and buff the team
       if (mau.snackCd <= 0 && p.hp <= Math.max(1, Math.floor(p.max*.4)) && (W.treats||0) > 0 && dead <= 0) { W.treats--; mau.snackCd = 30; mau.st2 = 'eat'; mau.stT = 1.8; buffT = Math.max(buffT, 10); p.hp = Math.min(p.max, p.hp + 3); mates.forEach(m => { if (!m.ko) m.hp = m.max; }); addNum(p.x, p.y - 44, '🐟 Snack Break! +3♥', '#c4601a'); mauSay('SNACK BREAK! *munch munch* Team, eat up!', 2.6); A.sfx('coin'); }
       // sniffing out hidden snacks
@@ -591,32 +768,34 @@ A.snowWorld = function(X) {
         if (ds < 170 && dist(sn, p) < 34) { W.snacks[sn.id] = 1; W.treats = (W.treats||0) + 1; addNum(sn.x, sn.y - 20, '+1 ' + sn.e, '#c4601a'); A.sfx('coin'); X.stat('snowSnack', 1, 'add'); mau.st2 = 'dance'; mau.stT = 1.6; save(); } }
       if (mau.quipT <= 0) { mau.quipT = 28 + Math.random()*20; if (!boss && mau.idle < 7) mauSay(MAU_LINES[Math.floor(Math.random()*MAU_LINES.length)], 3.2); }
       mau.cool -= dt; if (mau.cool <= 0 && !mau.dash && mau.idle < 7) { let tg = boss && dist(boss, mau) < 340 ? boss : null; if (!tg) { let bd = 320; for (const f of foes) { const d3 = dist(f, mau); if (d3 < bd) { bd = d3; tg = f; } } }
-        if (tg) { mau.cool = 1.1; const a = Math.atan2(tg.y - mau.y, tg.x - mau.x); balls.push({x:mau.x, y:mau.y - 10, vx:Math.cos(a)*480, vy:Math.sin(a)*480, mine:1, dmg:buffT > 0 ? 1.3 : 1, r:5, life:.9, hits:[], col:'#ffe0f0'}); } else mau.cool = .3; } }
+        if (tg) { mau.cool = 1.1; const a = Math.atan2(tg.y - mau.y, tg.x - mau.x); balls.push({x:mau.x, y:mau.y - 10, vx:Math.cos(a)*480, vy:Math.sin(a)*480, mine:1, dmg:(buffT > 0 ? 1.3 : 1)*(1 + .25*RL('guard')), r:5, life:.9, hits:[], col:'#ffe0f0', team:1}); } else mau.cool = .3; } }
     mates.forEach((m, i) => { m.throwT = Math.max(0, m.throwT - dt);
       if (m.ko > 0) { m.ko -= dt * (dist(m, p) < 50 ? 4 : 1); if (m.ko <= 0) { m.ko = 0; m.hp = m.max; addNum(m.x, m.y - 30, m.name + ' is back!', '#00B451'); } return; }
-      const a = p.face + Math.PI + (i - (mates.length - 1)/2)*.72, rad = 78 + (i % 2)*30, tx = p.x + Math.cos(a)*rad, ty = p.y + Math.sin(a)*rad + 6, dm = Math.hypot(tx - m.x, ty - m.y);
+      if (holdMates && !m.hx) { m.hx = m.x; m.hy = m.y; } if (!holdMates) m.hx = 0; const a = p.face + Math.PI + (i - (mates.length - 1)/2)*.72, rad = 78 + (i % 2)*30, tx = holdMates ? m.hx : p.x + Math.cos(a)*rad, ty = holdMates ? m.hy : p.y + Math.sin(a)*rad + 6, dm = Math.hypot(tx - m.x, ty - m.y);
       for (const o2 of mates) { if (o2 === m) continue; const sd = Math.hypot(m.x - o2.x, m.y - o2.y); if (sd > 0 && sd < 38) { m.x += (m.x - o2.x)/sd*(38 - sd)*.5; m.y += (m.y - o2.y)/sd*(38 - sd)*.5; } }
       if (dm > 650) { m.x = tx; m.y = ty; } else if (dm > 10) { const s2 = Math.min(dm*3.5, 280); m.x += (tx - m.x)/dm*s2*dt; m.y += (ty - m.y)/dm*s2*dt; m.walk += dt; }
       if (m.role == 'medic') { m.heal -= dt; if (m.heal <= 0 && p.hp < p.max && dead <= 0) { m.heal = Math.max(6, 14 - m.lv); p.hp++; addNum(p.x, p.y - 44, '➕ ' + m.name + ' +♥', '#ff5fa8'); } }
       m.cool -= dt; if (m.cool <= 0) { let tg = boss && dist(boss, m) < 360 ? boss : null; if (!tg) { let bd = 330; for (const f of foes) { const d3 = dist(f, m); if (d3 < bd) { bd = d3; tg = f; } } }
         if (!tg) { m.cool = .3; return; } m.cool = (m.role == 'thrower' ? 1.2 : m.role == 'builder' ? 1.7 : 2.2) / (1 + .1*m.lv); const a2 = Math.atan2(tg.y - m.y, tg.x - m.x); m.face = a2; m.throwT = .18;
-        balls.push({x:m.x, y:m.y - 10, vx:Math.cos(a2)*470, vy:Math.sin(a2)*470, mine:1, dmg:X.armM()*(.5 + .1*m.lv)*(m.role == 'builder' ? 1.3 : 1)*(buffT > 0 ? 1.25 : 1), r:m.role == 'builder' ? 7 : 5, life:.9, hits:[], kind:m.role == 'builder' ? 'slush' : 'snow', col:m.role == 'builder' ? '#bfe0ff' : '#ffffff'}); } });
+        balls.push({team:1, x:m.x, y:m.y - 10, vx:Math.cos(a2)*470, vy:Math.sin(a2)*470, mine:1, dmg:X.armM()*(.5 + .1*m.lv)*(m.role == 'builder' ? 1.3 : 1)*(buffT > 0 ? 1.25 : 1), r:m.role == 'builder' ? 7 : 5, life:.9, hits:[], kind:m.role == 'builder' ? 'slush' : 'snow', col:m.role == 'builder' ? '#bfe0ff' : '#ffffff'}); } });
     // snowballs
     for (const b of balls) { b.x += b.vx*dt; b.y += b.vy*dt; b.life -= dt;
       if (b.kind == 'stick') { b.spin = (b.spin||0) + dt*18; if (b.life <= 0 || solidAt(b.x, b.y) || (boss && Math.hypot(boss.x - b.x, boss.y - b.y) < boss.r + 10)) { b.life = 0; if (boss && boss.k == 'loki' && Math.hypot(boss.x - b.x, boss.y - b.y) < 280) { boss.fetch = {x:b.x, y:b.y, t:3.4}; boss.talk = ['Loki: “Is that... a STICK?! Mine mine mine!”', 'Loki: “Don’t you DARE throw that again— ooh, STICK!”', 'Loki: “I can stop any time I want! ...STICK!”'][Math.floor(Math.random()*3)]; boss.talkT = 2.6; A.sfx('point'); } else sticks.push({x:b.x, y:b.y}); } continue; }
       if (b.kind == 'boomer' && !b.ret && b.life < .45) { b.ret = 1; b.hits = []; const a = Math.atan2(p.y - b.y, p.x - b.x); b.vx = Math.cos(a)*560; b.vy = Math.sin(a)*560; b.life = .9; }
       if (solidAt(b.x, b.y) && !(b.mine && b.ret)) { b.life = 0; splat(b.x, b.y, 5, b.col); continue; }
       if (b.mine) { for (const f of foes) { if (f.dead || b.hits.includes(f) || Math.hypot(f.x - b.x, f.y - 8 - b.y) > FOE[f.k].r + b.r) continue; b.hits.push(f);
-          hurtFoe(f, b.dmg); if (b.kind == 'slush') f.slow = 3; if (b.kind == 'sparkle') { for (const f2 of foes) if (f2 !== f && !f2.dead && dist(f2, f) < 70) hurtFoe(f2, b.dmg*.5); splat(b.x, b.y, 12, '#ffe9a0'); }
+          let dm2 = b.dmg; if (b.team) f.mateHit = t; else if (t - (f.mateHit || -9) < .6) { dm2 *= 1.5; addNum(f.x, f.y - 46, 'TEAM COMBO!', '#EA55AB'); f.mateHit = -9; } hurtFoe(f, dm2); if (b.kind == 'slush') f.slow = 3; if (b.kind == 'sparkle') { for (const f2 of foes) if (f2 !== f && !f2.dead && dist(f2, f) < 70) hurtFoe(f2, b.dmg*.5); splat(b.x, b.y, 12, '#ffe9a0'); }
           const ka = Math.atan2(b.vy, b.vx); f.kbx = Math.cos(ka)*120; f.kby = Math.sin(ka)*120; f.kb = .12; splat(b.x, b.y, 6); A.sfx('hit'); if (!b.pierce) { b.life = 0; break; } }
         if (b.life > 0 && boss && !b.hits.includes(boss) && Math.hypot(boss.x - b.x, boss.y - b.y) < boss.r + b.r) { b.hits.push(boss); hurtBoss(b.dmg * (1 + .1*X.PU('boss'))); splat(b.x, b.y, 7); A.sfx('hit'); if (!b.pierce) b.life = 0; } }
       else { if (p.fortT > 0 && Math.hypot(b.x - p.x, b.y - p.y) < 64) { b.life = 0; splat(b.x, b.y, 5); continue; }
         if (W.mau && mau.blockCd <= 0 && (Math.hypot(b.x - mau.x, b.y - mau.y) < 26 || (Math.hypot(b.x - p.x, b.y - p.y) < 44 && dist(mau, p) < 70) || mates.some(m => !m.ko && Math.hypot(b.x - m.x, b.y - m.y) < 40 && dist(mau, m) < 70))) { b.life = 0; mau.blockCd = 4.5; mau.st2 = 'block'; mau.stT = .5; addNum(mau.x, mau.y - 40, 'SHIELD BELLY!', '#2f5fd0'); splat(b.x, b.y, 8, '#F9BF01'); A.tone(180, .08, 'square', .05); continue; }
+        if (siege && Math.hypot(b.x - BELL.x, b.y - (BELL.y - 20)) < 26 + b.r) { b.life = 0; bellHit(b.dmg); splat(b.x, b.y, 6); continue; }
         if (Math.hypot(b.x - p.x, b.y - (p.y - 8)) < 13 + b.r) { b.life = 0; hurtMe(b.dmg); continue; }
         for (const m of mates) if (!m.ko && Math.hypot(b.x - m.x, b.y - (m.y - 8)) < 12 + b.r) { b.life = 0; m.hp -= b.dmg; splat(m.x, m.y - 8, 6); if (m.hp <= 0) { m.ko = 10; say('💫 ' + m.name + ' is knocked out! Stand next to them to help them up faster', 2.2); } break; } } }
     balls = balls.filter(b => b.life > 0);
     A.mood(() => ({danger:p.hp == 1, boss:!!boss}));
-    cam.x = Math.max(0, Math.min(WORLD - VW, p.x - VW/2)); cam.y = Math.max(0, Math.min(WORLD - VH, p.y - VH/2 - 20)); };
+    { const lo = raid ? N*TS : 0, hi = raid ? (N + 40)*TS : WORLD, tx = Math.max(lo, Math.min(hi - VW, p.x - VW/2)), ty = Math.max(0, Math.min(WORLD - VH, p.y - VH/2 - 20)); if (Math.abs(tx - cam.x) > 500 || Math.abs(ty - cam.y) > 500) { cam.x = tx; cam.y = ty; } else { const k = Math.min(1, dt*9); cam.x += (tx - cam.x)*k; cam.y += (ty - cam.y)*k; } }
+    shakeV = Math.max(0, shakeV - dt*20); cheerT = Math.max(0, cheerT - dt); p.roll = Math.max(0, (p.roll||0) - dt); p.rollCd = Math.max(0, (p.rollCd||0) - dt); };
   // ---------- drawing ----------
   const kid = (x, y, col, o = {}) => { g.save(); g.translate(x, y); if (o.hit) g.globalAlpha = .55; const bob = o.walk ? Math.sin(o.walk*14)*2 : 0;
     g.fillStyle = 'rgba(0,0,0,.15)'; g.beginPath(); g.ellipse(0, 16, 13, 4, 0, 0, TAU); g.fill();
@@ -683,9 +862,40 @@ A.snowWorld = function(X) {
     else if (f.k == 'imp') { g.fillStyle = 'rgba(0,0,0,.15)'; g.beginPath(); g.ellipse(x, y + 14, 11, 3, 0, 0, TAU); g.fill(); g.fillStyle = '#9a3ac0'; g.beginPath(); g.moveTo(x - 6, y - 8); g.lineTo(x - 20, y - 18 + Math.sin(f.flap)*4); g.lineTo(x - 10, y); g.fill(); g.beginPath(); g.moveTo(x + 6, y - 8); g.lineTo(x + 20, y - 18 + Math.sin(f.flap)*4); g.lineTo(x + 10, y); g.fill();
       g.fillStyle = '#c04ae0'; g.beginPath(); g.arc(x, y - 4, 11, 0, TAU); g.fill(); g.fillStyle = '#5a2a9a'; g.beginPath(); g.moveTo(x - 8, y - 12); g.lineTo(x - 10, y - 22); g.lineTo(x - 3, y - 14); g.fill(); g.beginPath(); g.moveTo(x + 8, y - 12); g.lineTo(x + 10, y - 22); g.lineTo(x + 3, y - 14); g.fill();
       g.fillStyle = '#ffe066'; g.beginPath(); g.arc(x - 4, y - 5, 2.2, 0, TAU); g.arc(x + 4, y - 5, 2.2, 0, TAU); g.fill(); }
+    else if (f.k == 'catapult') { g.fillStyle = 'rgba(0,0,0,.15)'; g.beginPath(); g.ellipse(x, y + 16, 22, 5, 0, 0, TAU); g.fill(); g.fillStyle = '#8D5B1D'; rr(g, x - 20, y - 2, 40, 12, 3); g.fill(); g.fillStyle = '#5a3a1a'; for (const ox of [-13, 13]) { g.beginPath(); g.arc(x + ox, y + 12, 6, 0, TAU); g.fill(); }
+      const arm = f.cool > 2.6 ? -.2 : -1.1; g.save(); g.translate(x - 4, y - 2); g.rotate(arm); g.fillStyle = '#a0703a'; g.fillRect(0, -3, 26, 5); g.fillStyle = '#e8f4ff'; g.beginPath(); g.arc(26, -4, 6, 0, TAU); g.fill(); g.restore(); }
+    else if (f.k == 'ram') { g.fillStyle = 'rgba(0,0,0,.15)'; g.beginPath(); g.ellipse(x, y + 16, 22, 5, 0, 0, TAU); g.fill(); g.fillStyle = '#7a5a3a'; rr(g, x - 22, y - 8, 44, 18, 6); g.fill(); g.fillStyle = '#bfe3ff'; g.beginPath(); g.moveTo(x + 22, y - 10); g.lineTo(x + 34, y + 1); g.lineTo(x + 22, y + 12); g.fill();
+      g.fillStyle = '#e8f4ff'; rr(g, x - 20, y - 14, 40, 7, 3); g.fill(); g.fillStyle = '#5a3a1a'; for (const ox of [-14, 0, 14]) { g.beginPath(); g.arc(x + ox, y + 12, 5, 0, TAU); g.fill(); } }
+    else if (f.k == 'snowman') { g.fillStyle = 'rgba(0,0,0,.15)'; g.beginPath(); g.ellipse(x, y + 22, 22, 6, 0, 0, TAU); g.fill(); for (const [oy, r2] of [[8, 18], [-14, 13], [-32, 10]]) { g.fillStyle = '#fff'; g.beginPath(); g.arc(x, y + oy, r2, 0, TAU); g.fill(); g.strokeStyle = '#c8d8e8'; g.lineWidth = 1.5; g.stroke(); }
+      g.fillStyle = '#14204a'; g.beginPath(); g.arc(x - 4, y - 34, 2, 0, TAU); g.arc(x + 4, y - 34, 2, 0, TAU); g.fill(); g.strokeStyle = '#14204a'; g.lineWidth = 2; g.beginPath(); g.moveTo(x - 7, y - 41); g.lineTo(x - 2, y - 38); g.moveTo(x + 7, y - 41); g.lineTo(x + 2, y - 38); g.stroke();
+      g.fillStyle = '#ff8c1a'; g.beginPath(); g.moveTo(x, y - 31); g.lineTo(x + 10, y - 29); g.lineTo(x, y - 27); g.fill(); g.fillStyle = '#2f5fd0'; g.fillRect(x - 12, y - 24, 24, 4); }
     g.globalAlpha = 1;
     if (f.max > 1 && f.hp < f.max) { g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(x - 15, y + 22, 30, 4); g.fillStyle = '#FF4539'; g.fillRect(x - 15, y + 22, 30*Math.max(0, f.hp)/f.max, 4); }
     if (f.stun > 0) { g.font = '12px ' + A.font; g.textAlign = 'center'; g.fillText('💫', x, y - 30); } if (f.slow > 0) { g.strokeStyle = '#64CDF5'; g.lineWidth = 2; g.beginPath(); g.arc(x, y - 4, F.r + 6, 0, TAU); g.stroke(); } };
+  // raid bosses + the Siege King: simple, friendly looks (no gore)
+  const RLOOK = {r_knight:{f:'knight', c:'#9ab4d8', c2:'#5a6a8a', s:1}, r_warden:{f:'hood', c:'#bfe3ff', c2:'#3a4a7a', s:1.35}, r_lantern:{f:'lantern', c:'#9fe8ff', c2:'#3a5a8a', s:1},
+    r_queen:{f:'hood', c:'#e8d8ff', c2:'#7a5ab0', s:1.35, crown:1}, r_sentinel:{f:'golem', c:'#8a8aa8', c2:'#ffe066', s:1}, r_titan:{f:'golem', c:'#6a6a8a', c2:'#9fe8ff', s:1.45, crown:1},
+    r_vgolem:{f:'golem', c:'#f2d27a', c2:'#9fe8ff', s:1.1}, r_book:{f:'book', c:'#7a4ab0', c2:'#ffe066', s:1}, snowking:{f:'snowman', c:'#ffffff', c2:'#F9BF01', s:1.5, crown:1}};
+  const raidLook = (B, x, y) => { const L = RLOOK[B.k], ang = B.ph >= 2, eye = ang ? '#FF4539' : '#14204a', bob = Math.sin(t*3)*3; g.save(); g.translate(x, y); g.scale(L.s, L.s);
+    g.fillStyle = 'rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(0, 30, 28, 7, 0, 0, TAU); g.fill();
+    if (L.f == 'knight') { g.fillStyle = L.c2; rr(g, -16, -6, 32, 34, 8); g.fill(); g.fillStyle = L.c; g.beginPath(); g.arc(0, -16, 15, 0, TAU); g.fill(); g.fillStyle = '#14204a'; g.fillRect(-10, -18, 20, 4); g.fillStyle = eye; g.fillRect(-7, -18, 4, 4); g.fillRect(3, -18, 4, 4);
+      g.fillStyle = '#c8102e'; g.beginPath(); g.moveTo(0, -31); g.quadraticCurveTo(14, -40, 18, -26); g.lineTo(0, -28); g.fill(); g.fillStyle = L.c; rr(g, -32, -4, 18, 26, 6); g.fill(); g.strokeStyle = '#ffffff'; g.lineWidth = 2; g.beginPath(); g.moveTo(-23, 0); g.lineTo(-23, 18); g.moveTo(-29, 8); g.lineTo(-17, 8); g.stroke();
+      g.strokeStyle = '#dfeaf5'; g.lineWidth = 4; g.lineCap = 'round'; g.beginPath(); g.moveTo(18, 6); g.lineTo(32, -18 + bob); g.stroke(); }
+    else if (L.f == 'hood') { g.fillStyle = L.c2; g.beginPath(); g.moveTo(-24, 30); g.quadraticCurveTo(-26, -20, 0, -40 + bob); g.quadraticCurveTo(26, -20, 24, 30); g.closePath(); g.fill(); g.fillStyle = '#0a1430'; g.beginPath(); g.ellipse(0, -14 + bob, 13, 15, 0, 0, TAU); g.fill();
+      g.fillStyle = ang ? '#FF4539' : L.c; g.beginPath(); g.arc(-5, -15 + bob, 3, 0, TAU); g.arc(5, -15 + bob, 3, 0, TAU); g.fill(); g.strokeStyle = '#8D5B1D'; g.lineWidth = 3; g.beginPath(); g.moveTo(26, 30); g.lineTo(26, -26); g.stroke();
+      if (!low()) { g.fillStyle = 'rgba(160,230,255,' + (.35 + .2*Math.sin(t*5)) + ')'; g.beginPath(); g.arc(26, -30, 12, 0, TAU); g.fill(); } g.fillStyle = L.c; g.beginPath(); g.arc(26, -30, 6, 0, TAU); g.fill(); }
+    else if (L.f == 'lantern') { g.translate(0, bob*2); if (!low()) { g.fillStyle = 'rgba(160,230,255,.25)'; g.beginPath(); g.arc(0, -6, 34, 0, TAU); g.fill(); } g.fillStyle = '#3a4a6a'; rr(g, -14, -34, 28, 6, 3); g.fill(); rr(g, -14, 16, 28, 6, 3); g.fill(); g.fillStyle = L.c; rr(g, -12, -28, 24, 44, 8); g.fill();
+      g.fillStyle = eye; g.beginPath(); g.arc(-5, -8, 3, 0, TAU); g.arc(5, -8, 3, 0, TAU); g.fill(); g.strokeStyle = '#14204a'; g.lineWidth = 2; g.beginPath(); g.arc(0, 0, 5, .2, Math.PI - .2); g.stroke(); g.strokeStyle = '#3a4a6a'; g.beginPath(); g.arc(0, -40, 7, Math.PI, 0); g.stroke(); }
+    else if (L.f == 'golem') { for (const [ox, oy, r2] of [[0, 4, 22], [-24, -4, 11], [24, -4, 11], [0, -24, 14], [-12, 26, 8], [12, 26, 8]]) { g.fillStyle = L.c; g.beginPath(); g.arc(ox, oy, r2, 0, TAU); g.fill(); g.strokeStyle = 'rgba(0,0,0,.15)'; g.lineWidth = 2; g.stroke(); }
+      g.strokeStyle = L.c2; g.lineWidth = 2.5; g.beginPath(); g.moveTo(-6, -4); g.lineTo(2, 6); g.lineTo(-4, 16); g.stroke(); g.fillStyle = ang ? '#FF4539' : L.c2; g.beginPath(); g.arc(-5, -26, 3, 0, TAU); g.arc(5, -26, 3, 0, TAU); g.fill(); }
+    else if (L.f == 'book') { g.translate(0, bob*2); const fl = Math.sin(t*6)*.25; g.fillStyle = L.c; g.save(); g.rotate(-.15 - fl); rr(g, -34, -16, 34, 40, 4); g.fill(); g.restore(); g.save(); g.rotate(.15 + fl); rr(g, 0, -16, 34, 40, 4); g.fill(); g.restore();
+      g.fillStyle = '#fff8e0'; rr(g, -28, -12, 56, 32, 3); g.fill(); g.strokeStyle = '#c8b890'; g.lineWidth = 1; for (let i = 0; i < 4; i++) { g.beginPath(); g.moveTo(-24, -4 + i*6); g.lineTo(-4, -4 + i*6); g.moveTo(4, -4 + i*6); g.lineTo(24, -4 + i*6); g.stroke(); }
+      g.fillStyle = eye; g.beginPath(); g.arc(-12, -20, 4, 0, TAU); g.arc(12, -20, 4, 0, TAU); g.fill(); g.fillStyle = L.c2; g.font = '14px ' + A.font; g.textAlign = 'center'; g.fillText('✦', 0, 34 + Math.sin(t*4)*3); }
+    else if (L.f == 'snowman') { for (const [oy, r2] of [[14, 22], [-14, 16], [-36, 12]]) { g.fillStyle = L.c; g.beginPath(); g.arc(0, oy, r2, 0, TAU); g.fill(); g.strokeStyle = '#c8d8e8'; g.lineWidth = 1.5; g.stroke(); }
+      g.fillStyle = eye; g.beginPath(); g.arc(-4, -38, 2.2, 0, TAU); g.arc(4, -38, 2.2, 0, TAU); g.fill(); g.fillStyle = '#ff8c1a'; g.beginPath(); g.moveTo(0, -35); g.lineTo(12, -33); g.lineTo(0, -31); g.fill(); g.fillStyle = '#14204a'; for (const yy of [-18, -10, 8]) { g.beginPath(); g.arc(0, yy, 2, 0, TAU); g.fill(); }
+      g.strokeStyle = '#6b4a2b'; g.lineWidth = 3; g.beginPath(); g.moveTo(-14, -16); g.lineTo(-32, -26 + bob); g.moveTo(14, -16); g.lineTo(32, -26 - bob); g.stroke(); g.fillStyle = '#c8102e'; g.fillRect(-14, -26, 28, 5); }
+    if (L.crown) { const cy = L.f == 'snowman' ? -50 : L.f == 'golem' ? -38 : -42; g.fillStyle = L.f == 'snowman' ? L.c2 : '#F9BF01'; g.beginPath(); g.moveTo(-11, cy + 8); g.lineTo(-11, cy); g.lineTo(-5, cy + 5); g.lineTo(0, cy - 3); g.lineTo(5, cy + 5); g.lineTo(11, cy); g.lineTo(11, cy + 8); g.closePath(); g.fill(); }
+    g.restore(); };
   const drawBoss = B => { const x = B.x, y = B.y; g.save(); if (B.flash > 0) g.globalAlpha = .6;
     if (B.k == 'grumble') { g.fillStyle = 'rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(x, y + 34, 34, 9, 0, 0, TAU); g.fill(); g.fillStyle = '#6b4a2b'; rr(g, x - 14, y - 10, 28, 46, 6); g.fill();
       g.strokeStyle = '#6b4a2b'; g.lineWidth = 6; g.lineCap = 'round'; const sw = Math.sin(t*3)*6; g.beginPath(); g.moveTo(x - 12, y + 6); g.lineTo(x - 36, y - 6 + sw); g.moveTo(x + 12, y + 6); g.lineTo(x + 36, y - 6 - sw); g.stroke();
@@ -699,7 +909,7 @@ A.snowWorld = function(X) {
       for (const [ox, oy, h2, col] of [[-22, 10, 40, '#9a7ad8'], [22, 10, 40, '#7a9ad8'], [0, 0, 64, '#c9a0ff'], [-12, -6, 44, '#b0c8ff'], [12, -6, 44, '#d8b0ff']]) { g.fillStyle = col; g.beginPath(); g.moveTo(x + ox - 11, y + oy + 24); g.lineTo(x + ox, y + oy + 24 - h2); g.lineTo(x + ox + 11, y + oy + 24); g.fill(); }
       g.fillStyle = B.ph >= 2 ? '#FF4539' : '#ffffff'; g.beginPath(); g.arc(x - 6, y - 2, 3.5, 0, TAU); g.arc(x + 6, y - 2, 3.5, 0, TAU); g.fill(); }
     else if (B.k == 'rufus') dog(x, y, {s:1.5, fur:'#b07a4a', ear:'#6b4a2b', armor:1, helmet:1, brows:1, eyes:B.ph >= 3 ? '#FF4539' : '#121313'});
-    else if (B.k == 'loki') { if (B.ph < 4) { g.fillStyle = 'rgba(150,210,255,' + (.16 + .08*Math.sin(t*4)) + ')'; g.beginPath(); g.arc(x, y, 48, 0, TAU); g.fill(); } SC.loki(g, x, y, {s:1.6, ph:B.ph, cast:B.castT > 0, fetch:B.fetch && B.fetch.t > 0}, t); if (B.fetch && B.fetch.t > 0) { g.font = '900 16px ' + A.font; g.textAlign = 'center'; g.fillStyle = '#F9BF01'; g.fillText('🪵 STICK!!', x, y - 74); } }
+    else if (B.k == 'loki' || B.k == 'loki2') { if (B.ph < 4) { g.fillStyle = 'rgba(150,210,255,' + (.16 + .08*Math.sin(t*4)) + ')'; g.beginPath(); g.arc(x, y, 48, 0, TAU); g.fill(); } SC.loki(g, x, y, {s:1.6, ph:B.ph, cast:B.castT > 0, fetch:B.fetch && B.fetch.t > 0}, t); if (B.fetch && B.fetch.t > 0) { g.font = '900 16px ' + A.font; g.textAlign = 'center'; g.fillStyle = '#F9BF01'; g.fillText('🪵 STICK!!', x, y - 74); } }
     else if (B.k == 'chao') { if (!low()) { const au = g.createRadialGradient(x, y - 8, 6, x, y - 8, 70); au.addColorStop(0, 'rgba(20,30,70,.55)'); au.addColorStop(1, 'rgba(20,30,70,0)'); g.fillStyle = au; g.beginPath(); g.arc(x, y - 8, 70, 0, TAU); g.fill(); g.strokeStyle = 'rgba(200,230,255,.5)'; g.lineWidth = 2; for (let i = 0; i < 3; i++) { g.beginPath(); g.arc(x, y - 8, 30 + i*12 + Math.sin(t*5 + i)*3, t*2 + i, t*2 + i + 2.2); g.stroke(); } } SC.spirit(g, 'chao', x, y, {s:1.5, ghost:1, mood:B.ph >= 4 ? 'mad' : B.ph >= 2 ? 'angry' : 'frightened', jitter:.6 + .2*B.ph, glow:B.ph >= 4 ? '#ffffff' : '#cfe8ff'}, t); }
     else if (B.k == 'wraith' || B.k == 'echo') { const col = B.k == 'echo' ? '90,110,150' : '170,220,255'; g.globalAlpha = .85; const gl = g.createRadialGradient(x, y - 10, 6, x, y - 10, 60); gl.addColorStop(0, 'rgba(' + col + ',.55)'); gl.addColorStop(1, 'rgba(' + col + ',0)'); g.fillStyle = gl; g.beginPath(); g.arc(x, y - 10, 60, 0, TAU); g.fill();
       g.fillStyle = 'rgba(' + col + ',.9)'; g.beginPath(); g.moveTo(x - 30, y + 30); for (let i = 0; i <= 6; i++) g.lineTo(x - 30 + i*10, y + 30 + (i % 2 ? -10 : 0) + Math.sin(t*6 + i)*3); g.lineTo(x + 30, y - 20); g.quadraticCurveTo(x, y - 70, x - 30, y - 20); g.closePath(); g.fill();
@@ -708,7 +918,8 @@ A.snowWorld = function(X) {
       g.strokeStyle = 'rgba(255,230,100,' + (.6 + .4*Math.sin(t*12)) + ')'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(x - 8, y - 8); g.lineTo(x + 2, y + 4); g.lineTo(x - 4, y + 18); g.stroke(); g.fillStyle = '#9fe8ff'; g.beginPath(); g.arc(x - 6, y - 32, 3, 0, TAU); g.arc(x + 6, y - 32, 3, 0, TAU); g.fill(); }
     else if (B.k == 'fog') { g.globalAlpha = B.fadeA || .6; for (let i = 0; i < 9; i++) { const a = i*.7 + t*.3; g.fillStyle = 'rgba(220,228,240,.55)'; g.beginPath(); g.arc(x + Math.cos(a)*30, y - 6 + Math.sin(a*1.3)*16, 26, 0, TAU); g.fill(); } g.fillStyle = 'rgba(40,50,80,.8)'; g.beginPath(); g.ellipse(x - 12, y - 10, 4, 7, 0, 0, TAU); g.ellipse(x + 12, y - 10, 4, 7, 0, 0, TAU); g.fill(); g.globalAlpha = 1; }
     else if (B.k.slice(0, 6) == 'elite_') { g.save(); g.translate(x, y); g.scale(1.8, 1.8); g.fillStyle = '#4a5a7a'; for (const [ox, oy, r2] of [[-8, -2, 9], [6, -4, 10], [0, -10, 9], [10, 2, 7], [-10, 4, 7]]) { g.beginPath(); g.arc(ox, oy, r2, 0, TAU); g.fill(); } g.fillStyle = '#ffe066'; g.beginPath(); g.moveTo(-2, 4); g.lineTo(3, 4); g.lineTo(-1, 14); g.closePath(); g.fill(); g.fillStyle = '#ff6a6a'; g.beginPath(); g.arc(-4, -5, 2.2, 0, TAU); g.arc(5, -5, 2.2, 0, TAU); g.fill(); g.restore(); }
-    else if (B.k == 'yeti') { g.fillStyle = 'rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(x, y + 40, 40, 10, 0, 0, TAU); g.fill(); g.fillStyle = '#f4f8ff'; g.beginPath(); g.ellipse(x, y + 4, 36, 38, 0, 0, TAU); g.fill(); g.strokeStyle = '#c8d8e8'; g.lineWidth = 2; g.stroke(); const sw2 = Math.sin(t*3)*8; g.beginPath(); g.ellipse(x - 40, y + 8 + sw2, 12, 22, .3, 0, TAU); g.ellipse(x + 40, y + 8 - sw2, 12, 22, -.3, 0, TAU); g.fill();
+    else if (RLOOK[B.k]) raidLook(B, x, y);
+    else if (B.k == 'yeti' || B.k == 'r_yeti') { g.fillStyle = 'rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(x, y + 40, 40, 10, 0, 0, TAU); g.fill(); g.fillStyle = '#f4f8ff'; g.beginPath(); g.ellipse(x, y + 4, 36, 38, 0, 0, TAU); g.fill(); g.strokeStyle = '#c8d8e8'; g.lineWidth = 2; g.stroke(); const sw2 = Math.sin(t*3)*8; g.beginPath(); g.ellipse(x - 40, y + 8 + sw2, 12, 22, .3, 0, TAU); g.ellipse(x + 40, y + 8 - sw2, 12, 22, -.3, 0, TAU); g.fill();
       g.fillStyle = '#8ab0d0'; g.beginPath(); g.ellipse(x, y - 12, 18, 15, 0, 0, TAU); g.fill(); g.fillStyle = B.ph >= 2 ? '#FF4539' : '#14204a'; g.beginPath(); g.arc(x - 7, y - 16, 3, 0, TAU); g.arc(x + 7, y - 16, 3, 0, TAU); g.fill(); g.fillStyle = '#fff'; g.fillRect(x - 7, y - 6, 4, 6); g.fillRect(x + 3, y - 6, 4, 6); g.fillStyle = '#F9BF01'; g.beginPath(); g.moveTo(x - 16, y - 34); g.lineTo(x - 16, y - 46); g.lineTo(x - 8, y - 40); g.lineTo(x, y - 50); g.lineTo(x + 8, y - 40); g.lineTo(x + 16, y - 46); g.lineTo(x + 16, y - 34); g.fill(); }
     else if (B.k == 'giant') { g.fillStyle = 'rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(x, y + 44, 44, 10, 0, 0, TAU); g.fill(); g.fillStyle = '#a8d8f0'; rr(g, x - 30, y - 30, 60, 74, 12); g.fill(); g.strokeStyle = '#6aa8d0'; g.lineWidth = 2; g.stroke(); g.fillStyle = '#c8ecff'; rr(g, x - 24, y - 70, 48, 44, 12); g.fill(); rr(g, x - 50, y - 24, 18, 50, 8); g.fill(); rr(g, x + 32, y - 24, 18, 50, 8); g.fill();
       g.fillStyle = B.ph >= 2 ? '#FF4539' : '#2a5a8a'; g.beginPath(); g.arc(x - 9, y - 52, 4, 0, TAU); g.arc(x + 9, y - 52, 4, 0, TAU); g.fill(); g.strokeStyle = '#6aa8d0'; g.beginPath(); g.moveTo(x - 10, y - 38); g.lineTo(x + 10, y - 38); g.stroke(); }
@@ -717,11 +928,11 @@ A.snowWorld = function(X) {
     else if (B.k == 'serpent') { for (let i = 9; i >= 0; i--) { const sx2 = x - Math.cos(B.t*2 + i*.5)*i*9, sy2 = y + i*7 + Math.sin(B.t*3 + i*.6)*8; g.fillStyle = 'hsl(' + ((i*30 + t*60) % 360) + ',80%,65%)'; g.beginPath(); g.arc(sx2, sy2, 16 - i*.9, 0, TAU); g.fill(); }
       g.fillStyle = '#fff'; g.beginPath(); g.arc(x - 6, y - 4, 3.5, 0, TAU); g.arc(x + 6, y - 4, 3.5, 0, TAU); g.fill(); g.fillStyle = '#14204a'; g.beginPath(); g.arc(x - 6, y - 4, 1.6, 0, TAU); g.arc(x + 6, y - 4, 1.6, 0, TAU); g.fill(); }
     g.restore();
-    if (B.talkT > 0 && B.talk) { g.font = '700 12px ' + A.font; const tw = Math.min(380, g.measureText(B.talk).width + 20), bx = Math.max(8, Math.min(VW - tw - 8, x - cam.x - tw/2)) + cam.x; g.fillStyle = 'rgba(255,255,255,.95)'; rr(g, bx, y - B.r - 70, tw, 28, 10); g.fill(); g.fillStyle = '#14204a'; g.textAlign = 'left'; wrapClip(B.talk, bx + 10, y - B.r - 51, tw - 20); } };
+    if (B.talkT > 0 && B.talk) { g.font = '700 12px ' + A.font; const tw = Math.min(380, g.measureText(B.talk).width + 20), bx = Math.max(8, Math.min(VW - tw - 8, x - cam.x - tw/2)) + cam.x, by = Math.max(cam.y + topY() + 112, y - B.r - 70); g.fillStyle = 'rgba(255,255,255,.95)'; rr(g, bx, by, tw, 28, 10); g.fill(); g.fillStyle = '#14204a'; g.textAlign = 'left'; wrapClip(B.talk, bx + 10, by + 19, tw - 20); } };
   const wrapClip = (s2, x, y, mw) => { let line = s2; while (g.measureText(line).width > mw && line.length > 4) line = line.slice(0, -2); if (line != s2) line = line.slice(0, -1) + '…'; g.fillText(line, x, y); };
-  const RT = {hollow:'#d6ecff', shrine:'#e4e8f4', oldroad:'#dfe3ea', hall:'#eef1f6', peak:'#cdd3e3', aurora:'#eef6ff', coast:'#f2f6fa', ruins:'#e6ecf2', yeti:'#e8eef6', village:'#f3f7fb'};
-  const tileCol = (v, x, y) => v == VEIL ? (spiritsOpen() ? '#cfeaff' : '#7ad8ff') : v == WATER ? '#3a6ab0' : v == HOUSE ? '#b0703a' : v == PATH && regionAt(x, y) == 'oldroad' ? '#9aa2ac' : v == SNOW && RT[regionAt(x, y)] ? RT[regionAt(x, y)] : v == SNOW ? (regionAt(x, y) == 'castle' ? '#d8dbe9' : '#eef5fc') : v == PATH ? '#e6dcc8' : v == ICE || v == HOLE ? '#c4e8fa' : v == DEEP ? '#ffffff' : v == WALL ? '#2e2048' : v == FLOOR || v == GATE ? '#5d4c7d' : v == CAVE || (v == ROCK && regionAt(x, y) == 'caves') ? '#5a6a80' : v == CAMP ? '#f3e6cf' : regionAt(x, y) == 'castle' ? '#d8dbe9' : '#eef5fc';
-  const drawTiles = () => { const x0 = Math.floor(cam.x/TS), y0 = Math.floor(cam.y/TS), x1 = Math.min(N - 1, x0 + Math.ceil(VW/TS) + 1), y1 = Math.min(N - 1, y0 + Math.ceil(VH/TS) + 1);
+  const RT = {hollow:'#d6ecff', shrine:'#e4e8f4', oldroad:'#dfe3ea', hall:'#eef1f6', peak:'#cdd3e3', aurora:'#eef6ff', coast:'#f2f6fa', ruins:'#e6ecf2', yeti:'#e8eef6', village:'#f3f7fb', raid:'#584878'};
+  const tileCol = (v, x, y) => v == 16 ? '#5d4c7d' : v == VEIL ? (spiritsOpen() ? '#cfeaff' : '#7ad8ff') : v == WATER ? '#3a6ab0' : v == HOUSE ? '#b0703a' : v == PATH && regionAt(x, y) == 'oldroad' ? '#9aa2ac' : v == SNOW && RT[regionAt(x, y)] ? RT[regionAt(x, y)] : v == SNOW ? (regionAt(x, y) == 'castle' ? '#d8dbe9' : '#eef5fc') : v == PATH ? '#e6dcc8' : v == ICE || v == HOLE ? '#c4e8fa' : v == DEEP ? '#ffffff' : v == WALL ? '#2e2048' : v == FLOOR || v == GATE ? '#5d4c7d' : v == CAVE || (v == ROCK && regionAt(x, y) == 'caves') ? '#5a6a80' : v == CAMP ? '#f3e6cf' : regionAt(x, y) == 'castle' ? '#d8dbe9' : '#eef5fc';
+  const drawTiles = () => { const x0 = Math.floor(cam.x/TS), y0 = Math.floor(cam.y/TS), x1 = Math.min((raid ? N + 40 : N) - 1, x0 + Math.ceil(VW/TS) + 1), y1 = Math.min(N - 1, y0 + Math.ceil(VH/TS) + 1);
     // smooth, natural ground: every tile gets its land's snow colour first, then paths, ice, drifts, water and cave floors
     // are drawn as rounded shapes that flow into their neighbours (no blocky squares)
     const BLOB = {[PATH]:1, [ICE]:2, [HOLE]:2, [WATER]:3, [DEEP]:4, [CAVE]:5, [CAMP]:6};
@@ -752,10 +963,11 @@ A.snowWorld = function(X) {
         g.fillStyle = lite; g.beginPath(); g.ellipse(cx - 5*sz, cy - 6*sz, 10*sz, 6*sz, -.3, 0, TAU); g.fill();
         if (!cv) { g.fillStyle = '#fff'; g.beginPath(); g.ellipse(cx - 2, cy - 13*sz, 15*sz, 6*sz, (h - .5)*.4, Math.PI, 0); g.fill(); } else if (h < .25) { g.fillStyle = '#c9a0ff'; g.beginPath(); g.moveTo(sx + 16, sy + 30); g.lineTo(sx + 22, sy + 10); g.lineTo(sx + 28, sy + 30); g.fill(); } }
       else if (v == HOLE) { g.fillStyle = '#1f4f7a'; g.beginPath(); g.ellipse(sx + 24, sy + 24, 20, 14, 0, 0, TAU); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 3; g.stroke(); }
-      else if (v == WALL) { g.fillStyle = '#3e2c62'; g.fillRect(sx, sy, TS, TS); g.strokeStyle = '#2a1c44'; g.lineWidth = 2; for (let yy = 0; yy < TS; yy += 12) { g.beginPath(); g.moveTo(sx, sy + yy); g.lineTo(sx + TS, sy + yy); g.stroke(); for (let xx = (yy/12) % 2 ? 0 : 12; xx < TS; xx += 24) { g.beginPath(); g.moveTo(sx + xx, sy + yy); g.lineTo(sx + xx, sy + yy + 12); g.stroke(); } } g.fillStyle = '#fff'; g.fillRect(sx, sy, TS, 4); }
+      else if (v == WALL) { g.fillStyle = '#3e2c62'; g.fillRect(sx, sy, TS, TS); g.strokeStyle = '#2a1c44'; g.lineWidth = 2; for (let yy = 0; yy < TS; yy += 12) { g.beginPath(); g.moveTo(sx, sy + yy); g.lineTo(sx + TS, sy + yy); g.stroke(); for (let xx = (yy/12) % 2 ? 0 : 12; xx < TS; xx += 24) { g.beginPath(); g.moveTo(sx + xx, sy + yy); g.lineTo(sx + xx, sy + yy + 12); g.stroke(); } } if (tileAt(tx, ty - 1) != WALL) { g.fillStyle = '#fff'; g.fillRect(sx, sy, TS, 4); } }
       else if (v == GATE) { if (gateOpen()) { g.fillStyle = '#3e2c62'; g.fillRect(sx, sy, 6, TS); g.fillRect(sx + TS - 6, sy, 6, TS); } else { g.fillStyle = '#2a1c44'; g.fillRect(sx, sy, TS, TS); g.strokeStyle = '#8a8e94'; g.lineWidth = 3; for (let xx = 6; xx < TS; xx += 10) { g.beginPath(); g.moveTo(sx + xx, sy); g.lineTo(sx + xx, sy + TS); g.stroke(); }
         g.fillStyle = 'rgba(200,120,255,' + (.6 + .3*Math.sin(t*3 + tx)) + ')'; g.beginPath(); g.arc(sx + 24, sy + 24, 8, 0, TAU); g.fill(); } }
       else if (v == VEIL) { if (!spiritsOpen()) { g.fillStyle = 'rgba(122,216,255,' + (.55 + .25*Math.sin(t*2 + ty*.4)) + ')'; g.fillRect(sx, sy, TS, TS); if (!low()) { g.fillStyle = 'rgba(255,255,255,.7)'; g.fillRect(sx + (t*20 + ty*13) % TS, sy, 2, TS); } } }
+      else if (v == 16) { const closed = !(raid && raid.open >= ((ty % 28) >= 18 ? 2 : 1)); if (closed) { g.fillStyle = '#2a1c44'; g.fillRect(sx, sy, TS, TS); g.strokeStyle = '#9fe8ff'; g.lineWidth = 3; for (let xx = 6; xx < TS; xx += 10) { g.beginPath(); g.moveTo(sx + xx, sy); g.lineTo(sx + xx, sy + TS); g.stroke(); } } }
       else if (v == WATER) { if (!low()) { g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 2; g.beginPath(); const wo = Math.sin(t*1.5 + tx + ty)*4; g.moveTo(sx + 6, sy + 24 + wo); g.quadraticCurveTo(sx + 16, sy + 18 + wo, sx + 26, sy + 24 + wo); g.stroke(); } }
       else if (v == HOUSE) { if (tileAt(tx - 1, ty) != HOUSE && tileAt(tx, ty - 1) != HOUSE) { const hx = sx, hy = sy; g.fillStyle = '#c88a50'; g.fillRect(hx + 4, hy + 18, TS*3 - 8, TS*2 - 22); g.fillStyle = '#8a3a2a'; g.beginPath(); g.moveTo(hx - 4, hy + 22); g.lineTo(hx + TS*1.5, hy - 18); g.lineTo(hx + TS*3 + 4, hy + 22); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.moveTo(hx - 4, hy + 22); g.lineTo(hx + TS*1.5, hy - 18); g.lineTo(hx + TS*3 + 4, hy + 22); g.lineTo(hx + TS*3 - 6, hy + 14); g.lineTo(hx + TS*1.5, hy - 8); g.lineTo(hx + 6, hy + 14); g.fill();
           g.fillStyle = '#5a3a1a'; g.fillRect(hx + TS*1.5 - 9, hy + TS*2 - 26, 18, 22); g.fillStyle = 'rgba(255,214,120,' + (.75 + .2*Math.sin(t*3 + tx)) + ')'; g.fillRect(hx + 16, hy + 34, 16, 14); g.fillRect(hx + TS*3 - 32, hy + 34, 16, 14); } }
@@ -766,7 +978,7 @@ A.snowWorld = function(X) {
   const portrait = (who, x, y, mood) => { if (who == 'pip') penguin(x, y); else if (who == 'mau') SC.mau(g, x, y + 2, {s:.9, st:'stand', mood:mood || 'happy'}, t); else if (who == 'loki') SC.loki(g, x, y + 4, {s:.85, mood:mood || 'smug', cast:1}, t);
     else if (SC.LOOK[who]) SC.spirit(g, who, x, y, {mood:mood || 'peaceful'}, t); else if (who.slice(-1) == 'G' && SC.LOOK[who.slice(0, -1)]) SC.spirit(g, who.slice(0, -1), x, y + 4, {ghost:1, mood:mood || 'peaceful', jitter: who == 'chaoG' ? 1 : 0}, t); };
   const draw = () => { layout(); g.fillStyle = '#eef5fc'; g.fillRect(0, 0, VW, 720);
-    g.save(); g.beginPath(); g.rect(0, 0, VW, VH); g.clip(); g.translate(-cam.x, -cam.y); drawTiles();
+    g.save(); g.beginPath(); g.rect(0, 0, VW, VH); g.clip(); g.translate(-cam.x + (shakeV > 0 && !low() ? (Math.random() - .5)*shakeV : 0), -cam.y + (shakeV > 0 && !low() ? (Math.random() - .5)*shakeV : 0)); drawTiles();
     // camp: tent, campfire, Old Pip, the Emperor's ice throne
     if (onScreen(FIRE.x, FIRE.y, 260)) { g.fillStyle = '#c84a2a'; g.beginPath(); g.moveTo(TENT.x - 44, TENT.y + 20); g.lineTo(TENT.x, TENT.y - 34); g.lineTo(TENT.x + 44, TENT.y + 20); g.fill(); g.fillStyle = '#5a1a0a'; g.beginPath(); g.moveTo(TENT.x - 10, TENT.y + 20); g.lineTo(TENT.x, TENT.y - 6); g.lineTo(TENT.x + 10, TENT.y + 20); g.fill();
       g.fillStyle = '#6b4a2b'; g.fillRect(FIRE.x - 18, FIRE.y + 6, 36, 7); for (let k = 0; k < 3; k++) { const fl = Math.sin(t*12 + k)*3; g.fillStyle = ['#FF4539', '#ff8a3c', '#F9BF01'][k]; g.beginPath(); g.moveTo(FIRE.x - 12 + k*4, FIRE.y + 7); g.lineTo(FIRE.x - 4 + k*4, FIRE.y - 18 + k*5 + fl); g.lineTo(FIRE.x + 4 + k*4 - k*2, FIRE.y + 7); g.fill(); }
@@ -787,13 +999,13 @@ A.snowWorld = function(X) {
     for (const sk of sticks) if (onScreen(sk.x, sk.y)) { g.save(); g.translate(sk.x, sk.y); g.rotate(.4); g.fillStyle = '#8D5B1D'; rr(g, -12, -2.5, 24, 5, 2.5); g.fill(); g.fillRect(2, -7, 2.5, 6); g.restore(); if (!low()) { g.strokeStyle = 'rgba(249,191,1,' + (.4 + .3*Math.sin(t*5)) + ')'; g.lineWidth = 2; g.beginPath(); g.arc(sk.x, sk.y, 16, 0, TAU); g.stroke(); } }
     if (W.mau && mau.sniff && !W.snacks[mau.sniff.id] && onScreen(mau.sniff.x, mau.sniff.y)) { const sn = mau.sniff; g.font = '18px ' + A.font; g.textAlign = 'center'; g.fillText(sn.e, sn.x, sn.y + 6); g.fillStyle = '#F9BF01'; g.font = '900 18px ' + A.font; g.fillText('!', sn.x, sn.y - 18 + Math.sin(t*6)*3); }
     if (tornado) SC.tornado(g, tornado.x, tornado.y, tornado.r, t, low());
-    storyDraw();
+    storyDraw(); p3Draw();
     // characters, back to front (name tags are placed afterwards so they never overlap)
     const tags = [];
     const ents = foes.filter(f => onScreen(f.x, f.y)).map(f => ({y:f.y, d:() => drawFoe(f)}));
     storyEnts(ents); if (boss) ents.push({y:boss.y, d:() => drawBoss(boss)}); if (W.mau) ents.push({y:mau.y, d:() => { SC.mau(g, mau.x, mau.y, {st:mauState(), walk:mau.walk}, t); if (mau.say && mau.sayT > 0) bubble(mau.x, mau.y - 52, mau.say); }}); if (W.mau) tags.push({x:mau.x, y:mau.y + 32, t:'Royal Guard Mau Mau', s:'Mau Mau', col:'#2f5fd0'});
     for (const m of mates) if (onScreen(m.x, m.y)) ents.push({y:m.y, d:() => { if (m.ko > 0) { g.fillStyle = RCOL[m.role]; rr(g, m.x - 16, m.y + 4, 32, 12, 6); g.fill(); g.fillStyle = '#f2c9a0'; g.beginPath(); g.arc(m.x + 18, m.y + 8, 7, 0, TAU); g.fill(); g.font = '12px ' + A.font; g.textAlign = 'center'; g.fillText('💫', m.x, m.y - 6); }
-      else kid(m.x, m.y, RCOL[m.role], {walk:m.walk, face:m.face, throwT:m.throwT}); tags.push({x:m.x, y:m.y + 30, t:m.name + ' ' + RE[m.role] + ' ' + m.lv, s:m.name, col:RCOL[m.role]}); }});
+      else { kid(m.x, m.y - (cheerT > 0 ? Math.abs(Math.sin(t*10 + m.x))*9 : 0), RCOL[m.role], {walk:m.walk, face:m.face, throwT:m.throwT}); if (cheerT > 0) { g.font = '14px ' + A.font; g.textAlign = 'center'; g.fillText('🎉', m.x, m.y - 40); } } tags.push({x:m.x, y:m.y + 30, t:m.name + ' ' + RE[m.role] + ' ' + m.lv, s:m.name, col:RCOL[m.role]}); }});
     if (dead <= 0) ents.push({y:p.y - 1, d:() => { g.fillStyle = 'rgba(213,243,103,' + (.28 + .12*Math.sin(t*4)) + ')'; g.beginPath(); g.ellipse(p.x, p.y + 16, 24, 8, 0, 0, TAU); g.fill(); g.strokeStyle = '#D5F367'; g.lineWidth = 2; g.stroke(); }});
     if (dead <= 0 && !(p.inv > 0 && p.inv < 2 && Math.sin(t*25) > 0)) ents.push({y:p.y, d:() => { kid(p.x, p.y, X.CL().col, {hat:X.CL().hat, walk:Math.hypot(p.vx, p.vy) > 30 ? p.walk : 0, face:p.face, throwT:p.throwT, charge:charge ? charge.t : 0, hit:p.hitT > 0});
       if (p.shieldT > 0) { g.strokeStyle = 'rgba(255,233,120,' + (.5 + .4*Math.sin(t*12)) + ')'; g.lineWidth = 4; g.beginPath(); g.arc(p.x, p.y - 6, 32, 0, TAU); g.stroke(); }
@@ -833,8 +1045,10 @@ A.snowWorld = function(X) {
       g.font = '700 10px ' + A.font; g.fillStyle = '#D5F367'; wrapClip('🎯 ' + (G0 ? G0.n : 'Kingdom saved! Explore, find every chest, rematch Loki'), 16, TY + 33, hw - 18);
       g.fillStyle = '#cfe3f5'; wrapClip('❄ ' + A.fmt(PERM.bank) + ' · 🔷 ' + PERM.frost + ' · 🌙 ' + runesN() + '/3' + (W.mau ? ' · 🐟 ' + (W.treats||0) : '') + ' · ' + Math.floor(explored*100/fog.length) + '% explored', 16, TY + 48, hw - 18);
       g.fillStyle = 'rgba(255,255,255,.7)'; g.font = '800 11px ' + A.font; g.textAlign = 'right'; g.fillText('▾', 8 + hw - 8, TY + 14); hudR = {x:8, y:TY, w:hw, h:56}; }
-    const MX = VW - 116, MS2 = 100/N; g.fillStyle = 'rgba(20,32,74,.6)'; rr(g, MX, TY, 108, 120, 10); g.fill(); g.imageSmoothingEnabled = false; g.drawImage(mini, MX + 4, TY + 4, 100, 100); g.imageSmoothingEnabled = true; if (compHint) compHint(MX + 4, TY + 4, MS2); g.fillStyle = '#FF4539'; g.beginPath(); g.arc(MX + 4 + p.x/TS*MS2, TY + 4 + p.y/TS*MS2, 3, 0, TAU); g.fill();
-    if (G0) { g.fillStyle = '#F9BF01'; g.beginPath(); g.arc(MX + 4 + G0.x/TS*MS2, TY + 4 + G0.y/TS*MS2, 2.5, 0, TAU); g.fill(); } g.fillStyle = '#D5F367'; rr(g, MX + 22, TY + 106, 64, 12, 6); g.fill(); g.fillStyle = '#14204a'; g.font = '800 9px ' + A.font; g.textAlign = 'center'; g.fillText('M = MAP', MX + 54, TY + 115); mmR = {x:MX, y:TY, w:108, h:120};
+    if (raid) { const MX = VW - 196; g.fillStyle = 'rgba(20,32,74,.7)'; rr(g, MX, TY, 188, 92, 10); g.fill(); g.fillStyle = '#fff'; g.textAlign = 'left'; g.font = '800 12px ' + A.font; wrapClip(raid.R.e + ' ' + raid.R.n, MX + 10, TY + 18, 170); g.font = '700 11px ' + A.font; g.fillStyle = '#D5F367'; g.fillText('Floor ' + (raid.open + 1) + ' / 3', MX + 10, TY + 36);
+      g.fillStyle = '#cfe3f5'; g.font = '600 10px ' + A.font; raid.mods.forEach((m2, i) => wrapClip('⚙ ' + m2.n, MX + 10, TY + 54 + i*14, 170)); mmR = null; }
+    else { const MX = VW - 116, MS2 = 100/N; g.fillStyle = 'rgba(20,32,74,.6)'; rr(g, MX, TY, 108, 120, 10); g.fill(); g.imageSmoothingEnabled = false; g.drawImage(mini, MX + 4, TY + 4, 100, 100); g.imageSmoothingEnabled = true; if (compHint) compHint(MX + 4, TY + 4, MS2); g.fillStyle = '#FF4539'; g.beginPath(); g.arc(MX + 4 + p.x/TS*MS2, TY + 4 + p.y/TS*MS2, 3, 0, TAU); g.fill();
+    if (G0) { g.fillStyle = '#F9BF01'; g.beginPath(); g.arc(MX + 4 + G0.x/TS*MS2, TY + 4 + G0.y/TS*MS2, 2.5, 0, TAU); g.fill(); } g.fillStyle = '#D5F367'; rr(g, MX + 22, TY + 106, 64, 12, 6); g.fill(); g.fillStyle = '#14204a'; g.font = '800 9px ' + A.font; g.textAlign = 'center'; g.fillText('M = MAP', MX + 54, TY + 115); mmR = {x:MX, y:TY, w:108, h:120}; }
     if (boss) { const bw = Math.min(440, VW - 280), bx = VW/2 - bw/2, by = TY + 70; g.fillStyle = 'rgba(0,0,0,.35)'; rr(g, bx, by, bw, 14, 7); g.fill(); const np = boss.phases || 3; g.fillStyle = boss.ph >= np ? '#8a0000' : boss.ph >= 2 ? '#ff6a3c' : '#FF4539'; rr(g, bx, by, bw*Math.max(0, boss.hp)/boss.max, 14, 7); g.fill(); g.fillStyle = '#fff'; for (let i = 1; i < np; i++) g.fillRect(bx + bw*i/np, by, 2, 14);
       g.font = '800 12px ' + A.font; g.textAlign = 'center'; const bl = boss.n + ' · phase ' + boss.ph + '/' + np + (boss.phn ? ' · ' + boss.phn : ''); const tw = g.measureText(bl).width + 16; g.fillStyle = 'rgba(255,255,255,.85)'; rr(g, VW/2 - tw/2, by + 17, tw, 18, 9); g.fill(); g.fillStyle = '#14204a'; g.fillText(bl, VW/2, by + 30); }
     if (msgT > 0 && !dlg) { g.font = '700 13px ' + A.font; const tw = Math.min(VW - 30, g.measureText(msg).width + 30); g.fillStyle = 'rgba(20,32,74,.88)'; rr(g, VW/2 - tw/2, VH - 84, tw, 34, 12); g.fill(); g.fillStyle = '#fff'; g.textAlign = 'center'; wrapClip(msg, VW/2, VH - 62, VW - 50); }
@@ -849,11 +1063,11 @@ A.snowWorld = function(X) {
     if (touchUI) { g.fillStyle = '#14204a'; g.fillRect(0, BAR, VW, 720 - BAR); const BW = VW/BTN.length;
       BTN.forEach((b, i) => { const on = (i < 4 && pad(['l', 'u', 'd', 'r'][i])) || (i == 4 && p.ab <= 0) || (i == 5 && nt2) || (i == 6 && W.mau && (W.treats||0) > 0), x = i*BW; g.fillStyle = on ? '#D5F367' : 'rgba(255,255,255,.16)'; rr(g, x + 4, BAR + 12, BW - 8, 76, 14); g.fill(); g.fillStyle = on ? '#14204a' : '#fff'; g.textAlign = 'center';
         g.font = '800 ' + (i < 4 ? 24 : 18) + 'px ' + A.font; g.fillText(i == 4 && p.ab > 0 ? Math.ceil(p.ab) + 's' : b, x + BW/2, BAR + (i < 4 ? 58 : 50)); if (i >= 4) { g.font = '700 10px ' + A.font; g.fillText(i == 4 ? X.CL().ab : i == 5 ? (nt2 ? nt2.n : 'Use') : i == 6 ? 'Feed (' + (W.treats||0) + ')' : 'Map', x + BW/2, BAR + 72); } }); }
-    else { const chips = [['⭐ ' + (p.ab > 0 ? Math.ceil(p.ab) + 's' : X.CL().ab), 'Space', 'ab', p.ab <= 0], ['✋ ' + (nt2 ? nt2.n : 'Use'), 'E', 'use', !!nt2], ...(W.mau ? [['🐟 Feed Mau Mau (' + (W.treats||0) + ')', 'G', 'feed', (W.treats||0) > 0]] : []), ['🗺 Map', 'M', 'map', false]];
+    else { const chips = [['⭐ ' + (p.ab > 0 ? Math.ceil(p.ab) + 's' : X.CL().ab), 'Space', 'ab', p.ab <= 0], ['✋ ' + (nt2 ? nt2.n : 'Use'), 'E', 'use', !!nt2], ...(W.mau ? [['🐟 Feed Mau Mau (' + (W.treats||0) + ')', 'G', 'feed', (W.treats||0) > 0]] : []), ...(W.mount && !raid ? [[(MOUNTS.find(m => m.id == W.mount) || {e:'🛷'}).e + (riding ? ' Riding' : ' Ride'), 'V', 'ride', riding]] : []), ['🤸 Roll', 'Shift', 'roll', false], ['📈 Skills' + (kPts() > 0 ? ' (' + kPts() + ')' : ''), 'K', 'skills', kPts() > 0], ['🗺 Map', 'M', 'map', false]];
       g.font = '800 11px ' + A.font; let tot = 0; const ws = chips.map(([a, k]) => { const w2 = g.measureText(a).width + g.measureText(k).width + 30; tot += w2 + 6; return w2; }); let x = VW/2 - tot/2; const y = VH - 30;
       chips.forEach(([a, k, id, on], i) => { const w2 = ws[i]; g.fillStyle = on ? 'rgba(213,243,103,.92)' : 'rgba(20,32,74,.6)'; rr(g, x, y, w2, 24, 12); g.fill(); g.fillStyle = on ? '#14204a' : '#fff'; g.textAlign = 'left'; g.fillText(a, x + 10, y + 16); const kw = g.measureText(k).width + 8; g.fillStyle = on ? '#14204a' : 'rgba(255,255,255,.85)'; rr(g, x + w2 - kw - 6, y + 4, kw, 16, 5); g.fill(); g.fillStyle = on ? '#D5F367' : '#14204a'; g.textAlign = 'center'; g.fillText(k, x + w2 - 6 - kw/2, y + 16); btnR.push({x, y, w:w2, h:24, id}); x += w2 + 6; }); }
     // map
-    if (mapOpen) { const MS = Math.min((VW - 40)/N, (720 - 160)/N), MXo = VW/2 - N*MS/2; MAPR.x = MXo; MAPR.y = 70; MAPR.s = MS; g.fillStyle = 'rgba(10,16,36,.97)'; g.fillRect(0, 0, VW, 720); g.fillStyle = '#fff'; g.textAlign = 'center'; g.font = '900 22px ' + A.font; g.fillText(travel ? '✨ Fast travel: tap a waystone' : '🗺 The Snow Kingdom', VW/2, TY + 32); g.font = '600 11px ' + A.font; g.fillStyle = '#9fe8ff'; g.fillText(travel ? 'Waystones you have touched glow blue' : (touchUI ? '◀▲▼▶ move · tap to throw (hold = bigger) · ⭐ ability · ✋ use · 🐟 feed Mau Mau' : 'WASD/arrows move · click to throw (hold = bigger) · F throws · Space ability · E use · G feed Mau Mau · M map'), VW/2, TY + 50);
+    if (mapOpen) { const MS = Math.min((VW - 40)/N, (640 - TY - 62)/N), MXo = VW/2 - N*MS/2; MAPR.x = MXo; MAPR.y = TY + 62; MAPR.s = MS; g.fillStyle = 'rgba(10,16,36,.97)'; g.fillRect(0, 0, VW, 720); g.fillStyle = '#fff'; g.textAlign = 'center'; g.font = '900 22px ' + A.font; g.fillText(travel ? '✨ Fast travel: tap a waystone' : '🗺 The Snow Kingdom', VW/2, TY + 32); g.font = '600 11px ' + A.font; g.fillStyle = '#9fe8ff'; g.fillText(travel ? 'Waystones you have touched glow blue' : (touchUI ? '◀▲▼▶ move · tap to throw (hold = bigger) · ⭐ ability · ✋ use · 🐟 feed Mau Mau' : 'WASD/arrows move · click to throw (hold = bigger) · F throws · Space ability · E use · G feed Mau Mau · Shift roll · V ride · K skills · C team hold · M map'), VW/2, TY + 50);
       g.imageSmoothingEnabled = false; g.drawImage(mini, MAPR.x, MAPR.y, N*MAPR.s, N*MAPR.s); g.imageSmoothingEnabled = true;
       const ms = (L2) => ({x:MAPR.x + (L2.x + .5)*MAPR.s, y:MAPR.y + (L2.y + .5)*MAPR.s}), seen = L2 => fog[Math.floor(L2.y/2)*FB + Math.floor(L2.x/2)];
       g.font = '18px ' + A.font; [['camp', '🏕'], ['forest', W.runes.forest ? '🌙' : '🌲'], ['lake', W.runes.lake ? '🌙' : '🧊'], ['caves', W.runes.caves ? '🌙' : '💎'], ['pass', W.mau ? '🐱' : '⛓'], ['castle', W.bau ? '👑' : '🏰']].forEach(([k, e2]) => { if (!seen(LM[k])) return; const q = ms(LM[k]); g.fillText(e2, q.x, q.y + 6); });
@@ -861,8 +1075,13 @@ A.snowWorld = function(X) {
       for (const k in WAYS) { if (!W.ways[k]) continue; const q = ms(WAYS[k]); g.fillStyle = travel ? '#64CDF5' : 'rgba(100,205,245,.8)'; g.beginPath(); g.arc(q.x, q.y, travel ? 10 : 5, 0, TAU); g.fill(); if (travel) { g.fillStyle = '#fff'; g.font = '700 11px ' + A.font; g.fillText(WAYS[k].n, q.x, q.y - 14); } }
       const pq = {x:MAPR.x + p.x/TS*MAPR.s, y:MAPR.y + p.y/TS*MAPR.s}; g.fillStyle = '#FF4539'; g.beginPath(); g.arc(pq.x, pq.y, 6, 0, TAU); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 2; g.stroke();
       if (G0) { g.fillStyle = '#F9BF01'; g.font = '18px ' + A.font; g.fillText('⭐', MAPR.x + G0.x/TS*MAPR.s, MAPR.y + G0.y/TS*MAPR.s + 6); }
+      { const side = MAPR.x - 30; if (side >= 150) { const ex = regExplored(), ks = Object.keys(ex).filter(k => ex[k].seen > 0); const LW = Math.min(220, side), lx = MAPR.x - LW - 16; g.fillStyle = 'rgba(255,255,255,.08)'; rr(g, lx, MAPR.y, LW, 26 + ks.length*19, 10); g.fill();
+        g.textAlign = 'left'; g.fillStyle = '#D5F367'; g.font = '800 12px ' + A.font; g.fillText('% explored per land', lx + 10, MAPR.y + 18); ks.forEach((k, i) => { const e3 = ex[k], pc = Math.floor(e3.seen*100/e3.all), yy = MAPR.y + 38 + i*19; g.fillStyle = pc >= 100 ? '#D5F367' : '#cfe3f5'; g.font = '600 11px ' + A.font; wrapClip(REG[k].n, lx + 10, yy, LW - 70); g.textAlign = 'right'; g.font = '800 11px ' + A.font; g.fillText((pc >= 100 ? '✓ ' : '') + pc + '%', lx + LW - 10, yy); g.textAlign = 'left'; });
+        g.textAlign = 'center'; } }
       g.fillStyle = '#ffffff'; rr(g, VW/2 - 270, 650, 250, 48, 14); g.fill(); g.fillStyle = 'rgba(255,255,255,.18)'; rr(g, VW/2 + 20, 650, 250, 48, 14); g.fill(); g.fillStyle = '#14204a'; g.font = '800 16px ' + A.font; g.fillText('✕ Close map · M', VW/2 - 145, 680); g.fillStyle = '#fff'; g.fillText('⬅ Snowball menu', VW/2 + 145, 680); } };
-  const close = () => { save(); unlayout(); };
+  const escK = e => { if (e.key == 'Escape' && (panel || mapOpen)) { e.stopPropagation(); e.preventDefault(); panel = null; mapOpen = false; travel = false; } }; document.addEventListener('keydown', escK, true);
+  const close = () => { save(); unlayout(); document.removeEventListener('keydown', escK, true); };
+  const drawTop = () => { if (panel) drawPanel(); };
   reveal(); lastReg = regAt(p.x, p.y);
   if (!W.met) say('❄ Welcome to the Snow Kingdom! Talk to Old Pip, the penguin by the campfire', 4); else say('❄ Welcome back to the Snow Kingdom!', 2.4);
   const adm = {
@@ -872,8 +1091,11 @@ A.snowWorld = function(X) {
     boss:k => { if (!BOSS[k]) { say('Admin: unknown boss', 2); return; } if (boss) boss = null; const H = LAIR[k]; p.x = H.x; p.y = H.y + 200; foes = []; spawnBoss(k); },
     quest:() => { const sp = W.sp|0; if (!W.bau) { W.met = 1; W.runes = {forest:1, lake:1, caves:1}; W.mau = 1; W.down.grumble = W.down.icefang = W.down.crystal = W.down.rufus = 1; W.loki = Math.max(1, W.loki|0); W.bau = 1; } else if (sp == 2) { W.lan = 3; W.lanF = {0:1, 1:1, 2:1}; W.sp = 3; W.bless = 1; } else if (sp == 3) { W.clue = {paw:1, string:1, bell:1}; W.tag = 1; W.sp = 4; } else if (sp == 4) { W.held = 1; MEMS.forEach(m => { W.mem[m.k] = 1; W.down['elite_' + m.k] = 1; }); W.sp = 5; } else if (sp < 6) { W.sp = sp + 1; if (W.sp == 1) W.party.bau = 1; if (W.sp == 6) W.party.bau = 0; } save(); say('Admin: quest step completed · ' + (STORY_N[W.sp|0] || 'main quest'), 2.6); },
     chapter:n => { n = Math.max(0, Math.min(6, Math.floor(n))); W.met = 1; W.runes = {forest:1, lake:1, caves:1}; W.mau = 1; W.loki = Math.max(1, W.loki|0); W.bau = 1; ['grumble','icefang','crystal','rufus'].forEach(k => W.down[k] = 1); W.sp = n; W.party.bau = n >= 1 && n < 6 ? 1 : 0; if (n >= 3) { W.bless = 1; W.lan = 3; W.lanF = {0:1, 1:1, 2:1}; } if (n >= 4) { W.clue = {paw:1, string:1, bell:1}; W.tag = 1; } if (n >= 5) { W.held = 1; MEMS.forEach(m => { W.mem[m.k] = 1; W.down['elite_' + m.k] = 1; }); } save(); say('Admin: jumped to ' + (n ? 'Chapter ' + n + ': ' + STORY_N[n] : 'before the story'), 3); },
+    siege:() => { if (raid) leaveRaid(); p.x = BELL.x; p.y = BELL.y + 120; startSiege(); }, raid:n => { const R0 = RAIDS[Math.max(0, Math.min(4, Math.floor(n) - 1))]; if (siege) siegeEnd(false); enterRaid(R0); },
+    kxp:n => { give({xp:Math.round(n)}); save(); say('Admin: kingdom level ' + kLv(), 2); }, base:() => { W.base.tier = 3; ROOMS.forEach(r0 => { if (!r0.need || r0.need()) W.base.rooms[r0.id] = 4; }); refreshMax(); save(); say('Admin: Crystal Castle, every room maxed', 2.5); },
+    raidReset:() => { W.raidClr = {}; save(); say('Admin: weekly raid clears reset (rewards can be earned again)', 2.5); },
     bosses:() => Object.keys(BOSS)};
   if (W.extraHp) { p.max += W.extraHp; p.hp = p.max; }
-  return {frame:dt => { update(dt); draw(); }, down, move, up, key, close, adm, admin:{reveal:() => { fog.fill(1); for (let i = 0; i < fog.length; i++) paintBlock(i); explored = fog.length; save(); }, quest:() => { W.met = 1; W.runes = {forest:1, lake:1, caves:1}; W.mau = 1; W.down.grumble = W.down.icefang = W.down.crystal = W.down.rufus = 1; save(); say('Admin: runes + Mau Mau given, gate open'); }, tp:k => { const w2 = px(WAYS[k] || WAYS.camp); p.x = w2.x; p.y = w2.y + 40; foes = []; boss = null; }},
-    dbg:() => ({p, W, mates, foes, boss, balls, gateOpen, things, spawnBoss, hurtBoss, chests, LAIR, use, update, dlg:() => dlg, nextLine})}; };
+  return {frame:dt => { update(dt); draw(); drawTop(); }, down, move, up, key, close, adm, admin:{reveal:() => { fog.fill(1); for (let i = 0; i < fog.length; i++) paintBlock(i); explored = fog.length; save(); }, quest:() => { W.met = 1; W.runes = {forest:1, lake:1, caves:1}; W.mau = 1; W.down.grumble = W.down.icefang = W.down.crystal = W.down.rufus = 1; save(); say('Admin: runes + Mau Mau given, gate open'); }, tp:k => { const w2 = px(WAYS[k] || WAYS.camp); p.x = w2.x; p.y = w2.y + 40; foes = []; boss = null; }},
+    dbg:() => ({p3:{raid:() => raid, siege:() => siege, panel:() => panel, startSiege, siegeEnd, enterRaid, leaveRaid, RAIDS, toggleMount, riding:() => riding, skillPanel, fortPanel, raidPanel, shopPanel, panelDown, kLv, RL, roomCost, BELL, FORT, BOARD, rpx, give}, p, W, mates, foes, boss, balls, gateOpen, things, spawnBoss, hurtBoss, chests, LAIR, use, update, dlg:() => dlg, nextLine})}; };
 })();

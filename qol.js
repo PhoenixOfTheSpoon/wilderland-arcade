@@ -9,7 +9,9 @@ const el = (tag, at, ...kids) => { const n = document.createElement(tag); at = a
   kids.flat().forEach(c => { if (c == null || c === false) return; n.appendChild(typeof c == 'object' ? c : document.createTextNode(String(c))); }); return n; };
 
 // ---------------- What's new ----------------
-const WN = {v:'2026-12-08', items:[
+const WN = {v:'2026-12-08f', items:[
+  ['❄️', 'Snow Kingdom: raids & sieges', 'Five raid dungeons with rune puzzles, guardians and big bosses (Empowered Loki is in the Sunken Library) that reset every week with new modifiers. Defend Frostpine Village from catapults, rams and giant snowmen alongside Royal Guard Mau Mau.'],
+  ['🏰', 'Your Ice Fort', 'Grow your base from Snow Camp to Crystal Castle and build rooms that boost you everywhere. Plus kingdom levels with a skill tree (K), mounts (V), a dodge-roll (Shift), team combos and % explored per land on the map.'],
   ['🛣️', 'Rebirth Road', 'Tap the ⭐ NEXT REBIRTH bar (or press R) to see every rebirth milestone and its rewards. Players who already rebirthed got every reward they passed.'],
   ['🎧', 'Music Player', '9 new original songs unlock along the Rebirth Road. From Rebirth 10: pick any song, shuffle, repeat and make playlists. Every song shows its credit.'],
   ['🌈', 'Wilderland Wonders', '44 new Golden-Star prizes with permanent bonuses, 5 upgrade levels each, themed sets and a ×10 bonus for the whole Wilderland Collection.'],

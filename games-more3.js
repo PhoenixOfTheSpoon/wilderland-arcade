@@ -946,7 +946,12 @@ A.register('snowball', { mount(host, api){
     {label:'Kingdom: add hearts', num:5, min:1, max:500, run:n => { if (!wm) openWorld(); wm && wm.adm.hearts(n); }},
     {label:'Kingdom: spawn boss (1 Grumblebark 2 Icefang 3 Crystal Golem 4 Rufus 5 Loki 6 Frost Wraith 7 Storm Golem 8 Lonely Fog 9 Storm Elite 10 Chao Chao 11 Storm Echo 12 Yeti King 13 Ice Giant 14 Frostbeard 15 Aurora Serpent)', num:5, min:1, max:15, run:n => { if (!wm) openWorld(); wm && wm.adm.boss(['grumble','icefang','crystal','rufus','loki','wraith','guardian','fog','elite_hurt','chao','echo','yeti','giant','frostbeard','serpent'][Math.floor(n) - 1]); }},
     {label:'Kingdom: complete current quest step', run:() => { if (!wm) openWorld(); wm && wm.adm.quest(); }},
-    {label:'Kingdom: jump to story chapter (0 before · 1-5 chapters · 6 epilogue)', num:1, min:0, max:6, run:n => { if (!wm) openWorld(); wm && wm.adm.chapter(n); }}];
+    {label:'Kingdom: jump to story chapter (0 before · 1-5 chapters · 6 epilogue)', num:1, min:0, max:6, run:n => { if (!wm) openWorld(); wm && wm.adm.chapter(n); }},
+    {label:'Kingdom: start a village siege', run:() => { if (!wm) openWorld(); wm && wm.adm.siege(); }},
+    {label:'Kingdom: enter raid (1 Catacombs 2 Labyrinth 3 Citadel 4 Yeti Vault 5 Loki Library)', num:1, min:1, max:5, run:n => { if (!wm) openWorld(); wm && wm.adm.raid(n); }},
+    {label:'Kingdom: add kingdom XP', num:1000, min:1, run:n => { if (!wm) openWorld(); wm && wm.adm.kxp(n); }},
+    {label:'Kingdom: max Ice Fort (Crystal Castle + all rooms)', run:() => { if (!wm) openWorld(); wm && wm.adm.base(); }},
+    {label:'Kingdom: reset this week’s raid clears', run:() => { if (!wm) openWorld(); wm && wm.adm.raidReset(); }}];
   // ---- save & resume (old v2 saves still load) ----
   api.snap && api.snap(() => (st == 'play') ? {v:3, mode, seed, me, foes, walls, builds, mates, drops, score, wave, flakes, boss, phase, arena, pw, bossesBeat} : null);
   { const R0 = api.resume; if (R0 && (R0.v == 2 || R0.v == 3)) { try {
