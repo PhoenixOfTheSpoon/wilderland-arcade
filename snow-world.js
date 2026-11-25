@@ -134,7 +134,8 @@ A.snowWorld = function(X) {
   const {host, api, c, K, PERM} = X, g = c.getContext('2d'), {M, chests} = genMap();
   const W = PERM.ow = Object.assign({v:1, x:0, y:0, met:0, runes:{}, mau:0, loki:0, bau:0, down:{}, chests:{}, ways:{camp:1}, fog:'', kills:0, deaths:0}, PERM.ow || {});
   ['runes', 'down', 'chests', 'ways'].forEach(k => { W[k] = W[k] || {}; }); W.ways.camp = 1;
-  const save = () => { W.x = Math.round(p.x); W.y = Math.round(p.y); W.fog = fogStr(); X.savePerm(); };
+  // leaving while inside a raid dungeon saves you back at the Raids board (raids restart from floor 1, nothing is lost)
+  const save = () => { const inWing = p.x >= N*TS; W.x = Math.round(inWing ? 44.5*TS : p.x); W.y = Math.round(inWing ? 92*TS : p.y); W.fog = fogStr(); X.savePerm(); };
   // ---------- screen layout: fill the whole screen (wider view of the map), touch buttons only on touch screens ----------
   const dpr = window.devicePixelRatio || 1; let layW = 0;
   let touchUI = (() => { try { return matchMedia('(hover: none) and (pointer: coarse)').matches; } catch(e) { return false; } })();
@@ -168,6 +169,7 @@ A.snowWorld = function(X) {
     if (ch) { const before = Math.floor(explored*100/fog.length); explored += ch; const pct = Math.floor(explored*100/fog.length); if (pct > before) X.stat('snowExplore', pct, 'max'); } };
   // ---------- you ----------
   const mx0 = X.maxHp();
+  if (W.x >= N*TS) { W.x = Math.round(44.5*TS); W.y = Math.round(92*TS); }   // saves made inside a raid before this fix
   const p = {x:W.x || CAMPX.x, y:W.y || CAMPX.y, hp:mx0, max:mx0, inv:2, ab:0, shieldT:0, eye:0, fortT:0, ammo:X.maxAmmo(), reload:0, vx:0, vy:0, face:-Math.PI/2, hitT:0, walk:0};
   if (blocked(p.x, p.y, 12)) { p.x = CAMPX.x; p.y = CAMPX.y; }
   const mau = {x:p.x - 40, y:p.y + 10, cool:1, walk:0, idle:0, st2:'', stT:0, blockCd:0, chargeCd:5, snackCd:0, dash:null, say:'', sayT:0, quipT:20};
