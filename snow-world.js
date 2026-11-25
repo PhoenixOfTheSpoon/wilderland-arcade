@@ -6,17 +6,26 @@
 (function(){
 const A = window.Arcade, TAU = Math.PI*2;
 const rr = (g,x,y,w,h,r) => { g.beginPath(); if (g.roundRect) g.roundRect(x,y,w,h,r); else g.rect(x,y,w,h); };
-const N = 100, TS = 48, WORLD = N*TS; let VW = 600, VH = 620, BAR = 620;   // VW grows to fill a wide screen; VH/BAR: the touch buttons only show on touch screens
-const SNOW = 0, PATH = 1, TREE = 2, ROCK = 3, ICE = 4, DEEP = 5, HOLE = 6, WALL = 7, FLOOR = 8, GATE = 9, CAVE = 10, CAMP = 11, DEAD = 12;
-const SOLID = [0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1];
-const MINI = ['#eef5fc', '#e3d6bd', '#2f6a3a', '#8a8e94', '#aee6ff', '#ffffff', '#2a5a8a', '#3a2a5a', '#6a5a8a', '#c04ae0', '#5a6a80', '#ffd08a', '#5a4a4a'];
+const N = 140, N0 = 100, TS = 48, WORLD = N*TS;   // the old 100×100 kingdom (top-left) + new lands east (Spirits of the Snow) and south
+let VW = 600, VH = 620, BAR = 620;   // VW grows to fill a wide screen; VH/BAR: the touch buttons only show on touch screens
+const SNOW = 0, PATH = 1, TREE = 2, ROCK = 3, ICE = 4, DEEP = 5, HOLE = 6, WALL = 7, FLOOR = 8, GATE = 9, CAVE = 10, CAMP = 11, DEAD = 12, VEIL = 13, WATER = 14, HOUSE = 15;
+const SOLID = [0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1];
+const MINI = ['#eef5fc', '#e3d6bd', '#2f6a3a', '#8a8e94', '#aee6ff', '#ffffff', '#2a5a8a', '#3a2a5a', '#6a5a8a', '#c04ae0', '#5a6a80', '#ffd08a', '#5a4a4a', '#7ad8ff', '#3a6ab0', '#b0703a'];
 // landmarks (tile coordinates)
 const LM = {camp:{x:50, y:86}, forest:{x:16, y:62}, lake:{x:80, y:67}, caves:{x:16, y:18}, pass:{x:48, y:22}, castle:{x:83, y:13}, gate:{x:83, y:30}};
-const WAYS = {camp:{x:55, y:84, n:'Camp Cocoa'}, forest:{x:22, y:66, n:'Frostpine Forest'}, lake:{x:64, y:64, n:'Glimmer Lake'}, caves:{x:22, y:24, n:'Crystal Caves'}, pass:{x:44, y:31, n:'Howling Pass'}, castle:{x:83, y:35, n:'Shadow Castle Gate'}};
-const regionAt = (x, y) => { if (Math.hypot(x - 50, y - 86) < 8) return 'camp'; if (x >= 70 && y <= 34) return 'castle'; if (x < 34 && y < 40) return 'caves'; if (x < 36) return 'forest'; if (x > 62 && y > 44) return 'lake'; if (y < 44) return 'pass'; return 'meadow'; };
+const WAYS = {camp:{x:55, y:84, n:'Camp Cocoa'}, forest:{x:22, y:66, n:'Frostpine Forest'}, lake:{x:64, y:64, n:'Glimmer Lake'}, caves:{x:22, y:24, n:'Crystal Caves'}, pass:{x:44, y:31, n:'Howling Pass'}, castle:{x:83, y:35, n:'Shadow Castle Gate'},
+  village:{x:30, y:110, n:'Frostpine Village'}, aurora:{x:62, y:116, n:'Aurora Fields'}, coast:{x:40, y:126, n:'Shipwreck Coast'}, ruins:{x:84, y:116, n:'Ice Giant Ruins'}, yeti:{x:112, y:112, n:'Yeti Mountains'},
+  hollow:{x:106, y:82, n:'Spirit Hollow', spirit:1}, oldroad:{x:108, y:50, n:'The Old Road', spirit:1}, shrine:{x:118, y:38, n:'The Driveway Shrine', spirit:1}, hall:{x:127, y:74, n:'The Hall of Paws', spirit:1}, peak:{x:130, y:22, n:'Storm Peak', spirit:1}};
+const regionAt = (x, y) => { if (y >= N0) { if (x >= N0) return 'yeti'; if (y >= 127) return 'coast'; if (x < 42) return 'village'; if (x >= 74) return 'ruins'; return 'aurora'; }
+  if (x >= N0) { if (y < 22) return 'peak'; if (y < 42) return 'shrine'; if (y < 56) return 'oldroad'; if (y >= 56 && y < 78 && x >= 116) return 'hall'; return 'hollow'; }
+  if (Math.hypot(x - 50, y - 86) < 8) return 'camp'; if (x >= 70 && y <= 34) return 'castle'; if (x < 34 && y < 40) return 'caves'; if (x < 36) return 'forest'; if (x > 62 && y > 44) return 'lake'; if (y < 44) return 'pass'; return 'meadow'; };
 const REG = {camp:{n:'Camp Cocoa', tier:0, pool:[]}, meadow:{n:'Snowy Meadows', tier:1, pool:['pup', 'pup', 'goon']}, forest:{n:'Frostpine Forest', tier:2, pool:['pup', 'goon', 'bat']},
   lake:{n:'Glimmer Lake', tier:2, pool:['goon', 'bat', 'golem']}, caves:{n:'Crystal Caves', tier:3, pool:['bat', 'golem', 'goon', 'imp']}, pass:{n:'Howling Pass', tier:3, pool:['golem', 'hound', 'goon']},
-  castle:{n:'Loki’s Shadow Lands', tier:4, pool:['hound', 'imp', 'golem', 'imp']}};
+  castle:{n:'Loki’s Shadow Lands', tier:4, pool:['hound', 'imp', 'golem', 'imp']},
+  village:{n:'Frostpine Village', tier:1, pool:['pup', 'goon'], mood:'calm'}, aurora:{n:'Aurora Fields', tier:3, pool:['bat', 'imp', 'goon']}, coast:{n:'Frozen Shipwreck Coast', tier:3, pool:['goon', 'golem', 'bat']},
+  ruins:{n:'Ice Giant Ruins', tier:4, pool:['golem', 'golem', 'hound']}, yeti:{n:'Yeti Mountains', tier:5, pool:['golem', 'hound', 'yeti']},
+  hollow:{n:'Spirit Hollow', tier:4, pool:['wisp', 'wisp', 'stormling'], haunt:1}, oldroad:{n:'The Old Road', tier:4, pool:['wisp'], haunt:1, quiet:1}, shrine:{n:'The Driveway Shrine', tier:4, pool:['wisp', 'stormling'], haunt:1},
+  hall:{n:'The Hall of Paws', tier:0, pool:[], safe:1}, peak:{n:'Chao Chao’s Storm Peak', tier:5, pool:['stormling', 'wisp', 'stormling'], haunt:2}};
 const FOE = {
   pup:{n:'Hex Pup', hp:2, sp:125, melee:1, r:13, pts:30},
   goon:{n:'Snow Goon', hp:3, sp:60, shoot:2.2, r:15, pts:40},
@@ -25,7 +34,9 @@ const FOE = {
   hound:{n:'Shadow Hound', hp:5, sp:150, melee:2, r:16, pts:70},
   imp:{n:'Hex Imp', hp:4, sp:80, shoot:2.4, hex:1, r:14, pts:70},
   clone:{n:'Loki Clone', hp:3, sp:0, shoot:2.2, hex:1, r:20, pts:50, clone:1},
-  shade:{n:'Shadow Minion', hp:3, sp:140, melee:1, r:14, pts:40}};
+  shade:{n:'Shadow Minion', hp:3, sp:140, melee:1, r:14, pts:40},
+  wisp:{n:'Spirit Wisp', hp:2, sp:110, shoot:2.6, fly:1, r:12, pts:45, slow:1}, stormling:{n:'Stormling', hp:4, sp:120, melee:1, r:15, pts:55}, yeti:{n:'Little Yeti', hp:6, sp:95, melee:2, r:18, pts:80},
+  decoy:{n:'Fake-out', hp:1, sp:0, r:18, pts:0, clone:1, decoy:1}, echo:{n:'Shadow Copy', hp:3, sp:70, shoot:2.4, r:16, pts:40, clone:1}};
 const BOSS = {
   grumble:{n:'GRUMBLEBARK THE FROST ENT', hp:60, at:'forest', r:38, rune:'forest', intro:'Grumblebark: “Hrrrm! Loki told me to guard this rune. Go away, little snowball!”'},
   icefang:{n:'CAPTAIN ICEFANG', hp:75, at:'lake', r:32, rune:'lake', intro:'Captain Icefang: “Arr! This Moon Rune be MY treasure now!”'},
@@ -38,7 +49,8 @@ const RUNE_N = {forest:'Frostpine', lake:'Glimmer', caves:'Crystal'};
 const hash = (x, y, s) => { let h = (x*374761393 + y*668265263 + s*982451653) | 0; h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; };
 const noise = (x, y, sc, s) => { const fx = x/sc, fy = y/sc, ix = Math.floor(fx), iy = Math.floor(fy), u = fx - ix, v = fy - iy, sm = q => q*q*(3 - 2*q), a = hash(ix, iy, s), b = hash(ix + 1, iy, s), c = hash(ix, iy + 1, s), d = hash(ix + 1, iy + 1, s), top = a + (b - a)*sm(u), bot = c + (d - c)*sm(u); return top + (bot - top)*sm(v); };
 let MAPC = null;
-const genMap = () => { if (MAPC) return MAPC; const M = new Uint8Array(N*N), set = (x, y, v) => { if (x >= 0 && y >= 0 && x < N && y < N) M[y*N + x] = v; }, get = (x, y) => M[y*N + x];
+// the ORIGINAL 100×100 kingdom, generated exactly as before (so every saved chest and explored spot stays put)
+const genOld = () => { const N = N0; const M = new Uint8Array(N*N), set = (x, y, v) => { if (x >= 0 && y >= 0 && x < N && y < N) M[y*N + x] = v; }, get = (x, y) => M[y*N + x];
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { const r = regionAt(x, y), n1 = noise(x, y, 6, 1), n2 = noise(x, y, 3, 2), h = hash(x, y, 9); let v = SNOW;
     if (r == 'meadow') v = h < .045 ? TREE : h < .06 ? ROCK : n1 > .74 ? DEEP : SNOW;
     else if (r == 'forest') v = (n1 > .45 && h < .5) || h < .07 ? TREE : n2 > .8 ? DEEP : SNOW;
@@ -68,8 +80,56 @@ const genMap = () => { if (MAPC) return MAPC; const M = new Uint8Array(N*N), set
     if (SOLID[v] || v == HOLE || r == 'camp' || (r == 'castle' && v == FLOOR && y > 20 && Math.abs(x - 83) < 4)) continue;
     if (Object.values(LM).some(L => Math.hypot(L.x - x, L.y - y) < 7) || chests.some(C => Math.hypot(C.tx - x, C.ty - y) < 6)) continue;
     chests.push({id:chests.length, tx:x, ty:y, x:(x + .5)*TS, y:(y + .5)*TS, tier:Math.max(1, REG[r].tier)}); }
-  MAPC = {M, chests}; return MAPC; };
+  return {M, chests}; };
 
+
+const LM2 = {village:{x:28, y:114}, aurora:{x:62, y:120}, coast:{x:30, y:133}, ruins:{x:88, y:122}, yeti:{x:120, y:122}, hollow:{x:114, y:86}, shrine:{x:121, y:31}, oldroad:{x:118, y:49}, hall:{x:127, y:64}, peak:{x:124, y:10}};
+const genMap = () => { if (MAPC) return MAPC; const old = genOld(), M = new Uint8Array(N*N), set = (x, y, v) => { if (x >= 0 && y >= 0 && x < N && y < N) M[y*N + x] = v; }, get = (x, y) => M[y*N + x];
+  for (let y = 0; y < N0; y++) for (let x = 0; x < N0; x++) M[y*N + x] = old.M[y*N0 + x];
+  // new lands
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { if (x < N0 && y < N0) continue; const r = regionAt(x, y), n1 = noise(x, y, 6, 3), n2 = noise(x, y, 3, 4), h = hash(x, y, 11); let v = SNOW;
+    if (r == 'hollow') v = (n1 > .5 && h < .55) || h < .06 ? TREE : n2 > .82 ? DEEP : SNOW;
+    else if (r == 'shrine') v = h < .05 ? TREE : h < .07 ? ROCK : SNOW;
+    else if (r == 'oldroad') v = h < .035 ? DEAD : h < .05 ? ROCK : n1 > .76 ? DEEP : SNOW;
+    else if (r == 'hall') v = h < .03 ? TREE : SNOW;
+    else if (r == 'peak') v = n1 > .56 || (n2 > .8 && h < .5) ? ROCK : n2 > .5 ? DEEP : SNOW;
+    else if (r == 'village') v = h < .04 ? TREE : SNOW;
+    else if (r == 'aurora') v = h < .025 ? TREE : n1 > .72 ? DEEP : SNOW;
+    else if (r == 'coast') v = y > 133 ? WATER : y > 130 ? (h < .5 ? ICE : WATER) : h < .04 ? ROCK : SNOW;
+    else if (r == 'ruins') v = n1 > .66 ? ROCK : h < .05 ? ROCK : SNOW;
+    else if (r == 'yeti') v = n1 > .5 || h < .06 ? ROCK : n2 > .6 ? DEEP : SNOW;
+    set(x, y, v); }
+  // the old east and south edges used to be walls: give them back to the land around them
+  for (let i = 2; i < N0 - 2; i++) for (const [x, y] of [[N0 - 1, i], [N0 - 2, i], [i, N0 - 1], [i, N0 - 2]]) { const r = regionAt(x, y); set(x, y, r == 'forest' ? TREE : r == 'castle' ? (y <= 30 ? get(x - 1, y) : SNOW) : r == 'caves' ? CAVE : SNOW); }
+  const carve = (ax, ay, bx, by, wd) => { const dx = bx - ax, dy = by - ay, L = Math.hypot(dx, dy); for (let i = 0; i <= L*3; i++) { const q = i/(L*3), wob = Math.sin(q*8 + ax*.7)*2.4*Math.sin(q*Math.PI), px = ax + dx*q - dy/L*wob, py = ay + dy*q + dx/L*wob;
+      for (let oy = -wd; oy <= wd; oy++) for (let ox = -wd; ox <= wd; ox++) { const tx = Math.round(px + ox), ty = Math.round(py + oy); if (tx < 2 || ty < 2 || tx > N - 3 || ty > N - 3 || Math.hypot(ox, oy) > wd + .3) continue; const v = get(tx, ty);
+        if (v == HOLE || v == WATER) set(tx, ty, ICE); else if (v == ICE || v == CAMP || v == FLOOR || v == WALL || v == GATE || v == VEIL || v == HOUSE) continue; else set(tx, ty, regionAt(tx, ty) == 'caves' ? CAVE : PATH); } } };
+  const clear = (cx, cy, rad, v) => { for (let y = cy - rad; y <= cy + rad; y++) for (let x = cx - rad; x <= cx + rad; x++) if (Math.hypot(x - cx, y - cy) <= rad && x > 1 && y > 1 && x < N - 2 && y < N - 2) set(x, y, v); };
+  const box = (x0, y0, x1, y1, door) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, x == x0 || x == x1 || y == y0 || y == y1 ? WALL : FLOOR); if (door) door.forEach(([x, y]) => set(x, y, FLOOR)); };
+  const house = (x, y) => { for (let yy = y; yy < y + 2; yy++) for (let xx = x; xx < x + 3; xx++) set(xx, yy, HOUSE); };
+  // the spirit veil between the old kingdom and the eastern spirit lands, and a ridge between them and the Yeti Mountains
+  for (let y = 2; y < N0; y++) { set(N0, y, VEIL); set(N0 + 1, y, VEIL); } for (let x = N0; x < N - 2; x++) { set(x, N0, ROCK); set(x, N0 + 1, ROCK); }
+  // roads: camp → the new south lands, the lake → Spirit Hollow and on through the spirit lands
+  carve(50, 90, 30, 112, 1); carve(50, 90, 62, 118, 1); carve(62, 118, 86, 120, 1); carve(86, 120, 116, 120, 1); carve(40, 112, 34, 126, 1); carve(62, 118, 40, 126, 0);
+  carve(84, 70, 106, 82, 1); carve(106, 82, 116, 86, 1); carve(116, 86, 124, 72, 1); carve(110, 84, 108, 50, 1); carve(108, 50, 121, 42, 1); carve(121, 42, 129, 36, 1); carve(129, 36, 130, 21, 1); carve(130, 21, 124, 12, 1);
+  // The Old Road: a long, quiet road east to west
+  for (let x = N0 + 2; x < N - 3; x++) for (let y = 47; y <= 50; y++) set(x, y, PATH);
+  // Frostpine Village houses, the shipwreck, the ice giant's ruins
+  [[22, 106], [27, 106], [33, 107], [20, 112], [34, 112], [24, 118], [31, 118]].forEach(([x, y]) => house(x, y)); clear(28, 114, 2, PATH);
+  box(24, 129, 36, 133, [[30, 133], [24, 131]]);
+  for (let y = 112; y <= 132; y += 5) for (let x = 78; x <= 96; x += 5) if (hash(x, y, 4) < .7) { set(x, y, ROCK); set(x, y + 1, ROCK); }
+  clear(120, 122, 6, SNOW); clear(88, 122, 4, SNOW); clear(62, 120, 4, SNOW);
+  // Spirit Hollow grove, the Driveway Shrine (walled courtyard, door opened by three lanterns), the Hall of Paws, Storm Peak summit
+  clear(114, 86, 6, SNOW); box(116, 25, 126, 33, []); for (let x = 120; x <= 122; x++) set(x, 33, GATE); for (let y = 34; y <= 40; y++) for (let x = 119; x <= 123; x++) set(x, y, PATH);
+  box(120, 56, 134, 70, [[126, 70], [127, 70], [128, 70]]); clear(124, 10, 7, SNOW); clear(118, 49, 3, PATH);
+  for (const k in WAYS) clear(WAYS[k].x, WAYS[k].y, 1, PATH);
+  for (let i = 0; i < N; i++) for (const [x, y] of [[i, 0], [i, 1], [0, i], [1, i], [i, N - 1], [i, N - 2], [N - 1, i], [N - 2, i]]) if (x >= N0 || y >= N0 || x < 2 || y < 2) set(x, y, regionAt(x, y) == 'coast' ? WATER : regionAt(x, y) == 'village' ? TREE : ROCK);
+  // the original 40 chests, plus 30 more in the new lands
+  const chests = old.chests.slice(); let sd = 7; const rnd = () => (sd = (sd*16807) % 2147483647) / 2147483647;
+  for (let tries = 0; chests.length < 70 && tries < 8000; tries++) { const x = 3 + Math.floor(rnd()*(N - 6)), y = 3 + Math.floor(rnd()*(N - 6)), v = get(x, y); if (x < N0 && y < N0) continue; const r = regionAt(x, y);
+    if (SOLID[v] || v == HOLE || v == WATER || REG[r].safe || Object.values(LM2).some(L => Math.hypot(L.x - x, L.y - y) < 6) || chests.some(C => Math.hypot(C.tx - x, C.ty - y) < 6)) continue;
+    chests.push({id:chests.length, tx:x, ty:y, x:(x + .5)*TS, y:(y + .5)*TS, tier:Math.max(1, REG[r].tier)}); }
+  MAPC = {M, chests}; return MAPC; };
 A.snowWorld = function(X) {
   const {host, api, c, K, PERM} = X, g = c.getContext('2d'), {M, chests} = genMap();
   const W = PERM.ow = Object.assign({v:1, x:0, y:0, met:0, runes:{}, mau:0, loki:0, bau:0, down:{}, chests:{}, ways:{camp:1}, fog:'', kills:0, deaths:0}, PERM.ow || {});
@@ -91,13 +151,14 @@ A.snowWorld = function(X) {
   const tileAt = (tx, ty) => tx < 0 || ty < 0 || tx >= N || ty >= N ? ROCK : M[ty*N + tx];
   const runesN = () => ['forest', 'lake', 'caves'].filter(k => W.runes[k]).length;
   const gateOpen = () => runesN() >= 3 && !!W.mau;
-  const solidAt = (x, y) => { const v = tileAt(Math.floor(x/TS), Math.floor(y/TS)); return v == GATE ? !gateOpen() : !!SOLID[v] || v == HOLE; };
+  const spiritsOpen = () => (W.sp|0) >= 1;
+  const solidAt = (x, y) => { const tx = Math.floor(x/TS), ty = Math.floor(y/TS), v = tileAt(tx, ty); return v == GATE ? (regionAt(tx, ty) == 'shrine' ? !((W.sp|0) >= 3 || (W.lan|0) >= 3) : !gateOpen()) : v == VEIL ? !spiritsOpen() : !!SOLID[v] || v == HOLE; };
   const blocked = (x, y, r) => solidAt(x - r, y - r) || solidAt(x + r, y - r) || solidAt(x - r, y + r) || solidAt(x + r, y + r);
   const regAt = (x, y) => regionAt(Math.floor(x/TS), Math.floor(y/TS));
   const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
   const low = () => !!A.lowFx;
   // ---------- fog of war: the map fills in as you explore (2×2-tile blocks, saved) ----------
-  const FB = 50, fog = new Uint8Array(FB*FB); { const s2 = W.fog || ''; for (let i = 0; i < s2.length && i*4 < fog.length; i++) { const v = parseInt(s2[i], 16) || 0; for (let b = 0; b < 4; b++) if (v & (1 << b)) fog[i*4 + b] = 1; } }
+  const FB = N/2, fog = new Uint8Array(FB*FB); { const s2 = W.fog || '', oldFB = W.fogV == 2 ? FB : 50; for (let i = 0; i < s2.length; i++) { const v = parseInt(s2[i], 16) || 0; for (let b = 0; b < 4; b++) if (v & (1 << b)) { const j = i*4 + b, bx = j % oldFB, by = Math.floor(j/oldFB); if (by < FB) fog[by*FB + bx] = 1; } } W.fogV = 2; }
   const fogStr = () => { let s2 = ''; for (let i = 0; i < fog.length; i += 4) s2 += (fog[i] | fog[i + 1] << 1 | fog[i + 2] << 2 | fog[i + 3] << 3).toString(16); return s2.replace(/0+$/, ''); };
   const mini = document.createElement('canvas'); mini.width = N; mini.height = N; const mg = mini.getContext('2d');
   const paintBlock = i => { const bx = (i % FB)*2, by = Math.floor(i/FB)*2; for (let y = by; y < by + 2; y++) for (let x = bx; x < bx + 2; x++) { const v = tileAt(x, y); mg.fillStyle = regionAt(x, y) == 'castle' && v == SNOW ? '#cfd2e2' : MINI[v]; mg.fillRect(x, y, 1, 1); } };
@@ -124,7 +185,9 @@ A.snowWorld = function(X) {
   const MI = X.mates ? X.mates() : {n:0, lv:1, names:[]}, ROLES = ['thrower', 'builder', 'medic'], RCOL = {thrower:'#2fa8e0', builder:'#64CDF5', medic:'#ff9ad5'}, RE = {thrower:'🎯', builder:'🔨', medic:'➕'};
   const mates = []; for (let i = 0; i < MI.n; i++) mates.push({name:(MI.names[i] || 'Pal'), role:ROLES[i % 3], lv:MI.lv, x:p.x + (i - 1.5)*30, y:p.y + 40, cool:1 + i*.3, heal:12, hp:2 + MI.lv, max:2 + MI.lv, ko:0, face:0, walk:0, throwT:0});
   const mateHome = () => mates.forEach((m, i) => { m.x = p.x + (i - 1.5)*30; m.y = p.y + 40; });
-  let sticks = [], tornado = null;
+  let sticks = [], tornado = null, blizzard = 0, blizT = 120 + Math.random()*180, regMood = '';
+  // day and night: one full day every 12 minutes (night = darker, northern lights in the sky)
+  const nightAmt = () => { const ph = (Date.now()/720000) % 1; return Math.max(0, Math.min(1, (Math.cos(ph*TAU) + .25)*1.2)) * .9; };
   let foes = [], balls = [], fx = [], nums = [], drops = [], boss = null, dlg = null, mapOpen = false, travel = false, quiz = false, msg = '', msgT = 0, t = 0, score = 0;
   let saveT = 10, revealT = 0, spawnT = 1, dead = 0, lastReg = '', gateT = 0, lokiReady = !!W.bau, charge = null, aim = {x:300, y:200}, mouseIn = false, healT = 0;
   const pads = new Map(); const pad = k => { for (const v of pads.values()) if (v == k) return 1; return 0; };
@@ -167,17 +230,17 @@ A.snowWorld = function(X) {
     quiz = true; if (!X.learn2('BONUS QUESTION · ANSWER RIGHT FOR DOUBLE TREASURE', () => { quiz = false; go(2); }, () => { quiz = false; go(1); })) quiz = false; };
   // ---------- things you can use (✋ / E / tap them) ----------
   const things = () => { const L = [{x:PIP.x, y:PIP.y, n:'Talk', f:talkPip}];
-    for (const k in WAYS) { const w2 = px(WAYS[k]); L.push({x:w2.x, y:w2.y, n:W.ways[k] ? 'Travel' : 'Touch', f:() => { W.ways[k] = 1; save(); openMap(true); }}); }
+    for (const k in WAYS) { if (WAYS[k].spirit && !spiritsOpen()) continue; const w2 = px(WAYS[k]); L.push({x:w2.x, y:w2.y, n:W.ways[k] ? 'Travel' : 'Touch', f:() => { W.ways[k] = 1; save(); openMap(true); }}); }
     for (const ch of chests) if (!W.chests[ch.id]) L.push({x:ch.x, y:ch.y, n:'Open', f:() => openChest(ch)});
     if (W.loki && !W.bau) L.push({x:BAUCAGE.x, y:BAUCAGE.y, n:'Free', f:freeBau});
     if (W.bau) L.push({x:THRONE.x, y:THRONE.y, n:'Talk', f:talkBau});
     if (W.mau) L.push({x:mau.x, y:mau.y, n:'Talk', f:talkMau, quiet:1});   // tap Mau Mau to chat; he follows you, so no pop-up label
-    return L; };
+    return storyThings(L); };
   const nearThing = () => { let best = null, bd = 74; for (const T2 of things()) { if (T2.quiet) continue; const d = dist(T2, p); if (d < bd) { bd = d; best = T2; } } return best; };
   const use = () => { if (dlg) return nextLine(); const T2 = nearThing(); if (T2) T2.f(); };
   // ---------- the quest arrow ----------
   const goal = () => { if (!W.met) return {x:PIP.x, y:PIP.y, n:'Talk to Old Pip at Camp Cocoa'};
-    if (W.bau) return null;
+    if (W.bau) return storyGoal();
     if (W.loki) return {x:BAUCAGE.x, y:BAUCAGE.y, n:'Open Lord Emperor Bau Bau’s cage'};
     if (gateOpen()) return {x:LAIR.loki.x, y:LAIR.loki.y, n:'Storm the Shadow Castle and defeat Loki the Evil Sorcerer'};
     const left = []; if (!W.mau) left.push({...LAIR.rufus, n:'Free Royal Guard Mau Mau at Howling Pass'});
@@ -203,7 +266,7 @@ A.snowWorld = function(X) {
   // ---------- enemies ----------
   const spawnFoe = (k, x, y) => { const F = FOE[k], tier = Math.max(1, REG[regAt(x, y)].tier), hp = Math.ceil(F.hp * (1 + .3*(tier - 1)) * A.D(.8, 1, 1.25)); foes.push({k, x, y, hp, max:hp, cool:1 + Math.random()*1.5, wa:Math.random()*TAU, wt:0, stun:0, kb:0, kbx:0, kby:0, hurt:0, dir:Math.random() < .5 ? 1 : -1, tier, flap:Math.random()*6}); };
   const hurtFoe = (f, dmg) => { f.hp -= dmg; f.hurt = 3; f.flash = .12; addNum(f.x, f.y - 26, '-' + Math.round(dmg*10)/10, '#FF4539'); if (f.hp <= 0 && !f.dead) killFoe(f); };
-  const killFoe = f => { f.dead = 1; const F = FOE[f.k]; splat(f.x, f.y, 14, f.k == 'imp' || f.k == 'pup' || f.k == 'clone' ? '#c08aff' : '#ffffff'); if (F.clone) return;
+  const killFoe = f => { f.dead = 1; const F = FOE[f.k]; splat(f.x, f.y, 14, f.k == 'imp' || f.k == 'pup' || f.k == 'clone' ? '#c08aff' : '#ffffff'); if (F.decoy) addNum(f.x, f.y - 30, 'Fake-out!', '#2f8ad8'); if (F.clone) return;
     const fl = Math.round((3 + Math.random()*5) * f.tier); give({flakes:fl, xp:2, score:F.pts*f.tier}); addNum(f.x, f.y - 44, '+' + fl + ' ❄', '#2f8ad8'); W.kills = (W.kills || 0) + 1; X.stat('snowWorldKills', 1, 'add');
     if (Math.random() < .09) drops.push({x:f.x, y:f.y, k:'cocoa', life:15}); else if (W.mau && Math.random() < .05) drops.push({x:f.x, y:f.y, k:'fish', life:18}); };
   const hurtMe = dmg => { if (p.inv > 0 || p.shieldT > 0 || A.immortal || dead > 0 || quiz) return; if (Math.random() < .06*X.PU('armor')) { p.inv = .4; addNum(p.x, p.y - 40, 'Shrugged off!', '#2f8ad8'); return; } p.hp -= dmg; p.inv = .9; p.hitT = .3; A.sfx('bad'); splat(p.x, p.y - 10, 8, '#e8f4ff');
@@ -211,7 +274,7 @@ A.snowWorld = function(X) {
       if (!X.learn2('SNOWED UNDER! ANSWER RIGHT TO GET BACK UP RIGHT HERE', () => { quiz = false; p.hp = Math.ceil(p.max/2); p.inv = 2.5; say('Back on your feet!', 1.6); }, () => { quiz = false; dead = 1.8; say('❄ Snowed under! Waking up at Camp Cocoa...', 2.4); A.sfx('over'); })) quiz = false; } };
   const respawn = () => { tornado = null; sticks = []; p.stick = 0; p.x = CAMPX.x; p.y = CAMPX.y; p.vx = p.vy = 0; p.hp = p.max; p.inv = 2.5; p.ammo = X.maxAmmo(); foes = []; balls = []; if (boss) { boss = null; } mau.x = p.x - 40; mau.y = p.y + 10; mates.forEach(m => { m.ko = 0; m.hp = m.max; }); mateHome(); save(); say('🏕 Back at Camp Cocoa. Everything you found is safe!', 3); };
   // ---------- bosses ----------
-  const bossDone = k => k == 'loki' ? (W.loki > 0 && !lokiReady) : !!W.down[k];
+  const bossDone = k => k == 'loki' ? (W.loki > 0 && !lokiReady) : (BOSS[k].ai || k == 'chao') ? storyDone(k) : !!W.down[k];
   const phOf = (hp, max, np) => Math.min(np, 1 + Math.floor((1 - Math.max(0, hp)/max) * np));
   const spawnBoss = k => { W.bhp = W.bhp || {}; const B = BOSS[k], H = LAIR[k], hp = B.hp * A.D(.8, 1, 1.2) * (1 + .05*(X.lv() - 1)) * (k == 'loki' && W.loki ? 1.15 : 1);
     const left = W.bhp[k] != null ? Math.max(1, Math.min(hp, W.bhp[k])) : hp;
@@ -224,9 +287,12 @@ A.snowWorld = function(X) {
     if (ph > B.ph) { B.ph = ph; A.sfx('bad'); if (B.k == 'loki') { B.phn = LOKI_PH[ph]; B.talk = ['', '', 'Loki: “Shadows, my darlings! Fetch!”', 'Loki: “Let’s make it a little... breezier! AWOOOO!”', 'Loki: “ENOUGH! Now you’ll see REAL magic!” *his golden coat blazes*'][ph]; B.talkT = 3.2; if (ph == 4) { spawnFoe('clone', B.hx - 160, B.hy + 40); spawnFoe('clone', B.hx + 160, B.hy + 40); } if (ph == 3) tornado = {x:B.x, y:B.y + 60, r:46, t:0, life:10}; if (B.hp <= 0) bossDown(B); return; }
       const lines = {loki:['', '', '', '', ''], rufus:['', '', 'Rufus: “Grr... I’m just getting warmed up!”', 'Rufus: “Boss Loki will be SO mad at me!”'],
         grumble:['', '', 'Grumblebark: “Hrrm! Bats, help me!”', 'Grumblebark: “You... are... annoying!”'], icefang:['', '', 'Icefang: “Arr, now ye’ve done it!”', 'Icefang: “Full speed ahead!”'], crystal:['', '', 'Crystal Golem: “...CRACK... ANGRY...”', 'Crystal Golem: “...SHATTER... EVERYTHING...”']}[B.k];
-      B.talk = lines[ph]; B.talkT = 3; if (B.k == 'loki' && ph == 3) { spawnFoe('clone', B.hx - 150, B.hy + 40); spawnFoe('clone', B.hx + 150, B.hy + 40); } }
+      if (lines && lines[ph]) { B.talk = lines[ph]; B.talkT = 3; } }
     if (B.hp <= 0) bossDown(B); };
-  const bossDown = B => { boss = null; if (W.bhp) delete W.bhp[B.k]; balls = balls.filter(b => b.mine); foes = foes.filter(f => !FOE[f.k].clone); splat(B.x, B.y, 40, '#ffe9a0'); A.sfx('win'); X.stat('snowGuard', 1, 'add');
+  const bossDown = B => { boss = null; if (W.bhp) delete W.bhp[B.k]; balls = balls.filter(b => b.mine); foes = foes.filter(f => !FOE[f.k].clone);
+    if (B.k == 'chao') { chaoFade = {x:B.x, y:B.y, t:5}; A.tone(440, 1.2, 'sine', .03); X.stat('snowGuard', 1, 'add'); save(); return; }
+    splat(B.x, B.y, 40, '#ffe9a0'); A.sfx('win'); X.stat('snowGuard', 1, 'add');
+    if (BOSS[B.k].ai) { storyBossDown(B); save(); return; }
     if (B.k == 'loki') { const first = !W.loki; W.loki = (W.loki || 0) + 1; lokiReady = false; X.stat('snowLoki', 1, 'add');
       const it = give(first ? {frost:40 + X.PU('frost'), flakes:600, xp:120, score:4000, gear:3} : {frost:15 + X.PU('frost'), flakes:250, xp:60, score:1500, gear:Math.random() < .4 ? 2 : null});
       tornado = null; sticks = [];
@@ -240,7 +306,8 @@ A.snowWorld = function(X) {
     save(); };
   const bossAI = (B, dt) => { const ph = B.ph, d = dist(B, p), ang = Math.atan2(p.y - B.y, p.x - B.x), sp1 = 1 + .25*(ph - 1); B.t += dt; B.cd -= dt; B.flash = Math.max(0, B.flash - dt); B.talkT = Math.max(0, B.talkT - dt);
     const walk = (tx, ty, spd) => { const a = Math.atan2(ty - B.y, tx - B.x), nx = B.x + Math.cos(a)*spd*dt, ny = B.y + Math.sin(a)*spd*dt; if (Math.hypot(nx - B.hx, ny - B.hy) < 260 && !blocked(nx, ny, 18)) { B.x = nx; B.y = ny; } };
-    if (B.k == 'grumble') { walk(p.x, p.y, 34);
+    if (B.k == 'chao' || BOSS[B.k].ai) (B.k == 'chao' ? chaoAI : genericAI)(B, dt, ph, ang, d);
+    else if (B.k == 'grumble') { walk(p.x, p.y, 34);
       if (B.cd <= 0) { B.cd = 2.6 / sp1; const n = 8 + 2*ph; for (let i = 0; i < n; i++) shot(B, i/n*TAU + B.t*.7, 165, {r:8, col:'#a07040'}); if (ph >= 3) for (let i = -1; i <= 1; i++) shot(B, ang + i*.22, 240, {r:7, col:'#a07040'}); }
       if (ph >= 2) { B.sum -= dt; if (B.sum <= 0) { B.sum = 9; if (foes.length < 10) { spawnFoe('bat', B.x - 60, B.y); spawnFoe('bat', B.x + 60, B.y); } } } }
     else if (B.k == 'icefang') {
@@ -276,6 +343,158 @@ A.snowWorld = function(X) {
       if (ph >= 3 && !tornado) { B.torT = (B.torT || 3) - dt; if (B.torT <= 0) { B.torT = 3; tornado = {x:B.x, y:B.y + 60, r:46, t:0, life:10}; } } }
     if (d < B.r + 12 && B.k != 'icefang') hurtMe(1);
     if (dist(p, {x:B.hx, y:B.hy}) > 1150) { boss = null; tornado = null; sticks = []; balls = balls.filter(b => b.mine); save(); say(BOSS[B.k].n.toLowerCase().replace(/\b\w/g, m => m.toUpperCase()) + ' waits for you. Its health stays where you left it', 3); } };
+  // =====================================================================================================
+  // SPIRITS OF THE SNOW — after Loki. Bau Bau's brothers: Minccino (gentle and brave), Little Mow (small and shy)
+  // and Chao Chao (the fallen). Eerie and sad, never gory. W.sp: 0 not started · 1 Strange Lights · 2 The Driveway Shrine ·
+  // 3 Whispers on the Road · 4 The Fallen · 5 The Last Storm · 6 epilogue (Hall of Paws, spirit companions, post-game)
+  // =====================================================================================================
+  const BAUQ = ['Lord Emperor Bau Bau', 'bau'], MINCQ = ['Minccino', 'mincG'], MOWQ = ['Little Mow', 'mowG'], CHAOQ = ['Chao Chao', 'chaoG'], NAR = ['', 'snow'];
+  W.sp = W.sp|0; W.mem = W.mem || {}; W.clue = W.clue || {}; W.lanF = W.lanF || {}; W.party = W.party || {}; W.walk = W.walk || {}; W.echoN = W.echoN|0;
+  const L2 = k => px(LM2[k]);
+  const SHRINE_LAN = [{x:117.5, y:37}, {x:124.5, y:37}, {x:121, y:41}].map(q => ({x:q.x*TS, y:q.y*TS}));
+  const CLUES = [{k:'paw', x:112, y:48, e:'🐾', n:'a tiny paw print, frozen into the snow', mem:'Such small paws. Whoever walked here was very little, and very light.'},
+    {k:'string', x:122, y:50, e:'🧶', n:'a frayed piece of string', mem:'A string toy, chewed at one end. Someone played with this for a long, long time, all alone.'},
+    {k:'bell', x:131, y:47, e:'🔔', n:'a little silver bell', mem:'A tiny bell with no collar. It still rings, very softly.'}].map(c => ({...c, x:(c.x + .5)*TS, y:(c.y + .5)*TS}));
+  const MEMS = [{k:'hurt', at:{x:106, y:90}, n:'Memory: The Day He Got Hurt', lines:[[...BAUQ, 'Chao Chao was always the fastest of us. Skinny and quick. Nobody could catch him.', 'sad'], [...BAUQ, 'One day he jumped for the high fence and came down wrong. His leg was never quite right after that. He couldn’t run like before.', 'sad']]},
+    {k:'changed', at:{x:134, y:52}, n:'Memory: How He Changed', lines:[[...BAUQ, 'After that, he stopped coming to the warm window. He hissed at shadows. At us. He’d stare at nothing for hours.', 'sad'], [...BAUQ, 'We tried to help. We all tried. But it was like a storm had moved in behind his eyes.', 'sad']]},
+    {k:'ran', at:{x:112, y:28}, n:'Memory: The Night He Ran', lines:[[...BAUQ, 'One snowy night the door was open for just a moment. He ran out into the dark and didn’t look back.', 'sad'], [...BAUQ, 'We called and called. He never came home. Everyone thought he was gone for good.', 'sad'], [...BAUQ, '...I think part of him never stopped running.', 'sad']]}].map(m => ({...m, x:(m.at.x + .5)*TS, y:(m.at.y + .5)*TS}));
+  const LANTERNS = [{x:20, y:80}, {x:60, y:40}, {x:90, y:90}, {x:30, y:120}, {x:110, y:60}, {x:126, y:118}].map((q, i) => ({i, x:(q.x + .5)*TS, y:(q.y + .5)*TS}));
+  const TREAS = [...Array(10)].map((_, i) => { let x = 0, y = 0, k = 0; do { x = 6 + Math.floor(hash(i, k, 31)*(N - 12)); y = 6 + Math.floor(hash(k, i, 37)*(N - 12)); k++; } while ((SOLID[tileAt(x, y)] || tileAt(x, y) == HOLE || tileAt(x, y) == WATER) && k < 200); return {i, x:(x + .5)*TS, y:(y + .5)*TS, e:['🪀','🧸','🎀','🪶','🐚','🔑','🧦','🪙','🍂','🌰'][i]}; });
+  W.small = W.small || {}; W.lanW = W.lanW || {};
+  const bauF = {x:p.x - 30, y:p.y + 30, walk:0, cool:1};
+  const comp = {x:p.x + 30, y:p.y - 20, healT:15};
+  let chaoFade = null, holdWave = 0, holdT = 0, stormFlash = 0;
+  const STORY_N = ['', 'Strange Lights', 'The Driveway Shrine', 'Whispers on the Road', 'The Fallen', 'The Last Storm', 'Epilogue: The Hall of Paws'];
+  // the chapters' scenes
+  const startCh1 = () => talk([[...MAUF, 'Psst. Hero. I was on night watch last night. Fully awake. Mostly.', 'surprised'], [...MAUF, 'Cold blue lights were floating over the eastern hills, past Glimmer Lake. And the wind... the wind said a name.', 'frightened'],
+      [...BAUF, 'Chao Chao. It said Chao Chao.', 'sad'], [...BAUF, 'He was my brother. He ran away a long time ago. Everyone thought he was gone forever.', 'sad'],
+      [...BAUF, 'I’m coming with you. If those lights are what I think they are... I have to know.', 'peaceful'], [...MAUF, 'Then the Royal Guard rides with you, Your Majesty. Well. Waddles.', 'happy']],
+    () => { W.sp = 1; W.party.bau = 1; bauF.x = p.x - 30; bauF.y = p.y + 30; save(); A.sfx('win'); say('📖 Spirits of the Snow · Chapter 1: Strange Lights · the shimmering wall east of the lake has opened', 4.5); X.stat('snowStory', 1, 'max'); });
+  story = () => null;
+  const storyTalkBau = () => { const lines = {1:'The lights went east, into Spirit Hollow. Stay close to me.', 2:'North of the Old Road there’s a shrine... a driveway shrine. Something there is calling.', 3:'Somebody is out on the Old Road. Somebody very small and very quiet.', 4:'Chao Chao’s storms are getting worse. We need to understand what happened to him.', 5:'Storm Peak. He’s up there. Whatever happens... thank you for coming with me.', 6:'It’s quiet now. The storms are gone. Let’s visit the Hall of Paws sometimes, okay?'}[W.sp] || 'Purr.';
+    talk([[...BAUF, lines, W.sp >= 6 ? 'peaceful' : 'sad']]); };
+  const shrineDone = () => talk([[...MINCQ, '...You came. Little brother. You got so big.', 'peaceful'], [...BAUF, 'Minccino?! Is it really you?', 'surprised'],
+      [...MINCQ, 'Shh. I can’t stay long. Listen. Chao Chao has come back. But he is not himself. He is the storm now.', 'sad'],
+      [...MINCQ, 'He can’t be saved, Bau Bau. What’s left of him is only hurting and cold. The only kind thing left is to let the storm end.', 'sad'],
+      [...MINCQ, 'Take my blessing. It will keep you warm and mend your hurts. And please... find our littlest brother on the Old Road. Nobody ever found him.', 'peaceful']],
+    () => { W.sp = 3; W.bless = 1; save(); A.sfx('win'); say('💙 Minccino’s Blessing: you and your team slowly heal · Chapter 3: Whispers on the Road', 4.5); });
+  const mowFound = () => talk([[...MOWQ, '...', 'frightened'], [...BAUF, 'It’s okay. We won’t hurt you. You’re safe now.', 'peaceful'], [...MOWQ, '...mow?', 'sad'],
+      [...BAUF, 'This is Little Mow. He was the smallest of us. He wandered off one day and... he never came back. Nobody even knew his name for sure.', 'sad'],
+      [...BAUF, 'He never had a name tag. Every cat should have a name tag.', 'sad'], [...NAR, '*You fasten a little red name tag around Little Mow’s neck. It says LITTLE MOW.*', ''], [...MOWQ, '...mow.', 'peaceful'], [...BAUF, 'He likes it. Look. He’s purring.', 'happy']],
+    () => { W.tag = 1; W.sp = 4; save(); A.sfx('win'); say('🏷️ Little Mow has a name tag now · Chapter 4: The Fallen', 4.5); setTimeout(() => talk([[...MAUF, 'Hero! The storms are getting worse! They’re heading for Camp Cocoa!', 'frightened'], [...MAUF, 'The Royal Guard will hold the kingdom. Come back to camp and help us hold the line! (Then find out what happened to Chao Chao.)', 'angry']]), 300); });
+  const endStory = () => { const lines = [[...NAR, '*The storm goes quiet. Chao Chao stops. He looks at Bau Bau for a long moment.*', ''], [...CHAOQ, '...Bau Bau.', 'peaceful'], [...NAR, '*Then he fades away into the falling snow. He does not come back.*', ''],
+      [...BAUF, '...', 'sad'], [...NAR, '*The storms clear. For the first time in a long time, the stars come out over the whole kingdom.*', ''],
+      [...MINCQ, 'It’s over, little brother. You did the hardest thing. You stayed.', 'peaceful'], [...MOWQ, '...mow.', 'peaceful'],
+      [...MAUF, 'Royal Guard Mau Mau, back at his post. ...Your Majesty, would you like a snack? It helps. A little.', 'sad'], [...BAUF, 'Yes, Mau Mau. I think it does.', 'peaceful']];
+    talk(lines, () => { W.sp = 6; W.party.bau = 0; const it = give({frost:120, flakes:2500, xp:400, score:20000, gear:5}); X.stat('snowSpirits', 1, 'max'); save(); A.sfx('win'); say('🌌 Spirits of the Snow complete · the Hall of Paws is open · +120 Frost Crystals' + (it ? ' · ' + it.name : '') + ' · title: Keeper of Paws', 6); }); };
+  const hallScene = () => talk([[...MAUF, 'This is the Hall of Paws. I keep watch here now. Royal Guard’s orders. My own orders.', 'peaceful'], [...BAUF, 'Minccino. Little Mow. Chao Chao. We’ll remember all of you.', 'sad'],
+      [...MINCQ, 'If you like, one of us can walk with you a while longer. I can mend your hurts.', 'peaceful'], [...MOWQ, '...mow. (He points at something shiny. He’s good at finding things.)', 'happy']],
+    () => { W.hallSeen = 1; save(); say('🕯️ Touch a memorial to choose a spirit companion: Minccino (healing) or Little Mow (finds hidden things)', 5); });
+  // chapter quests for the quest arrow
+  const storyGoal = () => { const sp = W.sp|0; if (!W.bau) return null;
+    if (sp == 0) return {x:FIRE.x, y:FIRE.y, n:'📖 New story: go back to Camp Cocoa and talk to Royal Guard Mau Mau'};
+    if (sp == 1) return {...L2('hollow'), n:'Ch.1 · Follow the strange lights east into Spirit Hollow'};
+    if (sp == 2) { const left = SHRINE_LAN.filter((_, i) => !W.lanF[i]); if (left.length) { left.sort((a, b) => dist(a, p) - dist(b, p)); return {...left[0], n:'Ch.2 · Light the spirit lanterns at the Driveway Shrine (' + (3 - left.length) + '/3)'}; } return {...L2('shrine'), n:'Ch.2 · Enter the Driveway Shrine'}; }
+    if (sp == 3) { const left = CLUES.filter(c => !W.clue[c.k]); if (left.length) { left.sort((a, b) => dist(a, p) - dist(b, p)); return {...left[0], n:'Ch.3 · Search the Old Road for clues (' + (3 - left.length) + '/3)'}; } return {x:(133 + .5)*TS, y:(48 + .5)*TS, n:'Ch.3 · Someone is waiting at the end of the Old Road'}; }
+    if (sp == 4) { if (!W.held) return {x:FIRE.x, y:FIRE.y, n:'Ch.4 · Help the Royal Guard hold Camp Cocoa against the storm'}; const left = MEMS.filter(m => !W.mem[m.k]); left.sort((a, b) => dist(a, p) - dist(b, p)); return left.length ? {...left[0], n:'Ch.4 · Find Chao Chao’s memories (' + (3 - left.length) + '/3)'} : null; }
+    if (sp == 5) return {...L2('peak'), n:'Ch.5 · The Last Storm: climb Storm Peak'};
+    if (sp == 6 && !W.hallSeen) return {...L2('hall'), n:'Epilogue · Visit the Hall of Paws'};
+    if (sp >= 6) { const lw = LANTERNS.filter(l => !W.lanW[l.i]); if (lw.length) { lw.sort((a, b) => dist(a, p) - dist(b, p)); return {...lw[0], n:'Post-game · Lantern Walk: light the spirit lanterns (' + (LANTERNS.length - lw.length) + '/' + LANTERNS.length + ')'}; }
+      const st = TREAS.filter(q => !W.small[q.i]); if (st.length && W.comp == 'mow') { st.sort((a, b) => dist(a, p) - dist(b, p)); return {...st[0], n:'Post-game · Little Mow’s small treasures (' + (10 - st.length) + '/10)'}; } }
+    return null; };
+  // things you can use in the spirit lands
+  const storyThings = L => { const sp = W.sp|0;
+    if (W.party.bau) L.push({x:bauF.x, y:bauF.y, n:'Talk', f:storyTalkBau, quiet:1});
+    if (sp == 2) SHRINE_LAN.forEach((q, i) => { if (!W.lanF[i]) L.push({x:q.x, y:q.y, n:'Light', f:() => { W.lanF[i] = 1; W.lan = Object.keys(W.lanF).length; splat(q.x, q.y - 20, 16, '#9fe8ff'); A.sfx('coin'); say(W.lan >= 3 ? '🏮 All three lanterns glow. The shrine gate opens…' : '🏮 Spirit lantern lit (' + W.lan + '/3)', 2.6); save(); }}); });
+    if (sp == 3) CLUES.forEach(c => { if (!W.clue[c.k]) L.push({x:c.x, y:c.y, n:'Look', f:() => { W.clue[c.k] = 1; save(); talk([[...NAR, 'You found ' + c.n + '.', ''], [...BAUQ, c.mem, 'sad']], () => { if (Object.keys(W.clue).length >= 3) say('🌫️ Something small is waiting at the end of the Old Road…', 3); }); }}); });
+    if (sp == 4 && W.held) MEMS.forEach(m => { if (!W.mem[m.k] && W.down['elite_' + m.k]) L.push({x:m.x, y:m.y, n:'Remember', f:() => { W.mem[m.k] = 1; save(); talk([[...NAR, '✨ ' + m.n, ''], ...m.lines], () => { if (MEMS.every(q => W.mem[q.k])) { W.sp = 5; save(); A.sfx('win'); say('📖 Chapter 5: The Last Storm · Storm Peak is open', 4); talk([[...BAUF, 'Now I understand. He wasn’t angry at us. He was hurting, and he didn’t know how to stop.', 'sad'], [...BAUF, 'Storm Peak. Let’s end this. Gently, if we can.', 'peaceful']]); } }); }}); });
+    if (sp >= 6) { L.push({x:L2('hall').x, y:L2('hall').y - 20, n:'Remember', f:() => { if (!W.hallSeen) hallScene(); else talk([[...NAR, 'MINCCINO · gentle and brave. LITTLE MOW · small, shy, and loved. CHAO CHAO · the fastest of us all.', 'peaceful']]); }});
+      if (W.hallSeen) { L.push({x:L2('hall').x - 80, y:L2('hall').y - 10, n:W.comp == 'minc' ? 'With you' : 'Choose', f:() => { W.comp = 'minc'; save(); A.sfx('win'); say('💙 Minccino walks with you: he slowly heals you and your team', 3); }});
+        L.push({x:L2('hall').x + 80, y:L2('hall').y - 10, n:W.comp == 'mow' ? 'With you' : 'Choose', f:() => { W.comp = 'mow'; save(); A.sfx('win'); say('🔔 Little Mow walks with you: he finds hidden chests, snacks and small treasures', 3); }}); }
+      LANTERNS.forEach(l => { if (!W.lanW[l.i]) L.push({x:l.x, y:l.y, n:'Light', f:() => { W.lanW[l.i] = 1; splat(l.x, l.y - 20, 14, '#9fe8ff'); A.sfx('coin'); const n = Object.keys(W.lanW).length; if (n >= LANTERNS.length) { give({frost:60, flakes:1200, xp:120}); say('🏮 Lantern Walk complete! Every spirit lantern glows · +60 Frost Crystals', 4); } else say('🏮 Spirit lantern lit (' + n + '/' + LANTERNS.length + ')', 2.4); save(); }}); }); }
+    return L; };
+  // bosses of the story (and the new lands)
+  Object.assign(BOSS, {
+    wraith:{n:'THE FROST WRAITH', hp:140, r:34, intro:'The Frost Wraith: “...colddd... so colddd... go awayyy...”', ai:{walk:30, spread:2.2, ring:4, summon:'wisp', summonT:8}},
+    guardian:{n:'THE SHRINE STORM GOLEM', hp:170, r:36, intro:'The Storm Golem rumbles. Lightning crackles in its stones.', ai:{walk:26, spread:2.6, burst:1, rock:3}},
+    fog:{n:'THE LONELY FOG', hp:150, r:40, intro:'A cold, lonely fog rolls down the road. It doesn’t want to let him go.', ai:{walk:40, spread:3, ring:5, summon:'wisp', summonT:9, fade:1}},
+    elite_hurt:{n:'STORM ELITE', hp:90, r:26, intro:'A storm spirit guards a memory.', ai:{walk:60, spread:1.8, dash:1}}, elite_changed:{n:'STORM ELITE', hp:100, r:26, intro:'A storm spirit guards a memory.', ai:{walk:60, spread:1.8, dash:1, ring:4}}, elite_ran:{n:'STORM ELITE', hp:110, r:26, intro:'A storm spirit guards a memory.', ai:{walk:60, spread:1.6, dash:1, ring:3.5}},
+    chao:{n:'CHAO CHAO, THE FALLEN', hp:380, r:26, phases:4, intro:'Chao Chao: “Who’s there? WHO’S THERE? ...Go away. Go AWAY.”'},
+    echo:{n:'STORM ECHO', hp:220, r:30, intro:'Only an echo of the old storm is left. It howls, but nobody is inside it.', ai:{walk:50, spread:1.8, ring:3.5, spiral:1, summon:'stormling', summonT:9}},
+    yeti:{n:'THE YETI KING', hp:240, r:40, intro:'The Yeti King: “ROOOAR! These are MY mountains! Throw snow at ME? I’ll throw a MOUNTAIN!”', ai:{walk:55, rock:2.2, dash:1, summon:'yeti', summonT:10}},
+    giant:{n:'THE ICE GIANT', hp:260, r:44, intro:'The Ice Giant wakes up, very slowly, and very grumpily.', ai:{walk:22, ring:3.5, rock:2.5, burst:1}},
+    frostbeard:{n:'CAPTAIN FROSTBEARD', hp:200, r:30, intro:'Captain Frostbeard: “Yarr! This shipwreck be haunted... by ME! And I be very bored!”', ai:{walk:70, spread:1.6, dash:1, summon:'goon', summonT:9}},
+    serpent:{n:'THE AURORA SERPENT', hp:210, r:30, intro:'The Aurora Serpent ripples across the sky like the northern lights.', ai:{walk:110, spiral:1, spread:2.4}}});
+  Object.assign(LAIR, {wraith:L2('hollow'), guardian:{x:121*TS, y:28.5*TS}, fog:{x:133.5*TS, y:48.5*TS}, elite_hurt:MEMS[0], elite_changed:MEMS[1], elite_ran:MEMS[2], chao:L2('peak'), echo:L2('peak'), yeti:L2('yeti'), giant:L2('ruins'), frostbeard:L2('coast'), serpent:L2('aurora')});
+  const storyReady = k => { const sp = W.sp|0; return k == 'wraith' ? sp == 1 : k == 'guardian' ? sp == 2 && (W.lan|0) >= 3 && dist(p, LAIR.guardian) < 230 : k == 'fog' ? sp == 3 && Object.keys(W.clue).length >= 3 : k.slice(0, 6) == 'elite_' ? sp == 4 && !!W.held && !W.mem[k.slice(6)] : k == 'chao' ? sp == 5 : k == 'echo' ? sp >= 6 && Date.now() > (W.echoAt||0) : true; };
+  const storyDone = k => k == 'wraith' ? (W.sp|0) >= 2 : k == 'guardian' ? (W.sp|0) >= 3 : k == 'fog' ? (W.sp|0) >= 4 : k.slice(0, 6) == 'elite_' ? !!W.down[k] : k == 'chao' ? (W.sp|0) >= 6 : k == 'echo' ? false : !!W.down[k];
+  const storyBossDown = B => { const k = B.k;
+    if (k == 'wraith') { give({frost:30, flakes:500, xp:100, score:3000, gear:3}); W.sp = 2; save(); talk([[...BAUF, 'These lights... they smell like home. Like the warm window on the porch.', 'sad'], [...BAUF, 'They’re pointing north, past the Old Road. To the old driveway. I remember it.', 'peaceful']], () => say('📖 Chapter 2: The Driveway Shrine · light its three spirit lanterns', 4)); return; }
+    if (k == 'guardian') { give({frost:35, flakes:600, xp:110, score:3500, gear:3}); save(); shrineDone(); return; }
+    if (k == 'fog') { give({frost:35, flakes:600, xp:110, score:3500, gear:3}); save(); mowFound(); return; }
+    if (k.slice(0, 6) == 'elite_') { W.down[k] = 1; give({frost:12, flakes:250, xp:60, score:1500}); save(); say('✨ A memory shard glows where the storm spirit was. Touch it to remember', 3.5); return; }
+    if (k == 'chao') { endStory(); return; }
+    if (k == 'echo') { W.echoN++; W.echoAt = Date.now() + 10*60e3; const it = give({frost:25, flakes:700, xp:90, score:3000, gear:Math.random() < .5 ? 4 : 3}); save(); say('🌩️ The Storm Echo scatters into snowflakes · +25 Frost' + (it ? ' · ' + it.name : '') + ' · it gathers again in 10 minutes', 4); return; }
+    W.down[k] = 1; const it = give({frost:30, flakes:800, xp:120, score:4000, gear:4}); save(); say('🏆 ' + B.n.toLowerCase().replace(/\b\w/g, m => m.toUpperCase()) + ' defeated! +30 Frost Crystals' + (it ? ' · ' + it.name : ''), 4.5); };
+  // generic boss brain for the new bosses (spread shots, rings, summons, dashes, rock throws, spirals, fading)
+  const genericAI = (B, dt, ph, ang, d) => { const C2 = BOSS[B.k].ai || {}, sp1 = 1 + .25*(ph - 1); const walk = (tx, ty, spd) => { const a = Math.atan2(ty - B.y, tx - B.x), nx = B.x + Math.cos(a)*spd*dt, ny = B.y + Math.sin(a)*spd*dt; if (Math.hypot(nx - B.hx, ny - B.hy) < 300 && !blocked(nx, ny, 18)) { B.x = nx; B.y = ny; } };
+    if (B.st == 'dash') { B.wt -= dt; const nx = B.x + Math.cos(B.da)*420*dt, ny = B.y + Math.sin(B.da)*420*dt; if (!blocked(nx, ny, 18) && Math.hypot(nx - B.hx, ny - B.hy) < 330) { B.x = nx; B.y = ny; } else B.wt = 0; if (d < B.r + 14) hurtMe(2); if (B.wt <= 0) B.st = 'walk'; return; }
+    if (B.st == 'wind') { B.wt -= dt; if (B.wt <= 0) { B.st = 'dash'; B.wt = .7; } return; }
+    walk(p.x, p.y, (C2.walk || 40) * (d < 140 ? -.5 : 1));
+    if (C2.spread && B.cd <= 0) { B.cd = C2.spread / sp1; const n = 3 + 2*Math.min(2, ph - 1); for (let i = 0; i < n; i++) shot(B, ang + (i - (n - 1)/2)*.2, 230, {r:7, col:B.col || '#bfeeff'}); }
+    if (C2.ring) { B.ring -= dt; if (B.ring <= 0) { B.ring = C2.ring / sp1; for (let i = 0; i < 12; i++) shot(B, i/12*TAU + B.t, 150, {r:7, col:B.col || '#9fd8ff'}); } }
+    if (C2.rock) { B.rock -= dt; if (B.rock <= 0) { B.rock = C2.rock; shot(B, ang, 210, {r:13, dmg:2, col:'#c8d8e8'}); } }
+    if (C2.burst && ph >= 2) { B.tp -= dt; if (B.tp <= 0) { B.tp = .2; B.a += .45; shot(B, B.a, 160, {r:7, col:B.col || '#c9a0ff'}); } }
+    if (C2.spiral && ph >= 2) { B.tp2 = (B.tp2 || 0) - dt; if (B.tp2 <= 0) { B.tp2 = .16; B.a += .34; shot(B, B.a, 140, {r:6, col:'#ff9ad5'}); shot(B, B.a + Math.PI, 140, {r:6, col:'#9fe8ff'}); } }
+    if (C2.summon && ph >= 2) { B.sum -= dt; if (B.sum <= 0) { B.sum = C2.summonT || 9; for (let i = 0; i < 2 && foes.length < 10; i++) spawnFoe(C2.summon, B.x + (i ? 60 : -60), B.y + 40); } }
+    if (C2.dash && B.cd2 == null) B.cd2 = 4; if (C2.dash) { B.cd2 -= dt; if (B.cd2 <= 0) { B.cd2 = 4.5 / sp1; B.st = 'wind'; B.wt = .7; B.da = ang; } }
+    if (C2.fade) B.fadeA = .35 + .3*Math.sin(B.t*1.5); };
+  // CHAO CHAO, THE FALLEN: erratic teleports, fake-outs, splitting into shadow copies, screaming storms
+  const CHAO_SAY = ['Chao Chao: “The window was warm... why is it so COLD?”', 'Chao Chao: “Don’t touch me. DON’T. It hurts. Everything hurts.”', 'Chao Chao: “Bau Bau? ...No. You’re not real. None of you are real.”', 'Chao Chao: “I ran. I ran and the snow kept going and going and—”', 'Chao Chao: “You stopped looking. You ALL stopped looking!”', 'Chao Chao: “The bowl... my bowl... the door... THE DOOR—”', 'Chao Chao: “Shh. Shh. Do you hear it? The storm is talking.”'];
+  const CHAO_PH = ['', 'Flickering', 'Fake-Outs', 'Shadow Copies', 'Screaming Storm'];
+  const chaoAI = (B, dt, ph, ang, d) => { B.phn = CHAO_PH[ph]; B.sayT = (B.sayT || 2) - dt; if (B.sayT <= 0) { B.sayT = 6 + Math.random()*3; B.talk = CHAO_SAY[Math.floor(Math.random()*CHAO_SAY.length)]; B.talkT = 3.2; }
+    B.tp -= dt; if (B.tp <= 0) { B.tp = (ph >= 2 ? 1.6 : 2.4) * (.6 + Math.random()*.8); for (let k3 = 0; k3 < 8; k3++) { const a = Math.random()*TAU, r = 150 + Math.random()*170, nx = p.x + Math.cos(a)*r, ny = p.y + Math.sin(a)*r; if (!blocked(nx, ny, 16) && Math.hypot(nx - B.hx, ny - B.hy) < 360) { splat(B.x, B.y, 10, '#cfe8ff'); B.x = nx; B.y = ny; splat(B.x, B.y, 10, '#cfe8ff'); break; } }
+      if (ph >= 2 && foes.filter(f => f.k == 'decoy').length < 3) { spawnFoe('decoy', B.x + (Math.random() - .5)*200, B.y + (Math.random() - .5)*160); } }
+    if (B.cd <= 0) { B.cd = 1.4 / (1 + .15*(ph - 1)); const n = 3 + (ph >= 3 ? 2 : 0); for (let i = 0; i < n; i++) shot(B, ang + (i - (n - 1)/2)*.24 + (Math.random() - .5)*.2, 240, {r:6, col:'#dff4ff'}); }
+    if (ph >= 3) { B.sum -= dt; if (B.sum <= 0) { B.sum = 8; for (let i = 0; i < 2 && foes.filter(f => f.k == 'echo').length < 4; i++) spawnFoe('echo', B.x + (i ? 70 : -70), B.y + 30); B.talk = 'Chao Chao: “There’s MORE of me. There was always more of me.”'; B.talkT = 2.4; } }
+    if (ph >= 4) { B.ring -= dt; if (B.ring <= 0) { B.ring = 2.2; stormFlash = .5; A.tone(120, .4, 'sawtooth', .05); for (let i = 0; i < 18; i++) shot(B, i/18*TAU + B.t*.5, 170, {r:7, col:'#ffffff'}); } } };
+  // things in the world that come with the story
+  const storyUpdate = dt => { const sp = W.sp|0, rg2 = regAt(p.x, p.y);
+    if (W.bau && sp == 0 && W.mau && !dlg && dist(p, FIRE) < 260 && !boss) startCh1();
+    // hold Camp Cocoa (chapter 4): three storm waves, with Mau Mau and the Royal Guard
+    if (sp == 4 && !W.held && dist(p, FIRE) < 420 && !boss) { if (!holdWave) { holdWave = 1; holdT = 1; talk([[...MAUF, 'ROYAL GUARD, FORM UP! Nobody touches the cocoa!', 'angry']]); }
+      holdT -= dt; if (holdT <= 0 && holdWave <= 3 && foes.filter(f => f.hold).length == 0) { for (let i = 0; i < 3 + holdWave*2; i++) { const a = Math.random()*TAU; spawnFoe(i % 3 ? 'wisp' : 'stormling', FIRE.x + Math.cos(a)*520, FIRE.y + Math.sin(a)*420); foes[foes.length - 1].hold = 1; foes[foes.length - 1].hurt = 9; } say('🌩️ Storm wave ' + holdWave + ' of 3!', 2.2); holdWave++; holdT = 2; }
+      if (holdWave > 3 && foes.filter(f => f.hold).length == 0) { W.held = 1; holdWave = 0; give({frost:25, flakes:500, xp:80}); save(); A.sfx('win'); talk([[...MAUF, 'The camp holds! Well done, everyone. Snack for the troops!', 'happy'], [...BAUF, 'Now let’s find out what happened to Chao Chao. His memories are scattered in the spirit lands, guarded by storm spirits.', 'sad']]); } }
+    // Storm Peak is wrapped in a storm until chapter 5
+    if (rg2 == 'peak' && sp < 5 && p.y < 21*TS) { p.y = 21*TS + 4; p.vy = 0; if (msgT <= 0) say('🌩️ The storm on Storm Peak pushes you back. ' + (sp < 4 ? 'You’re not ready yet.' : 'Find Chao Chao’s three memories first.'), 2.6); }
+    // Bau Bau in your party
+    if (W.party.bau) { const tx = p.x + Math.cos(p.face + 2.3)*56, ty = p.y + Math.sin(p.face + 2.3)*56, dm = Math.hypot(tx - bauF.x, ty - bauF.y); if (dm > 600) { bauF.x = tx; bauF.y = ty; } else if (dm > 12) { const s2 = Math.min(dm*3.4, 270); bauF.x += (tx - bauF.x)/dm*s2*dt; bauF.y += (ty - bauF.y)/dm*s2*dt; bauF.walk += dt; } else bauF.walk = 0;
+      bauF.cool -= dt; if (bauF.cool <= 0) { let tg = boss && dist(boss, bauF) < 340 ? boss : null; if (!tg) { let bd = 300; for (const f of foes) { const d3 = dist(f, bauF); if (d3 < bd) { bd = d3; tg = f; } } } if (tg) { bauF.cool = 1.3; const a = Math.atan2(tg.y - bauF.y, tg.x - bauF.x); balls.push({x:bauF.x, y:bauF.y - 10, vx:Math.cos(a)*460, vy:Math.sin(a)*460, mine:1, dmg:X.armM()*.8, r:5, life:.9, hits:[], col:'#fff3e0'}); } else bauF.cool = .3; } }
+    // spirit companions and Minccino's blessing
+    const healer = W.comp == 'minc' || (W.bless && sp < 6); if (healer) { comp.healT -= dt; if (comp.healT <= 0) { comp.healT = W.comp == 'minc' ? 14 : 20; if (p.hp < p.max) { p.hp++; addNum(p.x, p.y - 44, '💙 +♥', '#2f8ad8'); } mates.forEach(m => { if (!m.ko && m.hp < m.max) m.hp++; }); } }
+    if (W.comp && sp >= 6) { const tx = p.x + 40, ty = p.y - 30, dm = Math.hypot(tx - comp.x, ty - comp.y); if (dm > 500) { comp.x = tx; comp.y = ty; } else { comp.x += (tx - comp.x)*Math.min(1, dt*3); comp.y += (ty - comp.y)*Math.min(1, dt*3); } }
+    if (W.comp == 'mow') TREAS.forEach(q => { if (!W.small[q.i] && dist(q, p) < 34) { W.small[q.i] = 1; const n = Object.keys(W.small).length; addNum(q.x, q.y - 20, '+ ' + q.e, '#c4601a'); A.sfx('coin'); give({flakes:150, frost:3}); if (n >= 10) { give({frost:50, xp:100}); say('🔔 Little Mow found all 10 small treasures! +50 Frost Crystals', 4); } save(); } });
+    if (chaoFade) { chaoFade.t -= dt; if (chaoFade.t < 2.6 && !chaoFade.told) { chaoFade.told = 1; endStory(); } if (chaoFade.t <= 0) chaoFade = null; }
+    stormFlash = Math.max(0, stormFlash - dt); };
+  // drawing for the story
+  const storyDraw = () => { const sp = W.sp|0;
+    if (sp == 2) SHRINE_LAN.forEach((q, i) => { if (!onScreen(q.x, q.y)) return; const on = W.lanF[i]; g.fillStyle = '#3a3a4a'; g.fillRect(q.x - 3, q.y - 26, 6, 30); g.fillStyle = on ? 'rgba(159,232,255,' + (.8 + .2*Math.sin(t*3 + i)) + ')' : '#5a6a80'; rr(g, q.x - 10, q.y - 44, 20, 20, 5); g.fill(); if (on && !low()) { g.fillStyle = 'rgba(159,232,255,.25)'; g.beginPath(); g.arc(q.x, q.y - 34, 26, 0, TAU); g.fill(); } });
+    if (sp == 3) CLUES.forEach(c => { if (W.clue[c.k] || !onScreen(c.x, c.y)) return; g.font = '18px ' + A.font; g.textAlign = 'center'; g.globalAlpha = .7 + .3*Math.sin(t*3); g.fillText(c.e, c.x, c.y + 6); g.globalAlpha = 1; });
+    if (sp == 3 && Object.keys(W.clue).length >= 3) { const mx = 133.5*TS, my = 48.5*TS; if (onScreen(mx, my)) SC.spirit(g, 'mow', mx, my, {ghost:1, mood:'frightened', alpha:.45 + .15*Math.sin(t*2)}, t); }
+    if (sp == 4 && W.held) MEMS.forEach(m => { if (W.mem[m.k] || !W.down['elite_' + m.k] || !onScreen(m.x, m.y)) return; g.fillStyle = 'rgba(200,240,255,' + (.6 + .3*Math.sin(t*4)) + ')'; g.beginPath(); g.moveTo(m.x, m.y - 30); g.lineTo(m.x + 10, m.y - 12); g.lineTo(m.x, m.y + 6); g.lineTo(m.x - 10, m.y - 12); g.closePath(); g.fill(); });
+    if (sp == 2 && W.lanF && (W.lan|0) >= 3 && dist(p, LAIR.guardian) < 600 && !boss && onScreen(LAIR.guardian.x, LAIR.guardian.y)) SC.spirit(g, 'minc', LAIR.guardian.x, LAIR.guardian.y - 60, {ghost:1, mood:'sad', alpha:.35}, t);
+    if (sp >= 6) { const H2 = L2('hall'); if (onScreen(H2.x, H2.y, 400)) { // the Hall of Paws: three memorials and candles
+        [['minc', -80], ['mow', 0], ['chao', 80]].forEach(([w2, ox], i) => { const mx = H2.x + ox, my = H2.y - 10; g.fillStyle = '#b8b098'; rr(g, mx - 22, my + 6, 44, 18, 4); g.fill(); g.fillStyle = '#8a8270'; g.font = '700 8px ' + A.font; g.textAlign = 'center'; g.fillText({minc:'MINCCINO', mow:'LITTLE MOW', chao:'CHAO CHAO'}[w2], mx, my + 19);
+          SC.spirit(g, w2, mx, my - 8, {fur:'#cfc8b4', belly:'#e8e2d0', stripe:null, patch:null, mask:null, eye:'#a09880', mood:'peaceful', tag:w2 == 'mow' ? 1 : 0}, t); g.fillStyle = '#F9BF01'; for (const cx of [-16, 16]) { g.fillStyle = '#f2e8d0'; g.fillRect(mx + cx - 2, my + 2, 4, 6); g.fillStyle = 'rgba(255,200,80,' + (.7 + .3*Math.sin(t*9 + i + cx)) + ')'; g.beginPath(); g.ellipse(mx + cx, my, 2, 3.5, 0, 0, TAU); g.fill(); } });
+        if (W.comp) { const cx2 = W.comp == 'minc' ? H2.x - 80 : H2.x + 80; g.strokeStyle = '#9fe8ff'; g.lineWidth = 2; g.beginPath(); g.arc(cx2, H2.y - 18, 30, 0, TAU); g.stroke(); } }
+      LANTERNS.forEach(l => { if (!onScreen(l.x, l.y)) return; const on = W.lanW[l.i]; g.fillStyle = '#3a3a4a'; g.fillRect(l.x - 3, l.y - 26, 6, 30); g.fillStyle = on ? 'rgba(159,232,255,' + (.8 + .2*Math.sin(t*3 + l.i)) + ')' : '#5a6a80'; rr(g, l.x - 10, l.y - 44, 20, 20, 5); g.fill(); });
+      if (W.comp == 'mow') TREAS.forEach(q => { if (W.small[q.i] || dist(q, p) > 520 || !onScreen(q.x, q.y)) return; g.font = '16px ' + A.font; g.textAlign = 'center'; g.fillText(q.e, q.x, q.y + 6); g.fillStyle = '#F9BF01'; g.font = '900 14px ' + A.font; g.fillText('!', q.x, q.y - 16 + Math.sin(t*6)*3); }); }
+    if (chaoFade && chaoFade.t > 0) SC.spirit(g, 'chao', chaoFade.x, chaoFade.y, {ghost:1, mood:'peaceful', alpha:Math.max(0, chaoFade.t/5)*.8, noSpark:1}, t); };
+  const storyEnts = ents => { if (W.party.bau) ents.push({y:bauF.y, d:() => SC.spirit(g, 'bau', bauF.x, bauF.y, {mood:'sad', walk:bauF.walk, pose:bauF.walk ? 'walk' : 'sit'}, t)});
+    if (W.comp && (W.sp|0) >= 6) ents.push({y:comp.y, d:() => SC.spirit(g, W.comp, comp.x, comp.y, {ghost:1, mood:'peaceful', tag:W.comp == 'mow' ? 1 : 0, alpha:.75}, t)});
+    // Mau Mau stands watch at the Hall of Paws entrance after the story
+    if ((W.sp|0) >= 6) { const H2 = L2('hall'), gx = H2.x, gy = 71.5*TS; if (onScreen(gx, gy)) ents.push({y:gy, d:() => SC.mau(g, gx - 60, gy, {st:Math.sin(t*.4) > .9 ? 'salute' : 'stand', s:.95}, t)}); } };
+  const compHint = (mx, my, sc2) => { if (W.comp != 'mow') return; g.fillStyle = '#F9BF01'; chests.forEach(ch => { if (!W.chests[ch.id] && dist(ch, p) < 900) { g.fillRect(mx + ch.x/TS*sc2 - 1, my + ch.y/TS*sc2 - 1, 2, 2); } }); };
   // ---------- map / fast travel ----------
   const openMap = tr => { mapOpen = true; travel = !!tr; A.sfx('blip'); };
   const MAPR = {x:20, y:66, s:5.6};
@@ -320,8 +539,10 @@ A.snowWorld = function(X) {
     if (X.PU('regen') && p.hp < p.max) { p.regT = (p.regT || 0) + dt; if (p.regT >= 40 - 5*X.PU('regen')) { p.regT = 0; p.hp++; addNum(p.x, p.y - 40, '☕ +♥', '#8D5B1D'); } }
     if (dist(p, FIRE) < 110 && p.hp < p.max) { healT -= dt; if (healT <= 0) { healT = 1; p.hp++; addNum(p.x, p.y - 40, '+♥', '#FF4539'); } }
     for (const d2 of drops) { d2.life -= dt; if (dist(d2, p) < 34) { d2.life = 0; if (d2.k == 'fish') { W.treats = (W.treats||0) + 1; addNum(p.x, p.y - 40, '+1 🐟 treat', '#c4601a'); } else { p.hp = Math.min(p.max, p.hp + 1); addNum(p.x, p.y - 40, '☕ +♥', '#8D5B1D'); } A.sfx('coin'); } } drops = drops.filter(d2 => d2.life > 0);
+    storyUpdate(dt);
+    blizT -= dt; if (blizT <= 0) { if (blizzard > 0) { blizzard = 0; blizT = 150 + Math.random()*200; } else { blizzard = 40 + Math.random()*30; blizT = blizzard; } } if (blizzard > 0) blizzard = Math.max(.01, blizzard - dt);
     // where am I
-    const rg = regAt(p.x, p.y); if (rg != lastReg) { if (lastReg) say('📍 ' + REG[rg].n, 2); if (rg != 'castle' && W.bau) lokiReady = true; lastReg = rg; }
+    const rg = regAt(p.x, p.y); if (rg != lastReg) { if (lastReg) say('📍 ' + REG[rg].n, 2); const md = REG[rg].haunt ? 'story' : REG[rg].mood || 'action'; if (md != regMood && window.WLMusic && window.WLMusic.mood) { regMood = md; try { window.WLMusic.mood(md); } catch(e){} } if (rg != 'castle' && W.bau) lokiReady = true; lastReg = rg; }
     for (const k in WAYS) if (!W.ways[k] && dist(p, px(WAYS[k])) < 80) { W.ways[k] = 1; say('✨ Waystone found: ' + WAYS[k].n + '! Use any waystone to travel here', 3); A.sfx('win'); save(); }
     for (let i = sticks.length - 1; i >= 0; i--) if (!p.stick && dist(sticks[i], p) < 30) { sticks.splice(i, 1); p.stick = 1; say('🪵 You picked up a stick! Throw it near Loki and watch what happens…', 2.6); A.sfx('coin'); }
     if (tornado) { tornado.t += dt; tornado.life -= dt; const ta = Math.atan2(p.y - tornado.y, p.x - tornado.x); tornado.x += Math.cos(ta)*70*dt; tornado.y += Math.sin(ta)*70*dt; const td = dist(tornado, p);
@@ -330,11 +551,11 @@ A.snowWorld = function(X) {
     revealT -= dt; if (revealT <= 0) { revealT = .25; reveal(); }
     saveT -= dt; if (saveT <= 0) { saveT = 15; save(); }
     // bosses wake up when you come close to their lair
-    if (!boss) for (const k in LAIR) { if (bossDone(k)) continue; if (k == 'loki' && !gateOpen()) continue; if (dist(p, LAIR[k]) < 380) { spawnBoss(k); break; } }
+    if (!boss) for (const k in LAIR) { if (bossDone(k)) continue; if (k == 'loki' && !gateOpen()) continue; if ((BOSS[k].ai || k == 'chao') && !storyReady(k)) continue; if (dlg) break; if (dist(p, LAIR[k]) < 380) { spawnBoss(k); break; } }
     if (boss) bossAI(boss, dt);
     // Loki's minions roam the land (never inside camp)
-    spawnT -= dt; const cap = A.D(6, 8, 10); if (spawnT <= 0 && rg != 'camp') { spawnT = 1.1; if (foes.length < cap && !boss) for (let k3 = 0; k3 < 6; k3++) { const a = Math.random()*TAU, r2 = 430 + Math.random()*260, sx = p.x + Math.cos(a)*r2, sy = p.y + Math.sin(a)*r2, rr2 = regAt(sx, sy);
-        if (sx < TS*2 || sy < TS*2 || sx > WORLD - TS*2 || sy > WORLD - TS*2 || rr2 == 'camp' || blocked(sx, sy, 16) || Math.hypot(sx - FIRE.x, sy - FIRE.y) < 600) continue; const pool = REG[rr2].pool; spawnFoe(pool[Math.floor(Math.random()*pool.length)], sx, sy); break; } }
+    spawnT -= dt; const cap = A.D(6, 8, 10); if (spawnT <= 0 && rg != 'camp' && !REG[rg].safe) { spawnT = 1.1; if (foes.length < cap && !boss) for (let k3 = 0; k3 < 6; k3++) { const a = Math.random()*TAU, r2 = 430 + Math.random()*260, sx = p.x + Math.cos(a)*r2, sy = p.y + Math.sin(a)*r2, rr2 = regAt(sx, sy);
+        if (sx < TS*2 || sy < TS*2 || sx > WORLD - TS*2 || sy > WORLD - TS*2 || rr2 == 'camp' || REG[rr2].safe || (rr2 == 'oldroad' && Math.random() < .5) || blocked(sx, sy, 16) || (!spiritsOpen() && Math.floor(sx/TS) >= N0 && sy < N0*TS) || Math.hypot(sx - FIRE.x, sy - FIRE.y) < 600) continue; const pool = REG[rr2].pool; spawnFoe(pool[Math.floor(Math.random()*pool.length)], sx, sy); break; } }
     for (const f of foes) { const F = FOE[f.k], d = dist(f, p), ang = Math.atan2(p.y - f.y, p.x - f.x); f.flash = Math.max(0, (f.flash || 0) - dt); f.hurt = Math.max(0, f.hurt - dt); f.flap += dt*12; f.cool -= dt;
       if (d > 1150 && !F.clone) { f.dead = 1; continue; }
       if (f.kb > 0) { f.kb -= dt; const nx2 = f.x + f.kbx*dt, ny2 = f.y + f.kby*dt; if (F.fly || !blocked(nx2, ny2, 10)) { f.x = nx2; f.y = ny2; } }
@@ -447,6 +668,12 @@ A.snowWorld = function(X) {
     else if (f.k == 'hound') dog(x, y, {s:.95, fur:'#2a2040', ear:'#14101f', snout:'#4a3a6a', eyes:'#FF4539', brows:1});
     else if (f.k == 'clone') SC.loki(g, x, y, {s:1.15, alpha:.5, cast:1}, t);
     else if (f.k == 'shade') SC.shade(g, x, y, {}, t);
+    else if (f.k == 'wisp') { const fl = Math.sin(f.flap*.4)*3; const gl = g.createRadialGradient(x, y - 6 + fl, 2, x, y - 6 + fl, 18); gl.addColorStop(0, 'rgba(220,250,255,.95)'); gl.addColorStop(1, 'rgba(120,200,255,0)'); g.fillStyle = gl; g.beginPath(); g.arc(x, y - 6 + fl, 18, 0, TAU); g.fill(); g.fillStyle = '#14204a'; g.beginPath(); g.arc(x - 3, y - 7 + fl, 1.4, 0, TAU); g.arc(x + 3, y - 7 + fl, 1.4, 0, TAU); g.fill(); }
+    else if (f.k == 'stormling') { g.fillStyle = 'rgba(0,0,0,.15)'; g.beginPath(); g.ellipse(x, y + 14, 13, 4, 0, 0, TAU); g.fill(); g.fillStyle = '#5a6a8a'; for (const [ox, oy, r2] of [[-8, -2, 9], [6, -4, 10], [0, -10, 9], [10, 2, 7], [-10, 4, 7]]) { g.beginPath(); g.arc(x + ox, y + oy, r2, 0, TAU); g.fill(); }
+      g.fillStyle = '#ffe066'; g.beginPath(); g.moveTo(x - 2, y + 4); g.lineTo(x + 3, y + 4); g.lineTo(x - 1, y + 14); g.closePath(); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(x - 4, y - 5, 2.2, 0, TAU); g.arc(x + 5, y - 5, 2.2, 0, TAU); g.fill(); g.strokeStyle = '#14204a'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x - 7, y - 9); g.lineTo(x - 2, y - 7); g.moveTo(x + 8, y - 9); g.lineTo(x + 3, y - 7); g.stroke(); }
+    else if (f.k == 'yeti') { g.fillStyle = 'rgba(0,0,0,.15)'; g.beginPath(); g.ellipse(x, y + 16, 16, 5, 0, 0, TAU); g.fill(); g.fillStyle = '#f4f8ff'; g.beginPath(); g.ellipse(x, y, 15, 16, 0, 0, TAU); g.fill(); g.strokeStyle = '#c8d8e8'; g.lineWidth = 1.5; g.stroke(); g.fillStyle = '#8ab0d0'; g.beginPath(); g.ellipse(x, y - 4, 8, 7, 0, 0, TAU); g.fill(); g.fillStyle = '#14204a'; g.beginPath(); g.arc(x - 3, y - 6, 1.6, 0, TAU); g.arc(x + 3, y - 6, 1.6, 0, TAU); g.fill(); g.fillStyle = '#fff'; g.fillRect(x - 3, y - 2, 2, 3); g.fillRect(x + 1, y - 2, 2, 3); }
+    else if (f.k == 'decoy') SC.spirit(g, 'chao', x, y, {ghost:1, mood:'mad', jitter:.6, alpha:.4 + .15*Math.sin(t*9 + f.flap)}, t);
+    else if (f.k == 'echo') { g.save(); g.globalAlpha = .75; SC.spirit(g, 'chao', x, y, {fur:'#2a2a3a', belly:'#3a3a4a', patch:'#1a1a2a', mask:'#1a1a2a', ghost:1, glow:'#8a6aff', mood:'mad', jitter:.4}, t); g.restore(); }
     else if (f.k == 'goon') { g.fillStyle = 'rgba(0,0,0,.15)'; g.beginPath(); g.ellipse(x, y + 16, 13, 4, 0, 0, TAU); g.fill(); g.fillStyle = '#fff'; g.strokeStyle = '#c8d8e8'; g.lineWidth = 1.5; g.beginPath(); g.arc(x, y + 4, 13, 0, TAU); g.fill(); g.stroke(); g.beginPath(); g.arc(x, y - 14, 9, 0, TAU); g.fill(); g.stroke();
       g.fillStyle = '#7a3ab0'; g.fillRect(x - 9, y - 7, 18, 4); g.fillStyle = '#121313'; g.beginPath(); g.arc(x - 3, y - 15, 1.6, 0, TAU); g.arc(x + 3, y - 15, 1.6, 0, TAU); g.fill(); g.strokeStyle = '#121313'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x - 6, y - 20); g.lineTo(x - 1, y - 18); g.moveTo(x + 6, y - 20); g.lineTo(x + 1, y - 18); g.stroke();
       g.fillStyle = '#ff8a3c'; g.beginPath(); g.moveTo(x, y - 13); g.lineTo(x + 7, y - 12); g.lineTo(x, y - 11); g.fill(); g.strokeStyle = '#6b4a2b'; g.lineWidth = 2; g.beginPath(); g.moveTo(x - 12, y + 2); g.lineTo(x - 22, y - 6); g.moveTo(x + 12, y + 2); g.lineTo(x + 22, y - 6); g.stroke(); }
@@ -473,13 +700,41 @@ A.snowWorld = function(X) {
       g.fillStyle = B.ph >= 2 ? '#FF4539' : '#ffffff'; g.beginPath(); g.arc(x - 6, y - 2, 3.5, 0, TAU); g.arc(x + 6, y - 2, 3.5, 0, TAU); g.fill(); }
     else if (B.k == 'rufus') dog(x, y, {s:1.5, fur:'#b07a4a', ear:'#6b4a2b', armor:1, helmet:1, brows:1, eyes:B.ph >= 3 ? '#FF4539' : '#121313'});
     else if (B.k == 'loki') { if (B.ph < 4) { g.fillStyle = 'rgba(150,210,255,' + (.16 + .08*Math.sin(t*4)) + ')'; g.beginPath(); g.arc(x, y, 48, 0, TAU); g.fill(); } SC.loki(g, x, y, {s:1.6, ph:B.ph, cast:B.castT > 0, fetch:B.fetch && B.fetch.t > 0}, t); if (B.fetch && B.fetch.t > 0) { g.font = '900 16px ' + A.font; g.textAlign = 'center'; g.fillStyle = '#F9BF01'; g.fillText('🪵 STICK!!', x, y - 74); } }
+    else if (B.k == 'chao') { if (!low()) { const au = g.createRadialGradient(x, y - 8, 6, x, y - 8, 70); au.addColorStop(0, 'rgba(20,30,70,.55)'); au.addColorStop(1, 'rgba(20,30,70,0)'); g.fillStyle = au; g.beginPath(); g.arc(x, y - 8, 70, 0, TAU); g.fill(); g.strokeStyle = 'rgba(200,230,255,.5)'; g.lineWidth = 2; for (let i = 0; i < 3; i++) { g.beginPath(); g.arc(x, y - 8, 30 + i*12 + Math.sin(t*5 + i)*3, t*2 + i, t*2 + i + 2.2); g.stroke(); } } SC.spirit(g, 'chao', x, y, {s:1.5, ghost:1, mood:B.ph >= 4 ? 'mad' : B.ph >= 2 ? 'angry' : 'frightened', jitter:.6 + .2*B.ph, glow:B.ph >= 4 ? '#ffffff' : '#cfe8ff'}, t); }
+    else if (B.k == 'wraith' || B.k == 'echo') { const col = B.k == 'echo' ? '90,110,150' : '170,220,255'; g.globalAlpha = .85; const gl = g.createRadialGradient(x, y - 10, 6, x, y - 10, 60); gl.addColorStop(0, 'rgba(' + col + ',.55)'); gl.addColorStop(1, 'rgba(' + col + ',0)'); g.fillStyle = gl; g.beginPath(); g.arc(x, y - 10, 60, 0, TAU); g.fill();
+      g.fillStyle = 'rgba(' + col + ',.9)'; g.beginPath(); g.moveTo(x - 30, y + 30); for (let i = 0; i <= 6; i++) g.lineTo(x - 30 + i*10, y + 30 + (i % 2 ? -10 : 0) + Math.sin(t*6 + i)*3); g.lineTo(x + 30, y - 20); g.quadraticCurveTo(x, y - 70, x - 30, y - 20); g.closePath(); g.fill();
+      g.fillStyle = '#0a1430'; g.beginPath(); g.ellipse(x - 10, y - 22, 5, 8, 0, 0, TAU); g.ellipse(x + 10, y - 22, 5, 8, 0, 0, TAU); g.fill(); g.globalAlpha = 1; if (B.k == 'echo') { g.strokeStyle = '#ffe066'; g.lineWidth = 3; g.beginPath(); g.moveTo(x - 4, y + 6); g.lineTo(x + 6, y + 14); g.lineTo(x - 2, y + 22); g.stroke(); } }
+    else if (B.k == 'guardian') { g.fillStyle = 'rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(x, y + 34, 36, 9, 0, 0, TAU); g.fill(); for (const [ox, oy, r2] of [[0, 4, 26], [-26, -6, 14], [26, -6, 14], [0, -30, 16]]) { g.fillStyle = '#4a5a7a'; g.beginPath(); g.arc(x + ox, y + oy, r2, 0, TAU); g.fill(); g.strokeStyle = '#2a3450'; g.lineWidth = 2; g.stroke(); }
+      g.strokeStyle = 'rgba(255,230,100,' + (.6 + .4*Math.sin(t*12)) + ')'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(x - 8, y - 8); g.lineTo(x + 2, y + 4); g.lineTo(x - 4, y + 18); g.stroke(); g.fillStyle = '#9fe8ff'; g.beginPath(); g.arc(x - 6, y - 32, 3, 0, TAU); g.arc(x + 6, y - 32, 3, 0, TAU); g.fill(); }
+    else if (B.k == 'fog') { g.globalAlpha = B.fadeA || .6; for (let i = 0; i < 9; i++) { const a = i*.7 + t*.3; g.fillStyle = 'rgba(220,228,240,.55)'; g.beginPath(); g.arc(x + Math.cos(a)*30, y - 6 + Math.sin(a*1.3)*16, 26, 0, TAU); g.fill(); } g.fillStyle = 'rgba(40,50,80,.8)'; g.beginPath(); g.ellipse(x - 12, y - 10, 4, 7, 0, 0, TAU); g.ellipse(x + 12, y - 10, 4, 7, 0, 0, TAU); g.fill(); g.globalAlpha = 1; }
+    else if (B.k.slice(0, 6) == 'elite_') { g.save(); g.translate(x, y); g.scale(1.8, 1.8); g.fillStyle = '#4a5a7a'; for (const [ox, oy, r2] of [[-8, -2, 9], [6, -4, 10], [0, -10, 9], [10, 2, 7], [-10, 4, 7]]) { g.beginPath(); g.arc(ox, oy, r2, 0, TAU); g.fill(); } g.fillStyle = '#ffe066'; g.beginPath(); g.moveTo(-2, 4); g.lineTo(3, 4); g.lineTo(-1, 14); g.closePath(); g.fill(); g.fillStyle = '#ff6a6a'; g.beginPath(); g.arc(-4, -5, 2.2, 0, TAU); g.arc(5, -5, 2.2, 0, TAU); g.fill(); g.restore(); }
+    else if (B.k == 'yeti') { g.fillStyle = 'rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(x, y + 40, 40, 10, 0, 0, TAU); g.fill(); g.fillStyle = '#f4f8ff'; g.beginPath(); g.ellipse(x, y + 4, 36, 38, 0, 0, TAU); g.fill(); g.strokeStyle = '#c8d8e8'; g.lineWidth = 2; g.stroke(); const sw2 = Math.sin(t*3)*8; g.beginPath(); g.ellipse(x - 40, y + 8 + sw2, 12, 22, .3, 0, TAU); g.ellipse(x + 40, y + 8 - sw2, 12, 22, -.3, 0, TAU); g.fill();
+      g.fillStyle = '#8ab0d0'; g.beginPath(); g.ellipse(x, y - 12, 18, 15, 0, 0, TAU); g.fill(); g.fillStyle = B.ph >= 2 ? '#FF4539' : '#14204a'; g.beginPath(); g.arc(x - 7, y - 16, 3, 0, TAU); g.arc(x + 7, y - 16, 3, 0, TAU); g.fill(); g.fillStyle = '#fff'; g.fillRect(x - 7, y - 6, 4, 6); g.fillRect(x + 3, y - 6, 4, 6); g.fillStyle = '#F9BF01'; g.beginPath(); g.moveTo(x - 16, y - 34); g.lineTo(x - 16, y - 46); g.lineTo(x - 8, y - 40); g.lineTo(x, y - 50); g.lineTo(x + 8, y - 40); g.lineTo(x + 16, y - 46); g.lineTo(x + 16, y - 34); g.fill(); }
+    else if (B.k == 'giant') { g.fillStyle = 'rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(x, y + 44, 44, 10, 0, 0, TAU); g.fill(); g.fillStyle = '#a8d8f0'; rr(g, x - 30, y - 30, 60, 74, 12); g.fill(); g.strokeStyle = '#6aa8d0'; g.lineWidth = 2; g.stroke(); g.fillStyle = '#c8ecff'; rr(g, x - 24, y - 70, 48, 44, 12); g.fill(); rr(g, x - 50, y - 24, 18, 50, 8); g.fill(); rr(g, x + 32, y - 24, 18, 50, 8); g.fill();
+      g.fillStyle = B.ph >= 2 ? '#FF4539' : '#2a5a8a'; g.beginPath(); g.arc(x - 9, y - 52, 4, 0, TAU); g.arc(x + 9, y - 52, 4, 0, TAU); g.fill(); g.strokeStyle = '#6aa8d0'; g.beginPath(); g.moveTo(x - 10, y - 38); g.lineTo(x + 10, y - 38); g.stroke(); }
+    else if (B.k == 'frostbeard') { g.globalAlpha = .85; g.fillStyle = 'rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(x, y + 26, 26, 7, 0, 0, TAU); g.fill(); g.fillStyle = '#9fc8e8'; g.beginPath(); g.ellipse(x, y + 2, 20, 24, 0, 0, TAU); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.ellipse(x, y + 6, 12, 16, 0, 0, TAU); g.fill(); g.fillStyle = '#e8f4ff'; g.beginPath(); g.moveTo(x - 12, y - 4); g.quadraticCurveTo(x, y + 26, x + 12, y - 4); g.fill();
+      g.fillStyle = '#1c1c24'; g.beginPath(); g.moveTo(x - 24, y - 18); g.quadraticCurveTo(x, y - 46, x + 24, y - 18); g.fill(); g.fillStyle = '#fff'; g.font = '12px ' + A.font; g.textAlign = 'center'; g.fillText('☠', x, y - 24); g.fillStyle = '#14204a'; g.beginPath(); g.arc(x - 6, y - 10, 2.4, 0, TAU); g.arc(x + 6, y - 10, 2.4, 0, TAU); g.fill(); g.globalAlpha = 1; }
+    else if (B.k == 'serpent') { for (let i = 9; i >= 0; i--) { const sx2 = x - Math.cos(B.t*2 + i*.5)*i*9, sy2 = y + i*7 + Math.sin(B.t*3 + i*.6)*8; g.fillStyle = 'hsl(' + ((i*30 + t*60) % 360) + ',80%,65%)'; g.beginPath(); g.arc(sx2, sy2, 16 - i*.9, 0, TAU); g.fill(); }
+      g.fillStyle = '#fff'; g.beginPath(); g.arc(x - 6, y - 4, 3.5, 0, TAU); g.arc(x + 6, y - 4, 3.5, 0, TAU); g.fill(); g.fillStyle = '#14204a'; g.beginPath(); g.arc(x - 6, y - 4, 1.6, 0, TAU); g.arc(x + 6, y - 4, 1.6, 0, TAU); g.fill(); }
     g.restore();
     if (B.talkT > 0 && B.talk) { g.font = '700 12px ' + A.font; const tw = Math.min(380, g.measureText(B.talk).width + 20), bx = Math.max(8, Math.min(VW - tw - 8, x - cam.x - tw/2)) + cam.x; g.fillStyle = 'rgba(255,255,255,.95)'; rr(g, bx, y - B.r - 70, tw, 28, 10); g.fill(); g.fillStyle = '#14204a'; g.textAlign = 'left'; wrapClip(B.talk, bx + 10, y - B.r - 51, tw - 20); } };
   const wrapClip = (s2, x, y, mw) => { let line = s2; while (g.measureText(line).width > mw && line.length > 4) line = line.slice(0, -2); if (line != s2) line = line.slice(0, -1) + '…'; g.fillText(line, x, y); };
-  const tileCol = (v, x, y) => v == SNOW ? (regionAt(x, y) == 'castle' ? '#d8dbe9' : '#eef5fc') : v == PATH ? '#e6dcc8' : v == ICE || v == HOLE ? '#c4e8fa' : v == DEEP ? '#ffffff' : v == WALL ? '#2e2048' : v == FLOOR || v == GATE ? '#5d4c7d' : v == CAVE || (v == ROCK && regionAt(x, y) == 'caves') ? '#5a6a80' : v == CAMP ? '#f3e6cf' : regionAt(x, y) == 'castle' ? '#d8dbe9' : '#eef5fc';
+  const RT = {hollow:'#d6ecff', shrine:'#e4e8f4', oldroad:'#dfe3ea', hall:'#eef1f6', peak:'#cdd3e3', aurora:'#eef6ff', coast:'#f2f6fa', ruins:'#e6ecf2', yeti:'#e8eef6', village:'#f3f7fb'};
+  const tileCol = (v, x, y) => v == VEIL ? (spiritsOpen() ? '#cfeaff' : '#7ad8ff') : v == WATER ? '#3a6ab0' : v == HOUSE ? '#b0703a' : v == PATH && regionAt(x, y) == 'oldroad' ? '#9aa2ac' : v == SNOW && RT[regionAt(x, y)] ? RT[regionAt(x, y)] : v == SNOW ? (regionAt(x, y) == 'castle' ? '#d8dbe9' : '#eef5fc') : v == PATH ? '#e6dcc8' : v == ICE || v == HOLE ? '#c4e8fa' : v == DEEP ? '#ffffff' : v == WALL ? '#2e2048' : v == FLOOR || v == GATE ? '#5d4c7d' : v == CAVE || (v == ROCK && regionAt(x, y) == 'caves') ? '#5a6a80' : v == CAMP ? '#f3e6cf' : regionAt(x, y) == 'castle' ? '#d8dbe9' : '#eef5fc';
   const drawTiles = () => { const x0 = Math.floor(cam.x/TS), y0 = Math.floor(cam.y/TS), x1 = Math.min(N - 1, x0 + Math.ceil(VW/TS) + 1), y1 = Math.min(N - 1, y0 + Math.ceil(VH/TS) + 1);
-    for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) { const v = tileAt(tx, ty), sx = tx*TS, sy = ty*TS; g.fillStyle = tileCol(v, tx, ty); g.fillRect(sx, sy, TS + 1, TS + 1);
+    // smooth, natural ground: every tile gets its land's snow colour first, then paths, ice, drifts, water and cave floors
+    // are drawn as rounded shapes that flow into their neighbours (no blocky squares)
+    const BLOB = {[PATH]:1, [ICE]:2, [HOLE]:2, [WATER]:3, [DEEP]:4, [CAVE]:5, [CAMP]:6};
+    for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) { const v = tileAt(tx, ty), sx = tx*TS, sy = ty*TS, cls = BLOB[v];
+      if (cls || v == ROCK || v == TREE || v == DEAD) { const r0 = regionAt(tx, ty); g.fillStyle = r0 == 'caves' ? '#5a6a80' : RT[r0] || (r0 == 'castle' ? '#d8dbe9' : r0 == 'camp' ? '#eef5fc' : '#eef5fc'); } else g.fillStyle = tileCol(v, tx, ty);
+      g.fillRect(sx, sy, TS + 1, TS + 1); }
+    for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) { const v = tileAt(tx, ty), cls = BLOB[v]; if (!cls || (cls == 5 && regionAt(tx, ty) == 'caves')) continue; const sx = tx*TS, sy = ty*TS, cx = sx + TS/2, cy = sy + TS/2, r2 = TS*.49;
+      if (cls == 4) { const hh = hash(tx, ty, 13); g.fillStyle = 'rgba(160,190,225,.35)'; g.beginPath(); g.ellipse(cx + (hh - .5)*10, cy + 9, TS*.58, TS*.22, 0, 0, TAU); g.fill(); g.fillStyle = '#ffffff'; g.beginPath(); g.ellipse(cx + (hh - .5)*10, cy + 4, TS*.55, TS*.3, 0, Math.PI, 0); g.fill(); continue; }
+      g.fillStyle = tileCol(v, tx, ty); g.beginPath(); g.arc(cx, cy, r2, 0, TAU); g.fill();
+      if (cls != 4) { const same = (x2, y2) => BLOB[tileAt(x2, y2)] == cls; if (same(tx + 1, ty)) g.fillRect(cx, cy - r2, TS/2 + 1, r2*2); if (same(tx - 1, ty)) g.fillRect(sx - 1, cy - r2, TS/2 + 1, r2*2); if (same(tx, ty + 1)) g.fillRect(cx - r2, cy, r2*2, TS/2 + 1); if (same(tx, ty - 1)) g.fillRect(cx - r2, sy - 1, r2*2, TS/2 + 1); } }
+    for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) { const v = tileAt(tx, ty), sx = tx*TS, sy = ty*TS;
       if (low()) continue; const h = hash(tx, ty, 5);
+      if (v == PATH && h < .5 && !low()) { g.fillStyle = 'rgba(120,100,80,.22)'; g.beginPath(); g.ellipse(sx + 16 + h*20, sy + 20, 3, 4.5, .3, 0, TAU); g.ellipse(sx + 24 + h*20, sy + 30, 3, 4.5, -.3, 0, TAU); g.fill(); }   // footprints
       if (v == SNOW && h < .25) { g.fillStyle = 'rgba(150,180,215,.25)'; g.beginPath(); g.ellipse(sx + h*160 % 40 + 4, sy + 30, 8, 3, 0, 0, TAU); g.fill(); }
       else if (v == DEEP) { g.fillStyle = 'rgba(170,200,230,.35)'; g.beginPath(); g.arc(sx + 14, sy + 30, 10, Math.PI, 0); g.arc(sx + 34, sy + 24, 9, Math.PI, 0); g.fill(); }
       else if (v == ICE) { g.strokeStyle = 'rgba(255,255,255,.7)'; g.lineWidth = 2; g.beginPath(); g.moveTo(sx + 8 + h*10, sy + 12); g.lineTo(sx + 26 + h*10, sy + 30); g.stroke(); }
@@ -487,13 +742,24 @@ A.snowWorld = function(X) {
       else if (v == CAVE && h < .12) { g.fillStyle = 'rgba(200,160,255,.5)'; g.beginPath(); g.moveTo(sx + 20, sy + 36); g.lineTo(sx + 24, sy + 22); g.lineTo(sx + 28, sy + 36); g.fill(); } }
     for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) { const v = tileAt(tx, ty), sx = tx*TS, sy = ty*TS, h = hash(tx, ty, 7);
       if (v == TREE) { const ox = (h - .5)*10; g.fillStyle = 'rgba(0,0,0,.12)'; g.beginPath(); g.ellipse(sx + 24 + ox, sy + 42, 16, 5, 0, 0, TAU); g.fill(); g.fillStyle = '#6b4a2b'; g.fillRect(sx + 21 + ox, sy + 32, 6, 12);
-        for (const [w2, yy] of [[22, 34], [18, 22], [13, 10]]) { g.fillStyle = regionAt(tx, ty) == 'forest' ? '#24583a' : '#2f6a3a'; g.beginPath(); g.moveTo(sx + 24 + ox - w2, sy + yy); g.lineTo(sx + 24 + ox, sy + yy - 20); g.lineTo(sx + 24 + ox + w2, sy + yy); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.moveTo(sx + 24 + ox - w2*.45, sy + yy - 11); g.lineTo(sx + 24 + ox, sy + yy - 20); g.lineTo(sx + 24 + ox + w2*.45, sy + yy - 11); g.fill(); } }
-      else if (v == ROCK) { const cv = regionAt(tx, ty) == 'caves'; g.fillStyle = cv ? '#3a4658' : '#8a8e94'; rr(g, sx + 3, sy + 6, TS - 6, TS - 8, 12); g.fill(); g.fillStyle = cv ? '#4a5870' : '#a6aab0'; rr(g, sx + 8, sy + 10, TS - 20, 10, 6); g.fill();
-        if (!cv) { g.fillStyle = '#fff'; rr(g, sx + 5, sy + 4, TS - 10, 10, 6); g.fill(); } else if (h < .25) { g.fillStyle = '#c9a0ff'; g.beginPath(); g.moveTo(sx + 16, sy + 30); g.lineTo(sx + 22, sy + 10); g.lineTo(sx + 28, sy + 30); g.fill(); } }
+        const tr2 = regionAt(tx, ty), sz = .8 + h*.45; if (tr2 == 'hollow' && !low() && h < .35) { g.fillStyle = 'rgba(150,225,255,' + (.35 + .25*Math.sin(t*2 + tx)) + ')'; g.beginPath(); g.arc(sx + 24 + ox + Math.sin(t + tx)*6, sy + 8 + Math.cos(t*1.3 + ty)*5, 3, 0, TAU); g.fill(); }
+        for (const [w0, yy] of [[22, 34], [18, 22], [13, 10]]) { const w2 = w0*sz; g.fillStyle = tr2 == 'hollow' ? '#1f5a7a' : tr2 == 'forest' ? '#24583a' : tr2 == 'village' ? '#2f7a4a' : '#2f6a3a'; g.beginPath(); g.moveTo(sx + 24 + ox - w2, sy + yy); g.lineTo(sx + 24 + ox, sy + yy - 20); g.lineTo(sx + 24 + ox + w2, sy + yy); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.moveTo(sx + 24 + ox - w2*.45, sy + yy - 11); g.lineTo(sx + 24 + ox, sy + yy - 20); g.lineTo(sx + 24 + ox + w2*.45, sy + yy - 11); g.fill(); } }
+      else if (v == ROCK) { const r0 = regionAt(tx, ty), cv = r0 == 'caves', dark = cv ? '#3a4658' : r0 == 'peak' ? '#6a7084' : r0 == 'ruins' ? '#8ab0c8' : '#8a8e94', lite = cv ? '#4a5870' : r0 == 'peak' ? '#868ca0' : r0 == 'ruins' ? '#b8d8ec' : '#a6aab0';
+        const nR = tileAt(tx + 1, ty) == ROCK, nD = tileAt(tx, ty + 1) == ROCK, sz = .75 + h*.5, cx = sx + 24 + (h - .5)*8, cy = sy + 28;
+        g.fillStyle = 'rgba(0,0,0,.12)'; g.beginPath(); g.ellipse(cx, cy + 14*sz, 22*sz, 6, 0, 0, TAU); g.fill();
+        g.fillStyle = dark; g.beginPath(); g.ellipse(cx, cy, 22*sz, 18*sz, h*.6, 0, TAU); g.fill(); if (nR) { g.beginPath(); g.ellipse(sx + TS, cy + 2, 16, 14, 0, 0, TAU); g.fill(); } if (nD) { g.beginPath(); g.ellipse(cx, sy + TS + 2, 18, 14, 0, 0, TAU); g.fill(); }
+        if (h > .55) { g.beginPath(); g.ellipse(cx + 14*sz, cy + 6, 10*sz, 8*sz, 0, 0, TAU); g.fill(); }
+        g.fillStyle = lite; g.beginPath(); g.ellipse(cx - 5*sz, cy - 6*sz, 10*sz, 6*sz, -.3, 0, TAU); g.fill();
+        if (!cv) { g.fillStyle = '#fff'; g.beginPath(); g.ellipse(cx - 2, cy - 13*sz, 15*sz, 6*sz, (h - .5)*.4, Math.PI, 0); g.fill(); } else if (h < .25) { g.fillStyle = '#c9a0ff'; g.beginPath(); g.moveTo(sx + 16, sy + 30); g.lineTo(sx + 22, sy + 10); g.lineTo(sx + 28, sy + 30); g.fill(); } }
       else if (v == HOLE) { g.fillStyle = '#1f4f7a'; g.beginPath(); g.ellipse(sx + 24, sy + 24, 20, 14, 0, 0, TAU); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 3; g.stroke(); }
       else if (v == WALL) { g.fillStyle = '#3e2c62'; g.fillRect(sx, sy, TS, TS); g.strokeStyle = '#2a1c44'; g.lineWidth = 2; for (let yy = 0; yy < TS; yy += 12) { g.beginPath(); g.moveTo(sx, sy + yy); g.lineTo(sx + TS, sy + yy); g.stroke(); for (let xx = (yy/12) % 2 ? 0 : 12; xx < TS; xx += 24) { g.beginPath(); g.moveTo(sx + xx, sy + yy); g.lineTo(sx + xx, sy + yy + 12); g.stroke(); } } g.fillStyle = '#fff'; g.fillRect(sx, sy, TS, 4); }
       else if (v == GATE) { if (gateOpen()) { g.fillStyle = '#3e2c62'; g.fillRect(sx, sy, 6, TS); g.fillRect(sx + TS - 6, sy, 6, TS); } else { g.fillStyle = '#2a1c44'; g.fillRect(sx, sy, TS, TS); g.strokeStyle = '#8a8e94'; g.lineWidth = 3; for (let xx = 6; xx < TS; xx += 10) { g.beginPath(); g.moveTo(sx + xx, sy); g.lineTo(sx + xx, sy + TS); g.stroke(); }
         g.fillStyle = 'rgba(200,120,255,' + (.6 + .3*Math.sin(t*3 + tx)) + ')'; g.beginPath(); g.arc(sx + 24, sy + 24, 8, 0, TAU); g.fill(); } }
+      else if (v == VEIL) { if (!spiritsOpen()) { g.fillStyle = 'rgba(122,216,255,' + (.55 + .25*Math.sin(t*2 + ty*.4)) + ')'; g.fillRect(sx, sy, TS, TS); if (!low()) { g.fillStyle = 'rgba(255,255,255,.7)'; g.fillRect(sx + (t*20 + ty*13) % TS, sy, 2, TS); } } }
+      else if (v == WATER) { if (!low()) { g.strokeStyle = 'rgba(255,255,255,.35)'; g.lineWidth = 2; g.beginPath(); const wo = Math.sin(t*1.5 + tx + ty)*4; g.moveTo(sx + 6, sy + 24 + wo); g.quadraticCurveTo(sx + 16, sy + 18 + wo, sx + 26, sy + 24 + wo); g.stroke(); } }
+      else if (v == HOUSE) { if (tileAt(tx - 1, ty) != HOUSE && tileAt(tx, ty - 1) != HOUSE) { const hx = sx, hy = sy; g.fillStyle = '#c88a50'; g.fillRect(hx + 4, hy + 18, TS*3 - 8, TS*2 - 22); g.fillStyle = '#8a3a2a'; g.beginPath(); g.moveTo(hx - 4, hy + 22); g.lineTo(hx + TS*1.5, hy - 18); g.lineTo(hx + TS*3 + 4, hy + 22); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.moveTo(hx - 4, hy + 22); g.lineTo(hx + TS*1.5, hy - 18); g.lineTo(hx + TS*3 + 4, hy + 22); g.lineTo(hx + TS*3 - 6, hy + 14); g.lineTo(hx + TS*1.5, hy - 8); g.lineTo(hx + 6, hy + 14); g.fill();
+          g.fillStyle = '#5a3a1a'; g.fillRect(hx + TS*1.5 - 9, hy + TS*2 - 26, 18, 22); g.fillStyle = 'rgba(255,214,120,' + (.75 + .2*Math.sin(t*3 + tx)) + ')'; g.fillRect(hx + 16, hy + 34, 16, 14); g.fillRect(hx + TS*3 - 32, hy + 34, 16, 14); } }
+      else if (v == PATH && regionAt(tx, ty) == 'oldroad' && (ty == 48) && tx % 3 == 0) { g.fillStyle = '#e8d070'; g.fillRect(sx + 8, sy + TS - 3, 22, 4); }
       else if (v == DEAD) { g.strokeStyle = '#3a2a2a'; g.lineWidth = 3; g.lineCap = 'round'; g.beginPath(); g.moveTo(sx + 24, sy + 44); g.lineTo(sx + 24, sy + 10); g.moveTo(sx + 24, sy + 24); g.lineTo(sx + 12, sy + 14); g.moveTo(sx + 24, sy + 18); g.lineTo(sx + 36, sy + 8); g.stroke(); } } };
   const onScreen = (x, y, m = 80) => x > cam.x - m && x < cam.x + VW + m && y > cam.y - m && y < cam.y + VH + m;
   const SC = A.snowCast;
@@ -521,10 +787,11 @@ A.snowWorld = function(X) {
     for (const sk of sticks) if (onScreen(sk.x, sk.y)) { g.save(); g.translate(sk.x, sk.y); g.rotate(.4); g.fillStyle = '#8D5B1D'; rr(g, -12, -2.5, 24, 5, 2.5); g.fill(); g.fillRect(2, -7, 2.5, 6); g.restore(); if (!low()) { g.strokeStyle = 'rgba(249,191,1,' + (.4 + .3*Math.sin(t*5)) + ')'; g.lineWidth = 2; g.beginPath(); g.arc(sk.x, sk.y, 16, 0, TAU); g.stroke(); } }
     if (W.mau && mau.sniff && !W.snacks[mau.sniff.id] && onScreen(mau.sniff.x, mau.sniff.y)) { const sn = mau.sniff; g.font = '18px ' + A.font; g.textAlign = 'center'; g.fillText(sn.e, sn.x, sn.y + 6); g.fillStyle = '#F9BF01'; g.font = '900 18px ' + A.font; g.fillText('!', sn.x, sn.y - 18 + Math.sin(t*6)*3); }
     if (tornado) SC.tornado(g, tornado.x, tornado.y, tornado.r, t, low());
+    storyDraw();
     // characters, back to front (name tags are placed afterwards so they never overlap)
     const tags = [];
     const ents = foes.filter(f => onScreen(f.x, f.y)).map(f => ({y:f.y, d:() => drawFoe(f)}));
-    if (boss) ents.push({y:boss.y, d:() => drawBoss(boss)}); if (W.mau) ents.push({y:mau.y, d:() => { SC.mau(g, mau.x, mau.y, {st:mauState(), walk:mau.walk}, t); if (mau.say && mau.sayT > 0) bubble(mau.x, mau.y - 52, mau.say); }}); if (W.mau) tags.push({x:mau.x, y:mau.y + 32, t:'Royal Guard Mau Mau', s:'Mau Mau', col:'#2f5fd0'});
+    storyEnts(ents); if (boss) ents.push({y:boss.y, d:() => drawBoss(boss)}); if (W.mau) ents.push({y:mau.y, d:() => { SC.mau(g, mau.x, mau.y, {st:mauState(), walk:mau.walk}, t); if (mau.say && mau.sayT > 0) bubble(mau.x, mau.y - 52, mau.say); }}); if (W.mau) tags.push({x:mau.x, y:mau.y + 32, t:'Royal Guard Mau Mau', s:'Mau Mau', col:'#2f5fd0'});
     for (const m of mates) if (onScreen(m.x, m.y)) ents.push({y:m.y, d:() => { if (m.ko > 0) { g.fillStyle = RCOL[m.role]; rr(g, m.x - 16, m.y + 4, 32, 12, 6); g.fill(); g.fillStyle = '#f2c9a0'; g.beginPath(); g.arc(m.x + 18, m.y + 8, 7, 0, TAU); g.fill(); g.font = '12px ' + A.font; g.textAlign = 'center'; g.fillText('💫', m.x, m.y - 6); }
       else kid(m.x, m.y, RCOL[m.role], {walk:m.walk, face:m.face, throwT:m.throwT}); tags.push({x:m.x, y:m.y + 30, t:m.name + ' ' + RE[m.role] + ' ' + m.lv, s:m.name, col:RCOL[m.role]}); }});
     if (dead <= 0) ents.push({y:p.y - 1, d:() => { g.fillStyle = 'rgba(213,243,103,' + (.28 + .12*Math.sin(t*4)) + ')'; g.beginPath(); g.ellipse(p.x, p.y + 16, 24, 8, 0, 0, TAU); g.fill(); g.strokeStyle = '#D5F367'; g.lineWidth = 2; g.stroke(); }});
@@ -549,7 +816,12 @@ A.snowWorld = function(X) {
     g.restore();
     // darker caves and castle, with light around you
     const rg = regAt(p.x, p.y); if ((rg == 'caves' || (rg == 'castle' && tileAt(Math.floor(p.x/TS), Math.floor(p.y/TS)) == FLOOR)) && !low()) { const gr = g.createRadialGradient(p.x - cam.x, p.y - cam.y, 90, p.x - cam.x, p.y - cam.y, 420); gr.addColorStop(0, 'rgba(10,15,40,0)'); gr.addColorStop(1, 'rgba(10,15,40,.5)'); g.fillStyle = gr; g.fillRect(0, 0, VW, VH); }
-    if (!low()) { g.fillStyle = 'rgba(255,255,255,.85)'; for (let i = 0; i < 40; i++) { const sx = (i*137 + t*(14 + i % 5*4) - cam.x*.3) % VW, sy = (i*71 + t*(30 + i % 7*6) - cam.y*.3) % VH; g.fillRect((sx + VW) % VW, (sy + VH) % VH, 2, 2); } }
+    { const H2 = REG[rg] && REG[rg].haunt, night = nightAmt(); if (H2 || night > .05) { const a2 = Math.max(night*.42, H2 ? (H2 == 2 && (W.sp|0) < 6 ? .5 : .32) : 0); const gr = g.createRadialGradient(p.x - cam.x, p.y - cam.y, 110, p.x - cam.x, p.y - cam.y, Math.max(VW, VH)*.7); gr.addColorStop(0, 'rgba(10,20,50,' + a2*.35 + ')'); gr.addColorStop(1, 'rgba(10,20,50,' + a2 + ')'); g.fillStyle = gr; g.fillRect(0, 0, VW, VH); }
+      if (night > .4 && !low()) { for (let b = 0; b < 3; b++) { const yb = 30 + b*26; g.fillStyle = 'rgba(' + ['80,255,190', '120,200,255', '200,140,255'][b] + ',' + (.08 + .06*Math.sin(t*.7 + b))*night + ')'; g.beginPath(); g.moveTo(0, yb); for (let xx = 0; xx <= VW; xx += 40) g.lineTo(xx, yb + Math.sin(xx*.01 + t*.5 + b)*18); g.lineTo(VW, yb + 40); for (let xx = VW; xx >= 0; xx -= 40) g.lineTo(xx, yb + 40 + Math.sin(xx*.012 + t*.4 + b)*14); g.fill(); } }
+      if (H2 && !low()) { g.fillStyle = 'rgba(180,230,255,.7)'; for (let i = 0; i < 14; i++) { const sx = (i*173 + t*12 - cam.x*.2) % VW, sy = (i*97 + Math.sin(t + i)*30 - cam.y*.2) % VH; g.beginPath(); g.arc((sx + VW) % VW, (sy + VH) % VH, 2 + (i % 3), 0, TAU); g.fill(); } }
+      if (stormFlash > 0) { g.fillStyle = 'rgba(255,255,255,' + stormFlash*.8 + ')'; g.fillRect(0, 0, VW, VH); } }
+    { const snowN = low() ? 0 : (blizzard > 0 || (rg == 'peak' && (W.sp|0) < 6)) ? 170 : 40; if (blizzard > 0 && !low()) { g.fillStyle = 'rgba(235,242,255,' + Math.min(.32, blizzard*.1) + ')'; g.fillRect(0, 0, VW, VH); }
+      const wind = blizzard > 0 ? 160 : 14; g.fillStyle = 'rgba(255,255,255,.85)'; for (let i = 0; i < snowN; i++) { const sx = (i*137 + t*(wind + i % 5*4) - cam.x*.3) % VW, sy = (i*71 + t*(30 + i % 7*6) - cam.y*.3) % VH; g.fillRect((sx + VW) % VW, (sy + VH) % VH, 2, 2); } }
     // quest arrow
     const G0 = goal(); if (G0) { const sx = G0.x - cam.x, sy = G0.y - cam.y; if (sx < 20 || sx > VW - 20 || sy < 130 || sy > VH - 20) { const a = Math.atan2(sy - (p.y - cam.y), sx - (p.x - cam.x)), ax = Math.max(30, Math.min(VW - 30, p.x - cam.x + Math.cos(a)*230)), ay = Math.max(150, Math.min(VH - 30, p.y - cam.y + Math.sin(a)*230));
         g.save(); g.translate(ax, ay); g.rotate(a); g.fillStyle = 'rgba(249,191,1,.95)'; g.strokeStyle = '#14204a'; g.lineWidth = 2; g.beginPath(); g.moveTo(18, 0); g.lineTo(-10, -12); g.lineTo(-4, 0); g.lineTo(-10, 12); g.closePath(); g.fill(); g.stroke(); g.restore(); }
@@ -561,8 +833,8 @@ A.snowWorld = function(X) {
       g.font = '700 10px ' + A.font; g.fillStyle = '#D5F367'; wrapClip('🎯 ' + (G0 ? G0.n : 'Kingdom saved! Explore, find every chest, rematch Loki'), 16, TY + 33, hw - 18);
       g.fillStyle = '#cfe3f5'; wrapClip('❄ ' + A.fmt(PERM.bank) + ' · 🔷 ' + PERM.frost + ' · 🌙 ' + runesN() + '/3' + (W.mau ? ' · 🐟 ' + (W.treats||0) : '') + ' · ' + Math.floor(explored*100/fog.length) + '% explored', 16, TY + 48, hw - 18);
       g.fillStyle = 'rgba(255,255,255,.7)'; g.font = '800 11px ' + A.font; g.textAlign = 'right'; g.fillText('▾', 8 + hw - 8, TY + 14); hudR = {x:8, y:TY, w:hw, h:56}; }
-    const MX = VW - 116; g.fillStyle = 'rgba(20,32,74,.6)'; rr(g, MX, TY, 108, 120, 10); g.fill(); g.imageSmoothingEnabled = false; g.drawImage(mini, MX + 4, TY + 4, 100, 100); g.imageSmoothingEnabled = true; g.fillStyle = '#FF4539'; g.beginPath(); g.arc(MX + 4 + p.x/TS, TY + 4 + p.y/TS, 3, 0, TAU); g.fill();
-    if (G0) { g.fillStyle = '#F9BF01'; g.beginPath(); g.arc(MX + 4 + G0.x/TS, TY + 4 + G0.y/TS, 2.5, 0, TAU); g.fill(); } g.fillStyle = '#D5F367'; rr(g, MX + 22, TY + 106, 64, 12, 6); g.fill(); g.fillStyle = '#14204a'; g.font = '800 9px ' + A.font; g.textAlign = 'center'; g.fillText('M = MAP', MX + 54, TY + 115); mmR = {x:MX, y:TY, w:108, h:120};
+    const MX = VW - 116, MS2 = 100/N; g.fillStyle = 'rgba(20,32,74,.6)'; rr(g, MX, TY, 108, 120, 10); g.fill(); g.imageSmoothingEnabled = false; g.drawImage(mini, MX + 4, TY + 4, 100, 100); g.imageSmoothingEnabled = true; if (compHint) compHint(MX + 4, TY + 4, MS2); g.fillStyle = '#FF4539'; g.beginPath(); g.arc(MX + 4 + p.x/TS*MS2, TY + 4 + p.y/TS*MS2, 3, 0, TAU); g.fill();
+    if (G0) { g.fillStyle = '#F9BF01'; g.beginPath(); g.arc(MX + 4 + G0.x/TS*MS2, TY + 4 + G0.y/TS*MS2, 2.5, 0, TAU); g.fill(); } g.fillStyle = '#D5F367'; rr(g, MX + 22, TY + 106, 64, 12, 6); g.fill(); g.fillStyle = '#14204a'; g.font = '800 9px ' + A.font; g.textAlign = 'center'; g.fillText('M = MAP', MX + 54, TY + 115); mmR = {x:MX, y:TY, w:108, h:120};
     if (boss) { const bw = Math.min(440, VW - 280), bx = VW/2 - bw/2, by = TY + 70; g.fillStyle = 'rgba(0,0,0,.35)'; rr(g, bx, by, bw, 14, 7); g.fill(); const np = boss.phases || 3; g.fillStyle = boss.ph >= np ? '#8a0000' : boss.ph >= 2 ? '#ff6a3c' : '#FF4539'; rr(g, bx, by, bw*Math.max(0, boss.hp)/boss.max, 14, 7); g.fill(); g.fillStyle = '#fff'; for (let i = 1; i < np; i++) g.fillRect(bx + bw*i/np, by, 2, 14);
       g.font = '800 12px ' + A.font; g.textAlign = 'center'; const bl = boss.n + ' · phase ' + boss.ph + '/' + np + (boss.phn ? ' · ' + boss.phn : ''); const tw = g.measureText(bl).width + 16; g.fillStyle = 'rgba(255,255,255,.85)'; rr(g, VW/2 - tw/2, by + 17, tw, 18, 9); g.fill(); g.fillStyle = '#14204a'; g.fillText(bl, VW/2, by + 30); }
     if (msgT > 0 && !dlg) { g.font = '700 13px ' + A.font; const tw = Math.min(VW - 30, g.measureText(msg).width + 30); g.fillStyle = 'rgba(20,32,74,.88)'; rr(g, VW/2 - tw/2, VH - 84, tw, 34, 12); g.fill(); g.fillStyle = '#fff'; g.textAlign = 'center'; wrapClip(msg, VW/2, VH - 62, VW - 50); }
@@ -585,6 +857,7 @@ A.snowWorld = function(X) {
       g.imageSmoothingEnabled = false; g.drawImage(mini, MAPR.x, MAPR.y, N*MAPR.s, N*MAPR.s); g.imageSmoothingEnabled = true;
       const ms = (L2) => ({x:MAPR.x + (L2.x + .5)*MAPR.s, y:MAPR.y + (L2.y + .5)*MAPR.s}), seen = L2 => fog[Math.floor(L2.y/2)*FB + Math.floor(L2.x/2)];
       g.font = '18px ' + A.font; [['camp', '🏕'], ['forest', W.runes.forest ? '🌙' : '🌲'], ['lake', W.runes.lake ? '🌙' : '🧊'], ['caves', W.runes.caves ? '🌙' : '💎'], ['pass', W.mau ? '🐱' : '⛓'], ['castle', W.bau ? '👑' : '🏰']].forEach(([k, e2]) => { if (!seen(LM[k])) return; const q = ms(LM[k]); g.fillText(e2, q.x, q.y + 6); });
+      [['village', '🏘'], ['aurora', '🌌'], ['coast', '⚓'], ['ruins', '🗿'], ['yeti', '🏔'], ['hollow', '✨'], ['shrine', '⛩️'], ['oldroad', '🛤️'], ['hall', '🕯️'], ['peak', '🌩️']].forEach(([k, e2]) => { if (!seen(LM2[k])) return; const q = ms(LM2[k]); g.fillText(e2, q.x, q.y + 6); });
       for (const k in WAYS) { if (!W.ways[k]) continue; const q = ms(WAYS[k]); g.fillStyle = travel ? '#64CDF5' : 'rgba(100,205,245,.8)'; g.beginPath(); g.arc(q.x, q.y, travel ? 10 : 5, 0, TAU); g.fill(); if (travel) { g.fillStyle = '#fff'; g.font = '700 11px ' + A.font; g.fillText(WAYS[k].n, q.x, q.y - 14); } }
       const pq = {x:MAPR.x + p.x/TS*MAPR.s, y:MAPR.y + p.y/TS*MAPR.s}; g.fillStyle = '#FF4539'; g.beginPath(); g.arc(pq.x, pq.y, 6, 0, TAU); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 2; g.stroke();
       if (G0) { g.fillStyle = '#F9BF01'; g.font = '18px ' + A.font; g.fillText('⭐', MAPR.x + G0.x/TS*MAPR.s, MAPR.y + G0.y/TS*MAPR.s + 6); }
@@ -592,6 +865,15 @@ A.snowWorld = function(X) {
   const close = () => { save(); unlayout(); };
   reveal(); lastReg = regAt(p.x, p.y);
   if (!W.met) say('❄ Welcome to the Snow Kingdom! Talk to Old Pip, the penguin by the campfire', 4); else say('❄ Welcome back to the Snow Kingdom!', 2.4);
-  return {frame:dt => { update(dt); draw(); }, down, move, up, key, close, admin:{reveal:() => { fog.fill(1); for (let i = 0; i < fog.length; i++) paintBlock(i); explored = fog.length; save(); }, quest:() => { W.met = 1; W.runes = {forest:1, lake:1, caves:1}; W.mau = 1; W.down.grumble = W.down.icefang = W.down.crystal = W.down.rufus = 1; save(); say('Admin: runes + Mau Mau given, gate open'); }, tp:k => { const w2 = px(WAYS[k] || WAYS.camp); p.x = w2.x; p.y = w2.y + 40; foes = []; boss = null; }},
+  const adm = {
+    tp:k => { const w2 = px(WAYS[k] || LM2[k] || WAYS.camp); if (WAYS[k] && WAYS[k].spirit && !spiritsOpen()) W.sp = Math.max(W.sp|0, 1); p.x = w2.x; p.y = w2.y + 40; foes = []; boss = null; tornado = null; mateHome(); save(); say('Admin: teleported to ' + ((WAYS[k] || {}).n || REG[k] && REG[k].n || k), 2); },
+    flakes:n => { PERM.bank += Math.round(n); save(); }, frost:n => { PERM.frost += Math.round(n); save(); }, item:tr => { const it = give({gear:Math.max(0, Math.min(5, Math.floor(tr)))}); save(); say('Admin: ' + (it ? it.name : 'item given'), 2.5); },
+    hearts:n => { p.max += Math.round(n); p.hp = p.max; W.extraHp = (W.extraHp|0) + Math.round(n); save(); say('Admin: ♥ ' + p.hp + '/' + p.max, 2); },
+    boss:k => { if (!BOSS[k]) { say('Admin: unknown boss', 2); return; } if (boss) boss = null; const H = LAIR[k]; p.x = H.x; p.y = H.y + 200; foes = []; spawnBoss(k); },
+    quest:() => { const sp = W.sp|0; if (!W.bau) { W.met = 1; W.runes = {forest:1, lake:1, caves:1}; W.mau = 1; W.down.grumble = W.down.icefang = W.down.crystal = W.down.rufus = 1; W.loki = Math.max(1, W.loki|0); W.bau = 1; } else if (sp == 2) { W.lan = 3; W.lanF = {0:1, 1:1, 2:1}; W.sp = 3; W.bless = 1; } else if (sp == 3) { W.clue = {paw:1, string:1, bell:1}; W.tag = 1; W.sp = 4; } else if (sp == 4) { W.held = 1; MEMS.forEach(m => { W.mem[m.k] = 1; W.down['elite_' + m.k] = 1; }); W.sp = 5; } else if (sp < 6) { W.sp = sp + 1; if (W.sp == 1) W.party.bau = 1; if (W.sp == 6) W.party.bau = 0; } save(); say('Admin: quest step completed · ' + (STORY_N[W.sp|0] || 'main quest'), 2.6); },
+    chapter:n => { n = Math.max(0, Math.min(6, Math.floor(n))); W.met = 1; W.runes = {forest:1, lake:1, caves:1}; W.mau = 1; W.loki = Math.max(1, W.loki|0); W.bau = 1; ['grumble','icefang','crystal','rufus'].forEach(k => W.down[k] = 1); W.sp = n; W.party.bau = n >= 1 && n < 6 ? 1 : 0; if (n >= 3) { W.bless = 1; W.lan = 3; W.lanF = {0:1, 1:1, 2:1}; } if (n >= 4) { W.clue = {paw:1, string:1, bell:1}; W.tag = 1; } if (n >= 5) { W.held = 1; MEMS.forEach(m => { W.mem[m.k] = 1; W.down['elite_' + m.k] = 1; }); } save(); say('Admin: jumped to ' + (n ? 'Chapter ' + n + ': ' + STORY_N[n] : 'before the story'), 3); },
+    bosses:() => Object.keys(BOSS)};
+  if (W.extraHp) { p.max += W.extraHp; p.hp = p.max; }
+  return {frame:dt => { update(dt); draw(); }, down, move, up, key, close, adm, admin:{reveal:() => { fog.fill(1); for (let i = 0; i < fog.length; i++) paintBlock(i); explored = fog.length; save(); }, quest:() => { W.met = 1; W.runes = {forest:1, lake:1, caves:1}; W.mau = 1; W.down.grumble = W.down.icefang = W.down.crystal = W.down.rufus = 1; save(); say('Admin: runes + Mau Mau given, gate open'); }, tp:k => { const w2 = px(WAYS[k] || WAYS.camp); p.x = w2.x; p.y = w2.y + 40; foes = []; boss = null; }},
     dbg:() => ({p, W, mates, foes, boss, balls, gateOpen, things, spawnBoss, hurtBoss, chests, LAIR, use, update, dlg:() => dlg, nextLine})}; };
 })();

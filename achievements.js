@@ -75,6 +75,8 @@ A.init = ctx => { if (FAM.length) return; const G = ctx.games || [], NG = G.leng
   sp('snowClass_tank','🛡','Tank Master', n => 'Reach level '+n+' as a Tank in Snowball Showdown', s => mx(s,'snowClass_tank'), [2,5,10,20,30]);
   sp('snowClass_sniper','🔭','Sniper Master', n => 'Reach level '+n+' as a Sniper in Snowball Showdown', s => mx(s,'snowClass_sniper'), [2,5,10,20,30]);
   sp('snowClass_trapper','🕳','Trapper Master', n => 'Reach level '+n+' as a Trapper in Snowball Showdown', s => mx(s,'snowClass_trapper'), [2,5,10,20,30]);
+  sp('snowSpirits','👻','Spirits of the Snow', n => 'Finish the Spirits of the Snow story', s => mx(s,'snowSpirits'), [1]);
+  sp('snowFeed','🐟','Snack Break', n => 'Feed Royal Guard Mau Mau '+n+' treat'+(n==1?'':'s'), s => sm(s,'snowFeed'), [1,10,50,150,500]);
   sp('snowLoki','🐶','Loki Stopper', n => 'Defeat Loki the Evil Sorcerer '+n+' time'+(n==1?'':'s')+' in Kingdom Quest', s => sm(s,'snowLoki'), [1,3,10,25,50]);
   sp('snowRescue','👑','Snow General', n => 'Rescue Lord Emperor Bau Bau', s => sm(s,'snowRescue'), [1]);
   sp('snowExplore','🗺','Kingdom Explorer', n => 'Explore '+n+'% of the Snow Kingdom', s => mx(s,'snowExplore'), [10,25,50,75,100]);

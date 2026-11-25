@@ -939,7 +939,14 @@ A.register('snowball', { mount(host, api){
     {label:'Give gear (rarity 0-5)', num:4, min:0, max:5, run:n => { makeGear(Math.floor(n)); }},
     {label:'Kingdom: reveal whole map', run:() => { if (!wm) openWorld(); wm && wm.admin.reveal(); }},
     {label:'Kingdom: give runes + free Mau Mau', run:() => { if (!wm) openWorld(); wm && wm.admin.quest(); }},
-    {label:'Kingdom: teleport (1 camp 2 forest 3 lake 4 caves 5 pass 6 castle)', num:1, min:1, max:6, run:n => { if (!wm) openWorld(); wm && wm.admin.tp(['camp', 'forest', 'lake', 'caves', 'pass', 'castle'][Math.floor(n) - 1]); }}];
+    {label:'Kingdom: teleport to region (1 camp 2 forest 3 lake 4 caves 5 pass 6 castle 7 village 8 aurora 9 coast 10 ruins 11 yeti 12 hollow 13 old road 14 shrine 15 hall 16 peak)', num:1, min:1, max:16, run:n => { if (!wm) openWorld(); wm && wm.adm.tp(['camp','forest','lake','caves','pass','castle','village','aurora','coast','ruins','yeti','hollow','oldroad','shrine','hall','peak'][Math.floor(n) - 1]); }},
+    {label:'Kingdom: add snowflakes', num:1000, min:1, run:n => { if (!wm) openWorld(); wm && wm.adm.flakes(n); }},
+    {label:'Kingdom: add Frost', num:100, min:1, run:n => { if (!wm) openWorld(); wm && wm.adm.frost(n); }},
+    {label:'Kingdom: give item (rarity 0-5)', num:4, min:0, max:5, run:n => { if (!wm) openWorld(); wm && wm.adm.item(n); }},
+    {label:'Kingdom: add hearts', num:5, min:1, max:500, run:n => { if (!wm) openWorld(); wm && wm.adm.hearts(n); }},
+    {label:'Kingdom: spawn boss (1 Grumblebark 2 Icefang 3 Crystal Golem 4 Rufus 5 Loki 6 Frost Wraith 7 Storm Golem 8 Lonely Fog 9 Storm Elite 10 Chao Chao 11 Storm Echo 12 Yeti King 13 Ice Giant 14 Frostbeard 15 Aurora Serpent)', num:5, min:1, max:15, run:n => { if (!wm) openWorld(); wm && wm.adm.boss(['grumble','icefang','crystal','rufus','loki','wraith','guardian','fog','elite_hurt','chao','echo','yeti','giant','frostbeard','serpent'][Math.floor(n) - 1]); }},
+    {label:'Kingdom: complete current quest step', run:() => { if (!wm) openWorld(); wm && wm.adm.quest(); }},
+    {label:'Kingdom: jump to story chapter (0 before · 1-5 chapters · 6 epilogue)', num:1, min:0, max:6, run:n => { if (!wm) openWorld(); wm && wm.adm.chapter(n); }}];
   // ---- save & resume (old v2 saves still load) ----
   api.snap && api.snap(() => (st == 'play') ? {v:3, mode, seed, me, foes, walls, builds, mates, drops, score, wave, flakes, boss, phase, arena, pw, bossesBeat} : null);
   { const R0 = api.resume; if (R0 && (R0.v == 2 || R0.v == 3)) { try {
