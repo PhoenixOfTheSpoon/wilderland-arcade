@@ -204,7 +204,7 @@ A.register('idle', { mount(host, api){
   // ---------- economy ----------
   const depthIdx = () => { const life = S.life * (1 + .1*((S.up||{}).bexp||0)); let d = 0; for (let i=0;i<DEPTHS.length;i++) if (life >= DEPTHS[i].at) d = i; return d; };   // Express Shaft makes lifetime ore count for more
   const extraStart = () => 0;   // (old level-cap overflow bonus: every Better Hires level now raises the hire level itself)
-  const mult = () => (1 + .01*U('bdepth')*depthIdx()) * (1 + .05*Math.max(0, U('gem')-GEM_MAX)) * (1 + .02*Math.max(0, U('auto')-FORE_MAX)) * (1 + .25*GL2('ore')) * (1 + .25*U('cart')) * (1 + .2*depthIdx()) * (1 + .1*U('drill')) * (1 + .15*extraStart()) * (traitOf(depthIdx()) && traitOf(depthIdx()).k == 'crew' ? 1.25 : 1);
+  const mult = () => (window.WLW ? window.WLW.mineOre() : 1) * (1 + .01*U('bdepth')*depthIdx()) * (1 + .05*Math.max(0, U('gem')-GEM_MAX)) * (1 + .02*Math.max(0, U('auto')-FORE_MAX)) * (1 + .25*GL2('ore')) * (1 + .25*U('cart')) * (1 + .2*depthIdx()) * (1 + .1*U('drill')) * (1 + .15*extraStart()) * (traitOf(depthIdx()) && traitOf(depthIdx()).k == 'crew' ? 1.25 : 1);
   const minerCount = () => S.grid.reduce((a,L)=>a+(L?1:0),0);
   let trouble = 0;   // a hazard went off: miners dig at half speed for a few seconds
   const rate = () => S.grid.reduce((a,L)=>a+lvRate(L),0) * mult() * (trouble > 0 ? .5 : 1);

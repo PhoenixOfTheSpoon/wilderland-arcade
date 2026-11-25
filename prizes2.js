@@ -304,8 +304,8 @@ const colMult = P => { const d = P.colDone||{}; let m = 1; Object.keys(d).forEac
 const loginMult = P => 1 + Math.min(30, (P.login||{}).streak||0) * (lv(P,'daily') ? MSHOP[2].eff(lv(P,'daily')) : .01);
 const comboN = P => { const c = P.combo||{}, E2 = window.WLE, warm = E2 ? E2.comboWarmMs(P) : 300000; return c.t && Date.now() - c.t > warm ? 1 : (c.n||1); };
 const comboMult = P => { const E2 = window.WLE, cap = E2 ? E2.comboCap(P) : 10, str = E2 ? E2.comboStrength(P) : 1; return 1 + Math.min(cap, Math.max(0, comboN(P)-1)) * (lv(P,'combo') ? MSHOP[1].eff(lv(P,'combo')) : .01) * str; };
-W.globalMult = P => MSHOP[0].eff(lv(P,'global')) * starMult(P) * colMult(P) * loginMult(P) * W.perks(P).all * (window.WLE ? window.WLE.ptAll(P) : 1) * (window.WLA && window.WLA.bonus ? window.WLA.bonus(P) : 1) * (window.WLH ? window.WLH.petAll(P) * window.WLH.homeMult(P) : 1) * (window.WLR ? window.WLR.mult(P) : 1);
-W.totalMult = (P, g) => W.globalMult(P) * comboMult(P) * (g ? GAME_UP.eff(glv(P,g)) * (W.perks(P).game[g]||1) * (window.WLE ? window.WLE.ptGame(P,g) : 1) * (window.WLH ? window.WLH.petGame(P,g) : 1) : 1) * (window.WLE ? window.WLE.gameMult(P) : 1);
+W.globalMult = P => MSHOP[0].eff(lv(P,'global')) * starMult(P) * colMult(P) * loginMult(P) * W.perks(P).all * (window.WLE ? window.WLE.ptAll(P) : 1) * (window.WLA && window.WLA.bonus ? window.WLA.bonus(P) : 1) * (window.WLH ? window.WLH.petAll(P) * window.WLH.homeMult(P) : 1) * (window.WLR ? window.WLR.mult(P) : 1) * (window.WLW ? window.WLW.all(P) : 1);
+W.totalMult = (P, g) => W.globalMult(P) * comboMult(P) * (g ? GAME_UP.eff(glv(P,g)) * (W.perks(P).game[g]||1) * (window.WLE ? window.WLE.ptGame(P,g) : 1) * (window.WLH ? window.WLH.petGame(P,g) : 1) * (window.WLW ? window.WLW.games(P,g) : 1) : 1) * (window.WLE ? window.WLE.gameMult(P) : 1);
 W.breakdown = P => [['Ticket Multiplier', MSHOP[0].eff(lv(P,'global'))], ['Golden Stars ('+(P.stars||0)+')', starMult(P)], ['Collections ('+Object.keys(P.colDone||{}).length+')', colMult(P)], ['Login streak ('+(((P.login||{}).streak)||0)+' days)', loginMult(P)], ['Wilderland prizes', W.perks(P).all], ['Prestige Tree 💎', window.WLE ? window.WLE.ptAll(P) * window.WLE.pt(P).games : 1], ['Arcade Expansions', window.WLE ? window.WLE.allMult(P) : 1], ['Achievements (Platinum & Diamond)', window.WLA && window.WLA.bonus ? window.WLA.bonus(P) : 1], ['Combo streak ('+(((P.combo||{}).n)||0)+')', comboMult(P)]];
 
 // ---------------- hooks the arcade calls ----------------
@@ -317,7 +317,7 @@ W.payout = (P, g, tix) => { const lines = []; const prev = {...(P.combo||{}), n:
   if (n > 1) lines.push('COMBO ×'+n+' MACHINES');
   const L = lv(P,'lucky'), lb = window.WLE ? window.WLE.luckBonus(P) : 0, jk = W.perks(P).jack * (window.WLE && window.WLE.jackMult ? window.WLE.jackMult(P) : 1); if (L || lb || jk > 1) { const o = MSHOP[4].eff(L); o.x10 += lb; if (jk > 1) { o.x10 = Math.min(.5, Math.max(o.x10, .01) * jk); o.x100 = Math.min(.05, Math.max(o.x100, .001) * jk); } const r = Math.random(); if (r < o.x100) { out *= 100; lines.push('JACKPOT ×100!!'); } else if (r < o.x100 + o.x10) { out *= 10; lines.push('LUCKY ×10!'); } }
   return {tix: Math.max(1, Math.round(out)), lines, patch:{combo}}; };
-W.learnBonus = P => Math.round((lv(P,'learn') ? MSHOP[3].eff(lv(P,'learn')) : 2) * W.globalMult(P) * (window.WLE ? window.WLE.learnMult(P) : 1) * W.perks(P).learn * (window.WLH ? window.WLH.petLearn(P) : 1));
+W.learnBonus = P => Math.round((lv(P,'learn') ? MSHOP[3].eff(lv(P,'learn')) : 2) * W.globalMult(P) * (window.WLE ? window.WLE.learnMult(P) : 1) * W.perks(P).learn * (window.WLH ? window.WLH.petLearn(P) : 1) * (window.WLW ? window.WLW.learn(P) : 1));
 W.login = P => { const L = P.login||{}, t = today(); if (L.last === t) return null; const streak = L.last === yesterday() ? (L.streak||0)+1 : 1; return {login:{last:t, streak, best:Math.max(L.best||0, streak)}}; };
 
 // ---------------- challenges ----------------
@@ -769,6 +769,7 @@ W.mount = (root, api) => {
     const host = E('div'); box.appendChild(host); setTimeout(() => { if (live && tab=='avatar') avOff = api.avatar(host); }, 0); return box; };
   // ----- Wilderland prizes (Golden Stars) -----
   const wild = () => { const p = P(), box = E('div');
+    if (window.WLW) box.appendChild(window.WLW.panel({P, setP:set, sfx:api.sfx, toast:api.toast, admin:api.admin, log:api.log, rerender:()=>renderBody(), q, qty}));
     box.appendChild(E('div', {cls:'wlp-box', style:{border:'3px solid #F9BF01'}}, E('div', {style:{fontWeight:800, fontSize:'18px', color:'#015640'}}, '⭐ Wilderland prizes · '+W.fmt(freeStars(p))+' Golden Stars to spend'),
       E('div', {cls:'wlp-small'}, 'The rarest prizes. They cost Golden Stars (earned by Rebirthing) and each one gives a permanent power that survives every Rebirth.')));
     box.appendChild(perkCard());

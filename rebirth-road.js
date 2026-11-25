@@ -117,7 +117,7 @@ R.autobuyOn = P => R.vals(P).autobuy && P.rbAutoBuy !== false;
 // Rebirth head start (called by the Prize Counter's Rebirth): tickets to start with, Quick Start levels, kept expansions
 let api = null;
 R.head = (P, upg, exp) => { const after = {...P, rebirths:rbOf(P) + 1}, v = R.vals(after), W = window.WLP, out = {tickets:0, exp:{...(exp||{})}};
-  if (v.start && W) out.tickets = Math.floor(W.rebirthNeed(after) * v.start / 100);
+  const st = Math.min(35, v.start + (window.WLW ? window.WLW.start(P) : 0)); if (st && W) out.tickets = Math.floor(W.rebirthNeed(after) * st / 100);
   if (v.quick && api && api.upg) { const U = api.upg(); Object.keys(U).forEach(g => { const cur = {...(upg[g]||{})}; U[g].forEach(u => { if (u.one) return; if ((cur[u.k]|0) < v.quick) cur[u.k] = v.quick; }); upg[g] = cur; }); }
   if (v.keep) Object.keys(P.exp||{}).forEach(k => { const kept = Math.floor(((P.exp||{})[k]|0) * v.keep / 100); if ((out.exp[k]|0) < kept) out.exp[k] = kept; });
   return out; };

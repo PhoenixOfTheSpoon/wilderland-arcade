@@ -78,7 +78,7 @@ E.ptGame = (P, g) => (g && g === P.ptFav) ? E.pt(P).fav : 1;
 E.ptHead = P => { const o = E.pt(P); return {boost:o.boost, expLv:o.expLv}; };
 
 const SP = (P,k) => window.WLP && window.WLP.perks ? window.WLP.perks(P)[k] : 1; // Wilderland prize powers
-E.critterRate = P => E.pt(P).critter * SP(P,'critter') * (window.WLH ? window.WLH.petCritter(P) : 1) * (window.WLR ? window.WLR.critter(P) : 1);
+E.critterRate = P => E.pt(P).critter * SP(P,'critter') * (window.WLH ? window.WLH.petCritter(P) : 1) * (window.WLR ? window.WLR.critter(P) : 1) * (window.WLW ? window.WLW.critter(P) : 1);
 E.buffLen = P => (1 + .10*lvOf(P,'snack')*expMul(P,'snack')) * E.pt(P).buffLen * SP(P,'buff') * (window.WLH ? window.WLH.petBuff(P) : 1);
 E.luckBonus = P => 0;
 E.jackMult = P => E.pt(P).jack;

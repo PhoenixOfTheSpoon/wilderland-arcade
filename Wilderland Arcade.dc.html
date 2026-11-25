@@ -1845,8 +1845,8 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048').sort((a,b) => a.key0.localeCompare(b.key0, 'en', {numeric:true})); return GAMES.indexOf(DG[h % DG.length]); };   // same order as the old A–Z floor, so the daily game never jumps
-const BUILD = '2026-12-08a';
-const SCRIPTS = ['arcade-core.js','music.js','prizes-more.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','rebirth-road.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js','games-secrets.js','games-more.js','games-more2.js','games-more3.js','snow-world.js'];
+const BUILD = '2026-12-08b';
+const SCRIPTS = ['arcade-core.js','music.js','prizes-more.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','rebirth-road.js','wonders.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js','games-secrets.js','games-more.js','games-more2.js','games-more3.js','snow-world.js'];
 const fmt = n => fmtN(Math.round(n));
 
 class Component extends DCLogic {
@@ -2077,6 +2077,7 @@ class Component extends DCLogic {
         games:()=>GAMES, icon:id=>ICON(id), autoRb:()=>this.P.autoRb !== false, setAutoRb:on=>{ this.setP({autoRb:on}); if (on) setTimeout(()=>this.checkRebirth(), 50); }, rebirthNow:()=>this.checkRebirth(true), upgrades:()=>this.upgData(), buyUpg:(g,k,n)=>this.buyUpg(g,k,n), upgPlan:(g,k,n)=>this.upgPlan(g,k,n), cats:()=>this.multCats(), avatar:el=>window.WLAV ? window.WLAV.mount(el, this.avApi()) : null, openAv:()=>{ this.setState({prizesOpen:false}); setTimeout(()=>this.setState({avOpen:true}), 30); }, classicArt: Object.fromEntries(PRIZES.map(pz=>[pz.id, PZ(pz.art)])) }); }
     if (window.WLE && !this._econAttached) { this._econAttached = true; window.WLE.attach(this.econApi()); }
     if (window.WLR && !this._roadAttached) { this._roadAttached = true; window.WLR.attach(this.roadApi()); this._abT = setInterval(()=>this.autoBuyTick(), 3000); }
+    if (window.WLW && !this._wwAttached) { this._wwAttached = true; window.WLW.attach(this.roadApi()); }
     if (window.WLE && window.WLP && this._welcomeFor !== this.profKey()) { this._welcomeFor = this.profKey(); setTimeout(()=>this.migrateEcon(), 600); }
     if (!this.state.prizesOpen && this._pzOff) { try { this._pzOff(); } catch(e){} this._pzOff = null; }
     if (this._fx !== LOWFX) { this._fx = LOWFX; applyLowFx(LOWFX); if (window.Arcade) window.Arcade.lowFx = LOWFX; }
@@ -2334,7 +2335,7 @@ class Component extends DCLogic {
     const cats = [
       {id:'all', e:'🎟', n:'All Tickets', d:'Boosts tickets from every game', rows:[['Ticket Multiplier (lv '+lvM('global')+')', f(M[0].eff(lvM('global'))), 'Every ticket you earn'], ['Golden Stars ('+fmtN(P.stars||0)+')', f(WP.breakdown(P)[1][1]), 'Every ticket you earn'],
         ['Collections ('+Object.keys(P.colDone||{}).length+')', f(WP.breakdown(P)[2][1]), 'Every ticket you earn'], ['Login streak', f(WP.breakdown(P)[3][1]), 'Every ticket you earn'], ['Wilderland prizes', f(pk.all), 'Every ticket you earn'],
-        ['Achievements (Platinum & Diamond)', f(A2 && A2.bonus ? A2.bonus(P) : 1), 'Every ticket you earn'], ['Rebirth Road milestones', f(window.WLR ? window.WLR.mult(P) : 1), 'Every ticket you earn · never resets'], ['Arcade Expansions', f(E2 ? E2.gameMult(P)/(pt.games||1) : 1), 'Tickets you earn by playing'], ['Combo streak', f(WP.breakdown(P)[8][1]), 'Game payouts while your combo lasts']]},
+        ['Achievements (Platinum & Diamond)', f(A2 && A2.bonus ? A2.bonus(P) : 1), 'Every ticket you earn'], ['Rebirth Road milestones', f(window.WLR ? window.WLR.mult(P) : 1), 'Every ticket you earn · never resets'], ['Wilderland Wonders', f(window.WLW ? window.WLW.all(P) : 1), 'Every ticket you earn · never resets'], ['Arcade Expansions', f(E2 ? E2.gameMult(P)/(pt.games||1) : 1), 'Tickets you earn by playing'], ['Combo streak', f(WP.breakdown(P)[8][1]), 'Game payouts while your combo lasts']]},
       {id:'mineTix', e:'⛏️', n:'Mine Tickets', d:'Boosts tickets from Deep Mines only', rows: [...gameRows('idle'), ['Gem Market (Gem Tree lv '+(GTr.market||0)+')', f(1+.1*(GTr.market||0)), 'Tickets when you cash out ore · permanent']]},
       {id:'mineCrew', e:'👷', n:'Mine Crew', d:'Miners, hiring and digging speed in Deep Mines', total:(1+.25*(IU.cart||0))*(1+.1*(IU.drill||0))*(1+.25*(GTr.ore||0)), rows:[
         ['Miner slots (Gem Tree · Bigger Mine lv '+(GTr.slots||0)+')', (12+4*(GTr.slots||0))+' slots', 'How many miners you can have · permanent'], ['Gem-Powered Drills (Gem Tree lv '+(GTr.ore||0)+')', f(1+.25*(GTr.ore||0)), 'All Mines ore · permanent'], ['Veteran Crew (Gem Tree lv '+(GTr.vet||0)+')', '+'+(GTr.vet||0)+' levels', 'Level of new miners · permanent'], ['Night Owls (Gem Tree)', GTr.owl ? '75%' : '50%', 'Digging speed while you’re away · permanent'],
@@ -2358,6 +2359,9 @@ class Component extends DCLogic {
         ...R2.miles(P.rebirths||0).filter(n => n <= (P.rebirths||0)).flatMap(n => R2.rewards(n).filter(x => x.k == 'mult').map(x => ['Rebirth '+n+' milestone', f(x.v), 'Every ticket you earn · never resets'])),
         ['Starting tickets', v.start ? v.start+'% of the next Rebirth' : 'Rebirth 2', 'Tickets you start each Rebirth with'], ['Quick Start', v.quick ? 'Workshop Lv '+v.quick : 'Rebirth 5', 'Workshop levels you start each Rebirth with'],
         ['Kept expansions', v.keep ? v.keep+'%' : 'Rebirth 20', 'Arcade Expansion levels kept after each Rebirth'], ['Golden Critters', f(v.critter), 'How often critters appear']]}]; })() : []),
+      ...(window.WLW ? (()=>{ const X = window.WLW, b = X.bonus(P), own = P.wonders||{}; return [{id:'wonders', e:'🌈', n:'Wilderland Wonders', d:'Golden-Star Wonders: permanent, upgradeable, never reset', total:b.all, rows:[
+        ...[...X.LIST, ...X.FOUNDER].filter(it => own[it.id]).map(it => [it.e+' '+it.n+(it.founder ? ' (Founder)' : ' ('+X.LV[own[it.id]-1].n+')'), X.effText(it, own[it.id]), 'Permanent · never resets']),
+        ['Finished themed sets ('+b.sets+'/'+Object.keys(X.SETS).length+')', f(Math.pow(2, b.sets)), 'Every ticket you earn'], ['Wilderland Collection', b.col ? '×10' : X.owned(P)+' / '+X.LIST.length, 'Own every Wonder for ×10 all tickets']]}]; })() : []),
       {id:'prestige', e:'💠', n:'Prestige', d:'From the Prestige Tree and Diamond Stars', total:(pt.all||1)*(pt.games||1), rows:[['All tickets', f(pt.all||1), 'Every ticket you earn'], ['Game payouts', f(pt.games||1), 'Tickets from every game'], ['Favourite machine'+(P.ptFav ? ' ('+((GAMES.find(g=>g.id==P.ptFav)||{}).title||'')+')' : ''), f(pt.fav||1), 'One cabinet you choose'],
         ['Learn answers', f(pt.learn||1), 'Learn-mode answer bonus'], ['Learn games', f(pt.learnGame||1), 'Learn-mode game payouts'], ['Jackpot chance', f(pt.jack||1), 'Lucky ×10 / ×100 payouts'], ['Diamond Stars', (E2 ? E2.diaFree(P) : 0)+' free · '+(E2 ? E2.diamonds(P) : 0)+' earned', 'Spend them in the Prestige Tree']]},
     ];
