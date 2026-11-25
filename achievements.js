@@ -93,6 +93,9 @@ A.init = ctx => { if (FAM.length) return; const G = ctx.games || [], NG = G.leng
   // ---------- Rebirth & Prestige ----------
   const R = (id, e, name, desc, v, goals, x) => add(id, 'Rebirth & Prestige', e, name, desc, v, goals, x);
   R('rebirths','🌟','Born Again', n => 'Rebirth '+n+' time'+(n==1?'':'s'), s => s.rebirths||0, [1,3,10,25,50], {titles:{1:'Phoenix',2:'Rebirth Legend',4:'Eternal'}});
+  R('roadMiles','🛣️','Rebirth Road', n => 'Reach '+n+' Rebirth Road milestone'+(n==1?'':'s'), s => window.WLR ? window.WLR.reachedCount(s) : 0, [1,5,10,16,22], {titles:{2:'Road Runner',4:'Road Master'}});
+  R('fastRb','⚡','Speed Rebirth', n => 'Finish one Rebirth in under '+({1:'1 hour',2:'30 minutes',4:'15 minutes',12:'5 minutes',60:'1 minute'}[n] || Math.round(60/n)+' minutes'), s => s.rbFast ? Math.floor(3600 / Math.max(1, s.rbFast)) : 0, [1,2,4,12,60], {titles:{3:'Speed Rebirther'}});
+  R('rbStreak','🔥','Rebirth Streak', n => 'Rebirth on '+n+' days in a row', s => (s.rbStr||{}).best||0, [2,3,5,7,14], {titles:{4:'Unstoppable'}});
   R('prestige','💎','Diamond Hands', n => 'Prestige '+n+' time'+(n==1?'':'s')+' (every 10 Rebirths)', s => Math.floor((s.rebirths||0)/10), [1,2,3,5,10], {titles:{0:'Diamond Hands',4:'Diamond Legend'}});
   R('ptree','🌳','Branching Out', n => 'Unlock '+n+' Prestige Tree node'+(n==1?'':'s'), s => Object.keys(s.ptree||{}).length, [1,3,6,10,20]);
   R('mult','✖️','Number Go Up', n => 'Reach Ticket Multiplier level '+n, s => ((s.mult||{}).global)|0, [10,50,100,200,500]);

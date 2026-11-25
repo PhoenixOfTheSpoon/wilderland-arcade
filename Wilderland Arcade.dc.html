@@ -86,12 +86,12 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
     </nav>
   </sc-if>
   <sc-if value="{{ arcEvOn }}" hint-placeholder-val="{{ false }}"><div onClick="{{ goCal }}" style="cursor:pointer; background:linear-gradient(90deg,#EA55AB,#F9BF01); color:#121313; font-weight:800; font-size:14px; text-align:center; padding:8px 12px; letter-spacing:.02em;">🕹️ {{ arcEvText }} <span style="font-weight:600; font-size:12px;">· from the Wilderland Calendar</span></div></sc-if>
-  <div onClick="{{ openRebirth }}" title="{{ rbLabel }}" style="cursor:pointer; background:#0b2e24; padding:6px 16px; display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(213,243,103,.2);">
+  <div onClick="{{ openRebirth }}" title="{{ rbLabel }} · tap for the Rebirth Road (R)" style="cursor:pointer; background:#0b2e24; padding:6px 16px; display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(213,243,103,.2);">
     <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:#F9BF01; white-space:nowrap;">⭐<span style="display:{{ rbWordDisp }};"> NEXT REBIRTH</span></div>
     <div style="flex:1; height:10px; border-radius:999px; background:rgba(255,255,255,.1); overflow:hidden;"><div style="height:100%; width:{{ rbPct }}; background:linear-gradient(90deg,#00B451,#D5F367,#F9BF01); border-radius:999px; transition:width .4s;"></div></div>
     <div style="font-size:11px; font-weight:700; color:#EDE9D8; white-space:nowrap; font-variant-numeric:tabular-nums; min-width:0; overflow:hidden; text-overflow:ellipsis; flex-shrink:1; max-width:62%;">{{ rbShort }}</div>
   </div>
-  <sc-if value="{{ songOn }}" hint-placeholder-val="{{ true }}"><div onClick="{{ openRebirth }}" title="{{ songShort }}" style="cursor:pointer; background:#0b2a30; padding:5px 16px; display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(100,205,245,.2);">
+  <sc-if value="{{ songOn }}" hint-placeholder-val="{{ true }}"><div onClick="{{ openSongs }}" title="{{ songShort }}" style="cursor:pointer; background:#0b2a30; padding:5px 16px; display:flex; align-items:center; gap:10px; border-bottom:1px solid rgba(100,205,245,.2);">
     <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:#64CDF5; white-space:nowrap;">🎵<span style="display:{{ rbWordDisp }};"> NEXT SONG</span></div>
     <div style="flex:1; height:8px; border-radius:999px; background:rgba(255,255,255,.1); overflow:hidden;"><div style="height:100%; width:{{ songPct }}; background:linear-gradient(90deg,#64CDF5,#E9B9F7,#EA55AB); border-radius:999px; transition:width .4s;"></div></div>
     <div style="font-size:11px; font-weight:700; color:#EDE9D8; white-space:nowrap; font-variant-numeric:tabular-nums; min-width:0; overflow:hidden; text-overflow:ellipsis; flex-shrink:1; max-width:62%;">{{ songShort }}</div>
@@ -169,7 +169,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
       </sc-if>
       <sc-if value="{{ floorOn }}" hint-placeholder-val="{{ true }}">
       <div style="width:100%; height:{{ scaledH }}px; position:relative;">
-        <div style="position:absolute; left:0; top:0; width:1120px; height:{{ floorH }}px; transform-origin:0 0; transform:{{ floorTransform }}; border-radius:20px; overflow:hidden; background-color:#DAD3B1; background-image:repeating-conic-gradient(#d2caa4 0 25%, #DAD3B1 0 50%); background-size:80px 80px; box-shadow:0 18px 50px rgba(0,0,0,.35);">
+        <div style="position:absolute; left:0; top:0; width:1120px; height:{{ floorH }}px; transform-origin:0 0; transform:{{ floorTransform }}; border-radius:20px; overflow:hidden; box-shadow:0 18px 50px rgba(0,0,0,.35); {{ floorCss }}">
 
           <div style="position:absolute; left:0; top:0; right:0; height:14px; background:#8D5B1D;"></div>
           <sc-for list="{{ zoneRects }}" as="zr" hint-placeholder-count="6">
@@ -246,6 +246,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
           </div>
           <div onClick="{{ openLb }}" style="position:absolute; left:850px; top:1437px; width:230px; height:270px; cursor:pointer; border-radius:14px; background:linear-gradient(#2a2238,#121313); border:3px solid #F9BF01; padding:10px; box-sizing:border-box; display:flex; flex-direction:column; align-items:center;">
             <div style="font-size:12px; font-weight:800; letter-spacing:.12em; color:#F9BF01;">🏛 HALL OF FAME</div>
+            <sc-if value="{{ statueOn }}" hint-placeholder-val="{{ false }}"><div title="{{ statueTip }}" style="position:absolute; right:8px; top:24px; display:flex; flex-direction:column; align-items:center;"><img src="{{ statueImg }}" alt="" style="width:40px; height:40px; filter:sepia(1) saturate(5) brightness(1.15) drop-shadow(0 0 6px #F9BF01);"><div style="width:36px; height:9px; background:linear-gradient(#fff3b0,#c48a00); border-radius:3px;"></div><div style="font-size:8px; font-weight:800; color:#F9BF01;">YOU</div></div></sc-if>
             <div style="flex:1; display:flex; align-items:flex-end; justify-content:center; gap:6px; width:100%;">
               <sc-for list="{{ fame }}" as="fm" hint-placeholder-count="3"><div style="display:flex; flex-direction:column; align-items:center; width:64px;"><img src="{{ fm.img }}" alt="" style="width:50px; height:50px; filter:{{ fm.flt }};"><div style="width:60px; height:{{ fm.h }}px; background:linear-gradient(#e8e4d8,#b8b2a0); border-radius:6px 6px 0 0; display:flex; flex-direction:column; align-items:center; padding-top:4px; box-sizing:border-box;"><b style="font-size:16px; color:#121313;">{{ fm.place }}</b><span style="font-size:9px; font-weight:800; color:#121313; max-width:56px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ fm.name }}</span></div></div></sc-for>
             </div>
@@ -277,7 +278,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
           <sc-if value="{{ hasPet }}" hint-placeholder-val="{{ false }}"><img src="{{ petImg }}" alt="" style="position:absolute; left:{{ pet.x }}px; top:{{ pet.y }}px; width:34px; height:34px; margin:-17px 0 0 -17px; z-index:19; pointer-events:none; filter:drop-shadow(0 4px 4px rgba(0,0,0,.3));"></sc-if>
           <sc-if value="{{ hasMount }}" hint-placeholder-val="{{ false }}"><img src="{{ mountImg }}" alt="" style="position:absolute; left:{{ player.x }}px; top:{{ player.y }}px; width:58px; height:58px; margin:-14px 0 0 -29px; z-index:19; pointer-events:none;"></sc-if>
           <sc-if value="{{ hasNPet }}" hint-placeholder-val="{{ false }}"><img src="{{ npetImg }}" alt="" style="position:absolute; left:{{ npet.x }}px; top:{{ npet.y }}px; width:40px; height:40px; margin:-20px 0 0 -20px; z-index:19; pointer-events:none; filter:drop-shadow(0 4px 4px rgba(0,0,0,.3));"></sc-if>
-          <img src="{{ walkImg }}" alt="" style="position:absolute; left:{{ player.x }}px; top:{{ walkY }}px; width:46px; height:{{ walkH }}px; margin:-23px 0 0 -23px; z-index:20; pointer-events:none; filter:drop-shadow(0 6px 6px rgba(0,0,0,.3)); animation:{{ emoteAnim }}; transform-origin:50% 90%;">
+          <img src="{{ walkImg }}" alt="" style="position:absolute; left:{{ player.x }}px; top:{{ walkY }}px; width:46px; height:{{ walkH }}px; margin:-23px 0 0 -23px; z-index:20; pointer-events:none; filter:drop-shadow(0 6px 6px rgba(0,0,0,.3)) {{ auraFlt }}; animation:{{ emoteAnim }}; transform-origin:50% 90%;">
           <sc-if value="{{ emoteOn }}" hint-placeholder-val="{{ false }}"><div style="position:absolute; left:{{ player.x }}px; top:{{ player.y }}px; transform:translate(-50%,-64px); font-size:26px; z-index:22; pointer-events:none; animation:wlhPop .3s ease-out;">{{ emoteE }}</div></sc-if>
 
           <sc-if value="{{ nearLabel }}" hint-placeholder-val="{{ false }}">
@@ -562,7 +563,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
           <div style="display:flex; flex-direction:column; max-height:320px; overflow-y:auto; border-radius:10px; border:1px solid #e6e2cf;">
             <sc-for list="{{ admRows }}" as="r" hint-placeholder-count="5">
               <div style="display:flex; align-items:center; gap:6px 10px; padding:7px 10px; border-bottom:1px solid #f1eedf; font-size:13px; flex-wrap:wrap;">
-                <span style="width:24px; font-weight:700; color:#4a4a4a;">{{ r.rank }}</span><span style="flex:1; min-width:0; font-weight:700; color:#015640; overflow:hidden; text-overflow:ellipsis;">{{ r.name }}</span><span style="font-size:12px; color:#4a4a4a;">{{ r.date }}</span><span style="font-weight:700; min-width:70px; text-align:right;">{{ r.score }}</span>
+                <span style="width:24px; font-weight:700; color:#4a4a4a;">{{ r.rank }}</span><span style="flex:1; min-width:0; font-weight:700; color:#015640; overflow:hidden; text-overflow:ellipsis; {{ r.nmCss }}">{{ r.name }}</span><span style="font-size:12px; color:#4a4a4a;">{{ r.date }}</span><span style="font-weight:700; min-width:70px; text-align:right;">{{ r.score }}</span>
                 <sc-if value="{{ r.isTix }}" hint-placeholder-val="{{ true }}"><button onClick="{{ r.rm }}" style="border:none; border-radius:999px; padding:5px 11px; font-weight:700; font-size:12px; cursor:pointer; background:#DD8B03; color:#ffffff;">{{ r.rmLabel }}</button><button onClick="{{ r.upg }}" style="border:none; border-radius:999px; padding:5px 11px; font-weight:700; font-size:12px; cursor:pointer; background:#5B2A86; color:#ffffff;">{{ r.upgLabel }}</button><button onClick="{{ r.full }}" style="border:none; border-radius:999px; padding:5px 11px; font-weight:700; font-size:12px; cursor:pointer; background:#121313; color:#ffffff;">{{ r.fullLabel }}</button><button onClick="{{ r.kick }}" style="border:none; border-radius:999px; padding:5px 11px; font-weight:700; font-size:12px; cursor:pointer; background:#FF8A3C; color:#121313;">{{ r.kickLabel }}</button><button onClick="{{ r.unkick }}" style="border:1.5px solid #015640; border-radius:999px; padding:4px 10px; font-weight:700; font-size:12px; cursor:pointer; background:#fff; color:#015640;">Unkick</button></sc-if>
                 <button onClick="{{ r.del }}" style="border:none; border-radius:999px; padding:5px 11px; font-weight:700; font-size:12px; cursor:pointer; background:#B3001B; color:#ffffff;">{{ r.delLabel }}</button>
               </div>
@@ -974,7 +975,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
             <div style="display:flex; align-items:center; gap:10px; padding:9px 12px; background:{{ r.bg }}; font-size:14px;">
               <span style="width:26px; height:26px; flex-shrink:0; border-radius:50%; background:{{ r.medal }}; color:{{ r.rankFgDark }}; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center;">{{ r.rank }}</span>
               <img src="{{ r.avImg }}" alt="" style="width:32px; height:32px; flex-shrink:0;">
-              <span style="flex:1; min-width:0; font-weight:{{ r.weight }}; color:#015640; overflow:hidden; text-overflow:ellipsis;">{{ r.name }}</span>
+              <span style="flex:1; min-width:0; font-weight:{{ r.weight }}; color:#015640; overflow:hidden; text-overflow:ellipsis; {{ r.nmCss }}">{{ r.name }}</span>
               <sc-if value="{{ r.hasBadge }}" hint-placeholder-val="{{ false }}"><span style="background:#64CDF5; color:#0b2e24; font-size:10px; font-weight:700; padding:2px 7px; border-radius:999px;">{{ r.badge }}</span></sc-if>
               <span style="font-size:12px; font-weight:500; color:#4a4a4a;">{{ r.date }}</span>
               <span style="font-weight:700; color:#121313; min-width:64px; text-align:right;">{{ r.score }}</span>
@@ -1229,6 +1230,7 @@ const VBOARDS = {
   _rb:{t:'🔁 Rebirths', title:'Most rebirths', f:x=>x.rb||0},
   _dia:{t:'💎 Diamond Stars', title:'Most Diamond Stars (1 per prestige, plus bonus stars)', f:x=>Math.floor((x.rb||0)/10)+(x.db||0)},
   _ach:{t:'⭐ Achievements', title:'Most achievements', f:x=>x.al||0},
+  _fast:{t:'⚡ Fastest Rebirth', title:'Fastest single Rebirth', f:x=>x.fr ? 1e9 / x.fr : 0, show:x=>window.WLR ? window.WLR.timeTxt(x.fr) : x.fr+' s'},
 };
 const vbDetail = x => (x.rb||0)+' rebirth'+((x.rb||0)==1?'':'s')+' · Prestige '+Math.floor((x.rb||0)/10)+' · '+(x.al||0)+' achievement'+((x.al||0)==1?'':'s');
 const scoreCap = id => { const g = GAMES.find(x=>x.id==id); return id=='idle' ? 1e300 : Math.max(1e6, ((g&&g.target)||1000) * 2000); };
@@ -1285,7 +1287,7 @@ const AVP = {
     {n:'Light',c:'#fbe0c8'},{n:'Olive',c:'#c19a6b'},{n:'Sky',c:'#a8dcf5',r:14},{n:'Bubblegum',c:'#f7a8cf',r:24},{n:'Zombie',c:'#9fbf7a',a:'owl:0'},{n:'Silver',c:'#d7dde2',rb:3},{n:'Diamond',c:'#bff0ff',pr:1},{n:'Magma',c:'#ff6a3a',a:'mineCore:0'}]},
   shirt:{t:'Outfit',o:[{n:'Forest',c:'#00B451'},{n:'Lime',c:'#D5F367'},{n:'Sky',c:'#64CDF5'},{n:'Pink',c:'#EA55AB'},{n:'Gold',c:'#F9BF01',r:3},{n:'Ember',c:'#FF8A3C',r:6},{n:'Navy',c:'#014987',r:9},{n:'Midnight',c:'#121313',r:14},{n:'Rainbow',c:'rainbow',a:'collections:2'},
     {n:'Red',c:'#FF4539'},{n:'Purple',c:'#8a4be0',r:2},{n:'Stripes',c:'#ffffff',pat:'stripes',r:7},{n:'Stars',c:'#014987',pat:'stars',r:11},{n:'Checkers',c:'#121313',pat:'check',r:17},{n:'Hoodie',c:'#9a9a9b',pat:'hood',r:21},{n:'Jersey',c:'#FF4539',pat:'jersey',a:'plays:2'},{n:'Galaxy',c:'#2a1250',pat:'stars',rb:1},{n:'Diamond Armor',c:'#bff0ff',pat:'armor',pr:1},
-    {n:'Ranger Vest',c:'#c9b48a',pat:'vest',a:'rootout_plays:1'},{n:'Spacesuit',c:'#f2f2f2',pat:'space',a:'rebirths:0'},{n:'Tuxedo',c:'#121313',pat:'tux',r:26},{n:'Overalls',c:'#2f7de0',pat:'overalls',r:5},{n:'Lab Coat',c:'#ffffff',pat:'lab',a:'eduRight:2'},{n:'Hoodie Lime',c:'#B6E64A',pat:'hood',r:9}]},
+    {n:'Ranger Vest',c:'#c9b48a',pat:'vest',a:'rootout_plays:1'},{n:'Spacesuit',c:'#f2f2f2',pat:'space',a:'rebirths:0'},{n:'Tuxedo',c:'#121313',pat:'tux',r:26},{n:'Overalls',c:'#2f7de0',pat:'overalls',r:5},{n:'Lab Coat',c:'#ffffff',pat:'lab',a:'eduRight:2'},{n:'Hoodie Lime',c:'#B6E64A',pat:'hood',r:9},{n:'Reborn Hoodie',c:'#ff8a3c',pat:'hood',rb:3},{n:'Rebirth Legend Armor',c:'#F9BF01',pat:'armor',rb:30},{n:'Immortal Starsuit',c:'#14204a',pat:'stars',rb:250}]},
   hat:{t:'Hat',o:[{n:'None'},{n:'Cap'},{n:'Beanie',r:3},{n:'Headband',r:5},{n:'Ranger',a:'variety:1'},{n:'Miner',a:'idle_plays:1'},{n:'Wizard',a:'eduRight:2'},{n:'Astronaut',a:'rebirths:1'},{n:'Crown',a:'prizes:2'},{n:'Halo',a:'login:3'},
     {n:'Party Hat',r:2},{n:'Bunny Ears',r:7},{n:'Flower Crown',a:'trace_plays:1'},{n:'Chef',r:15},{n:'Cowboy',r:20},{n:'Top Hat',r:27},{n:'Pirate',r:35},{n:'Viking',a:'td_plays:2'},{n:'Golden Laurel',rb:5},{n:'Diamond Star Crown',pr:1},
     {n:'Antlers',a:'variety:2'},{n:'Headphones',r:8},{n:'Graduation Cap',a:'eduStreak:2'},{n:'Propeller Cap',r:12}]},
@@ -1302,13 +1304,13 @@ const AVP = {
     {n:'Balloon',r:3},{n:'Guitar',a:'simon_plays:1'},{n:'Butterfly wings',r:18},{n:'Shield',a:'tdWave:1'},{n:'Bat wings',a:'owl:0'},{n:'Rocket',rb:3},{n:'Diamond wings',pr:1}]},
   pet:{t:'Pet',note:'Your pet sidekick follows you around the arcade floor.',o:[{n:'None'},{n:'Frog',a:'crossing_plays:0'},{n:'Fox',a:'critters:1'},{n:'Owl',a:'eduRight:0'},{n:'Turtle',a:'rootout_plays:2'},{n:'Dragon',a:'prestige:0'},
     {n:'Cat',r:3},{n:'Puppy',r:7},{n:'Bunny',r:10},{n:'Penguin',a:'login:1'},{n:'Axolotl',a:'collections:1'},{n:'Slime',a:'mines_plays:2'},{n:'Robot',a:'typing_plays:3'},{n:'Phoenix',rb:10},{n:'Unicorn',pr:1}]},
-  bg:{t:'Background',o:[{n:'Forest',c:'#015640'},{n:'Night',c:'#14204a'},{n:'Sunset',c:'sunset'},{n:'Ocean',c:'#0a5c8a'},{n:'Candy',c:'#c2427f',r:5},{n:'Lava',c:'lava',r:13},{n:'Starfield',c:'stars',a:'eduStreak:1'},{n:'Aurora',c:'aurora',a:'prestige:1'},{n:'Gold',c:'#b8860b',rb:1},{n:'Diamond',c:'diamond',pr:1}]},
+  bg:{t:'Background',o:[{n:'Forest',c:'#015640'},{n:'Night',c:'#14204a'},{n:'Sunset',c:'sunset'},{n:'Ocean',c:'#0a5c8a'},{n:'Candy',c:'#c2427f',r:5},{n:'Lava',c:'lava',r:13},{n:'Starfield',c:'stars',a:'eduStreak:1'},{n:'Aurora',c:'aurora',a:'prestige:1'},{n:'Gold',c:'#b8860b',rb:1},{n:'Diamond',c:'diamond',pr:1},{n:'Rebirth Nebula',c:'#3a1660',rb:175}]},
   body:{t:'Body',o:[{n:'Kid'},{n:'Fox'},{n:'Bear'},{n:'Owl',a:'eduRight:1'},{n:'Gopher',a:'whack_plays:1'},{n:'Frog',a:'crossing_plays:1'},{n:'Rabbit',r:6},{n:'Raccoon',r:11},{n:'Cat',r:4},{n:'Panda',a:'collections:0'},{n:'Penguin',r:16},{n:'Robot',a:'typing_plays:1'},{n:'Dragon',a:'rebirths:2'},{n:'Moose',a:'variety:3'},{n:'Axolotl',r:8}]},
   main:{t:'Main color',note:'Fur, feathers or metal for critter bodies.',o:[{n:'Natural'},{n:'Orange',c:'#FF8A3C'},{n:'Brown',c:'#8D5B1D'},{n:'Gray',c:'#9a9a9b'},{n:'White',c:'#f4f1e6'},{n:'Black',c:'#2b2b2b'},{n:'Forest',c:'#00B451'},{n:'Lime',c:'#B6E64A',r:3},{n:'Sky',c:'#64CDF5',r:5},{n:'Pink',c:'#f7a8cf',r:8},{n:'Purple',c:'#8a4be0',r:12},{n:'Gold',c:'#F9BF01',a:'jackpots:1'},{n:'Diamond',c:'#bff0ff',pr:1}]},
   accent:{t:'Accent color',note:'Muzzles, bellies, inner ears and masks.',o:[{n:'Natural'},{n:'Cream',c:'#f6e7c8'},{n:'White',c:'#ffffff'},{n:'Tan',c:'#d9a066'},{n:'Charcoal',c:'#2b2b2b'},{n:'Lime',c:'#D5F367',r:3},{n:'Pink',c:'#f7a8cf',r:6},{n:'Sky',c:'#64CDF5',r:9},{n:'Gold',c:'#F9BF01',r:14},{n:'Rainbow',c:'rainbow',a:'jackpots:2'}]},
   eye:{t:'Eye color',o:[{n:'Dark',c:'#121313'},{n:'Brown',c:'#5a3a1c'},{n:'Blue',c:'#2f7de0'},{n:'Green',c:'#00894a'},{n:'Hazel',c:'#8a6a2a',r:3},{n:'Purple',c:'#7a3bd0',r:7},{n:'Gold',c:'#e0a800',a:'targets:2'},{n:'Ruby',c:'#e01b4c',rb:2},{n:'Diamond',c:'#4ad8ff',pr:1}]},
   frame:{t:'Frame',note:'The ring around your avatar card. “Level” shows your achievement level frame.',o:[{n:'Level'},{n:'None'},{n:'Wood'},{n:'Leafy',a:'variety:0'},{n:'Gold',a:'rebirths:0'},{n:'Neon',a:'combo:2'},{n:'Rainbow',a:'avItems:2'},{n:'Platinum',a:'plays:3'},{n:'Diamond',pr:1}]},
-  trail:{t:'Trail',note:'What you leave behind when you walk the arcade floor.',o:[{n:'None',e:''},{n:'Footprints',e:'👣'},{n:'Leaves',e:'🍃',a:'rootout_plays:0'},{n:'Sparkles',e:'✨',a:'plays:1'},{n:'Stars',e:'⭐',a:'earned:2'},{n:'Hearts',e:'💗',r:8},{n:'Bubbles',e:'🫧',r:12},{n:'Notes',e:'🎵',a:'simon_plays:0'},{n:'Rainbow',e:'🌈',a:'collections:2'},{n:'Diamonds',e:'💎',pr:1},{n:'Core Flames',e:'🔥',a:'mineCore:0'},{n:'Deep Crystals',e:'💠',a:'mineDepth:2'}]},
+  trail:{t:'Trail',note:'What you leave behind when you walk the arcade floor.',o:[{n:'None',e:''},{n:'Footprints',e:'👣'},{n:'Leaves',e:'🍃',a:'rootout_plays:0'},{n:'Sparkles',e:'✨',a:'plays:1'},{n:'Stars',e:'⭐',a:'earned:2'},{n:'Hearts',e:'💗',r:8},{n:'Bubbles',e:'🫧',r:12},{n:'Notes',e:'🎵',a:'simon_plays:0'},{n:'Rainbow',e:'🌈',a:'collections:2'},{n:'Diamonds',e:'💎',pr:1},{n:'Core Flames',e:'🔥',a:'mineCore:0'},{n:'Deep Crystals',e:'💠',a:'mineDepth:2'},{n:'Phoenix Feathers',e:'🪶',rb:9}]},
   fx:{t:'Face FX',multi:1,note:'These STACK — tap as many as you like (laser eyes + flames + scar …). Tap again to take one off.',o:[{n:'Laser eyes',rb:1},{n:'Fire eyes',r:12},{n:'Glowing eyes',r:6},{n:'Tears',r:2},{n:'Scar',r:5},{n:'Blush',r:1},{n:'Sweat drop',r:3},{n:'Angry mark',r:4},{n:'Sparkles',r:8},{n:'Demon horns',r:14},{n:'Halo glow',r:10},{n:'Lightning aura',r:18},{n:'Shadow aura',r:20},{n:'Speed lines (INTENSE)',r:9},{n:'Ice breath',r:15},{n:'Rainbow glow',pr:1}]},
   bstyle:{t:'Body style',critterOnly:1,note:'Patterns and finishes for animal bodies — they work with every body and every colour.',o:[{n:'Plain'},{n:'Spotted',r:2},{n:'Striped',r:3},{n:'Fluffy',r:4},{n:'Freckled',r:1},{n:'Sparkly',r:6},{n:'Crystal',r:10},{n:'Cyber',r:12},{n:'Shadow',r:14},{n:'Glow outline',r:9},{n:'Patchwork',r:7},{n:'Galaxy',r:16},{n:'Leopard',r:8},{n:'Tiger',r:8},{n:'Stitched',r:5},{n:'Tie-dye',r:11},{n:'Golden shine',rb:2},{n:'Rainbow',pr:1}]},
   pants:{t:'Pants',note:'Your lower half — it shows on the arcade floor and in the full-body preview.',o:[{n:'Match outfit'},{n:'Jeans'},{n:'Shorts'},{n:'Cargo',r:3},{n:'Joggers',r:2},{n:'Plaid',r:6},{n:'Skirt',r:4},{n:'Kilt',r:9},{n:'Pajamas',r:5},{n:'Ranger pants',a:'rootout_plays:1'},{n:'Galaxy',r:14},{n:'Lava',r:16},{n:'Rainbow',r:18},{n:'Robot legs',a:'typing_plays:2'},{n:'Knight armor',r:20},{n:'Gold',rb:2},{n:'Diamond',pr:1}]},
@@ -1843,8 +1845,8 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048').sort((a,b) => a.key0.localeCompare(b.key0, 'en', {numeric:true})); return GAMES.indexOf(DG[h % DG.length]); };   // same order as the old A–Z floor, so the daily game never jumps
-const BUILD = '2026-12-07f';
-const SCRIPTS = ['arcade-core.js','music.js','prizes-more.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js','games-secrets.js','games-more.js','games-more2.js','games-more3.js','snow-world.js'];
+const BUILD = '2026-12-08a';
+const SCRIPTS = ['arcade-core.js','music.js','prizes-more.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','rebirth-road.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js','games-secrets.js','games-more.js','games-more2.js','games-more3.js','snow-world.js'];
 const fmt = n => fmtN(Math.round(n));
 
 class Component extends DCLogic {
@@ -1895,10 +1897,10 @@ class Component extends DCLogic {
     this.setP({edu:{...this.P.edu, ...patch}}); window.Arcade && window.Arcade.sfx('blip'); if (remount) this.setState({liveScore:0, payout:''}); }
   addScore(g, s, edu){ if (!this.P.username || (g!='_none' && !(s>0))) return;
     if (this.state.cloud) { const C = window.WLCloud; if (!this.cloudUid || !C) return; const row = {uid:this.cloudUid, u:this.P.username, s:Math.max(0,Math.round(s)), edu:!!edu, d:today(), av:avFull(this.P), al:(this.P.ach||[]).length};
-      if (g!='_none') C.postScore(g, row).catch(()=>{}); C.setTix(this.cloudUid, {...row, s:Math.max(0,Math.round(this.P.earned)), rb:this.P.rebirths||0, db:this.P.diaBonus||0, ov:ovScore({rb:this.P.rebirths, db:this.P.diaBonus, al:(this.P.ach||[]).length})}).catch(()=>{});
+      if (g!='_none') C.postScore(g, row).catch(()=>{}); C.setTix(this.cloudUid, {...row, s:Math.max(0,Math.round(this.P.earned)), rb:this.P.rebirths||0, db:this.P.diaBonus||0, fr:this.P.rbFast||0, ov:ovScore({rb:this.P.rebirths, db:this.P.diaBonus, al:(this.P.ach||[]).length})}).catch(()=>{});
       this._bAt = {}; return; } const B = getJSON(BOARD_KEY,{e:[]}), k = this.profKey(), u = this.P.username;
     const av = avEnc(this.P.avatar), al = (this.P.ach||[]).length; if (g!='_none') { B.e.push({u, k, g, s, edu:!!edu, d:today(), av, al}); const mine = B.e.filter(x=>x.g==g).sort((a,b)=>b.s-a.s).slice(0,60); B.e = B.e.filter(x=>x.g!=g).concat(mine); }
-    B.e = B.e.filter(x=>!(x.g=='_tix' && x.k==k)); B.e.push({u, k, g:'_tix', s:this.P.earned, edu:false, d:today(), av, al, rb:this.P.rebirths||0, db:this.P.diaBonus||0}); putJSON(BOARD_KEY, B); }
+    B.e = B.e.filter(x=>!(x.g=='_tix' && x.k==k)); B.e.push({u, k, g:'_tix', s:this.P.earned, edu:false, d:today(), av, al, rb:this.P.rebirths||0, db:this.P.diaBonus||0, fr:this.P.rbFast||0}); putJSON(BOARD_KEY, B); }
   async saveUsername(){ if (this.state.cloud) { const v = (this.state.uVal||'').trim(), C = window.WLCloud;
       if (!this.cloudUid) { this.setState({uMsg:'Sign up or log in first — leaderboard names need an online account.'}); return; }
       const bad = unameRules(v, false).find(r=>!r[1]); if (bad) { this.setState({uMsg:'Username check failed: '+bad[0].toLowerCase()+'.'}); window.Arcade && window.Arcade.sfx('bad'); return; }
@@ -1993,6 +1995,7 @@ class Component extends DCLogic {
       const tg = e.target && e.target.tagName; if (tg=='INPUT' || tg=='TEXTAREA' || tg=='SELECT') return;
       if (this.state.kickUntil > Date.now() && !this.state.admin) return;
       if (k=='t' && !this.state.calOpen && !this.state.chatOpen && !this.state.game && !this.state.codeOpen && !this.state.authOpen) { e.preventDefault(); this.openChat(); return; }
+      if (!this.state.game && !this.state.chatOpen && !this.state.authOpen && !e.ctrlKey && !e.metaKey && !e.altKey && this.hotkey(k, e)) return;
       if (this.state.chatOpen) return;
       const S = this.state; if (S.calOpen || S.game || S.homeOpen || S.sugOpen || S.shopOpen || S.avOpen || S.prizesOpen || S.codeOpen || S.authOpen || S.achOpen || S.learnOpen || S.lbOpen || S.uOpen) return;
       if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(k)) e.preventDefault();
@@ -2073,6 +2076,7 @@ class Component extends DCLogic {
       this._pzOff = window.WLP.mount(this.pzRef.current, { P:P0, setP:pt=>this.setP(pt), toast:t=>this.toast(t), sfx:n=>window.Arcade && window.Arcade.sfx(n), admin:()=>!!this.state.admin, log:(k,t)=>this.logAct(k,t), lowFx:()=>LOWFX, tab:(t=>{ this._pzTab = null; return t; })(this._pzTab),
         games:()=>GAMES, icon:id=>ICON(id), autoRb:()=>this.P.autoRb !== false, setAutoRb:on=>{ this.setP({autoRb:on}); if (on) setTimeout(()=>this.checkRebirth(), 50); }, rebirthNow:()=>this.checkRebirth(true), upgrades:()=>this.upgData(), buyUpg:(g,k,n)=>this.buyUpg(g,k,n), upgPlan:(g,k,n)=>this.upgPlan(g,k,n), cats:()=>this.multCats(), avatar:el=>window.WLAV ? window.WLAV.mount(el, this.avApi()) : null, openAv:()=>{ this.setState({prizesOpen:false}); setTimeout(()=>this.setState({avOpen:true}), 30); }, classicArt: Object.fromEntries(PRIZES.map(pz=>[pz.id, PZ(pz.art)])) }); }
     if (window.WLE && !this._econAttached) { this._econAttached = true; window.WLE.attach(this.econApi()); }
+    if (window.WLR && !this._roadAttached) { this._roadAttached = true; window.WLR.attach(this.roadApi()); this._abT = setInterval(()=>this.autoBuyTick(), 3000); }
     if (window.WLE && window.WLP && this._welcomeFor !== this.profKey()) { this._welcomeFor = this.profKey(); setTimeout(()=>this.migrateEcon(), 600); }
     if (!this.state.prizesOpen && this._pzOff) { try { this._pzOff(); } catch(e){} this._pzOff = null; }
     if (this._fx !== LOWFX) { this._fx = LOWFX; applyLowFx(LOWFX); if (window.Arcade) window.Arcade.lowFx = LOWFX; }
@@ -2208,10 +2212,14 @@ class Component extends DCLogic {
   // Auto Rebirth can be switched off in the header; then a REBIRTH NOW button appears once you qualify.
   checkRebirth(force){ const W2 = window.WLP; if (!W2 || this.state.admin || this._rebirthing || !(this.P.tickets >= W2.rebirthNeed(this.P))) return; if (this.P.autoRb === false && !force) return;
     this._rebirthing = true;
-    Promise.resolve().then(()=>{ try { if (this.state.game) this.closeAll(); const rb = W2.doRebirth(this.P); if (rb) { this.setP(rb.patch);
+    Promise.resolve().then(()=>{ try { if (this.state.game) this.closeAll(); const P0 = this.P, now = Date.now(), runS = P0.rbAt ? Math.round((now - P0.rbAt)/1000) : 0, runT = P0.rbEarned != null ? Math.max(0, (P0.earned||0) - P0.rbEarned) : 0;
+        const rb = W2.doRebirth(this.P); if (rb) { this.setP(rb.patch);
+        { const td = today(), yk = new Date(Date.now()-864e5).toISOString().slice(0,10), st0 = P0.rbStr || {}, n = st0.d == td ? (st0.n||1) : st0.d == yk ? (st0.n||1) + 1 : 1;
+          const fast = runS && (!P0.rbFast || runS < P0.rbFast) ? runS : (P0.rbFast||0); this._rbRun = {runS, runT, fast, newRec: !!runS && fast === runS && !!P0.rbFast};
+          this.setP({rbAt:now, rbEarned:this.P.earned||0, rbLast:runS, rbFast:fast, rbStr:{d:td, n, best:Math.max(n, st0.best||0)}}); }
         if (this._pzOff) { try { this._pzOff(); } catch(e){} this._pzOff = null; } this.forceUpdate();
         const info = {stars:rb.stars, total:this.P.stars, free:Math.max(0,(this.P.stars||0)-(this.P.starsSpent||0)), n:this.P.rebirths, next:W2.rebirthNeed(this.P), starMult:W2.starMult(this.P)};
-        info.toDia = window.WLE ? window.WLE.toNextDia(this.P) : 0; if (window.WLE) window.WLE.celebrate(info); else W2.reveal(W2.rebirthCard(rb.stars, this.P.stars, this.P.rebirths), 'REBIRTH!', LOWFX);
+        info.toDia = window.WLE ? window.WLE.toNextDia(this.P) : 0; Object.assign(info, this._rbRun||{}); if (window.WLR) window.WLR.summary(info); else if (window.WLE) window.WLE.celebrate(info); else W2.reveal(W2.rebirthCard(rb.stars, this.P.stars, this.P.rebirths), 'REBIRTH!', LOWFX);
         this.toast('REBIRTH #'+this.P.rebirths+' · +'+rb.stars+' GOLDEN STAR'+(rb.stars>1?'S':'')); this.logAct('rebirth', 'REBIRTH #'+this.P.rebirths+' · +'+rb.stars+' ⭐');
         if (window.WLE && this.P.rebirths % 10 === 0) { const E2 = window.WLE; E2.diamond({level:E2.prestige(this.P), rebirths:this.P.rebirths, free:E2.diaFree(this.P), open:()=>{ this._pzTab = 'prestige'; this.setState({prizesOpen:true}); }}); this.toast('PRESTIGE '+E2.prestige(this.P)+' · +1 DIAMOND STAR 💎'); this.logAct('rebirth', 'PRESTIGE '+E2.prestige(this.P)+' · +1 💎'); } } }
       finally { this._rebirthing = false; } }); }
@@ -2245,6 +2253,27 @@ class Component extends DCLogic {
     else if (s.cloud && window.WLCloud && window.WLCloud.suggest) window.WLCloud.suggest({uid:this.cloudUid||'', u:this.sugWho(), t:text}).catch(e=>{ console.warn('[suggest] not saved', e && (e.code||e.message)); });
     try { const L = JSON.parse(localStorage.getItem('wl-suggestions')||'[]'); L.unshift({t:text, n:name, at:Date.now()}); localStorage.setItem('wl-suggestions', JSON.stringify(L.slice(0,30))); } catch(e){}
     this.setState({sugText:'', sugMsg:'', sugDone:true}); window.Arcade && window.Arcade.sfx('win'); this.logAct('here', 'sent a suggestion'); }
+  // floor hotkeys: R Rebirth Road · M music · U Upgrade Workshop · P Prize Counter · ? help (Y full screen, T chat and Esc are above)
+  hotkey(k, e){ const R2 = window.WLR; if (document.querySelector('.wlr-pop')) return false;
+    if (k=='r' && R2) { e.preventDefault(); if (R2.isOpen()) R2.close(); else { this.closeAll(); R2.open(); } return true; }
+    if (k=='m') { e.preventDefault(); if (R2 && R2.isOpen()) { R2.open('music'); return true; } if (window.WLMusic) { window.WLMusic.cycle(); this.setState({musicTick:Date.now()}); this.toast('🎵 '+window.WLMusic.label()); } return true; }
+    if (k=='u') { e.preventDefault(); if (R2) R2.close(); this.openShopTab('upg'); return true; }
+    if (k=='p') { e.preventDefault(); if (R2) R2.close(); if (this.state.prizesOpen) this.closeAll(); else this.openShopTab('shop'); return true; }
+    if (k=='?' || (k=='/' && e.shiftKey)) { e.preventDefault(); this.hotkeyHelp(); return true; }
+    return false; }
+  hotkeyHelp(){ if (document.querySelector('.wl-keys')) { document.querySelector('.wl-keys').remove(); return; } const o = document.createElement('div'); o.className = 'wl-keys';
+    Object.assign(o.style, {position:'fixed', inset:'0', zIndex:9600, background:'rgba(1,30,22,.82)', display:'flex', alignItems:'center', justifyContent:'center', padding:'14px', fontFamily:'"Uncut Sans",system-ui,sans-serif'});
+    const rows = [['Y','Full screen'],['M','Music (next track) · in the Rebirth Road: Music Player'],['R','Rebirth Road'],['U','Upgrade Workshop'],['P','Prize Counter'],['T','Chat'],['Arrows / WASD','Walk the arcade floor'],['E or Enter','Play the cabinet you’re next to'],['Esc','Close · save & leave a game'],['?','This help']];
+    o.innerHTML = '<div style="background:#fff;border-radius:20px;padding:20px 22px;max-width:440px;width:100%;box-shadow:0 0 0 4px #D5F367"><div style="font-weight:800;font-size:22px;color:#015640;margin-bottom:10px">⌨️ Hotkeys</div>'+rows.map(([a,b])=>'<div style="display:flex;gap:12px;align-items:center;padding:6px 0;border-bottom:1px solid #eee8d4"><kbd style="min-width:64px;text-align:center;background:#015640;color:#D5F367;border-radius:8px;padding:4px 8px;font:800 13px inherit;font-family:inherit">'+a+'</kbd><span style="font-size:14px;color:#121313">'+b+'</span></div>').join('')+'<div style="font-size:12px;color:#4a4a4a;margin-top:10px">Hotkeys work on the arcade floor (not while you’re typing or playing a game). Tap anywhere to close.</div></div>';
+    o.onclick = () => o.remove(); const kd = ev => { if (ev.key == 'Escape' || ev.key == '?') { ev.stopPropagation(); o.remove(); document.removeEventListener('keydown', kd, true); } }; document.addEventListener('keydown', kd, true); document.body.appendChild(o); }
+  roadApi(){ return { P:()=>this.P, setP:pt=>this.setP(pt), toast:t=>this.toast(t), sfx:n=>window.Arcade && window.Arcade.sfx(n), admin:()=>!!this.state.admin, ready:()=>!!this.ready && !this.state.authOpen,
+    busy:()=>!!this.state.game || !!this.state.calOpen, upg:()=>UPG, avImg:()=>avSVG(this.P.avatar, (this.P.ach||[]).length, {noPet:true}), openRebirthTab:()=>{ window.WLR.close(); this._pzTab = 'rebirth'; this.setState({prizesOpen:true}); } }; }
+  // Rebirth Road auto-buy: every few seconds, buy the cheapest Upgrade Workshop levels you can afford (up to a quarter of your tickets at a time)
+  autoBuyTick(){ const R2 = window.WLR, P = this.P; if (!R2 || this.state.admin || !R2.autobuyOn(P) || !(P.tickets > 0)) return;
+    let budget = P.tickets * .25, spent = 0, n = 0; const upg = {...(P.upg||{})};
+    while (n < 30) { let best = null; Object.keys(UPG).forEach(g => (UPG[g]||[]).forEach(u => { const lv = ((upg[g]||{})[u.k])|0; if (lv >= upgMax(u)) return; const c = upgCost(u, lv); if (c <= budget && (!best || c < best.c)) best = {g, u, lv, c}; }));
+      if (!best) break; upg[best.g] = {...(upg[best.g]||{}), [best.u.k]:best.lv + 1}; budget -= best.c; spent += best.c; n++; }
+    if (!n) return; this.setP({tickets:P.tickets - spent, upg, stats:{...P.stats, sum:{...P.stats.sum, upgrades:(P.stats.sum.upgrades||0) + n}}}); }
   econApi(){ return { P:()=>this.P, setP:pt=>this.setP(pt), toast:t=>this.toast(t), sfx:n=>window.Arcade && window.Arcade.sfx(n), admin:()=>!!this.state.admin, addTix:(n,f)=>this.addTix(n,f) }; }
   // One-time move to the new economy. Nothing is wiped: tickets, prizes, scores, stars and achievements all stay.
   // One-time moves to the new economy. Nothing is wiped: tickets, prizes, scores, stars and achievements all stay.
@@ -2305,7 +2334,7 @@ class Component extends DCLogic {
     const cats = [
       {id:'all', e:'🎟', n:'All Tickets', d:'Boosts tickets from every game', rows:[['Ticket Multiplier (lv '+lvM('global')+')', f(M[0].eff(lvM('global'))), 'Every ticket you earn'], ['Golden Stars ('+fmtN(P.stars||0)+')', f(WP.breakdown(P)[1][1]), 'Every ticket you earn'],
         ['Collections ('+Object.keys(P.colDone||{}).length+')', f(WP.breakdown(P)[2][1]), 'Every ticket you earn'], ['Login streak', f(WP.breakdown(P)[3][1]), 'Every ticket you earn'], ['Wilderland prizes', f(pk.all), 'Every ticket you earn'],
-        ['Achievements (Platinum & Diamond)', f(A2 && A2.bonus ? A2.bonus(P) : 1), 'Every ticket you earn'], ['Arcade Expansions', f(E2 ? E2.gameMult(P)/(pt.games||1) : 1), 'Tickets you earn by playing'], ['Combo streak', f(WP.breakdown(P)[8][1]), 'Game payouts while your combo lasts']]},
+        ['Achievements (Platinum & Diamond)', f(A2 && A2.bonus ? A2.bonus(P) : 1), 'Every ticket you earn'], ['Rebirth Road milestones', f(window.WLR ? window.WLR.mult(P) : 1), 'Every ticket you earn · never resets'], ['Arcade Expansions', f(E2 ? E2.gameMult(P)/(pt.games||1) : 1), 'Tickets you earn by playing'], ['Combo streak', f(WP.breakdown(P)[8][1]), 'Game payouts while your combo lasts']]},
       {id:'mineTix', e:'⛏️', n:'Mine Tickets', d:'Boosts tickets from Deep Mines only', rows: [...gameRows('idle'), ['Gem Market (Gem Tree lv '+(GTr.market||0)+')', f(1+.1*(GTr.market||0)), 'Tickets when you cash out ore · permanent']]},
       {id:'mineCrew', e:'👷', n:'Mine Crew', d:'Miners, hiring and digging speed in Deep Mines', total:(1+.25*(IU.cart||0))*(1+.1*(IU.drill||0))*(1+.25*(GTr.ore||0)), rows:[
         ['Miner slots (Gem Tree · Bigger Mine lv '+(GTr.slots||0)+')', (12+4*(GTr.slots||0))+' slots', 'How many miners you can have · permanent'], ['Gem-Powered Drills (Gem Tree lv '+(GTr.ore||0)+')', f(1+.25*(GTr.ore||0)), 'All Mines ore · permanent'], ['Veteran Crew (Gem Tree lv '+(GTr.vet||0)+')', '+'+(GTr.vet||0)+' levels', 'Level of new miners · permanent'], ['Night Owls (Gem Tree)', GTr.owl ? '75%' : '50%', 'Digging speed while you’re away · permanent'],
@@ -2325,6 +2354,10 @@ class Component extends DCLogic {
           {id:'home', e:'🏠', n:'Home', d:'Permanent bonuses from your home (never reset by Rebirth)', total:W.homeMult(P), rows:[[T.n+' (tier '+(h.tier+1)+'/7)', f(1+T.mul), 'Every ticket you earn'], ['Themed sets complete ('+done.length+'/5)', f(Math.pow(1.03, done.length)), 'Every ticket you earn · +3% per finished set']]}]; })(),
       {id:'learn', e:'📚', n:'Learn Mode', d:'Bonuses for playing with Learn mode on', rows:[['Learn game payout', f(1.25*(E2 ? E2.learnGameMult(P) : 1)), 'Tickets from games played in Learn mode'],
         ['Learn Mode Bonus (lv '+lvM('learn')+')', '+'+WP.fmt(WP.learnBonus(P))+' per answer', 'Each correct answer'], ['Learn boost from Expansions & Prestige', f(E2 ? E2.learnMult(P) : 1), 'Each correct answer'], ['Wilderland prize power', f(pk.learn), 'Each correct answer']]},
+      ...(window.WLR ? (()=>{ const R2 = window.WLR, v = R2.vals(P); return [{id:'rebirth', e:'🛣️', n:'Rebirth', d:'Permanent rewards from the Rebirth Road — they survive every Rebirth', total:v.mult, rows:[
+        ...R2.miles(P.rebirths||0).filter(n => n <= (P.rebirths||0)).flatMap(n => R2.rewards(n).filter(x => x.k == 'mult').map(x => ['Rebirth '+n+' milestone', f(x.v), 'Every ticket you earn · never resets'])),
+        ['Starting tickets', v.start ? v.start+'% of the next Rebirth' : 'Rebirth 2', 'Tickets you start each Rebirth with'], ['Quick Start', v.quick ? 'Workshop Lv '+v.quick : 'Rebirth 5', 'Workshop levels you start each Rebirth with'],
+        ['Kept expansions', v.keep ? v.keep+'%' : 'Rebirth 20', 'Arcade Expansion levels kept after each Rebirth'], ['Golden Critters', f(v.critter), 'How often critters appear']]}]; })() : []),
       {id:'prestige', e:'💠', n:'Prestige', d:'From the Prestige Tree and Diamond Stars', total:(pt.all||1)*(pt.games||1), rows:[['All tickets', f(pt.all||1), 'Every ticket you earn'], ['Game payouts', f(pt.games||1), 'Tickets from every game'], ['Favourite machine'+(P.ptFav ? ' ('+((GAMES.find(g=>g.id==P.ptFav)||{}).title||'')+')' : ''), f(pt.fav||1), 'One cabinet you choose'],
         ['Learn answers', f(pt.learn||1), 'Learn-mode answer bonus'], ['Learn games', f(pt.learnGame||1), 'Learn-mode game payouts'], ['Jackpot chance', f(pt.jack||1), 'Lucky ×10 / ×100 payouts'], ['Diamond Stars', (E2 ? E2.diaFree(P) : 0)+' free · '+(E2 ? E2.diamonds(P) : 0)+' earned', 'Spend them in the Prestige Tree']]},
     ];
@@ -2493,13 +2526,14 @@ class Component extends DCLogic {
     const topicName = t => ({add:'Addition',sub:'Subtraction',mult:'Multiplication',div:'Division',skip:'Skip counting',spell:'Spelling',multi:'Two-step math',mixed:'Mixed',words:'Sight words',handwriting:'Handwriting',species:'Invasive species'}[t] || '—');
     // leaderboard
     const B = s.cloud ? {e:[]} : (s.lbOpen || !s.game) ? getJSON(BOARD_KEY,{e:[]}) : {e:[]}, myK = this.cloudUid || this.profKey();
+    const plRb = u => { const pl = ((this.cloudBoard||{})._pl)||[]; const r = pl.find(y => y.u == u); return r ? r.rb||0 : 0; };
     const lbRows = (g, mode, n) => { const V = VBOARDS[g], src = V ? '_pl' : g; if (s.cloud && (s.lbOpen || !s.game)) this.needBoard(src); let e = s.cloud ? ((this.cloudBoard||{})[src]||[]).slice() : B.e.filter(x=>x.g==(V ? '_tix' : g)); if (V) e = e.map(x=>({...x, s:V.f(x), d:vbDetail(x)})).filter(x=>x.s>0); if (mode=='edu') e = e.filter(x=>x.edu); if (mode=='reg') e = e.filter(x=>!x.edu);
-      return e.filter(x=>V || x.g=='_tix' || x.s <= scoreCap(x.g||g)).sort((a,b)=>b.s-a.s).slice(0,n).map((x,i)=>({rank:i+1, avImg: avSVG(avDec(x.av), x.al||0, {npet:petOf(x.av)}), name:x.u, score:fmtN(x.s), badge: x.edu?'LEARN':'', hasBadge:!!x.edu, date:x.d||'', bg: x.k==myK ? '#D5F367' : (i%2?'#ffffff':'#f6f3e6'), weight: x.k==myK ? 700 : 500, medal: ['#F9BF01','#B9C4BF','#DD8B03'][i]||'transparent', rankFg: i<3 ? '#121313' : '#ffffff', rankFgDark: '#121313'})); };
+      return e.filter(x=>V || x.g=='_tix' || x.s <= scoreCap(x.g||g)).sort((a,b)=>b.s-a.s).slice(0,n).map((x,i)=>({rank:i+1, avImg: avSVG(avDec(x.av), x.al||0, {npet:petOf(x.av)}), name:x.u, score:V && V.show ? V.show(x) : fmtN(x.s), nmCss: window.WLR ? window.WLR.rainbowCss(x.rb != null ? x.rb : plRb(x.u)) : '', badge: x.edu?'LEARN':'', hasBadge:!!x.edu, date:x.d||'', bg: x.k==myK ? '#D5F367' : (i%2?'#ffffff':'#f6f3e6'), weight: x.k==myK ? 700 : 500, medal: ['#F9BF01','#B9C4BF','#DD8B03'][i]||'transparent', rankFg: i<3 ? '#121313' : '#ffffff', rankFgDark: '#121313'})); };
     const uv = (s.uVal||'').trim(), ureg = s.uOpen ? getJSON(UNAME_KEY,{}) : {}, uOwner = ureg[uv.toLowerCase()];
     const pad = s.game && PADS[s.game];
     const mkPad = key => ({down: e=>{ if (e && e.preventDefault) e.preventDefault(); this.padHeld[key] = 1; fireKey(key,'keydown'); }, up: ()=>{ if (this.padHeld[key]) { this.padHeld[key] = 0; fireKey(key,'keyup'); } }});
     const R0 = {
-      narrow, wide: !narrow, mainPad: narrow ? '14px 12px' : '20px 24px', headPad: narrow ? '12px 14px' : '14px 24px', logoH: narrow ? '22px' : '30px', rbWordDisp: narrow ? 'none' : 'inline', brandFs: narrow ? '14px' : '18px', brandLs: narrow ? '0.12em' : '0.189em', floorH: FH, 
+      narrow, wide: !narrow, mainPad: narrow ? '14px 12px' : '20px 24px', headPad: narrow ? '12px 14px' : '14px 24px', logoH: narrow ? '22px' : '30px', rbWordDisp: narrow ? 'none' : 'inline', brandFs: narrow ? '14px' : '18px', brandLs: narrow ? '0.12em' : '0.189em', floorH: FH, floorCss: window.WLR ? window.WLR.floorCss(P) : 'background-color:#DAD3B1; background-image:repeating-conic-gradient(#d2caa4 0 25%, #DAD3B1 0 50%); background-size:80px 80px;', 
       fsOpts: !!s.fsOpts, toggleOpts: ()=>this.setState({fsOpts:!s.fsOpts}), optsExpanded: s.fsOpts ? 'true' : 'false', optsLabel: vw < 560 ? '' : 'Options', optsBg: s.fsOpts ? '#ffffff' : 'rgba(255,255,255,.16)', optsFg: s.fsOpts ? '#015640' : '#ffffff',
       leaveLabel: vw < 560 ? '⏏ Leave' : '⏏ Save & leave · Esc', fsTitleDisp: vw < 720 ? 'none' : 'inline',
       optDisp: !fsOn || s.fsOpts ? 'flex' : 'none', optPos: fsOn ? 'fixed' : 'static', optTop: fsOn ? '52px' : 'auto', optRight: fsOn ? 'max(8px, env(safe-area-inset-right))' : 'auto', optW: fsOn ? 'min(560px, calc(100vw - 16px))' : 'auto', optMaxH: fsOn ? 'calc(100vh - 64px)' : 'none', optZ: fsOn ? 760 : 'auto', optPad: fsOn ? '14px' : '0', optShadow: fsOn ? '0 14px 40px rgba(0,0,0,.45)' : 'none',
@@ -2542,7 +2576,7 @@ class Component extends DCLogic {
       // leaderboard
       lbScope: s.cloud ? 'GLOBAL LEADERBOARD · EVERY PLAYER, EVERY DEVICE' : 'LEADERBOARD · EVERY PLAYER ON THIS DEVICE',
       lbOpen: s.lbOpen, openLb: ()=>{ this.keys = {}; this.setState({lbOpen:true}); }, closeLb: ()=>this.setState({lbOpen:false}),
-      lbGames: [{id:'_ov',title:VBOARDS._ov.t}, {id:'_tix',title:'🎟 Tickets'}, ...['_rb','_dia','_ach'].map(id=>({id, title:VBOARDS[id].t})), ...GAMES].map(x=>({label:x.title, bg: s.lbGame==x.id ? '#015640' : '#ffffff', fg: s.lbGame==x.id ? '#ffffff' : '#015640', pick: ()=>this.setState({lbGame:x.id})})),
+      lbGames: [{id:'_ov',title:VBOARDS._ov.t}, {id:'_tix',title:'🎟 Tickets'}, ...['_rb','_fast','_dia','_ach'].map(id=>({id, title:VBOARDS[id].t})), ...GAMES].map(x=>({label:x.title, bg: s.lbGame==x.id ? '#015640' : '#ffffff', fg: s.lbGame==x.id ? '#ffffff' : '#015640', pick: ()=>this.setState({lbGame:x.id})})),
       lbModes: [['all','Everyone'],['edu','Learn mode only'],['reg','Regular only']].map(([id,label])=>({label, bg: s.lbMode==id ? '#015640' : 'transparent', fg: s.lbMode==id ? '#ffffff' : '#015640', pick: ()=>this.setState({lbMode:id})})),
       lbTitle: VBOARDS[s.lbGame] ? VBOARDS[s.lbGame].title : s.lbGame=='_tix' ? 'Tickets earned' : gname(s.lbGame), lbList: lbRows(s.lbGame, s.lbGame[0]=='_'?'all':s.lbMode, 25), lbEmpty: lbRows(s.lbGame, s.lbGame[0]=='_'?'all':s.lbMode, 1).length==0, lbShowModes: s.lbGame[0]!='_',
       lbEmptyText: s.cloud && !this.cloudUid ? 'Sign up or log in, create a username, and your finished games post here automatically.' : 'No scores here yet. Create a username and every finished game posts automatically.',
@@ -2558,7 +2592,7 @@ class Component extends DCLogic {
       showCash: !!s.game && s.game!='idle' && s.game!='secrets', cashOutGame: ()=>this.cashOutGame(), cashLabel: s.admin ? 'Cash out · (admin)' : 'Cash out · '+fmtN(s.liveScore||0),
       
       openExp: ()=>{ this.keys = {}; this._pzTab = 'exp'; this.setState({prizesOpen:true}); },
-      openRebirth: ()=>{ this.keys = {}; this._pzTab = 'rebirth'; this.setState({prizesOpen:true}); },
+      openRebirth: ()=>{ this.keys = {}; if (window.WLR) { window.WLR.open('road'); return; } this._pzTab = 'rebirth'; this.setState({prizesOpen:true}); }, openSongs: ()=>{ this.keys = {}; if (window.WLR) window.WLR.open('music'); },
       rbPct: window.WLP ? Math.min(100, (P.tickets||0)/window.WLP.rebirthNeed(P)*100).toFixed(1)+'%' : '0%', ...(() => { const M2 = window.WLMusic, ns = M2 && M2.nextSong && M2.nextSong(); if (M2 && !M2.onUnlock) M2.onUnlock = names => { this.toast('🎵 NEW SONG UNLOCKED: ' + names.join(', ').toUpperCase() + ' · PICK IT WITH THE 🎵 MUSIC BUTTON IN SETTINGS', true); try { window.Arcade && window.Arcade.sfx('win'); } catch(e){} };
         if (!ns) return {songOn:false, songPct:'0%', songShort:''}; const fr = window.WLP ? Math.min(.999, (P.tickets||0)/window.WLP.rebirthNeed(P)) : 0, rb = (P.rebirths||0) + fr;
         return {songOn:true, songPct:Math.max(0, Math.min(100, (rb - ns.prev)/(ns.need - ns.prev)*100)).toFixed(1)+'%', songShort:ns.n + ' · ' + (P.rebirths||0) + ' / ' + ns.need + ' rebirths'}; })(),
@@ -2589,7 +2623,7 @@ class Component extends DCLogic {
       calWho: (this.cloudMeta && ADMIN_EMAILS.includes(String(this.cloudMeta.email||'').toLowerCase())) ? 'Signed in as admin · you can edit events' : 'Same events for everyone · tap an event for details',
       ...(()=>{ const evs = window.WLC ? window.WLC.arcadeToday() : []; return {arcEvOn: evs.length > 0 && !s.calOpen, arcEvText: evs.map(e => e.title+' is on!').join(' · ')}; })(),
       homeOpen: !!s.homeOpen, openPets: ()=>{ this.keys = {}; this._homeTab = 'pets'; this.setState({homeOpen:true}); }, openHome: ()=>{ this.keys = {}; this._homeTab = 'home'; this.setState({homeOpen:true}); }, closeHome: ()=>this.closeAll(),
-      walkImg: avSVG(P.avatar, (P.ach||[]).length, {noPet:true, full:!P.avPortrait}), walkH: P.avPortrait ? 46 : 69, hasPet: avNorm(P.avatar).pet > 0, petImg: avSVG(P.avatar, 0, {petOnly:true}), pet: this._petPos || {x:s.px-34, y:s.py+10},
+      auraFlt: window.WLR ? window.WLR.aura(P) : '', walkImg: avSVG(P.avatar, (P.ach||[]).length, {noPet:true, full:!P.avPortrait}), walkH: P.avPortrait ? 46 : 69, hasPet: avNorm(P.avatar).pet > 0, petImg: avSVG(P.avatar, 0, {petOnly:true}), pet: this._petPos || {x:s.px-34, y:s.py+10},
       trailDots: (this._trail||[]).map((d,i)=>{ const age = Math.min(1, (performance.now()-d.t)/1100); return {key:d.t+'-'+i, x:d.x, y:d.y, op:(1-age).toFixed(2), sc:(1.1-age*.6).toFixed(2), e:AVP.trail.o[avNorm(P.avatar).trail].e||''}; }),
       achCount, achTotal: achTot, achPct: Math.round(achCount/achTot*100), achRef: this.achRef, avRef: this.avRef, homeRef: this.homeRef, calRef: this.calRef,
       tierCounts: WA ? [0,1,2,3,4].map(t=>({c:WA.TIERS[t].c, label:WA.TIERS[t].n+' '+WA.list().filter(f=>(atM[f.id]|0)>t).length+'/'+WA.list().filter(f=>f.goals.length>t).length})) : [],
@@ -2735,7 +2769,7 @@ class Component extends DCLogic {
           const Nw = GAMES.filter(g => !plays[g.id]).sort(sorter); if (Nw.length) shelves.push({key:'new', t:'✨ TRY SOMETHING NEW · '+Nw.length+' NOT PLAYED YET', col:'#F9BF01', items:Nw.map(mini), empty:false, emptyText:''}); }
         const cabP = (c, i) => { const ok = !filt || match(c), fav = !!favs[c.id];
           return {...c, ...POS[i], icon: ICON(c.id), best:bestOf(c), bestLbl:lblOf(c), nfs:cabFs(c.name), gfs:narrow ? (c.name.length > 14 ? 10 : 12) : cabFs(c.name), daily:i==di, saved:savedOf(c.id), isNew:!!c.isNew && !P.played[c.id] && !savedOf(c.id), learn: !!c.learn || (eduOn && EDU_SWITCH.includes(c.id)),
-            shadow: (ni===i?glow:base)+(P.skin && window.WLP ? ', '+window.WLP.skinStyle(P.skin) : ''), op: ok ? 1 : .25, flt: ok ? 'none' : 'grayscale(.85)', ok,
+            shadow: (ni===i?glow:base)+(()=>{ const sk = window.WLR ? window.WLR.cabSkin(P) : P.skin; return sk && window.WLP ? ', '+window.WLP.skinStyle(sk) : ''; })(), op: ok ? 1 : .25, flt: ok ? 'none' : 'grayscale(.85)', ok,
             favIc: fav ? '♥' : '♡', favAria: fav ? 'Remove '+c.title+' from favorites' : 'Add '+c.title+' to favorites', favTap: e => { if (e && e.stopPropagation) e.stopPropagation(); const f2 = {...(this.P.favs||{})}; if (f2[c.id]) delete f2[c.id]; else f2[c.id] = 1; this.setP({favs:f2}); }, open:()=>this.open(c.id)}; };
         const cabs = GAMES.map(cabP), zpl = Z => GAMES.filter(g => ZONE_OF[g.id] == Z.k), pN = Z => zpl(Z).filter(g => plays[g.id]).length;
         const hq = (s.hsQ||'').trim().toLowerCase(), TABS = [['profile','👤 Profile'], ['today','📅 Today'], ['lb','🏆 Board'], ['learn','🎓 Learn'], ['ach','⭐ Awards'], ['scores','📈 Scores']], tab = s.sideTab || 'profile';
@@ -2757,6 +2791,7 @@ class Component extends DCLogic {
             {key:'n2', t:evs2.length ? '🎉 Today: '+evs2.map(e => e.title).join(', ')+'!' : '❄ Kingdom Quest is open in Snowball Showdown. Rescue Bau Bau and Mau Mau!', bg:'#ffd6e8', rot:1.2},
             {key:'n3', t:'🎵 The 18-song Wilderland Playlist is in Settings. Rebirths unlock more songs.', bg:'#d6f3ff', rot:-.8}],
           todayEvent: evs2.length ? evs2.map(e => e.title+' is on!').join(' · ') : 'No special event today. The calendar shows what is coming up.',
+          statueOn: !!(window.WLR && window.WLR.statue(P)), statueImg: window.WLR && window.WLR.statue(P) ? avSVG(P.avatar, (P.ach||[]).length, {noPet:true}) : '', statueTip: 'A golden statue of '+(P.username||'you')+' · Rebirth Road reward for 100 rebirths',
           fame: [top3[1], top3[0], top3[2]].map((r, k) => ({key:'f'+k, img: r ? r.avImg : blank, name: r ? r.name : '—', flt: r ? 'none' : 'opacity(.4)', place: ['2','1','3'][k], h:[52, 72, 40][k]})),
           hallPlayers: board, hallEmpty: board.length==0, hallCount: board.length, hallH: TROPHY_Y - 20 - 1727,
           trophyY: TROPHY_Y, expY: EXP_Y, trophyCount: doneN+' / '+cols.length+' trophies', trophyL: () => scrollT(-420), trophyR: () => scrollT(420),

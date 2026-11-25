@@ -200,6 +200,13 @@ const PETS = [
   P_('celestia','Celestia the Sky Wisp','wisp',['#ffffff','#ff5fd2','#bff0ff'],7,{star:16},{k:'learn'}),
   // THE ONE — the final rarity: collect every other pet, or hatch it from a Wilderland Egg (0.00001%)
   P_('theone','THE ONE','theone',['#0b0b10','#1d1d26','#64CDF5'],8,{one:1},{k:'allTix'}),
+  // Rebirth Road pets: given automatically when you reach their rebirth milestone
+  P_('cinder','Cinder the Reborn Fox','fox',['#ff8a3c','#c4401a','#fff3b0'],2,{road:5},{k:'allTix'}),
+  P_('clover','Lucky the Clover Cat','cat',['#7be07b','#2f8a3c','#ffffff'],2,{road:13},{k:'critter'}),
+  P_('nova','Nova the Starlight Dragon','dragon',['#2a1250','#ff5fd2','#bff0ff'],5,{road:75},{k:'allTix'}),
+  P_('orbit','Orbit the Galaxy Owl','owl',['#14204a','#64CDF5','#F9BF01'],6,{road:150},{k:'learn'}),
+  P_('aurum','Aurum the Golden Phoenix','bird',['#F9BF01','#FF4539','#fff3b0'],7,{road:200},{k:'allTix'}),
+  P_('prisma','Prisma the Eternal Wisp','wisp',['#ff5fd2','#64CDF5','#D5F367'],7,{road:250},{k:'critter'}),
 ];
 H.PETS = PETS;
 const byId = id => PETS.find(p => p.id === id);
@@ -244,6 +251,7 @@ H.petGems = P => H.perkVal(P, 'gems');
 H.status = (P, pet) => { const s = pet.src, n = H.norm(P);
   if (n.own[pet.id]) return {own:true, how:'Owned'};
   if (s.free) return {can:true, how:'Free starter pet'};
+  if (s.road) return {can:(P.rebirths||0) >= s.road, how:'Rebirth Road reward · reach rebirth '+s.road+' ('+Math.min(P.rebirths||0, s.road)+'/'+s.road+')'};
   if (s.shop) { const price = H.shopPrice(P, pet); return {buy:'tix', price, how:'Pet Shop · '+fmt(price)+' 🎟'}; }
   if (s.star) return {buy:'star', price:s.star, how:'Golden Stars · '+s.star+' ⭐ (Wilderland pet)'};
   if (s.ach) { const [f, t] = s.ach.split(':'); const ok = ((P.at||{})[f]|0) > +t; const fam = window.WLA && window.WLA.fam ? window.WLA.fam(f) : null;
@@ -252,7 +260,7 @@ H.status = (P, pet) => { const s = pet.src, n = H.norm(P);
     const c = st(P,'mineChests'); return {can:c >= s.mine.chests, how:'Mine treasure: open '+s.mine.chests+' treasure rooms ('+c+'/'+s.mine.chests+')'}; }
   if (s.boss) { const [k, v] = Object.entries(s.boss)[0], c = st(P,k), nm = {spaceBoss:'Star Ranger bosses', tdBoss:'Trailhead Defense bosses', mineGolem:'Cave Golems', rootBoss:'Kudzu Kings', mineCore:'the Armageddon Core'}[k] || k;
     return {can:c >= v, how:'Boss drop: defeat '+nm+' ('+Math.min(c,v)+'/'+v+')'}; }
-  if (s.one) { const c = PETS.filter(x => x.id != pet.id && n.own[x.id]).length, all = PETS.length - 1; return {can:c >= all, how:'THE ONE appears when you own every other pet ('+c+'/'+all+') — or hatch it from a Wilderland Egg (0.00001%)'}; }
+  if (s.one) { const base = PETS.filter(x => x.id != pet.id && !x.src.road), c = base.filter(x => n.own[x.id]).length, all = base.length; return {can:c >= all, how:'THE ONE appears when you own every other pet ('+c+'/'+all+') — or hatch it from a Wilderland Egg (0.00001%)'}; }
   if (s.pr) return {can:prestige(P) >= s.pr, how:'Prestige reward: reach Prestige '+s.pr+' ('+prestige(P)+'/'+s.pr+')'};
   return {how:'?'}; };
 H.shopPrice = (P, pet) => nice(Math.min(1500*Math.pow(7, pet.r) * (1 + PETS.indexOf(pet)%3*.15), need(P)*.3));
@@ -332,6 +340,8 @@ const FURN = [
       ['galaxy',[['helm','Ship\u2019s Helm',2,2,'🛸'],['planets','Planet Mobile',2,2,'🪐'],['blackhole','Tiny Black Hole',1,1,'🕳️'],['astro','Astro Statue',1,2,'👨‍🚀']]],
       ['heaven',[['worldtree','World Tree',3,3,'🌳'],['spring','Spirit Spring',2,2,'💧'],['shrine','Wilderland Shrine',2,2,'⛩️'],['wisps','Wisp Lanterns',1,1,'🏮']]]]
     .flatMap(([rm, list]) => list.map(([id, n, w, h, e]) => F_(id, n, w, h, '', {built:rm}, {emo:e, light:1}))),
+  // Rebirth Road home decorations (given automatically)
+  F_('rbfount','Rebirth Fountain',2,2,'',{road:10},{emo:'⛲', light:1}), F_('rbarch','Golden Rebirth Arch',2,2,'',{road:200},{emo:'🌈', light:1}),
 ];
 // size & shape versions: bigger rugs, square / round / diamond rugs, big tables, plants, ponds …
 const VARS = {rug:['big','huge','square','round','diamond'], crug:['big','huge','square','round','diamond'], srug:['big','huge','square','round','diamond'],
@@ -347,6 +357,7 @@ H.SETS = SETS;
 const fById = id => FURN.find(f => f.id == id);
 H.furnPrice = (P, f) => nice(Math.max(150, need(P) * .0015) * Math.pow(1.9, f.src.t || 0) * (f.w*f.h > 3 ? 1.6 : 1) * (f.area || 1));
 H.furnStatus = (P, f) => { const s = f.src, ti = s.t != null ? s.t : null;
+  if (s.road) return {free:(P.rebirths||0) >= s.road, how:'Rebirth Road · rebirth '+s.road};
   if (s.built) { const bt = TIERS.findIndex(T => T.room == s.built); return {free:H.home(P).tier >= bt, how:'Built into the '+TIERS[bt].n+' ('+ROOMS[s.built]+')'}; }
   if (ti != null) { const t = H.home(P).tier; return t >= ti ? {buy:true, price:H.furnPrice(P, f), how:'Shop · '+fmt(H.furnPrice(P, f))+' 🎟'} : {how:'Shop · unlocks with the '+TIERS[ti].n}; }
   if (s.ach) { const [fa, t] = s.ach.split(':'); return {free:((P.at||{})[fa]|0) > +t, how:'Achievement reward'}; }
@@ -456,6 +467,8 @@ const EMOTES = [
   {k:'dance', e:'💃', n:'Dance', how:'5 achievements', ok:P=>(P.ach||[]).length >= 5, anim:'wlhDance .4s ease-in-out 4'},
   {k:'cheer', e:'🎉', n:'Cheer', how:'Win 25 games', ok:P=>Object.values(P.played||{}).reduce((a,b)=>a+b,0) >= 25, anim:'wlhJump .35s ease-out 4'},
   {k:'flex', e:'💪', n:'Flex', how:'Rebirth once', ok:P=>(P.rebirths||0) >= 1, anim:'wlhFlex .6s ease-in-out 2'},
+  {k:'spin', e:'🌀', n:'Spin', how:'Rebirth Road · rebirth 15', ok:P=>(P.rebirths||0) >= 15, anim:'wlhSpin .45s linear 4'},
+  {k:'starburst', e:'🌟', n:'Starburst', how:'Rebirth Road · rebirth 125', ok:P=>(P.rebirths||0) >= 125, anim:'wlhStar .7s ease-out 3'},
   {k:'sleepy', e:'😴', n:'Sleepy', how:'3-day login streak', ok:P=>((P.login||{}).best||0) >= 3, anim:'wlhSleep 1.6s ease-in-out 1'},
   {k:'frown', e:'☹️', n:'Frown', how:'10 achievements', ok:P=>(P.ach||[]).length >= 10, anim:'wlhShake .3s ease-in-out 4'},
 ];
@@ -515,6 +528,8 @@ const css = `
 @keyframes wlhWave{0%,100%{transform:rotate(0)}50%{transform:rotate(-14deg)}}
 @keyframes wlhDance{0%,100%{transform:translateX(0) rotate(0)}25%{transform:translateX(-5px) rotate(-10deg)}75%{transform:translateX(5px) rotate(10deg)}}
 @keyframes wlhJump{0%,100%{transform:translateY(0)}50%{transform:translateY(-16px) scale(1.06)}}
+@keyframes wlhSpin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+@keyframes wlhStar{0%{transform:scale(1);filter:drop-shadow(0 0 0 #F9BF01)}50%{transform:scale(1.25) translateY(-6px);filter:drop-shadow(0 0 14px #F9BF01)}100%{transform:scale(1);filter:drop-shadow(0 0 0 #F9BF01)}}
 @keyframes wlhFlex{0%,100%{transform:scale(1)}50%{transform:scale(1.22,1.08)}}
 @keyframes wlhSleep{0%,100%{transform:rotate(0)}50%{transform:rotate(18deg) translateY(4px)}}
 @keyframes wlhShake{0%,100%{transform:translateX(0)}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}

@@ -304,7 +304,7 @@ const colMult = P => { const d = P.colDone||{}; let m = 1; Object.keys(d).forEac
 const loginMult = P => 1 + Math.min(30, (P.login||{}).streak||0) * (lv(P,'daily') ? MSHOP[2].eff(lv(P,'daily')) : .01);
 const comboN = P => { const c = P.combo||{}, E2 = window.WLE, warm = E2 ? E2.comboWarmMs(P) : 300000; return c.t && Date.now() - c.t > warm ? 1 : (c.n||1); };
 const comboMult = P => { const E2 = window.WLE, cap = E2 ? E2.comboCap(P) : 10, str = E2 ? E2.comboStrength(P) : 1; return 1 + Math.min(cap, Math.max(0, comboN(P)-1)) * (lv(P,'combo') ? MSHOP[1].eff(lv(P,'combo')) : .01) * str; };
-W.globalMult = P => MSHOP[0].eff(lv(P,'global')) * starMult(P) * colMult(P) * loginMult(P) * W.perks(P).all * (window.WLE ? window.WLE.ptAll(P) : 1) * (window.WLA && window.WLA.bonus ? window.WLA.bonus(P) : 1) * (window.WLH ? window.WLH.petAll(P) * window.WLH.homeMult(P) : 1);
+W.globalMult = P => MSHOP[0].eff(lv(P,'global')) * starMult(P) * colMult(P) * loginMult(P) * W.perks(P).all * (window.WLE ? window.WLE.ptAll(P) : 1) * (window.WLA && window.WLA.bonus ? window.WLA.bonus(P) : 1) * (window.WLH ? window.WLH.petAll(P) * window.WLH.homeMult(P) : 1) * (window.WLR ? window.WLR.mult(P) : 1);
 W.totalMult = (P, g) => W.globalMult(P) * comboMult(P) * (g ? GAME_UP.eff(glv(P,g)) * (W.perks(P).game[g]||1) * (window.WLE ? window.WLE.ptGame(P,g) : 1) * (window.WLH ? window.WLH.petGame(P,g) : 1) : 1) * (window.WLE ? window.WLE.gameMult(P) : 1);
 W.breakdown = P => [['Ticket Multiplier', MSHOP[0].eff(lv(P,'global'))], ['Golden Stars ('+(P.stars||0)+')', starMult(P)], ['Collections ('+Object.keys(P.colDone||{}).length+')', colMult(P)], ['Login streak ('+(((P.login||{}).streak)||0)+' days)', loginMult(P)], ['Wilderland prizes', W.perks(P).all], ['Prestige Tree 💎', window.WLE ? window.WLE.ptAll(P) * window.WLE.pt(P).games : 1], ['Arcade Expansions', window.WLE ? window.WLE.allMult(P) : 1], ['Achievements (Platinum & Diamond)', window.WLA && window.WLA.bonus ? window.WLA.bonus(P) : 1], ['Combo streak ('+(((P.combo||{}).n)||0)+')', comboMult(P)]];
 
@@ -359,7 +359,9 @@ const CAPS = [
 const CAP_MAX_R = 5; CAPS.forEach(c => { for (let i = CAP_MAX_R+1; i < 8; i++) c.odds[i] = 0; const t = c.odds.reduce((a,b)=>a+b,0); if (t !== 100) c.odds = c.odds.map(o => Math.round(o*100/t*10)/10); });
 W.CAPS = CAPS;
 const capPrice = (c, P) => nice(Math.min(c.price * Math.max(1, Math.pow(W.globalMult(P), .25)), W.rebirthNeed(P) * .3));
-const rollCap = (c, P) => { const tot = c.odds.slice(0, CAP_MAX_R+1).reduce((a,b)=>a+b,0); const r = Math.random()*tot; let acc = 0, tier = 0; for (let i=0;i<=CAP_MAX_R;i++) { if (!c.odds[i]) continue; acc += c.odds[i]; tier = i; if (r < acc) break; }
+// Lucky Charm (Rebirth Road, rebirth 13): 20% of capsules roll twice and keep the rarer prize
+const rollCap = (c, P) => { const a = rollCap1(c, P); if (!(window.WLR && window.WLR.charm(P)) || Math.random() >= .2) return a; const b = rollCap1(c, P); return b.r > a.r ? b : a; };
+const rollCap1 = (c, P) => { const tot = c.odds.slice(0, CAP_MAX_R+1).reduce((a,b)=>a+b,0); const r = Math.random()*tot; let acc = 0, tier = 0; for (let i=0;i<=CAP_MAX_R;i++) { if (!c.odds[i]) continue; acc += c.odds[i]; tier = i; if (r < acc) break; }
   const pool = CAT.filter(it => it.r === tier && it.r <= CAP_MAX_R && !it.season && !it.noCap && it.col !== 'golden' && !it.repeat); return pool[Math.floor(Math.random()*pool.length)] || CAT[0]; };
 W.rollCap = rollCap;
 
@@ -378,11 +380,15 @@ W.doRebirth = P => { const stars = W.rebirthStars(P); if (!stars) return null;
   const idle = P.idle && typeof P.idle=='object' ? {...P.idle, grid:[1,0,0,0,0,0,0,0,0,0,0,0], up:{}, ore:0, hires:1, last:Date.now()} : P.idle;
   const upg = {}; // the whole Upgrade Workshop resets
   const hs = W.headStart(P); Object.assign(upg, hs.upg); // Golden Star head starts survive
-  return {stars, patch:{tickets:0, mult:{}, exp:hs.exp, expUp:{}, combo:{}, stars:(P.stars||0)+stars, rebirths:(P.rebirths||0)+1, saves:{}, idle, upg}}; };
+  // Rebirth Road speed-ups: starting tickets, Quick Start Workshop levels, keep part of your Arcade Expansions
+  const road = window.WLR ? window.WLR.head(P, upg, hs.exp) : {tickets:0, exp:hs.exp};
+  return {stars, patch:{tickets:road.tickets, mult:{}, exp:road.exp, expUp:{}, combo:{}, stars:(P.stars||0)+stars, rebirths:(P.rebirths||0)+1, saves:{}, idle, upg}}; };
 W.rebirthCard = (stars, total, n) => ({n:'+'+W.fmt(stars)+' Golden Star'+(stars>1?'s':''), d:'Every ticket is now worth ×'+W.fmt(Math.pow(1.5,total))+'. Your next milestone is '+W.fmt(1e7*Math.pow(1000,n))+' tickets.', e:'⭐', r:7, colName:'Rebirth #'+n});
-const SKINS = [{id:'',n:'Classic',stars:0},{id:'gold',n:'Gold Trim',stars:1},{id:'neon',n:'Neon Glow',stars:3},{id:'galaxy',n:'Galaxy',stars:6},{id:'rainbow',n:'Wilderland Rainbow',stars:10}];
+const SKINS = [{id:'',n:'Classic',stars:0},{id:'gold',n:'Gold Trim',stars:1},{id:'neon',n:'Neon Glow',stars:3},{id:'galaxy',n:'Galaxy',stars:6},{id:'rainbow',n:'Wilderland Rainbow',stars:10},{id:'reborn',n:'Reborn Glow',stars:0,rb:2},{id:'goldcab',n:'Golden Arcade',stars:0,rb:50}];
+const skinOk = (P, s) => s.rb ? (P.rebirths||0) >= s.rb : (P.stars||0) >= s.stars;
+W.skinOk = skinOk;
 W.SKINS = SKINS;
-W.skinStyle = id => ({gold:'0 0 0 3px #F9BF01, 0 0 16px rgba(249,191,1,.6)', neon:'0 0 0 3px #64CDF5, 0 0 18px #EA55AB', galaxy:'0 0 0 3px #4a5cff, 0 0 22px rgba(166,75,224,.8)', rainbow:'0 0 0 3px #ff5fd2, 0 0 14px #64CDF5, 0 0 26px #F9BF01'})[id] || '';
+W.skinStyle = id => ({gold:'0 0 0 3px #F9BF01, 0 0 16px rgba(249,191,1,.6)', neon:'0 0 0 3px #64CDF5, 0 0 18px #EA55AB', galaxy:'0 0 0 3px #4a5cff, 0 0 22px rgba(166,75,224,.8)', rainbow:'0 0 0 3px #ff5fd2, 0 0 14px #64CDF5, 0 0 26px #F9BF01', reborn:'0 0 0 3px #ff8a3c, 0 0 18px rgba(255,138,60,.85)', goldcab:'0 0 0 4px #F9BF01, 0 0 0 7px #fff3b0, 0 0 30px rgba(249,191,1,.95)'})[id] || '';
 
 // ---------------- collection status ----------------
 W.colStatus = P => { build(); const inv = P.prizes||{}; return COLS.map(C => { const items = CAT.filter(it => it.col===C.id && !it.repeat), own = items.filter(it => inv[it.id]).length;
@@ -692,10 +698,10 @@ W.mount = (root, api) => {
       if (!on) { const b = E('button', {cls:'wlp-buy', style:{width:'auto', minWidth:'160px'}, onclick:()=>api.rebirthNow()}, ready ? '⭐ Rebirth now' : 'Rebirth at '+W.fmt(need)+' 🎟'); if (!ready) b.disabled = true; row.appendChild(b); }
       row.appendChild(E('span', {cls:'wlp-small'}, on ? 'You Rebirth the moment you reach the milestone.' : 'Auto Rebirth is off: your tickets keep stacking past the milestone until you press Rebirth now.')); box.appendChild(row); }
     box.appendChild(perkCard());
-    box.appendChild(E('div', {cls:'wlp-h'}, 'CABINET SKINS (UNLOCK WITH GOLDEN STARS)'));
+    box.appendChild(E('div', {cls:'wlp-h'}, 'CABINET SKINS (GOLDEN STARS · REBIRTH ROAD)'));
     const sk = E('div', {style:{display:'flex', gap:'8px', flexWrap:'wrap'}});
-    SKINS.forEach(s => { const ok = (p.stars||0) >= s.stars, on = (p.skin||'') === s.id;
-      const b = E('button', {cls:'wlp-chip'+(on?' on':''), style:{boxShadow:W.skinStyle(s.id), opacity:ok?1:.5}, onclick:()=>{ if (!ok) return api.sfx('bad'); set({skin:s.id}); api.sfx('blip'); render(); }}, s.n+(ok?'':' · 🔒 '+s.stars+' ⭐')); sk.appendChild(b); });
+    SKINS.forEach(s => { const ok = skinOk(p, s), on = (p.skin||'') === s.id;
+      const b = E('button', {cls:'wlp-chip'+(on?' on':''), style:{boxShadow:W.skinStyle(s.id), opacity:ok?1:.5}, onclick:()=>{ if (!ok) return api.sfx('bad'); set({skin:s.id}); api.sfx('blip'); render(); }}, s.n+(ok?'':s.rb ? ' · 🔒 Rebirth '+s.rb : ' · 🔒 '+s.stars+' ⭐')); sk.appendChild(b); });
     box.appendChild(sk);
     box.appendChild(E('div', {cls:'wlp-h'}, 'GOLDEN HALL · WILDERLAND PRIZES (GOLDEN STARS)'));
     const gg = E('div', {cls:'wlp-grid'}); CAT.filter(it => it.col==='golden').forEach(it => gg.appendChild(prizeCard(it))); box.appendChild(gg); return box; };
