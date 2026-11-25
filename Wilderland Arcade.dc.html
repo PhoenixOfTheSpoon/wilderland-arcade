@@ -1231,7 +1231,7 @@ const VBOARDS = {
   _ach:{t:'⭐ Achievements', title:'Most achievements', f:x=>x.al||0},
 };
 const vbDetail = x => (x.rb||0)+' rebirth'+((x.rb||0)==1?'':'s')+' · Prestige '+Math.floor((x.rb||0)/10)+' · '+(x.al||0)+' achievement'+((x.al||0)==1?'':'s');
-const scoreCap = id => { const g = GAMES.find(x=>x.id==id); return id=='idle' ? 99999999 : Math.max(1e6, ((g&&g.target)||1000) * 2000); };
+const scoreCap = id => { const g = GAMES.find(x=>x.id==id); return id=='idle' ? 1e300 : Math.max(1e6, ((g&&g.target)||1000) * 2000); };
 const safeScore = (id, n) => { n = Number(n); if (!isFinite(n) || n < 0) return 0; return Math.min(Math.floor(n), scoreCap(id)); };
 // Big numbers: 12,345 then 12.3K, 4.5M, 6.7B, T, Qa, Qi, Sx … then 1.2e45 style.
 const fmtN = n => (window.WLP ? window.WLP.fmt(n) : (Number(n)||0).toLocaleString());
@@ -1843,7 +1843,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048').sort((a,b) => a.key0.localeCompare(b.key0, 'en', {numeric:true})); return GAMES.indexOf(DG[h % DG.length]); };   // same order as the old A–Z floor, so the daily game never jumps
-const BUILD = '2026-12-07e';
+const BUILD = '2026-12-07f';
 const SCRIPTS = ['arcade-core.js','music.js','prizes-more.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js','games-secrets.js','games-more.js','games-more2.js','games-more3.js','snow-world.js'];
 const fmt = n => fmtN(Math.round(n));
 
@@ -2087,7 +2087,7 @@ class Component extends DCLogic {
       this.setState({hint:null});
       this.snapFn = null; this._perfect = false; this._roundT0 = Date.now(); this._act = 0; this.startSess(game);
       const am = n => this.state.admin ? Math.round(n*(this.state.adminMult||1)) : n;
-      this.cleanup = A.games[game].mount(this.gameRef.current, { score: n => { const v = am(n); if (v === this.state.liveScore) return; const now = performance.now(); clearTimeout(this._sTo); if (now - (this._sT||0) < 300) { this._sTo = setTimeout(()=>{ this._sT = performance.now(); this.setState({liveScore:v}); }, 160); return; } this._sT = now; this.setState({liveScore:v}); }, over: n => this.finish(game, am(n)), hint: h => this.setState({hint:h}),
+      this.cleanup = A.games[game].mount(this.gameRef.current, { score: n => { const v = am(n); if (game == 'idle' && !this.state.admin && v > ((this.P.best||{}).idle||0) && Date.now() - (this._idleBestT||0) > 2500) { this._idleBestT = Date.now(); this.setP({best:{...this.P.best, idle:v}}); } if (v === this.state.liveScore) return; const now = performance.now(); clearTimeout(this._sTo); if (now - (this._sT||0) < 300) { this._sTo = setTimeout(()=>{ this._sT = performance.now(); this.setState({liveScore:v}); }, 160); return; } this._sT = now; this.setState({liveScore:v}); }, over: n => this.finish(game, am(n)), hint: h => this.setState({hint:h}),
         resume, snap: f => { this.snapFn = f; }, gdata: () => JSON.parse(JSON.stringify((this.P.gdata||{})[game] || {})), setGdata: o => { try { const gd = {...(this.P.gdata||{})}; gd[game] = {...(gd[game]||{}), ...JSON.parse(JSON.stringify(o))}; this.setP({gdata:gd}); } catch(e){ console.error('[save-check] '+game+' game data not saveable', e); } }, stat: (k,v,m) => this.stat(k,v,m),
         stored: ((game == 'secrets' ? this.P.secrets : this.P.idle) || null), store: d => { try { this.P = {...this.P, [game == 'secrets' ? 'secrets' : 'idle']: JSON.parse(JSON.stringify(d))}; } catch(e) { return; } this.persist(); },
         tix: (n, score, label) => this.grantTix(game, n, score, label), jackpot: label => this.fishJackpot(game, label), tixCap: () => Infinity, tixMul: () => game == 'idle' ? Math.max(1e-9, this.tixFactor('idle')) : 1, tixMax: () => { const W2 = window.WLP; return (W2 ? W2.rebirthNeed(this.P) : 1e7)*.05; }, tixWait: () => { const b = this.mineBud(); return Math.max(1, Math.ceil(Math.max(1, this.tixFactor('idle')) / b.rate)); }, perfect: () => { this._perfect = true; },
