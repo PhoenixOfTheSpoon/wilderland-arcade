@@ -9,7 +9,8 @@ const el = (tag, at, ...kids) => { const n = document.createElement(tag); at = a
   kids.flat().forEach(c => { if (c == null || c === false) return; n.appendChild(typeof c == 'object' ? c : document.createTextNode(String(c))); }); return n; };
 
 // ---------------- What's new ----------------
-const WN = {v:'2026-12-08f', items:[
+const WN = {v:'2026-12-09', items:[
+  ['👑', 'Admin events', 'Live events for everyone online at once: Ticket Storms, Multiplier Madness, Gift Drops, World Bosses you hit by playing any game, Flash Tournaments, disco, frogs and more. See them in Menu → Admin events. Calm visuals: Menu → Settings.'],
   ['❄️', 'Snow Kingdom: raids & sieges', 'Five raid dungeons with rune puzzles, guardians and big bosses (Empowered Loki is in the Sunken Library) that reset every week with new modifiers. Defend Frostpine Village from catapults, rams and giant snowmen alongside Royal Guard Mau Mau.'],
   ['🏰', 'Your Ice Fort', 'Grow your base from Snow Camp to Crystal Castle and build rooms that boost you everywhere. Plus kingdom levels with a skill tree (K), mounts (V), a dodge-roll (Shift), team combos and % explored per land on the map.'],
   ['🛣️', 'Rebirth Road', 'Tap the ⭐ NEXT REBIRTH bar (or press R) to see every rebirth milestone and its rewards. Players who already rebirthed got every reward they passed.'],
@@ -53,6 +54,7 @@ Q.settings = api => { css(); const o = el('div', {cls:'wlq-ov'}), close = () => 
       row('🔊', 'Sound effects', A.muted ? 'Sound is muted' : Math.round((A.sfxVol == null ? 1 : A.sfxVol)*100)+'%', slider(A.sfxVol == null ? 1 : A.sfxVol, v => { A.sfxVol = v; LSset('wl-sfx-vol', v); if (A.tone && v > 0) A.tone(880, .05, 'square', .05); })),
       row('🎵', 'Music volume', M && M.on && !M.on() ? 'Music is off (turn it on in the Music Player or with M)' : '', slider(M && M.volume ? M.volume() : 1, v => M && M.setVolume && M.setVolume(v))),
       row('🎧', 'Music Player & playlists', 'Every song, its credit, shuffle and playlists', el('button', {cls:'wlq-btn sm', onclick:() => { close(); window.WLR && window.WLR.open('music'); }}, 'Open')),
+      row('👑', 'Admin event effects', 'Calm keeps every event reward but skips the big visuals (flips, disco, snow, stampedes)', seg(window.WLLive ? window.WLLive.fxMode() : 'full', [['full', 'Full'], ['calm', 'Calm']], k => window.WLLive && window.WLLive.setFx(k))),
       row('🔔', 'Notifications', 'Pop-up messages while you play', el('button', {cls:'wlq-btn sm alt', onclick:() => { api.toggleNotif && api.toggleNotif(); render(); }}, (api.notif ? api.notif() : 'all').toUpperCase())),
       row('⌨️', 'Hotkeys', 'Y full screen · M music · R Rebirth Road · U Workshop · P Prize Counter · ? help', el('button', {cls:'wlq-btn sm alt', onclick:() => { close(); api.keys && api.keys(); }}, 'Show')),
       row('🆕', 'What’s new', 'The latest update', el('button', {cls:'wlq-btn sm alt', onclick:() => { close(); Q.whatsNew(true); }}, 'Show'))); };

@@ -133,5 +133,33 @@ const SUG = collection(db, 'boards', '_suggest', 'scores');
 WLCloud.suggest = row => addDoc(SUG, { ...row, s: 0, d: new Date().toISOString().slice(0, 10), at: serverTimestamp() });
 WLCloud.sugDelete = id => deleteDoc(doc(db, 'boards', '_suggest', 'scores', id));
 WLCloud.sugListen = cb => onSnapshot(query(SUG, orderBy('at', 'desc'), limit(200)), snap => cb(snap.docs.map(d => ({ id: d.id, ...d.data(), at: d.data().at && d.data().at.toMillis ? d.data().at.toMillis() : Date.now() }))), () => cb(null));
+// ================= ADMIN ABUSE: live arcade-wide events =================
+// events/live holds every running, upcoming and finished-but-not-cleared event. Everyone reads it live; ONLY the admin's
+// Google account can write it (enforced by the Firestore rules in firestore.rules, not just by this page).
+const EV = doc(db, 'events', 'live'), EVH = doc(db, 'events', 'history');
+const msOf = v => v && v.toMillis ? v.toMillis() : (typeof v == 'number' ? v : 0);
+WLCloud.ev = {
+  listen: cb => { let off = null, n = 0; const go = () => { try { off = onSnapshot(EV, s => { n = 0; cb(s.exists() ? s.data() : {}); }, e => { cb(null, e); n = Math.min(n + 1, 6); setTimeout(go, 10000 * n); }); } catch (e) {} }; go(); return () => off && off(); },
+  get: async () => { const s = await getDoc(EV); return s.exists() ? s.data() : {}; },
+  put: data => setDoc(EV, { ...data, at: serverTimestamp() }),
+  hist: async () => { const s = await getDoc(EVH); return s.exists() ? (s.data().items || []) : []; },
+  histAdd: async items => { const s = await getDoc(EVH); const cur = (s.exists() && s.data().items) || []; return setDoc(EVH, { items: cur.concat(items).slice(-150) }); },
+  me: () => ME ? { uid: ME.uid, email: (ME.email || '').toLowerCase(), verified: !!ME.emailVerified, google: (ME.providerData || []).some(p => p.providerId == 'google.com') } : null,
+  // presence: signed-in players say "I'm here" every minute. The reply also tells us how far this device's clock is off.
+  presence: async row => { if (!ME) return null; const ref = doc(db, 'presence', ME.uid), t0 = Date.now();
+    await setDoc(ref, { u: String(row.u || '').slice(0, 16), g: String(row.g || '').slice(0, 20), at: serverTimestamp() });
+    const s = await getDoc(ref), t1 = Date.now(), at = s.exists() ? msOf(s.data().at) : 0; return at ? at - (t0 + t1) / 2 : null; },
+  online: async () => { const r = await getDocs(query(collection(db, 'presence'), where('at', '>', new Date(Date.now() - 150000)))); return r.docs.map(d => ({ uid: d.id, ...d.data(), at: msOf(d.data().at) })); },
+  // shared boss bars and tournament boards: one row per player per event, written by that player
+  play: (eid, u, v) => ME ? setDoc(doc(db, 'eventPlay', eid + '_' + ME.uid), { e: eid, uid: ME.uid, u: String(u || 'player').slice(0, 16), v: Math.min(Math.max(0, Number(v) || 0), 9.99e299), at: serverTimestamp() }) : Promise.resolve(),
+  playListen: (eid, cb) => onSnapshot(query(collection(db, 'eventPlay'), where('e', '==', eid), limit(500)), s => cb(s.docs.map(d => d.data())), () => cb(null)),
+  // one-time codes: the first X players to type it get the reward
+  codeMake: (code, o) => setDoc(doc(db, 'eventCodes', code), { left: o.max, max: o.max, who: [], pct: o.pct, t1: o.t1 }),
+  codeClaim: code => runTransaction(db, async tx => { if (!ME) throw Object.assign(new Error('login'), { code: 'login' });
+    const ref = doc(db, 'eventCodes', code), s = await tx.get(ref); if (!s.exists()) throw Object.assign(new Error('none'), { code: 'none' });
+    const d = s.data(); if ((d.who || []).includes(ME.uid)) throw Object.assign(new Error('again'), { code: 'again' });
+    if (d.t1 && d.t1 < Date.now() - 60000) throw Object.assign(new Error('expired'), { code: 'expired' }); if (!(d.left > 0)) throw Object.assign(new Error('gone'), { code: 'gone' });
+    tx.update(ref, { left: d.left - 1, who: [...(d.who || []), ME.uid] }); return d; }),
+};
 window.WLCloud = WLCloud;
 window.dispatchEvent(new Event('wlcloud-ready'));

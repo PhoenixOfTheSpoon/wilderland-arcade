@@ -212,6 +212,8 @@ const PETS = [
   P_('wstag','Aurora Stag','deer',['#9fffe0','#64CDF5','#ffffff'],7,{wonder:'stag'},{k:'critter'}),
   P_('wfox','Celestial Fox','fox',['#2a1250','#bff0ff','#F9BF01'],7,{wonder:'cfox'},{k:'learn'}),
   P_('wdragon','Diamond Dragon','dragon',['#bff0ff','#64CDF5','#ffffff'],7,{wonder:'ddragon'},{k:'gems'}),
+  // Admin event exclusive: everyone online during a Pet Party gets one
+  P_('partypup','Confetti the Party Pup','puppy',['#ff5fd2','#F9BF01','#64CDF5'],4,{event:'party'},{k:'allTix'}),
 ];
 H.PETS = PETS;
 const byId = id => PETS.find(p => p.id === id);
@@ -257,6 +259,7 @@ H.status = (P, pet) => { const s = pet.src, n = H.norm(P);
   if (n.own[pet.id]) return {own:true, how:'Owned'};
   if (s.free) return {can:true, how:'Free starter pet'};
   if (s.wonder) { const W2 = window.WLW, it = W2 && W2.byId(s.wonder); return {can:!!((P.wonders||{})[s.wonder]), how:'Comes with the Wilderland Wonder “'+(it ? it.n : s.wonder)+'” (Golden Stars, Prize Counter → ⭐ Wilderland)'}; }
+  if (s.event) return {can:false, how:'Admin event exclusive: everyone online during a 🐾 Pet Party gets one'};
   if (s.road) return {can:(P.rebirths||0) >= s.road, how:'Rebirth Road reward · reach rebirth '+s.road+' ('+Math.min(P.rebirths||0, s.road)+'/'+s.road+')'};
   if (s.shop) { const price = H.shopPrice(P, pet); return {buy:'tix', price, how:'Pet Shop · '+fmt(price)+' 🎟'}; }
   if (s.star) return {buy:'star', price:s.star, how:'Golden Stars · '+s.star+' ⭐ (Wilderland pet)'};
@@ -266,7 +269,7 @@ H.status = (P, pet) => { const s = pet.src, n = H.norm(P);
     const c = st(P,'mineChests'); return {can:c >= s.mine.chests, how:'Mine treasure: open '+s.mine.chests+' treasure rooms ('+c+'/'+s.mine.chests+')'}; }
   if (s.boss) { const [k, v] = Object.entries(s.boss)[0], c = st(P,k), nm = {spaceBoss:'Star Ranger bosses', tdBoss:'Trailhead Defense bosses', mineGolem:'Cave Golems', rootBoss:'Kudzu Kings', mineCore:'the Armageddon Core'}[k] || k;
     return {can:c >= v, how:'Boss drop: defeat '+nm+' ('+Math.min(c,v)+'/'+v+')'}; }
-  if (s.one) { const base = PETS.filter(x => x.id != pet.id && !x.src.road && !x.src.wonder), c = base.filter(x => n.own[x.id]).length, all = base.length; return {can:c >= all, how:'THE ONE appears when you own every other pet ('+c+'/'+all+') — or hatch it from a Wilderland Egg (0.00001%)'}; }
+  if (s.one) { const base = PETS.filter(x => x.id != pet.id && !x.src.road && !x.src.wonder && !x.src.event), c = base.filter(x => n.own[x.id]).length, all = base.length; return {can:c >= all, how:'THE ONE appears when you own every other pet ('+c+'/'+all+') — or hatch it from a Wilderland Egg (0.00001%)'}; }
   if (s.pr) return {can:prestige(P) >= s.pr, how:'Prestige reward: reach Prestige '+s.pr+' ('+prestige(P)+'/'+s.pr+')'};
   return {how:'?'}; };
 H.shopPrice = (P, pet) => nice(Math.min(1500*Math.pow(7, pet.r) * (1 + PETS.indexOf(pet)%3*.15), need(P)*.3));
@@ -278,7 +281,11 @@ H.titles = P => { const n = H.norm(P), c = Object.keys(n.own).length, h = H.home
 H.addXp = (P, xp, id) => { const n = H.norm(P); id = id || n.active; if (!id || !n.own[id]) return null; const before = H.lv(n.own[id].xp), d = {...n.own[id], xp:(n.own[id].xp||0) + xp};
   const own = {...n.own, [id]:d}, after = H.lv(d.xp); return {patch:{pets:{...n, own}}, up: after > before ? after : 0, evo: evoOf(after) > evoOf(before) ? EVO_N[evoOf(after)] : ''}; };
 // called by the arcade when a game finishes (mins played) or tickets are paid out
-H.onPlay = (P, mins) => H.addXp(P, Math.round((8 + Math.min(20, mins||0)*12) * (window.WLW ? window.WLW.petxp(P) : 1)));
+H.onPlay = (P, mins) => H.addXp(P, Math.round((8 + Math.min(20, mins||0)*12) * (window.WLW ? window.WLW.petxp(P) : 1) * (window.WLLive ? window.WLLive.petxp() : 1)));
+// admin events: give a pet (event pet, or a random shop pet you don't have yet for Gift Drops)
+H.givePet = (P, id) => { const n = H.norm(P); if (n.own[id] || !byId(id)) return null; return {pets:{...n, own:{...n.own, [id]:{xp:0}}}}; };
+H.giftPetId = P => { const n = H.norm(P), pool = PETS.filter(x => x.src.shop && x.r <= 5 && !n.own[x.id]); return pool.length ? pool[Math.floor(Math.random()*pool.length)].id : null; };
+H.name = id => { const p = byId(id); return p ? p.n : id; };
 
 // =====================================================================================================================
 // EGGS — tickets only, exact odds shown. The Cosmic and Wilderland eggs can hatch the top two rarities.

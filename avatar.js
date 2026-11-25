@@ -29,6 +29,8 @@ V.status = (P, cat, i, adm) => { const o = AVP[cat].o[i]; if (!o) return {own:fa
   else if (o.r) { how = 'shop'; price = V.price(o); own = false; label = 'Avatar Shop · '+fmt(price)+' tickets'; rar = price < 2e3 ? 1 : price < 5e4 ? 2 : price < 1e6 ? 3 : 4; }
   return {own: adm || own || bought, how, label, rar, price, rc: RC[rar], rn: RN[rar]}; };
 V.ownedCount = P => { if (!AVP) return 0; let n = 0; AVK.forEach(k => AVP[k].o.forEach((o,i) => { const st = V.status(P, k, i); if (st.own && st.how !== 'free') n++; })); return n; }; // starter items don't count
+// admin Gift Drops: a random Avatar Shop item you don't own yet (never Cosmic/Wilderland ones)
+V.giftItem = P => { if (!AVP) return null; const pool = []; AVK.forEach(k => AVP[k].o.forEach((o, i) => { const st = V.status(P, k, i); if (st.how == 'shop' && !st.own && st.rar <= 5) pool.push({key:V.key(k, i), n:o.n || k}); })); return pool.length ? pool[Math.floor(Math.random()*pool.length)] : null; };
 V.allOwned = (P, adm) => { let n = 0; AVK.forEach(k => AVP[k].o.forEach((o,i) => { if (V.status(P, k, i, adm).own) n++; })); return n; };
 V.totalCount = () => AVK.reduce((a,k)=>a+AVP[k].o.length,0);
 V.itemsFor = (fid, t) => { if (!AVP) return []; const out = []; AVK.forEach(k => AVP[k].o.forEach(o => { if (o.a === fid+':'+t) out.push(o.n+' '+AVP[k].t.toLowerCase()); })); return out; };

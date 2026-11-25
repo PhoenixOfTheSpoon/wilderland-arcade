@@ -40,7 +40,7 @@ C.load = (force) => { if (loaded && !force) return Promise.resolve(LIVE);
     .catch(e => { loaded = true; loadErr = 'Couldn’t load calendar-events.json ('+(e.message||e)+').'; listeners.forEach(f => f()); return LIVE; }); };
 C.onChange = f => { listeners.push(f); return () => { listeners = listeners.filter(x => x !== f); }; };
 let preview = false;
-const events = () => (preview && DRAFT) ? DRAFT : LIVE;
+const events = () => { const base = (preview && DRAFT) ? DRAFT : LIVE; let ex = []; try { ex = window.WLLive ? window.WLLive.calEvents().map(norm) : []; } catch(e) {} return ex.length ? base.concat(ex) : base; };
 C.events = () => LIVE.slice();
 
 // Expand events into day-by-day occurrences between a and b (inclusive).

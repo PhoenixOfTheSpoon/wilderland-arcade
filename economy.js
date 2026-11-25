@@ -338,5 +338,6 @@ E.welcome = (info) => { ensureCss(); const o = el('div', {cls:'wle-celebrate', s
     el('button', {cls:'wle-btn', style:{marginTop:'14px', padding:'12px 26px', fontSize:'15px'}, onclick:()=>o.remove()}, 'Start playing'));
   o.appendChild(card); document.body.appendChild(o); };
 
+E.spawnCritter = () => { if (host && !document.querySelector('.wle-critter')) { ensureCss(); spawnCritter(); } };   // admin events: Golden Hour
 window.WLE = E;
 })();

@@ -71,6 +71,59 @@ service cloud.firestore {
             || (request.auth != null && request.resource.data.uid == request.auth.uid));
     }
 
+    // ================= ADMIN ABUSE: LIVE EVENTS =================
+    // Only the admin's real Google account can start, change or end events. Checked here on Google's servers,
+    // so editing the page can't get around it. Players can only READ events.
+    function isEventAdmin() {
+      return request.auth != null
+        && request.auth.token.email == 'jonah@wilderland.academy'
+        && request.auth.token.email_verified == true
+        && request.auth.token.firebase.sign_in_provider == 'google.com';
+    }
+    // events/live (what's running) and events/history (the log): everyone reads, only the admin writes.
+    match /events/{id} {
+      allow read: if true;
+      allow write: if isEventAdmin();
+    }
+    // "I'm online" pings: each signed-in player writes only their own (username, game, time). Only the admin can list them.
+    match /presence/{uid} {
+      allow read: if isEventAdmin() || (request.auth != null && request.auth.uid == uid);
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['u', 'g', 'at'])
+        && request.resource.data.u is string && request.resource.data.u.size() <= 16
+        && request.resource.data.g is string && request.resource.data.g.size() <= 20
+        && request.resource.data.at == request.time;
+      allow delete: if isEventAdmin() || (request.auth != null && request.auth.uid == uid);
+    }
+    // World Boss damage / Admin vs Everyone hits / Flash Tournament scores: one row per player per event,
+    // only while the admin has that event open, only going up, at most once every 2 seconds.
+    match /eventPlay/{id} {
+      allow read: if true;
+      allow create, update: if request.auth != null
+        && request.resource.data.keys().hasOnly(['e', 'uid', 'u', 'v', 'at'])
+        && request.resource.data.uid == request.auth.uid
+        && id == request.resource.data.e + '_' + request.auth.uid
+        && request.resource.data.e in get(/databases/$(database)/documents/events/live).data.get('open', [])
+        && request.resource.data.u is string && request.resource.data.u.size() <= 16
+        && request.resource.data.v is number && request.resource.data.v >= 0 && request.resource.data.v < math.pow(10, 300)
+        && request.resource.data.at == request.time
+        && (resource == null || (request.resource.data.v >= resource.data.v
+            && request.time > resource.data.at + duration.value(2, 's')));
+      allow delete: if isEventAdmin();
+    }
+    // Admin Code Drops: the admin makes the code; a player can only take ONE spot (left - 1, add their own id once).
+    match /eventCodes/{code} {
+      allow read: if true;
+      allow create, delete: if isEventAdmin();
+      allow update: if isEventAdmin() || (request.auth != null
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['left', 'who'])
+        && resource.data.left > 0
+        && request.resource.data.left == resource.data.left - 1
+        && !(request.auth.uid in resource.data.who)
+        && request.resource.data.who == resource.data.who.concat([request.auth.uid])
+        && request.time.toMillis() < resource.data.t1 + 60000);
+    }
+
     // ================= WILDERLAND BUSINESS TYCOON =================
     // Nothing here can touch profiles (tickets, prizes, stars, pets, homes, avatars) — those stay owner-only above.
     function signedIn() { return request.auth != null; }

@@ -204,7 +204,7 @@ A.register('idle', { mount(host, api){
   // ---------- economy ----------
   const depthIdx = () => { const life = S.life * (1 + .1*((S.up||{}).bexp||0)); let d = 0; for (let i=0;i<DEPTHS.length;i++) if (life >= DEPTHS[i].at) d = i; return d; };   // Express Shaft makes lifetime ore count for more
   const extraStart = () => 0;   // (old level-cap overflow bonus: every Better Hires level now raises the hire level itself)
-  const mult = () => (window.WLW ? window.WLW.mineOre() : 1) * (1 + .01*U('bdepth')*depthIdx()) * (1 + .05*Math.max(0, U('gem')-GEM_MAX)) * (1 + .02*Math.max(0, U('auto')-FORE_MAX)) * (1 + .25*GL2('ore')) * (1 + .25*U('cart')) * (1 + .2*depthIdx()) * (1 + .1*U('drill')) * (1 + .15*extraStart()) * (traitOf(depthIdx()) && traitOf(depthIdx()).k == 'crew' ? 1.25 : 1);
+  const mult = () => (window.WLW ? window.WLW.mineOre() : 1) * (window.WLLive ? window.WLLive.mineOre() : 1) * (1 + .01*U('bdepth')*depthIdx()) * (1 + .05*Math.max(0, U('gem')-GEM_MAX)) * (1 + .02*Math.max(0, U('auto')-FORE_MAX)) * (1 + .25*GL2('ore')) * (1 + .25*U('cart')) * (1 + .2*depthIdx()) * (1 + .1*U('drill')) * (1 + .15*extraStart()) * (traitOf(depthIdx()) && traitOf(depthIdx()).k == 'crew' ? 1.25 : 1);
   const minerCount = () => S.grid.reduce((a,L)=>a+(L?1:0),0);
   let trouble = 0;   // a hazard went off: miners dig at half speed for a few seconds
   const rate = () => S.grid.reduce((a,L)=>a+lvRate(L),0) * mult() * (trouble > 0 ? .5 : 1);
@@ -384,6 +384,7 @@ A.register('idle', { mount(host, api){
   const rollRare = () => { const L = GL(), boost = (L>=11 ? 1.5 : 1) * (L>=16 ? 1.5 : 1); const r = Math.random();
     if (L>=18 && r < .02*boost) return {k:'Starlight', m:25, c:'#ffffff'}; if (L>=10 && r < .05*boost) return {k:'Diamond', m:12, c:'#bff0ff'};
     if (L>=7 && r < .1*boost) return {k:'Emerald', m:6, c:'#2fe08a'}; if (L>=3 && r < .18*boost) return {k:'Ruby', m:3, c:'#ff4a6a'}; return null; };
+  let liveGemT = 2, liveGemSaid = false;
   const spawnGem = () => { let x = 30 + Math.random()*(W-80), y = VIEW.y + 50 + Math.random()*(VIEW.h-120);
     if (Math.hypot(x-ROCK.x, y-ROCK.y) < ROCK.r+30) x = 40 + Math.random()*180; gems.push({x, y, life: learn ? undefined : gemLife(), rare: learn ? null : rollRare()}); A.tone(1320,.08,'sine',.05); };
   const takeGem = gm => { gems = gems.filter(x => x !== gm); const sp = {x:gm.x, y:gm.y};
@@ -782,6 +783,7 @@ A.register('idle', { mount(host, api){
     if (msg) { msg.t -= dt; if (msg.t <= 0) msg = null; }
     if (!busy && !trans) { if (!gems.length) { gemT -= dt*(hasT('gemmy') ? 2 : 1); if (gemT <= 0) { spawnGem(); if (GL()>=12 && Math.random()<.3) spawnGem(); } } }
     for (const gm of gems) if (gm.life !== undefined) gm.life -= dt; if (gems.some(gm => gm.life !== undefined && gm.life <= 0)) { gems = gems.filter(gm => !(gm.life !== undefined && gm.life <= 0)); if (!gems.length) gemT = gemGap(); }
+    if (window.WLLive && window.WLLive.gems() && !busy && !trans) { liveGemT -= dt; if (liveGemT <= 0) { liveGemT = 5; spawnGem(); if (!liveGemSaid) { liveGemSaid = true; say('💎 GEM SHOWER!', 'An admin event is raining gems and ore — grab them!', '#9fd8ff'); } } } else liveGemSaid = false;
     if (GL() >= 20 && !learn) { stormT -= dt; if (stormT <= 0) { stormT = 180; for (let q=0;q<6;q++) spawnGem(); say('GEM STORM!', 'Six gems just appeared — grab them!', '#9fd8ff'); } }
     // Foreman: merges in batches so even one merge every 0.1 s stays smooth
     const FL = U('auto'); if (FL && !busy) { const iv = foreInt(FL); autoAcc += dt; let m = 0; const quiet = iv < .5; while (autoAcc >= iv && m < 20) { autoAcc -= iv; if (!autoMerge(quiet)) { autoAcc = Math.min(autoAcc, iv); break; } for (let x=0;x<U('fcrew');x++) if (!autoMerge(true)) break; m++; } if (m) paintBar(); if (autoAcc > iv*20) autoAcc = 0; }

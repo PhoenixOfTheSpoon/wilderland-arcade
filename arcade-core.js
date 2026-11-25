@@ -87,7 +87,7 @@ A.canvas = (host, w=480, h=480) => {
   host.appendChild(c); const g = c.getContext('2d'); g.scale(dpr,dpr); return {c, g, w, h};
 };
 A.keys = (handler) => { const f = e => { if (handler(e) !== false && ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault(); }; window.addEventListener('keydown', f); return () => window.removeEventListener('keydown', f); };
-A.loop = (fn) => { let id, last = performance.now(), live = true; const t = now => { if(!live) return; const dt = Math.min(50, now-last); last = now; fn(dt/1000*A.speed); id = requestAnimationFrame(t); }; id = requestAnimationFrame(t); return () => { live=false; cancelAnimationFrame(id); }; };
+A.loop = (fn) => { let id, last = performance.now(), live = true; const t = now => { if(!live) return; const dt = Math.min(50, now-last); last = now; fn(dt/1000*A.speed*(A.liveSpeed || 1)); id = requestAnimationFrame(t); }; id = requestAnimationFrame(t); return () => { live=false; cancelAnimationFrame(id); }; };
 A.overlayText = (g, w, h, big, small) => {
   g.fillStyle = 'rgba(1,86,64,0.82)'; g.fillRect(0,0,w,h);
   g.fillStyle = '#D5F367'; g.textAlign='center'; g.font = '700 34px '+A.font; g.fillText(big, w/2, h/2-8);
