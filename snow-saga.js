@@ -208,12 +208,12 @@ A.snowSaga = S => {
     const fly = (PW.flyT || 0) > 0, how = {climb:fly || v == CLIFF || (ahead == CLIFF && canClimb), glide:fly || v == CHASM || (ahead == CHASM && canGlide)};
     mode = fly ? 'fly' : v == CLIFF ? 'climb' : v == CHASM ? 'glide' : v == SWIM ? 'swim' : '';
     // stamina
-    const drain = mode == 'climb' ? 16 : mode == 'glide' ? (SV.flags.starCloak ? 6.5 : 13) : mode == 'swim' ? (moving ? 9 : 4) : 0;
-    if (drain) { stam -= drain*dt*(1 - .08*Math.min(5, (SV.flags.gripLv|0))); stamShow = 2; } else if (stam < sm) { stam = Math.min(sm, stam + dt*(buffOn('stam') ? 60 : 22)); stamShow = Math.max(stamShow, .8); } else stamShow = Math.max(0, stamShow - dt);
-    if (stam <= 0) { stam = 0; if (mode == 'climb') { fall('😓 Too tired to keep climbing! (cook a Stamina Soup or earn more stamina at the Aurora Statue)'); return true; } if (mode == 'glide') { fall(SV.cloak ? '💨 Out of stamina mid-air… you drift back down' : '🕳️ You need the Snow Cloak to glide over that'); return true; } if (mode == 'swim') { fall('🌊 Too tired to swim! Back to the shore'); return true; } }
+    const drain = mode == 'climb' ? (moving ? 9 : 2) : mode == 'glide' ? (SV.flags.starCloak ? 6.5 : 13) : mode == 'swim' ? (moving ? 9 : 4) : 0;
+    if (drain) { stam -= drain*dt*(1 - .08*Math.min(5, (SV.flags.gripLv|0))); stamShow = 2; } else if (stam < sm) { stam = Math.min(sm, stam + dt*(buffOn('stam') ? 80 : 40)); stamShow = Math.max(stamShow, .8); } else stamShow = Math.max(0, stamShow - dt);
+    if (stam <= 0) { stam = 0; if (mode == 'climb') { mode = ''; if (lastSafe) { p.x = lastSafe.x; p.y = lastSafe.y; } p.vx = p.vy = 0; S.say('😓 Too tired! You slide back down. Rest a second, then climb again', 2.4); return true; } if (mode == 'glide') { fall(SV.cloak ? '💨 Out of stamina mid-air… you drift back down' : '🕳️ You need the Snow Cloak to glide over that'); return true; } if (mode == 'swim') { fall('🌊 Too tired to swim! Back to the shore'); return true; } }
     if (v == CHASM && !SV.cloak && !fly) { fall('🕳️ Careful! You need the Snow Cloak to cross gaps'); return true; }
     // speed
-    let spd = 215*X.spd()*(PW.slow || 1); if (mode == 'fly') spd = 300; else if (mode == 'climb') spd = 140 + 8*(SV.flags.gripLv|0); else if (mode == 'glide') spd = 270; else if (mode == 'swim') spd *= .55; else if (v == DEEP) spd *= .62; else if (v == SAND) spd *= .88; else if (v == PATH || v == FLOOR || v == CLOUD) spd *= 1.15;
+    let spd = 215*X.spd()*(PW.slow || 1); if (mode == 'fly') spd = 300; else if (mode == 'climb') spd = 200 + 8*(SV.flags.gripLv|0); else if (mode == 'glide') spd = 270; else if (mode == 'swim') spd *= .55; else if (v == DEEP) spd *= .62; else if (v == SAND) spd *= .88; else if (v == PATH || v == FLOOR || v == CLOUD) spd *= 1.15;
     if (S.riding && W.mount && v == SLOPE) spd *= 1.25;
     const k2 = v == ICE ? 2.2 + .8*X.gStat('boots') : mode == 'glide' ? 3 : 14;
     if (!(p.roll > 0)) { p.vx += (mx*spd - p.vx)*Math.min(1, k2*dt); p.vy += (my*spd - p.vy)*Math.min(1, k2*dt); }
