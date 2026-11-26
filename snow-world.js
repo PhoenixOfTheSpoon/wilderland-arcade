@@ -260,7 +260,7 @@ A.snowWorld = function(X) {
     if (p.stick) { p.stick = 0; balls.push({x:p.x, y:p.y - 10, vx:Math.cos(ang)*430, vy:Math.sin(ang)*430, mine:1, dmg:0, r:9, life:.75, kind:'stick', hits:[], col:'#8D5B1D'}); p.reload = .5; p.face = ang; p.throwT = .2; A.tone(300, .08, 'triangle', .04); say('🪵 Stick!', 1); return; }
     if (k == 'boulder') { dmg *= 3; r = 12; sp = 420; }
     balls.push({x:p.x, y:p.y - 10, vx:Math.cos(ang)*sp, vy:Math.sin(ang)*sp, mine:1, dmg, r, life:.8 + (sn > 1 ? .35 : 0) + pk*.2, kind:k, hits:[], pierce:k == 'shard' || p.eye > 0, col:k == 'shard' ? '#9fe8ff' : k == 'slush' ? '#bfe0ff' : k == 'sparkle' ? '#ffe9a0' : '#ffffff'});
-    p.ammo -= cost; p.reload = .7; p.face = ang; p.throwT = .18; A.tone(520 + pk*200, .04, 'triangle', .03); };
+    p.ammo -= cost; p.reload = Math.max(p.reload, .7/Math.min(4, Math.max(1, regenMul()))); p.idleT = 0; p.face = ang; p.throwT = .18; A.tone(520 + pk*200, .04, 'triangle', .03); };
   const useAbility = () => { if (p.ab > 0 || dead > 0) return; const C2 = X.CL(), k = PERM.cls; p.ab = X.abCd(); A.sfx('win'); say('⭐ ' + C2.ab + '!', 1.4);
     const wa = toWorld(aim);
     if (k == 'slinger') for (let i = -2; i <= 2; i++) { const a = Math.atan2(wa.y - p.y, wa.x - p.x) + i*.16; balls.push({x:p.x, y:p.y - 10, vx:Math.cos(a)*560, vy:Math.sin(a)*560, mine:1, dmg:X.armM()*1.2, r:6, life:.9, hits:[], col:'#ffffff'}); }
@@ -272,7 +272,7 @@ A.snowWorld = function(X) {
   // ---------- enemies ----------
   const spawnFoe = (k, x, y) => { const F = FOE[k], tier = Math.max(1, REG[regAt(x, y)].tier), hp = Math.ceil(F.hp * (1 + .3*(tier - 1)) * A.D(.8, 1, 1.25)); foes.push({k, x, y, hp, max:hp, cool:1 + Math.random()*1.5, wa:Math.random()*TAU, wt:0, stun:0, kb:0, kbx:0, kby:0, hurt:0, dir:Math.random() < .5 ? 1 : -1, tier, flap:Math.random()*6}); };
   const hurtFoe = (f, dmg) => { f.hp -= dmg; f.hurt = 3; f.flash = .12; addNum(f.x, f.y - 26, '-' + Math.round(dmg*10)/10, '#FF4539'); if (f.hp <= 0 && !f.dead) killFoe(f); };
-  const killFoe = f => { f.dead = 1; const F = FOE[f.k]; splat(f.x, f.y, 14, f.k == 'imp' || f.k == 'pup' || f.k == 'clone' ? '#c08aff' : '#ffffff'); if (F.decoy) addNum(f.x, f.y - 30, 'Fake-out!', '#2f8ad8'); if (F.clone) return;
+  const killFoe = f => { f.dead = 1; if (!f.dk) { f.dk = 1; p.ammo = Math.min(X.maxAmmo(), p.ammo + 1 + RL('well')); } const F = FOE[f.k]; splat(f.x, f.y, 14, f.k == 'imp' || f.k == 'pup' || f.k == 'clone' ? '#c08aff' : '#ffffff'); if (F.decoy) addNum(f.x, f.y - 30, 'Fake-out!', '#2f8ad8'); if (F.clone) return;
     const fl = Math.round((3 + Math.random()*5) * f.tier); give({flakes:fl, xp:2, score:F.pts*f.tier}); addNum(f.x, f.y - 44, '+' + fl + ' ❄', '#2f8ad8'); W.kills = (W.kills || 0) + 1; X.stat('snowWorldKills', 1, 'add');
     if (Math.random() < .09) drops.push({x:f.x, y:f.y, k:'cocoa', life:15}); else if (W.mau && Math.random() < .05) drops.push({x:f.x, y:f.y, k:'fish', life:18}); };
   const hurtMe = dmg => { if (p.inv > 0 || p.shieldT > 0 || A.immortal || dead > 0 || quiz) return; if (raid && raid.mods.some(m2 => m2.dmg)) dmg *= 2; shakeV = Math.max(shakeV, 4); if (Math.random() < .06*X.PU('armor')) { p.inv = .4; addNum(p.x, p.y - 40, 'Shrugged off!', '#2f8ad8'); return; } p.hp -= dmg; p.inv = .9; p.hitT = .3; A.sfx('bad'); splat(p.x, p.y - 10, 8, '#e8f4ff');
@@ -516,6 +516,7 @@ A.snowWorld = function(X) {
     {id:'trophy', e:'🏆', n:'Trophy Hall', d:lv => '+' + (10*lv) + '% snowflakes from everything'},
     {id:'shrine', e:'🕯️', n:'Spirit Shrine', d:lv => 'Spirit companions and blessings heal ' + (lv*20) + '% faster', need:() => (W.sp|0) >= 6, needTxt:'Finish Spirits of the Snow'},
     {id:'yard', e:'🎯', n:'Training Yard', d:lv => '+' + (2*lv) + ' snowballs you can carry'},
+    {id:'well', e:'⛲', n:'Snow Well', d:lv => 'Snowballs come back ' + (35*lv) + '% faster · knockouts give +' + lv + ' extra snowball' + (lv == 1 ? '' : 's')},
     {id:'defenses', e:'🏰', n:'Defenses', d:lv => lv + ' free snow turret' + (lv == 1 ? '' : 's') + ' in sieges · village bell +' + (25*lv) + '% sturdier'}];
   W.base = W.base || {tier:0, rooms:{}}; W.base.rooms = W.base.rooms || {}; W.sk = W.sk || {}; W.kxp = W.kxp || 0; W.mounts = W.mounts || {}; W.village = W.village|0; W.raids = W.raids || {};
   const RL = id => W.base.rooms[id]|0;
@@ -524,7 +525,7 @@ A.snowWorld = function(X) {
   const costTxt = c => [c.frost ? c.frost + ' 🔷' : '', c.flakes ? A.fmt(c.flakes) + ' ❄' : ''].filter(Boolean).join(' + ');
   // kingdom level + skill tree (hearts keep growing: +1 every 3 levels, and the Heart skill)
   const SK = [{id:'dmg', e:'💥', n:'Strong Arm', d:r => '+' + (8*r) + '% snowball damage'}, {id:'hp', e:'❤️', n:'Big Heart', d:r => '+' + r + ' max heart' + (r == 1 ? '' : 's')}, {id:'spd', e:'👟', n:'Quick Feet', d:r => '+' + (6*r) + '% walking speed'},
-    {id:'ammo', e:'⚪', n:'Deep Pockets', d:r => '+' + (2*r) + ' snowballs'}, {id:'crit', e:'🍀', n:'Lucky Shot', d:r => '+' + (4*r) + '% critical hits'}];
+    {id:'ammo', e:'⚪', n:'Deep Pockets', d:r => '+' + (2*r) + ' snowballs'}, {id:'crit', e:'🍀', n:'Lucky Shot', d:r => '+' + (4*r) + '% critical hits'}, {id:'regen', e:'🏭', n:'Snow Factory', d:r => 'Snowballs come back ' + (25*r) + '% faster'}];
   const kLv = () => Math.floor(Math.sqrt(W.kxp/30)) + 1, kPts = () => kLv() - 1 - SK.reduce((a, s) => a + (W.sk[s.id]|0), 0);
   { const a0 = X.armM, m0 = X.maxAmmo, s0 = X.spd, h0 = X.maxHp, c0 = X.crit, g0 = X.give;
     X.armM = () => a0() * (1 + .08*(W.sk.dmg|0)) * (1 + .08*RL('forge'));
@@ -532,6 +533,11 @@ A.snowWorld = function(X) {
     X.spd = () => s0() * (1 + .06*(W.sk.spd|0)) * mountMul();
     X.maxHp = () => h0() + (W.sk.hp|0) + RL('kitchen') + Math.floor((kLv() - 1)/3) + (W.extraHp|0);
     X.crit = () => c0() + (W.sk.crit|0); }
+  // snowball regen: every source multiplies. Standing still (not throwing) for a moment refills three times as fast.
+  const regenParts = () => [['Fast Scoop & Snow Machine (arena upgrades)', X.scoop()], ['Snow Factory skill', 1 + .25*(W.sk.regen|0)], ['Snow Well', 1 + .35*RL('well')],
+    ['Backpack & gloves', 1 + .1*(X.gStat ? X.gStat('pack') : 0) + .05*(X.gStat ? X.gStat('gloves') : 0)], ['Bottomless Mitten', W.mitten ? 1.5 : 1], ['Snow Globe Charm', W.globe ? 2 : 1]];
+  const regenMul = () => regenParts().reduce((a, q) => a*q[1], 1);
+  const regenTxt = () => (2.5*regenMul()).toFixed(1) + ' snowballs/s (×3 when you pause throwing)';
   const refreshMax = () => { const m2 = X.maxHp(); if (m2 > p.max) p.hp += m2 - p.max; p.max = m2; };
   // mounts: sled, reindeer, snowmobile (V to hop on or off)
   const MOUNTS = [{id:'sled', e:'🛷', n:'Sled', mul:1.4}, {id:'reindeer', e:'🦌', n:'Reindeer', mul:1.65}, {id:'snowmobile', e:'🏍️', n:'Snowmobile', mul:1.95}];
@@ -553,22 +559,27 @@ A.snowWorld = function(X) {
   const panelDown = q => { for (const r2 of pnR) if (q.x >= r2.x && q.x <= r2.x + r2.w && q.y >= r2.y && q.y <= r2.y + r2.h) { r2.fn(); return; } };
   const fortPanel = () => openPanelUI(() => { const T = W.base.tier, nx = TIER_COST[T + 1];
     return {title:'🏰 ' + TIER_N[T] + ' · your base', sub:'Rooms give bonuses all over the Snow Kingdom. Each tier lets rooms grow one level more. You have ' + PERM.frost + ' 🔷 and ' + A.fmt(PERM.bank) + ' ❄.',
-      rows:[...(nx ? [{e:'⬆️', n:'Upgrade to ' + TIER_N[T + 1], d:'Bigger walls, taller towers, rooms can reach level ' + (T + 2), btn:costTxt(nx), ok:canPay(nx), fn:() => { pay(nx); W.base.tier++; X.stat('snowFort', W.base.tier, 'max'); save(); A.sfx('win'); say('🏰 Your base is now a ' + TIER_N[W.base.tier] + '!', 3); }}] : [{e:'💎', n:'Crystal Castle', d:'Your base is fully upgraded', btn:''}]),
+      rows:[forgeRow(), ...(nx ? [{e:'⬆️', n:'Upgrade to ' + TIER_N[T + 1], d:'Bigger walls, taller towers, rooms can reach level ' + (T + 2), btn:costTxt(nx), ok:canPay(nx), fn:() => { pay(nx); W.base.tier++; X.stat('snowFort', W.base.tier, 'max'); save(); A.sfx('win'); say('🏰 Your base is now a ' + TIER_N[W.base.tier] + '!', 3); }}] : [{e:'💎', n:'Crystal Castle', d:'Your base is fully upgraded', btn:''}]),
         ...ROOMS.map(r0 => { const lv = RL(r0.id), max = T + 1, c = roomCost(r0.id, lv), locked = r0.need && !r0.need();
           return {e:r0.e, n:r0.n + ' · Lv ' + lv + '/' + max, d:(lv ? r0.d(lv) : 'Not built') + (lv < max && !locked ? ' → next: ' + r0.d(lv + 1) : ''), btn:locked ? '🔒 ' + r0.needTxt : lv >= max ? (lv >= 4 ? 'MAX' : 'Needs a bigger base') : (lv ? 'Upgrade · ' : 'Build · ') + costTxt(c), ok:!locked && lv < max && canPay(c), fn:() => { pay(c); W.base.rooms[r0.id] = lv + 1; refreshMax(); save(); A.sfx('coin'); }}; }),
-        {e:'📈', n:'Skills · kingdom level ' + kLv(), d:kPts() + ' skill point' + (kPts() == 1 ? '' : 's') + ' to spend (or press K)', btn:'Open skills', ok:true, fn:() => skillPanel()},
-        {e:'🔨', n:'Craft gear at the Forge', d:'Rarity up to ' + Math.min(5, 1 + RL('forge')) + ' · needs a Forge', btn:'Craft · 25 🔷', ok:RL('forge') > 0 && PERM.frost >= 25, fn:() => { PERM.frost -= 25; const it = give({gear:Math.min(5, Math.floor(Math.random()*(1 + RL('forge'))) + 1)}); save(); say('🔨 Crafted: ' + (it ? it.name : 'gear'), 2.6); }}]}; });
-  const skillPanel = () => openPanelUI(() => ({title:'📈 Level ' + kLv() + ' · ' + kPts() + ' skill point' + (kPts() == 1 ? '' : 's'), sub:'Earn kingdom XP from enemies, bosses, raids and quests. Every 3 levels also gives +1 max heart. Next level at ' + A.fmt(30*kLv()*kLv()) + ' XP (you have ' + A.fmt(W.kxp) + ').',
+        {e:'📈', n:'Skills · kingdom level ' + kLv(), d:kPts() + ' skill point' + (kPts() == 1 ? '' : 's') + ' to spend (or press K)', btn:'Open skills', ok:true, fn:() => skillPanel()}]}; });
+  const forgeRow = () => { const fl = RL('forge'), c0 = roomCost('forge', 0);
+    return fl ? {e:'🔨', n:'Forge gear · Uncommon or better, up to ' + GRN[Math.min(5, 1 + fl)] + ' guaranteed', d:'Random slot · upgrade the Forge for rarer gear · equip it in the Snowball menu → Loadout', btn:'Forge · 25 🔷', ok:PERM.frost >= 25, fn:() => { PERM.frost -= 25; const it = give({gear:Math.min(5, Math.floor(Math.random()*(1 + fl)) + 1)}); X.savePerm && X.savePerm(); save(); A.sfx('coin'); say('🔨 Forged: ' + (it ? it.name : 'gear') + (it ? ' (' + GRN[it.rar] + ')' : ''), 3); }}
+      : {e:'🔨', n:'Forge gear', d:'You need a Forge first: build it here, then forge gear for 25 🔷', btn:'Build Forge · ' + costTxt(c0), ok:canPay(c0), fn:() => { pay(c0); W.base.rooms.forge = 1; save(); A.sfx('coin'); say('⚒️ Forge built! Now you can forge gear', 2.6); }}; };
+  const GRN = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary', 'Mythic'];
+  const skillPanel = () => openPanelUI(() => ({title:'📈 Level ' + kLv() + ' · ' + kPts() + ' skill point' + (kPts() == 1 ? '' : 's'), sub:'Earn kingdom XP from enemies, bosses, raids and quests. Every 3 levels also gives +1 max heart. Next level at ' + A.fmt(30*kLv()*kLv()) + ' XP (you have ' + A.fmt(W.kxp) + '). ⚪ Snowball regen: ' + regenTxt() + '.',
     rows:SK.map(s2 => { const r = W.sk[s2.id]|0; return {e:s2.e, n:s2.n + ' · rank ' + r + '/5', d:(r ? s2.d(r) : 'Not learned') + (r < 5 ? ' → ' + s2.d(r + 1) : ''), btn:r >= 5 ? 'MAX' : 'Learn · 1 point', ok:r < 5 && kPts() > 0, fn:() => { W.sk[s2.id] = r + 1; refreshMax(); save(); A.sfx('coin'); }}; })}));
   const SHOP = [{e:'🐟', n:'Bag of 5 treats', d:'For Royal Guard Mau Mau', c:{flakes:250}, fn:() => { W.treats = (W.treats||0) + 5; }},
     {e:'☕', n:'Cocoa (full heal)', d:'Heals you and your team right now', c:{flakes:120}, fn:() => { p.hp = p.max; mates.forEach(m => { m.ko = 0; m.hp = m.max; }); }},
     {e:'🛷', n:'Sled', d:'Ride ×1.4 speed (V)', c:{flakes:1500}, own:'sled'}, {e:'🦌', n:'Reindeer', d:'Ride ×1.65 speed (V) · village level 1', c:{frost:40}, own:'reindeer', lv:1},
     {e:'🏍️', n:'Snowmobile', d:'Ride ×1.95 speed (V) · village level 2', c:{frost:150}, own:'snowmobile', lv:2},
     {e:'🛡️', n:'Royal Guard armor piece', d:'Rare gear · village level 1', c:{frost:60}, lv:1, fn:() => { const it = give({gear:4}); say('🛡️ ' + (it ? it.name : 'Royal Guard armor'), 2.4); }},
+    {e:'🧤', n:'Bottomless Mitten', d:'Snowballs come back ×1.5 faster, forever · village level 1', c:{frost:80}, lv:1, perk:'mitten'},
+    {e:'🔮', n:'Snow Globe Charm', d:'Snowballs come back ×2 faster, forever · village level 2', c:{frost:220}, lv:2, perk:'globe'},
     {e:'🧣', n:'Spirit scarf (cosmetic gear)', d:'Legendary gear · village level 3', c:{frost:160}, lv:3, fn:() => { const it = give({gear:5}); say('🧣 ' + (it ? it.name : 'Spirit scarf'), 2.4); }}];
   const shopPanel = () => openPanelUI(() => ({title:'🏪 Frostpine Village Shop · village level ' + W.village, sub:'Defend the village from sieges to grow it and unlock more. You have ' + PERM.frost + ' 🔷 and ' + A.fmt(PERM.bank) + ' ❄.',
-    rows:SHOP.map(it => { const owned = it.own && W.mounts[it.own], locked = (it.lv||0) > W.village; return {e:it.e, n:it.n, d:it.d, btn:owned ? (W.mount == it.own && riding ? 'Hop off (V)' : 'Ride (V)') : locked ? '🔒 Village level ' + it.lv : costTxt(it.c), ok:owned ? true : !locked && canPay(it.c),
-      fn:() => { if (owned) { if (W.mount == it.own && riding) riding = false; else { W.mount = it.own; riding = true; } save(); A.sfx('blip'); return; } pay(it.c); if (it.own) { W.mounts[it.own] = 1; W.mount = it.own; riding = true; } if (it.fn) it.fn(); save(); A.sfx('coin'); }}; })}));
+    rows:SHOP.map(it => { const owned = it.own && W.mounts[it.own], locked = (it.lv||0) > W.village, perk = it.perk && W[it.perk]; if (perk) return {e:it.e, n:it.n, d:it.d, btn:'✓ Owned', ok:false}; return {e:it.e, n:it.n, d:it.d, btn:owned ? (W.mount == it.own && riding ? 'Hop off (V)' : 'Ride (V)') : locked ? '🔒 Village level ' + it.lv : costTxt(it.c), ok:owned ? true : !locked && canPay(it.c),
+      fn:() => { if (owned) { if (W.mount == it.own && riding) riding = false; else { W.mount = it.own; riding = true; } save(); A.sfx('blip'); return; } pay(it.c); if (it.own) { W.mounts[it.own] = 1; W.mount = it.own; riding = true; } if (it.perk) { W[it.perk] = 1; say(it.e + ' ' + it.n + ': snowballs come back faster!', 2.6); } if (it.fn) it.fn(); save(); A.sfx('coin'); }}; })}));
   // ---------- VILLAGE SIEGE ----------
   const BELL = {x:28.5*TS, y:115.5*TS}, TSPOT = [[-140, -60], [140, -60], [-140, 90], [140, 90]].map(([a, b]) => ({x:BELL.x + a, y:BELL.y + b}));
   let siege = null;
@@ -936,7 +947,7 @@ A.snowWorld = function(X) {
     if (!gateOpen() && Math.abs(p.x - (83.5*TS)) < 90 && Math.abs(p.y - 31*TS) < 40) { gateT -= dt; if (gateT <= 0) { gateT = 4; say('🔒 The gate is sealed: ' + runesN() + '/3 Moon Runes' + (W.mau ? '' : ' · Royal Guard Mau Mau has the key') , 3); } }
     // timers, ammo, healing
     p.inv = Math.max(0, p.inv - dt); p.hitT = Math.max(0, p.hitT - dt); p.ab = Math.max(0, p.ab - dt); p.shieldT = Math.max(0, p.shieldT - dt); p.eye = Math.max(0, p.eye - dt); p.fortT = Math.max(0, p.fortT - dt); p.throwT = Math.max(0, (p.throwT || 0) - dt);
-    p.reload -= dt * X.scoop(); if (p.reload <= 0 && p.ammo < X.maxAmmo()) { p.ammo++; p.reload = .4; }
+    p.idleT = (p.idleT || 0) + dt; { const mxA = X.maxAmmo(); p.reload -= dt * regenMul() * (p.idleT > 1.2 ? 3 : 1); let n3 = 0; while (p.reload <= 0 && p.ammo < mxA && n3++ < 50) { p.ammo++; p.reload += .4; } if (p.ammo >= mxA) p.reload = Math.max(p.reload, 0); }
     if (X.PU('regen') && p.hp < p.max) { p.regT = (p.regT || 0) + dt; if (p.regT >= 40 - 5*X.PU('regen')) { p.regT = 0; p.hp++; addNum(p.x, p.y - 40, '☕ +♥', '#8D5B1D'); } }
     if (dist(p, FIRE) < 110 && p.hp < p.max) { healT -= dt; if (healT <= 0) { healT = 1; p.hp++; addNum(p.x, p.y - 40, '+♥', '#FF4539'); } }
     for (const d2 of drops) { d2.life -= dt; if (dist(d2, p) < 34) { d2.life = 0; if (d2.k == 'fish') { W.treats = (W.treats||0) + 1; addNum(p.x, p.y - 40, '+1 🐟 treat', '#c4601a'); } else { p.hp = Math.min(p.max, p.hp + 1); addNum(p.x, p.y - 40, '☕ +♥', '#8D5B1D'); } A.sfx('coin'); } } drops = drops.filter(d2 => d2.life > 0);
