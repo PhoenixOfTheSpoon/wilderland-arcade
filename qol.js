@@ -9,7 +9,10 @@ const el = (tag, at, ...kids) => { const n = document.createElement(tag); at = a
   kids.flat().forEach(c => { if (c == null || c === false) return; n.appendChild(typeof c == 'object' ? c : document.createTextNode(String(c))); }); return n; };
 
 // ---------------- What's new ----------------
-const WN = {v:'2026-12-12', items:[
+const WN = {v:'2026-12-13', items:[
+  ['⚔️', 'Raid Season!', 'The Raid board is now the War Table (next to Camp Cocoa): 10 raids with 5–8 themed floors each, Normal → Heroic → Mythic → Nightmare, weekly modifiers, raid keys with no level limit, raid sets, relics, Raid Tokens and the Quartermaster, weekly lockouts and a weekly chest, a Trophy Hall, raid achievements, titles and leaderboards (with World First).'],
+  ['🧠', 'Raid bosses you learn', 'Every attack has a warning and a counter: dodge charges into walls, hide from breath behind pillars, roll through shockwaves, knock gold orbs back, interrupt spells with a charged snowball, stack or spread with your team, solve puzzles mid-fight. Fill the stagger bar for a big damage window. Mau Mau tanks — feed him!'],
+  ['🧭', 'Raid fixes', 'Every objective has an arrow, a mini-map star and a banner. The bottom buttons never overlap (icons only on small screens). Teammates keep a spread-out formation. Online and couch co-op raids come with the Couch Co-op update.'],
   ['🌌', 'After the credits: the Gecko God', 'Cat Gone Missing: find Oswald, stop the ritual, survive 3 godlike fights (each unlocks a power: Seal-Breaker Snowballs, Starlight Cloak, Flight on X), then the Gecko God with 50 layered bars. Rewards: Gecko God Slayer title, godlike outfit, a statue in the Hall of Paws with a timed rematch.'],
   ['🦎', 'The Dumpling Saga', 'After Spirits of the Snow: a new 9-chapter main story across 8 new lands (Expedition Board at camp). Climb cliffs, glide with the Snow Cloak, sled, swim, solve 66 Ice Shrines, cook at campfires, collect Frost Feathers, and face Dumpling, the sealed gecko king. Press J for the saga journal.'],
   ['⚪', 'Way faster snowballs', 'Snowballs come back much faster: new Snow Factory skill, Snow Well room, Bottomless Mitten and Snow Globe Charm in the village shop, a Snow Machine upgrade that refills you anywhere, Fast Scoop up to level 10, knockouts hand snowballs back, and a ×3 refill when you pause throwing.'],

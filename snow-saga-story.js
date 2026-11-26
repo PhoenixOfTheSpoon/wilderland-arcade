@@ -205,6 +205,7 @@ SAGA.storyInit = (S, SG) => {
   // ---------- drawing ----------
   const rr = S.rr;
   // Dumpling, side view, lying flat like a real leopard gecko (faces right; flip:true faces left)
+  SAGA.drawGecko = (x, y, o) => drawGecko(x, y, o);   // the raids borrow him for Dumpling's Shadow
   const drawGecko = (x, y, o = {}) => { const s = o.s || 1, t = S.t; g.save(); g.translate(x, y); g.scale(o.flip ? -s : s, s); if (o.alpha != null) g.globalAlpha = o.alpha;
     const body = o.col || '#efe2a2', dark = o.dark || '#1e1e24', belly = o.belly || '#fbf6e4', br = Math.sin(t*3)*.8, walk = o.walk ? Math.sin(t*12) : 0;
     const spot = (sx, sy, rx, ry, a) => { g.beginPath(); g.ellipse(sx, sy, rx, ry, a || 0, 0, TAU); g.fill(); };

@@ -30,6 +30,17 @@ const MOODS = {
   dump1:  {root:50, sc:HARM,bpm:128, prog:[0,5,1,4], lead:'square',   arp:'triangle', bass:'square',   drums:2, seed:203, vol:.85},
   dump2:  {root:50, sc:HARM,bpm:148, prog:[0,5,1,4], lead:'sawtooth', arp:'square',   bass:'sawtooth', drums:3, seed:203, vol:.8},
   godchoir:{root:55, sc:HARM,bpm:84, prog:[0,5,3,6], lead:'sine',     arp:'triangle', bass:'sine',     drums:2, seed:233, vol:1},
+  // Raid Season: one tune per raid (original)
+  r_library:  {root:62, sc:DOR, bpm:104, prog:[0,3,5,4], lead:'triangle', arp:'sine',     bass:'triangle', drums:1, seed:301, vol:1},
+  r_catacombs:{root:55, sc:PHRY,bpm:96,  prog:[0,1,5,4], lead:'square',   arp:'triangle', bass:'sine',     drums:1, seed:313, vol:.9},
+  r_labyrinth:{root:64, sc:DOR, bpm:112, prog:[0,6,3,4], lead:'sine',     arp:'triangle', bass:'triangle', drums:1, seed:331, vol:1},
+  r_citadel:  {root:57, sc:MIN, bpm:144, prog:[0,5,6,4], lead:'sawtooth', arp:'square',   bass:'sawtooth', drums:3, seed:347, vol:.8},
+  r_vault:    {root:60, sc:HARM,bpm:120, prog:[0,4,5,3], lead:'square',   arp:'triangle', bass:'square',   drums:2, seed:359, vol:.9},
+  r_kitchen:  {root:65, sc:MAJ, bpm:132, prog:[0,3,4,4], lead:'square',   arp:'square',   bass:'triangle', drums:2, seed:367, vol:.9},
+  r_temple:   {root:58, sc:DOR, bpm:88,  prog:[0,5,3,6], lead:'sine',     arp:'triangle', bass:'sine',     drums:1, seed:379, vol:1.05},
+  r_hollow:   {root:53, sc:HARM,bpm:100, prog:[0,5,1,4], lead:'triangle', arp:'square',   bass:'square',   drums:2, seed:383, vol:.9},
+  r_clockwork:{root:59, sc:MIN, bpm:126, prog:[0,4,0,5], lead:'square',   arp:'square',   bass:'square',   drums:3, seed:397, vol:.85},
+  r_void:     {root:54, sc:PHRY,bpm:92,  prog:[0,1,6,5], lead:'sawtooth', arp:'sine',     bass:'triangle', drums:2, seed:409, vol:.85},
   dump3:  {root:50, sc:HARM,bpm:170, prog:[0,5,1,6], lead:'sawtooth', arp:'sawtooth', bass:'sawtooth', drums:3, seed:203, vol:.78},
 };
 const mtof = m => 440 * Math.pow(2, (m-69)/12);

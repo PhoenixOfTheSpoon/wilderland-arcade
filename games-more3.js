@@ -969,11 +969,20 @@ A.register('snowball', { mount(host, api){
     {label:'Kingdom: complete current quest step', run:() => { if (!wm) openWorld(); wm && wm.adm.quest(); }},
     {label:'Kingdom: jump to story chapter (0 before · 1-5 chapters · 6 epilogue)', num:1, min:0, max:6, run:n => { if (!wm) openWorld(); wm && wm.adm.chapter(n); }},
     {label:'Kingdom: start a village siege', run:() => { if (!wm) openWorld(); wm && wm.adm.siege(); }},
-    {label:'Kingdom: enter raid (1 Catacombs 2 Labyrinth 3 Citadel 4 Yeti Vault 5 Loki Library)', num:1, min:1, max:5, run:n => { if (!wm) openWorld(); wm && wm.adm.raid(n); }},
+    {label:'Raids: start a raid on Normal (1 Library 2 Catacombs 3 Labyrinth 4 Citadel 5 Vault 6 Kitchen 7 Temple 8 Hollow 9 Clockwork 10 Void)', num:1, min:1, max:10, run:n => { if (!wm) openWorld(); wm && wm.adm.raid(n, 0); }},
+    {label:'Raids: start a raid on Mythic (1-10)', num:1, min:1, max:10, run:n => { if (!wm) openWorld(); wm && wm.adm.raid(n, 2); }},
+    {label:'Raids: teleport to raid floor', num:1, min:1, max:8, run:n => { const R2 = wm && wm.adm.raids(); R2 && R2.floor(n); }},
+    {label:'Raids: spawn the raid boss (jumps to the last floor)', run:() => { if (!wm) openWorld(); const R2 = wm && wm.adm.raids(); R2 && R2.boss(); }},
+    {label:'Raids: skip boss phase (or finish the floor)', run:() => { const R2 = wm && wm.adm.raids(); R2 && R2.skip(); }},
+    {label:'Raids: give a raid set piece (Legendary)', run:() => { if (!wm) openWorld(); const R2 = wm && wm.adm.raids(); R2 && R2.gear(); }},
+    {label:'Raids: set every raid key level', num:5, min:0, run:n => { if (!wm) openWorld(); const R2 = wm && wm.adm.raids(); R2 && R2.key(n); }},
+    {label:'Raids: reset weekly lockouts', run:() => { if (!wm) openWorld(); const R2 = wm && wm.adm.raids(); R2 && R2.resetLock(); }},
+    {label:'Raids: unlock every difficulty', run:() => { if (!wm) openWorld(); const R2 = wm && wm.adm.raids(); R2 && R2.unlockAll(); }},
+    {label:'Raids: add Raid Tokens', num:500, min:1, run:n => { if (!wm) openWorld(); const R2 = wm && wm.adm.raids(); R2 && R2.tokens(n); }},
+    {label:'Raids: toggle boss hints', run:() => { if (!wm) openWorld(); const R2 = wm && wm.adm.raids(); if (R2) { const RS = wm.adm.raids && window.Arcade._dbg && window.Arcade._dbg.snow().wm().dbg().W.rs; if (RS) RS.hints = RS.hints ? 0 : 1; } }},
     {label:'Kingdom: add kingdom XP', num:1000, min:1, run:n => { if (!wm) openWorld(); wm && wm.adm.kxp(n); }},
     {label:'Kingdom: max Ice Fort (Crystal Castle + all rooms)', run:() => { if (!wm) openWorld(); wm && wm.adm.base(); }},
-    {label:'Kingdom: reset this week’s raid clears', run:() => { if (!wm) openWorld(); wm && wm.adm.raidReset(); }},
-    {label:'Kingdom: side story — finish the current step (or start the next one)', run:() => { if (!wm) openWorld(); wm && wm.adm.sq(); }},
+        {label:'Kingdom: side story — finish the current step (or start the next one)', run:() => { if (!wm) openWorld(); wm && wm.adm.sq(); }},
     {label:'Kingdom: finish every available side story', run:() => { if (!wm) openWorld(); wm && wm.adm.sqAll(); }}];
   // ---- save & resume (old v2 saves still load) ----
   api.snap && api.snap(() => (st == 'play') ? {v:3, mode, seed, me, foes, walls, builds, mates, drops, score, wave, flakes, boss, phase, arena, pw, bossesBeat} : null);
