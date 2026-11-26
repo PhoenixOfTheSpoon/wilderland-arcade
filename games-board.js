@@ -42,26 +42,6 @@ A.register('memory', { mount(host, api){
   return ()=>clearTimeout(timer);
 }});
 
-A.register('whack-classic', { mount(host, api){
-  const b = board(host, C.bark); let iv, to, running=false;
-  const start = () => {
-    b.innerHTML=''; let score=0, left=30; api.score(0); running=true;
-    const hud = el('div',{position:'absolute',top:'12px',left:'16px',right:'16px',display:'flex',justifyContent:'space-between',color:C.cream,fontWeight:700,fontSize:'18px'}); b.appendChild(hud);
-    const draw=()=>hud.textContent=''; const sT=el('span'), sS=el('span'); hud.append(sS,sT);
-    const grid = el('div',{position:'absolute',top:'56px',left:'30px',right:'30px',bottom:'30px',display:'grid',gridTemplateColumns:'repeat(3,1fr)',gap:'18px'}); b.appendChild(grid);
-    const holes=[...Array(9)].map(()=>{ const h=el('div',{background:'#5a3a12',borderRadius:'50%',position:'relative',overflow:'hidden',cursor:'crosshair'});
-      const m=el('div',{position:'absolute',left:'15%',width:'70%',height:'80%',top:'100%',background:C.sand,borderRadius:'50% 50% 30% 30%',transition:'top .12s ease-out',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'28px',fontWeight:700,color:C.ink},'• •');
-      h.appendChild(m); h.m=m; m.onmousedown=e=>{ if(!m.up)return; m.up=0; m.style.top='100%'; score+=m.gold?30:10; api.score(score); A.sfx(m.gold?'coin':'hit'); }; grid.appendChild(h); return h; });
-    const upd=()=>{sS.textContent='Score '+score;sT.textContent=left+'s';}; upd();
-    const pop=()=>{ if(!running)return; const h=holes[Math.random()*9|0]; if(!h.m.up){ const gold=Math.random()<.15; h.m.gold=gold; h.m.style.background=gold?C.gold:C.sand; h.m.up=1; h.m.style.top='20%';
-        setTimeout(()=>{h.m.up=0;h.m.style.top='100%';},Math.max(450,900-(30-left)*15)*A.D(1.35,1,.7)/A.speed); }
-      to=setTimeout(pop,Math.max(300,700-(30-left)*14)*A.D(1.3,1,.72)/A.speed); upd(); };
-    pop(); iv=setInterval(()=>{ left--; upd(); if(left<=0){ running=false; clearInterval(iv); clearTimeout(to); A.sfx('over'); api.over(score); splash(b,'TIME',score+' points. Gold critters are worth triple.','Play again',start);} },1000);
-  };
-  splash(b,'WHACK-A-GOPHER','30 seconds. Click them as they pop up. Gold ones pay triple.','Start',start);
-  return ()=>{running=false;clearInterval(iv);clearTimeout(to);};
-}});
-
 A.register('2048', { mount(host, api){
   const b = board(host, C.sand); const shades={2:'#EDE9D8',4:'#e4f7a8',8:C.lime,16:'#9fe07a',32:C.green,64:'#028a4e',128:C.forest,256:C.sky,512:C.blue,1024:C.pink,2048:C.gold};
   let G, score, over=false;

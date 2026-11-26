@@ -4,14 +4,37 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="./support.js"></script>
+<script>
+/* Fast start: download every arcade file right away, in parallel (the arcade floor's files first), while the page itself starts up.
+   The files run later, in order, once the arcade is on screen. A loading screen shows progress instead of a blank page. */
+(function(){ var B = '2026-12-11d'; window.WL_BUILD = B; var CORE = ["arcade-core.js", "prizes-more.js", "prizes2.js", "economy.js", "achievements.js", "avatar.js", "pets.js", "rebirth-road.js", "wonders.js", "qol.js"], GAMES = ["music.js", "live-events.js", "moderation.js", "calendar.js", "games-board.js", "games-edu.js", "games-action.js", "games-skill.js", "games-extra.js", "games-new.js", "games-td.js", "games-space.js", "games-idle.js", "games-secrets.js", "games-more.js", "games-more2.js", "games-more3.js", "snow-cast.js", "snow-world.js"], all = CORE.concat(GAMES), got = 0;
+  window.WL_FILES = {core:CORE, games:GAMES};
+  var say = function(){ var b = document.getElementById('wl-boot-bar'), t = document.getElementById('wl-boot-txt'); var pct = Math.min(96, Math.round(8 + 80*got/all.length + (window.WL_RUN||0)*8));
+    if (b) b.style.width = pct + '%'; if (t) t.textContent = window.WL_RUN ? 'Opening the arcade…' : 'Loading the arcade… ' + pct + '%'; };
+  window.WL_BOOT_SAY = say;
+  var pre = function(list, low, then){ var left = list.length; list.forEach(function(f){ var l = document.createElement('link'); l.rel = 'preload'; l.as = 'script'; l.href = f + '?v=' + B; if (low && 'fetchPriority' in l) l.fetchPriority = 'low';
+    l.onload = l.onerror = function(){ got++; say(); if (--left == 0 && then) then(); }; document.head.appendChild(l); }); };
+  /* the floor's own files run as soon as they arrive (they don't need the page to be drawn yet); the games download right after */
+  var left = CORE.length; window.WL_T = {start:performance.now()}; window.WL_CORE = Promise.all(CORE.map(function(f){ return new Promise(function(res){ var e = document.createElement('script'); e.src = f + '?v=' + B; e.async = false;
+    e.onload = e.onerror = function(){ got++; window.WL_RUN = 1 - (--left)/CORE.length; say(); if (!left) pre(GAMES, true); res(); }; document.head.appendChild(e); }); }));
+  window.WL_BOOT_DONE = function(){ (window.WL_T||{}).done = performance.now(); var o = document.getElementById('wl-boot'); if (!o || o.dataset.out) return; o.dataset.out = '1'; o.style.opacity = '0'; setTimeout(function(){ o.remove(); }, 350); };
+  setTimeout(function(){ window.WL_BOOT_DONE(); }, 25000);   /* never trap anyone behind the loading screen */
+})();
+</script>
 </head>
 <body>
+<div id="wl-boot" style="position:fixed;inset:0;z-index:99999;background:#0b2e24;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font-family:system-ui,-apple-system,sans-serif;color:#D5F367;transition:opacity .3s ease">
+<div style="font-size:54px;line-height:1">🎟️</div>
+<div style="font-weight:800;font-size:26px;letter-spacing:.02em">Wilderland Arcade</div>
+<div style="width:min(320px,80vw);height:12px;border-radius:999px;background:rgba(213,243,103,.18);overflow:hidden"><div id="wl-boot-bar" style="height:100%;width:6%;border-radius:999px;background:#D5F367;transition:width .25s ease"></div></div>
+<div id="wl-boot-txt" style="font-size:14px;font-weight:600;color:#cfe3d8">Loading the arcade…</div>
+</div>
 <x-dc>
 <helmet>
 <title>Wilderland Arcade</title><link rel="icon" type="image/svg+xml" href="assets/favicon.svg"><link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png"><link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <style>
-@font-face{font-family:"Uncut Sans";src:url("fonts/UncutSans-Medium.otf") format("opentype");font-weight:500;}
-@font-face{font-family:"Uncut Sans";src:url("fonts/UncutSans-Bold.otf") format("opentype");font-weight:700;}
+@font-face{font-family:"Uncut Sans";src:url("fonts/UncutSans-Medium.woff2") format("woff2"),url("fonts/UncutSans-Medium.otf") format("opentype");font-weight:500;font-display:swap;}
+@font-face{font-family:"Uncut Sans";src:url("fonts/UncutSans-Bold.woff2") format("woff2"),url("fonts/UncutSans-Bold.otf") format("opentype");font-weight:700;font-display:swap;}
 @keyframes wlTicker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 html,body{margin:0;background:#0b2e24;overflow-x:hidden;}
 button{touch-action:manipulation;}
@@ -33,6 +56,8 @@ div[style*="position:fixed; inset:0"] > div[style*="border-radius:20px"]{animati
 .wl-fullwrap > .wl-full{width:100% !important; max-width:none !important; min-height:100vh; border-radius:0 !important; padding-left:max(18px, env(safe-area-inset-left)) !important; padding-right:max(18px, env(safe-area-inset-right)) !important; box-shadow:none !important;}
 @keyframes wlBob{0%,100%{transform:translateY(0) rotate(-4deg)}50%{transform:translateY(-6px) rotate(4deg)}}
 .wl-bob{animation:wlBob 2.2s ease-in-out infinite;}
+/* while a game is open, the floor behind it stops animating (saves battery and keeps games smooth on Chromebooks) */
+html.wl-ingame .wl-bob,html.wl-ingame .wl-gold,html.wl-ingame .wl-gold::after,html.wl-ingame [style*="wlTicker"]{animation-play-state:paused !important;}
 @keyframes wlGold{0%,100%{box-shadow:0 0 0 0 rgba(249,191,1,.0), 0 8px 18px rgba(0,0,0,.35)}50%{box-shadow:0 0 26px 6px rgba(249,191,1,.55), 0 8px 18px rgba(0,0,0,.35)}}
 .wl-gold{animation:wlGold 2.6s ease-in-out infinite; transition:transform .15s ease;}
 .wl-gold:hover{transform:translateY(-3px) scale(1.02);} .wl-gold:active{transform:scale(.97);}
@@ -65,7 +90,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
         <span style="display:inline-block; width:18px; height:12px; background:#015640; border-radius:3px;"></span>{{ tickets }} tickets
       </div>
       <div onClick="{{ openMultCats }}" title="Your total multiplier · tap for the breakdown by category" style="cursor:pointer; background:#015640; color:#D5F367; border:1.5px solid #D5F367; font-weight:700; font-size:15px; padding:7px 13px; border-radius:999px; white-space:nowrap;">{{ multLabelHead }}</div>
-      <button onClick="{{ openAv }}" title="Your avatar" style="background:#D5F367; color:#015640; border:none; border-radius:999px; padding:6px 12px 6px 8px; font-weight:800; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:6px;"><img src="{{ avImg }}" alt="" style="width:24px; height:24px; margin:-3px 0;">AVATAR</button>
+      <button onClick="{{ openAv }}" title="Your avatar" style="background:#D5F367; color:#015640; border:none; border-radius:999px; padding:6px 12px 6px 8px; font-weight:800; font-size:13px; cursor:pointer; display:flex; align-items:center; gap:6px;"><img loading="lazy" src="{{ avImg }}" alt="" style="width:24px; height:24px; margin:-3px 0;">AVATAR</button>
       <button onClick="{{ openAccount }}" title="Your account" style="background:{{ acctHeadBg }}; color:{{ acctHeadFg }}; border:1.5px solid #D5F367; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer; max-width:200px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ acctHeadLabel }}</button>
       <sc-if value="{{ rbReady }}" hint-placeholder-val="{{ false }}"><button onClick="{{ rebirthNow }}" style="background:#F9BF01; color:#121313; border:none; border-radius:999px; padding:8px 14px; font-weight:800; font-size:13px; cursor:pointer; white-space:nowrap;">⭐ REBIRTH NOW</button></sc-if>
       <button onClick="{{ openMenu }}" aria-label="Menu" aria-expanded="{{ menuOn }}" style="background:#0b2e24; color:#D5F367; border:1.5px solid #D5F367; border-radius:999px; padding:8px 16px; font-weight:800; font-size:14px; cursor:pointer; white-space:nowrap;">☰ Menu<span style="display:{{ menuDot }}; width:9px; height:9px; border-radius:50%; background:#FF4539; margin-left:6px; vertical-align:middle; box-shadow:0 0 0 2px #0b2e24;"></span></button>
@@ -116,7 +141,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
             <div style="display:flex; gap:8px; overflow-x:auto; padding-bottom:4px; scrollbar-width:thin;">
               <sc-for list="{{ sh.items }}" as="mi" hint-placeholder-count="6"><button onClick="{{ mi.open }}" title="{{ mi.title }}" style="flex-shrink:0; width:112px; border:none; border-radius:12px; background:#121313; padding:0; overflow:hidden; cursor:pointer; text-align:center; font-family:inherit;">
                 <div style="background:{{ mi.color }}; color:#121313; font-size:{{ mi.mfs }}px; font-weight:800; letter-spacing:.03em; padding:4px 3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ mi.name }}</div>
-                <img src="{{ mi.icon }}" alt="" style="width:40px; height:40px; margin:6px auto 2px; display:block;">
+                <img loading="lazy" src="{{ mi.icon }}" alt="" style="width:40px; height:40px; margin:6px auto 2px; display:block;">
                 <div style="font-size:10px; font-weight:700; color:#9a9a9b; padding:0 6px 6px;">{{ mi.bestLbl }} <span style="color:#EDE9D8;">{{ mi.best }}</span></div>
               </button></sc-for>
               <sc-if value="{{ sh.empty }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px; color:#9fb8ad; padding:8px 0;">{{ sh.emptyText }}</div></sc-if>
@@ -138,7 +163,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
                   <div onClick="{{ cab.open }}" role="button" tabindex="0" style="position:relative; display:flex; flex-direction:column; align-items:stretch; border-radius:14px; overflow:hidden; background:#121313; cursor:pointer; text-align:left; min-height:150px;">
                     <div style="background:{{ cab.color }}; color:#121313; font-weight:800; font-size:{{ cab.gfs }}px; letter-spacing:0.05em; text-align:center; padding:7px 4px; line-height:1.1; min-height:30px; display:flex; align-items:center; justify-content:center; box-sizing:border-box;">{{ cab.name }}</div>
                     <div style="margin:8px; height:78px; background:#015640; border-radius:8px; display:flex; align-items:center; justify-content:center; position:relative;">
-                      <img src="{{ cab.icon }}" alt="" style="width:62px; height:62px; display:block;">
+                      <img loading="lazy" src="{{ cab.icon }}" alt="" style="width:62px; height:62px; display:block;">
                       <sc-if value="{{ cab.saved }}" hint-placeholder-val="{{ false }}"><span style="position:absolute; top:4px; right:4px; background:#F9BF01; color:#015640; font-size:9px; font-weight:700; padding:2px 6px; border-radius:999px;">SAVED</span></sc-if>
                       <sc-if value="{{ cab.isNew }}" hint-placeholder-val="{{ false }}"><span style="position:absolute; top:4px; left:4px; background:#EA55AB; color:#121313; font-size:9px; font-weight:700; padding:2px 6px; border-radius:999px;">NEW</span></sc-if>
                       <sc-if value="{{ cab.learn }}" hint-placeholder-val="{{ false }}"><span style="position:absolute; bottom:4px; left:4px; background:#64CDF5; color:#0b2e24; font-size:9px; font-weight:700; padding:2px 6px; border-radius:999px;">LEARN</span></sc-if>
@@ -152,11 +177,11 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
           </sc-for>
           <div style="display:grid; grid-template-columns:{{ gridCols }}; gap:10px;">
             <button onClick="{{ openPrizes }}" style="border:none; border-radius:14px; background:#AB2372; color:#ffffff; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:16px 10px; cursor:pointer; min-height:110px;">PRIZE COUNTER<br><span style="font-size:12px; font-weight:500; letter-spacing:0;">{{ prizesLabel }}</span></button>
-            <button onClick="{{ openLb }}" style="border:none; border-radius:14px; background:#121313; color:#F9BF01; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:10px; cursor:pointer; min-height:110px; display:flex; flex-direction:column; align-items:center; gap:4px;"><img src="{{ boardIcon }}" alt="" style="width:44px; height:44px;">LEADERBOARD</button>
-            <button onClick="{{ openLearn }}" style="border:none; border-radius:14px; background:#014987; color:#ffffff; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:10px; cursor:pointer; min-height:110px; display:flex; flex-direction:column; align-items:center; gap:4px;"><img src="{{ learnIcon }}" alt="" style="width:44px; height:44px;">LEARNING DESK</button>
-            <button onClick="{{ openShop }}" style="border:none; border-radius:14px; background:#2a1d12; color:#F9BF01; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:10px; cursor:pointer; min-height:110px; display:flex; flex-direction:column; align-items:center; gap:4px;"><img src="{{ shopIcon }}" alt="" style="width:44px; height:44px;">WORKSHOP</button>
-            <button onClick="{{ openAv }}" style="border:none; border-radius:14px; background:#015640; color:#D5F367; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:10px; cursor:pointer; min-height:110px; display:flex; flex-direction:column; align-items:center; gap:4px;"><img src="{{ avImg }}" alt="" style="width:44px; height:44px;">AVATAR STUDIO</button>
-            <button onClick="{{ openPets }}" style="border:none; border-radius:14px; background:#3b2614; color:#F9BF01; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:10px; cursor:pointer; min-height:110px; display:flex; flex-direction:column; align-items:center; gap:4px;"><img src="{{ cardPetImg }}" alt="" style="width:44px; height:44px;">PETS &amp; HOME</button>
+            <button onClick="{{ openLb }}" style="border:none; border-radius:14px; background:#121313; color:#F9BF01; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:10px; cursor:pointer; min-height:110px; display:flex; flex-direction:column; align-items:center; gap:4px;"><img loading="lazy" src="{{ boardIcon }}" alt="" style="width:44px; height:44px;">LEADERBOARD</button>
+            <button onClick="{{ openLearn }}" style="border:none; border-radius:14px; background:#014987; color:#ffffff; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:10px; cursor:pointer; min-height:110px; display:flex; flex-direction:column; align-items:center; gap:4px;"><img loading="lazy" src="{{ learnIcon }}" alt="" style="width:44px; height:44px;">LEARNING DESK</button>
+            <button onClick="{{ openShop }}" style="border:none; border-radius:14px; background:#2a1d12; color:#F9BF01; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:10px; cursor:pointer; min-height:110px; display:flex; flex-direction:column; align-items:center; gap:4px;"><img loading="lazy" src="{{ shopIcon }}" alt="" style="width:44px; height:44px;">WORKSHOP</button>
+            <button onClick="{{ openAv }}" style="border:none; border-radius:14px; background:#015640; color:#D5F367; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:10px; cursor:pointer; min-height:110px; display:flex; flex-direction:column; align-items:center; gap:4px;"><img loading="lazy" src="{{ avImg }}" alt="" style="width:44px; height:44px;">AVATAR STUDIO</button>
+            <button onClick="{{ openPets }}" style="border:none; border-radius:14px; background:#3b2614; color:#F9BF01; font-family:inherit; font-weight:700; font-size:14px; letter-spacing:0.08em; padding:10px; cursor:pointer; min-height:110px; display:flex; flex-direction:column; align-items:center; gap:4px;"><img loading="lazy" src="{{ cardPetImg }}" alt="" style="width:44px; height:44px;">PETS &amp; HOME</button>
           </div>
           <div style="background:#3b2614; border-radius:16px; padding:12px;">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;"><span style="font-size:12px; font-weight:800; letter-spacing:.12em; color:#F9BF01;">🏆 TROPHY WALK</span><span style="font-size:12px; font-weight:700; color:#EDE9D8;">{{ trophyCount }}</span></div>
@@ -186,7 +211,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
             <div onClick="{{ cab.open }}" style="position:absolute; left:{{ cab.x }}px; top:{{ cab.y }}px; width:140px; height:130px; cursor:pointer; display:flex; flex-direction:column; border-radius:12px; overflow:hidden; background:#121313; box-shadow:{{ cab.shadow }}; opacity:{{ cab.op }}; filter:{{ cab.flt }}; transition:transform .18s cubic-bezier(.3,1.4,.5,1), box-shadow .18s, opacity .2s;" style-hover="transform:translateY(-6px) scale(1.04);">
               <div style="background:{{ cab.color }}; color:#121313; font-weight:800; font-size:{{ cab.nfs }}px; letter-spacing:0.05em; text-align:center; padding:3px 4px; line-height:1.08; height:30px; display:flex; align-items:center; justify-content:center; box-sizing:border-box; overflow:hidden;">{{ cab.name }}</div>
               <div style="flex:1; margin:6px 10px 4px; background:radial-gradient(circle at 50% 40%, #027a5a, #015640 70%); border-radius:6px; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;">
-                <img src="{{ cab.icon }}" alt="" style="width:56px; height:56px; display:block;">
+                <img loading="lazy" src="{{ cab.icon }}" alt="" style="width:56px; height:56px; display:block;">
                 <sc-if value="{{ cab.learn }}" hint-placeholder-val="{{ false }}"><span style="position:absolute; bottom:3px; left:4px; background:#64CDF5; color:#0b2e24; font-size:9px; font-weight:700; padding:2px 6px; border-radius:999px; letter-spacing:0.06em;">LEARN</span></sc-if>
                 <sc-if value="{{ cab.saved }}" hint-placeholder-val="{{ false }}"><span style="position:absolute; top:4px; right:4px; background:#F9BF01; color:#015640; font-size:9px; font-weight:700; padding:2px 6px; border-radius:999px; letter-spacing:0.06em;">SAVED</span></sc-if>
                 <sc-if value="{{ cab.isNew }}" hint-placeholder-val="{{ false }}"><span style="position:absolute; top:4px; left:4px; background:#EA55AB; color:#121313; font-size:9px; font-weight:700; padding:2px 6px; border-radius:999px; letter-spacing:0.06em;">NEW</span></sc-if>
@@ -197,32 +222,32 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
           </sc-for>
 
           <div onClick="{{ openPets }}" style="position:absolute; left:{{ svcPetX }}px; top:{{ svcPetY }}px; width:140px; height:130px; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; border-radius:12px; background:#3b2614; border:3px solid #F9BF01; box-sizing:border-box; box-shadow:{{ petsShadow }}; transition:transform .18s cubic-bezier(.3,1.4,.5,1);" style-hover="transform:translateY(-6px) scale(1.04);">
-            <img src="{{ cardPetImg }}" alt="" style="width:58px; height:58px;">
+            <img loading="lazy" src="{{ cardPetImg }}" alt="" style="width:58px; height:58px;">
             <div style="font-size:11px; font-weight:800; letter-spacing:.08em; color:#F9BF01; text-align:center; line-height:1.15;">PETS &amp; HOMES</div>
           </div>
           <div onClick="{{ openAv }}" style="position:absolute; left:{{ svcAvX }}px; top:{{ svcAvY }}px; width:140px; height:130px; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; border-radius:12px; background:#015640; border:3px solid #D5F367; box-sizing:border-box; box-shadow:{{ avatarShadow }}; transition:transform .18s cubic-bezier(.3,1.4,.5,1);" style-hover="transform:translateY(-6px) scale(1.04);">
-            <img src="{{ avImg }}" alt="" style="width:58px; height:58px;">
+            <img loading="lazy" src="{{ avImg }}" alt="" style="width:58px; height:58px;">
             <div style="font-size:11px; font-weight:800; letter-spacing:.08em; color:#D5F367; text-align:center; line-height:1.15;">AVATAR STUDIO</div>
           </div>
 
           <div onClick="{{ openPrizes }}" style="position:absolute; left:850px; top:50px; width:230px; height:200px; cursor:pointer; border-radius:14px; background:#AB2372; box-shadow:{{ prizeShadow }}; display:flex; flex-direction:column; overflow:hidden;">
             <div style="background:#EA55AB; padding:10px; text-align:center; font-weight:700; letter-spacing:0.12em; font-size:15px; color:#ffffff;">PRIZE COUNTER</div>
             <div style="flex:1; display:grid; grid-template-columns:repeat(4,1fr); gap:8px; padding:14px;">
-              <sc-for list="{{ kioskPrizes }}" as="kp" hint-placeholder-count="8"><img src="{{ kp.img }}" alt="" style="width:100%; height:100%; opacity:{{ kp.op }};"></sc-for>
+              <sc-for list="{{ kioskPrizes }}" as="kp" hint-placeholder-count="8"><img loading="lazy" src="{{ kp.img }}" alt="" style="width:100%; height:100%; opacity:{{ kp.op }};"></sc-for>
             </div>
             <div style="background:#8D5B1D; height:26px; font-size:11px; font-weight:700; letter-spacing:0.08em; display:flex; align-items:center; justify-content:center; color:#EDE9D8;">{{ prizesLabel }}</div>
           </div>
 
           <div onClick="{{ openLb }}" style="position:absolute; left:850px; top:465px; width:230px; height:110px; cursor:pointer; border-radius:14px; background:#121313; border:3px solid #F9BF01; box-shadow:{{ boardShadow }}; padding:10px 12px; box-sizing:border-box; display:flex; align-items:center; gap:10px;">
-            <img src="{{ boardIcon }}" alt="" style="width:56px; height:56px; flex-shrink:0;">
+            <img loading="lazy" src="{{ boardIcon }}" alt="" style="width:56px; height:56px; flex-shrink:0;">
             <div style="min-width:0;"><div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:#F9BF01;">LEADERBOARD</div><div style="font-size:16px; font-weight:700; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">#1 {{ lbLeader }}</div><div style="font-size:12px; font-weight:500; color:#EDE9D8;">{{ unameLabel }}</div></div>
           </div>
           <div onClick="{{ openLearn }}" style="position:absolute; left:850px; top:605px; width:230px; height:110px; cursor:pointer; border-radius:14px; background:#014987; border:3px solid #64CDF5; box-shadow:{{ learnShadow }}; padding:10px 12px; box-sizing:border-box; display:flex; align-items:center; gap:10px;">
-            <img src="{{ learnIcon }}" alt="" style="width:56px; height:56px; flex-shrink:0;">
+            <img loading="lazy" src="{{ learnIcon }}" alt="" style="width:56px; height:56px; flex-shrink:0;">
             <div style="min-width:0;"><div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:#a9e2fb;">LEARNING DESK</div><div style="font-size:16px; font-weight:700; color:#ffffff;">{{ eduLabel }}</div><div style="font-size:12px; font-weight:500; color:#EDE9D8;">Report &amp; settings</div></div>
           </div>
           <div onClick="{{ openShop }}" style="position:absolute; left:850px; top:745px; width:230px; height:110px; cursor:pointer; border-radius:12px; overflow:hidden; background:#2a1d12; border:3px solid #F9BF01; box-sizing:border-box; box-shadow:{{ shopShadow }}; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; transition:transform .18s cubic-bezier(.3,1.4,.5,1);" style-hover="transform:translateY(-6px) scale(1.04);">
-            <img src="{{ shopIcon }}" alt="" style="width:54px; height:54px;">
+            <img loading="lazy" src="{{ shopIcon }}" alt="" style="width:54px; height:54px;">
             <div style="font-size:11px; font-weight:700; letter-spacing:0.1em; color:#F9BF01; text-align:center; line-height:1.2;">UPGRADE<br>WORKSHOP</div>
             <div style="font-size:10px; font-weight:600; color:#EDE9D8;">{{ shopOwned }} levels · ∞</div>
           </div>
@@ -247,16 +272,16 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
           </div>
           <div onClick="{{ openLb }}" style="position:absolute; left:850px; top:1437px; width:230px; height:270px; cursor:pointer; border-radius:14px; background:linear-gradient(#2a2238,#121313); border:3px solid #F9BF01; padding:10px; box-sizing:border-box; display:flex; flex-direction:column; align-items:center;">
             <div style="font-size:12px; font-weight:800; letter-spacing:.12em; color:#F9BF01;">🏛 HALL OF FAME</div>
-            <sc-if value="{{ statueOn }}" hint-placeholder-val="{{ false }}"><div title="{{ statueTip }}" style="position:absolute; right:8px; top:24px; display:flex; flex-direction:column; align-items:center;"><img src="{{ statueImg }}" alt="" style="width:40px; height:40px; filter:sepia(1) saturate(5) brightness(1.15) drop-shadow(0 0 6px #F9BF01);"><div style="width:36px; height:9px; background:linear-gradient(#fff3b0,#c48a00); border-radius:3px;"></div><div style="font-size:8px; font-weight:800; color:#F9BF01;">YOU</div></div></sc-if>
+            <sc-if value="{{ statueOn }}" hint-placeholder-val="{{ false }}"><div title="{{ statueTip }}" style="position:absolute; right:8px; top:24px; display:flex; flex-direction:column; align-items:center;"><img loading="lazy" src="{{ statueImg }}" alt="" style="width:40px; height:40px; filter:sepia(1) saturate(5) brightness(1.15) drop-shadow(0 0 6px #F9BF01);"><div style="width:36px; height:9px; background:linear-gradient(#fff3b0,#c48a00); border-radius:3px;"></div><div style="font-size:8px; font-weight:800; color:#F9BF01;">YOU</div></div></sc-if>
             <div style="flex:1; display:flex; align-items:flex-end; justify-content:center; gap:6px; width:100%;">
-              <sc-for list="{{ fame }}" as="fm" hint-placeholder-count="3"><div style="display:flex; flex-direction:column; align-items:center; width:64px;"><img src="{{ fm.img }}" alt="" style="width:50px; height:50px; filter:{{ fm.flt }};"><div style="width:60px; height:{{ fm.h }}px; background:linear-gradient(#e8e4d8,#b8b2a0); border-radius:6px 6px 0 0; display:flex; flex-direction:column; align-items:center; padding-top:4px; box-sizing:border-box;"><b style="font-size:16px; color:#121313;">{{ fm.place }}</b><span style="font-size:9px; font-weight:800; color:#121313; max-width:56px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ fm.name }}</span></div></div></sc-for>
+              <sc-for list="{{ fame }}" as="fm" hint-placeholder-count="3"><div style="display:flex; flex-direction:column; align-items:center; width:64px;"><img loading="lazy" src="{{ fm.img }}" alt="" style="width:50px; height:50px; filter:{{ fm.flt }};"><div style="width:60px; height:{{ fm.h }}px; background:linear-gradient(#e8e4d8,#b8b2a0); border-radius:6px 6px 0 0; display:flex; flex-direction:column; align-items:center; padding-top:4px; box-sizing:border-box;"><b style="font-size:16px; color:#121313;">{{ fm.place }}</b><span style="font-size:9px; font-weight:800; color:#121313; max-width:56px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ fm.name }}</span></div></div></sc-for>
             </div>
           </div>
           <div style="position:absolute; left:850px; top:1727px; width:230px; max-height:{{ hallH }}px; border-radius:14px; background:rgba(1,86,64,.12); border:3px solid #015640; padding:10px; box-sizing:border-box; display:flex; flex-direction:column; gap:8px;">
             <div style="font-size:12px; font-weight:800; letter-spacing:.12em; color:#015640;">👋 HALL OF PLAYERS · {{ hallCount }}</div>
             <sc-if value="{{ hallEmpty }}" hint-placeholder-val="{{ false }}"><div style="font-size:12px; color:#4a4a4a;">Create a username to join the hall</div></sc-if>
             <div style="flex:1; overflow-y:auto; display:flex; flex-wrap:wrap; align-content:flex-start; gap:6px;">
-              <sc-for list="{{ hallPlayers }}" as="hp" hint-placeholder-count="8"><div title="{{ hp.name }}" style="display:flex; align-items:center; gap:4px; background:rgba(255,255,255,.6); border-radius:999px; padding:2px 9px 2px 2px; max-width:100%; box-sizing:border-box;"><img src="{{ hp.avImg }}" alt="" style="width:28px; height:28px; flex-shrink:0;"><span style="font-size:11px; font-weight:700; color:#015640; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ hp.name }}</span></div></sc-for>
+              <sc-for list="{{ hallPlayers }}" as="hp" hint-placeholder-count="8"><div title="{{ hp.name }}" style="display:flex; align-items:center; gap:4px; background:rgba(255,255,255,.6); border-radius:999px; padding:2px 9px 2px 2px; max-width:100%; box-sizing:border-box;"><img loading="lazy" src="{{ hp.avImg }}" alt="" style="width:28px; height:28px; flex-shrink:0;"><span style="font-size:11px; font-weight:700; color:#015640; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ hp.name }}</span></div></sc-for>
             </div>
           </div>
 
@@ -276,11 +301,11 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
           </div>
 
           <sc-for list="{{ trailDots }}" as="td" hint-placeholder-count="0"><span style="position:absolute; left:{{ td.x }}px; top:{{ td.y }}px; transform:translate(-50%,-50%) scale({{ td.sc }}); opacity:{{ td.op }}; font-size:15px; z-index:18; pointer-events:none;">{{ td.e }}</span></sc-for>
-          <sc-if value="{{ hasPet }}" hint-placeholder-val="{{ false }}"><img src="{{ petImg }}" alt="" style="position:absolute; left:{{ pet.x }}px; top:{{ pet.y }}px; width:34px; height:34px; margin:-17px 0 0 -17px; z-index:19; pointer-events:none; filter:drop-shadow(0 4px 4px rgba(0,0,0,.3));"></sc-if>
-          <sc-if value="{{ hasMount }}" hint-placeholder-val="{{ false }}"><img src="{{ mountImg }}" alt="" style="position:absolute; left:{{ player.x }}px; top:{{ player.y }}px; width:58px; height:58px; margin:-14px 0 0 -29px; z-index:19; pointer-events:none;"></sc-if>
-          <sc-if value="{{ hasNPet }}" hint-placeholder-val="{{ false }}"><img src="{{ npetImg }}" alt="" style="position:absolute; left:{{ npet.x }}px; top:{{ npet.y }}px; width:40px; height:40px; margin:-20px 0 0 -20px; z-index:19; pointer-events:none; filter:drop-shadow(0 4px 4px rgba(0,0,0,.3));"></sc-if>
+          <sc-if value="{{ hasPet }}" hint-placeholder-val="{{ false }}"><img loading="lazy" src="{{ petImg }}" alt="" style="position:absolute; left:{{ pet.x }}px; top:{{ pet.y }}px; width:34px; height:34px; margin:-17px 0 0 -17px; z-index:19; pointer-events:none; filter:drop-shadow(0 4px 4px rgba(0,0,0,.3));"></sc-if>
+          <sc-if value="{{ hasMount }}" hint-placeholder-val="{{ false }}"><img loading="lazy" src="{{ mountImg }}" alt="" style="position:absolute; left:{{ player.x }}px; top:{{ player.y }}px; width:58px; height:58px; margin:-14px 0 0 -29px; z-index:19; pointer-events:none;"></sc-if>
+          <sc-if value="{{ hasNPet }}" hint-placeholder-val="{{ false }}"><img loading="lazy" src="{{ npetImg }}" alt="" style="position:absolute; left:{{ npet.x }}px; top:{{ npet.y }}px; width:40px; height:40px; margin:-20px 0 0 -20px; z-index:19; pointer-events:none; filter:drop-shadow(0 4px 4px rgba(0,0,0,.3));"></sc-if>
           <sc-if value="{{ liveTag }}" hint-placeholder-val="{{ false }}"><div style="position:absolute; left:{{ player.x }}px; top:{{ player.y }}px; transform:translate(-50%,-96px); background:#121313; color:#F9BF01; border:2px solid #F9BF01; font-size:12px; font-weight:800; padding:3px 10px; border-radius:999px; white-space:nowrap; z-index:21; pointer-events:none;">{{ liveTag }}</div></sc-if>
-          <img class="wl-me" src="{{ walkImg }}" alt="" style="position:absolute; left:{{ player.x }}px; top:{{ walkY }}px; width:46px; height:{{ walkH }}px; margin:-23px 0 0 -23px; z-index:20; pointer-events:none; filter:drop-shadow(0 6px 6px rgba(0,0,0,.3)) {{ auraFlt }}; animation:{{ emoteAnim }}; transform-origin:50% 90%;">
+          <img loading="lazy" class="wl-me" src="{{ walkImg }}" alt="" style="position:absolute; left:{{ player.x }}px; top:{{ walkY }}px; width:46px; height:{{ walkH }}px; margin:-23px 0 0 -23px; z-index:20; pointer-events:none; filter:drop-shadow(0 6px 6px rgba(0,0,0,.3)) {{ auraFlt }}; animation:{{ emoteAnim }}; transform-origin:50% 90%;">
           <sc-if value="{{ emoteOn }}" hint-placeholder-val="{{ false }}"><div style="position:absolute; left:{{ player.x }}px; top:{{ player.y }}px; transform:translate(-50%,-64px); font-size:26px; z-index:22; pointer-events:none; animation:wlhPop .3s ease-out;">{{ emoteE }}</div></sc-if>
 
           <sc-if value="{{ nearLabel }}" hint-placeholder-val="{{ false }}">
@@ -298,7 +323,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
       </div>
       <sc-if value="{{ tabProfile }}" hint-placeholder-val="{{ true }}">
       <section style="background:#121313; border-radius:16px; padding:14px 16px; display:flex; align-items:center; gap:12px; border:1.5px solid rgba(213,243,103,.35);">
-        <img onClick="{{ openAv }}" src="{{ avImg }}" alt="Edit avatar" title="Avatar Studio" style="width:52px; height:52px; flex-shrink:0; cursor:pointer;">
+        <img loading="lazy" onClick="{{ openAv }}" src="{{ avImg }}" alt="Edit avatar" title="Avatar Studio" style="width:52px; height:52px; flex-shrink:0; cursor:pointer;">
         <div style="flex:1; min-width:0;">
           <div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:#D5F367;">{{ acctKicker }}</div>
           <div style="font-size:17px; font-weight:700; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ acctName }}</div>
@@ -310,8 +335,8 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
       </section>
       <section style="background:#121313; border-radius:16px; padding:12px 14px; display:flex; flex-direction:column; gap:8px; border:1.5px solid rgba(213,243,103,.35); margin-top:-6px;">
         <div style="display:flex; align-items:center; gap:10px;">
-          <img onClick="{{ openPets }}" src="{{ cardPetImg }}" alt="Your pet" title="Your pet" style="width:52px; height:52px; cursor:pointer; background:rgba(213,243,103,.1); border-radius:12px;">
-          <img onClick="{{ openHome }}" src="{{ cardHomeImg }}" alt="Visit home" title="Visit your home" style="width:52px; height:52px; cursor:pointer; border-radius:12px;">
+          <img loading="lazy" onClick="{{ openPets }}" src="{{ cardPetImg }}" alt="Your pet" title="Your pet" style="width:52px; height:52px; cursor:pointer; background:rgba(213,243,103,.1); border-radius:12px;">
+          <img loading="lazy" onClick="{{ openHome }}" src="{{ cardHomeImg }}" alt="Visit home" title="Visit your home" style="width:52px; height:52px; cursor:pointer; border-radius:12px;">
           <div style="flex:1; min-width:0;"><div style="font-size:11px; font-weight:700; letter-spacing:0.12em; color:#D5F367;">PET &amp; HOME</div><div style="font-size:13px; font-weight:700; color:#ffffff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ cardPetName }}</div><div style="font-size:12px; color:#b9cfc5; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ cardHomeName }}</div></div>
         </div>
         <div style="display:flex; gap:6px; flex-wrap:wrap;">
@@ -343,7 +368,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
         <div style="display:flex; justify-content:space-between; align-items:center; gap:8px;"><span style="font-size:12px; font-weight:700; letter-spacing:0.12em; color:#F9BF01;">LEADERBOARD</span><button onClick="{{ openUname }}" style="background:transparent; color:#F9BF01; border:1.5px solid #F9BF01; border-radius:999px; padding:4px 10px; font-weight:700; font-size:12px; cursor:pointer; max-width:60%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ unameLabel }}</button></div>
         <sc-if value="{{ lbTopEmpty }}" hint-placeholder-val="{{ false }}"><div style="font-size:13px; font-weight:500; color:#b9cfc5;">No scores yet. Create a username, then finish a game to post one.</div></sc-if>
         <sc-for list="{{ lbTop }}" as="r" hint-placeholder-count="5">
-          <div style="display:flex; align-items:center; gap:8px; font-size:14px; color:#ffffff;"><span style="width:22px; height:22px; flex-shrink:0; border-radius:50%; background:{{ r.medal }}; color:{{ r.rankFg }}; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; box-shadow:inset 0 0 0 1px rgba(255,255,255,.25);">{{ r.rank }}</span><img src="{{ r.avImg }}" alt="" style="width:24px; height:24px; flex-shrink:0;"><span style="flex:1; min-width:0; font-weight:{{ r.weight }}; overflow:hidden; text-overflow:ellipsis;">{{ r.name }}</span><span style="font-weight:700;">{{ r.score }}</span></div>
+          <div style="display:flex; align-items:center; gap:8px; font-size:14px; color:#ffffff;"><span style="width:22px; height:22px; flex-shrink:0; border-radius:50%; background:{{ r.medal }}; color:{{ r.rankFg }}; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; box-shadow:inset 0 0 0 1px rgba(255,255,255,.25);">{{ r.rank }}</span><img loading="lazy" src="{{ r.avImg }}" alt="" style="width:24px; height:24px; flex-shrink:0;"><span style="flex:1; min-width:0; font-weight:{{ r.weight }}; overflow:hidden; text-overflow:ellipsis;">{{ r.name }}</span><span style="font-weight:700;">{{ r.score }}</span></div>
         </sc-for>
         <button onClick="{{ openLb }}" style="margin-top:2px; background:#F9BF01; color:#121313; border:none; border-radius:999px; padding:8px 14px; font-weight:700; font-size:13px; cursor:pointer;">Open leaderboard</button>
       </section>
@@ -735,7 +760,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
         <sc-if value="{{ chatEmpty }}" hint-placeholder-val="{{ false }}"><div style="font-size:13px; color:#4a4a4a; text-align:center; padding:20px;">No messages yet. Say hi!</div></sc-if>
         <sc-for list="{{ chatList }}" as="m" hint-placeholder-count="6">
           <div style="display:flex; gap:8px; align-items:flex-start; background:{{ m.bg }}; border-radius:12px; padding:7px 9px;">
-            <img src="{{ m.avImg }}" alt="" style="width:30px; height:30px; flex-shrink:0;">
+            <img loading="lazy" src="{{ m.avImg }}" alt="" style="width:30px; height:30px; flex-shrink:0;">
             <div style="flex:1; min-width:0;"><div style="display:flex; justify-content:space-between; gap:6px;"><span style="font-weight:700; font-size:13px; color:#015640;">{{ m.name }}</span><span style="font-size:10px; color:#8a8a8a;">{{ m.time }}</span></div>
               <div style="font-size:14px; line-height:1.3; overflow-wrap:anywhere;">{{ m.text }}</div>
               <sc-if value="{{ m.canReport }}" hint-placeholder-val="{{ false }}"><button onClick="{{ m.report }}" title="Report this message to the admin" style="border:none; background:transparent; color:#8a8a8a; font-size:11px; font-weight:700; cursor:pointer; padding:2px 0;">{{ m.reportLabel }}</button></sc-if>
@@ -854,7 +879,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
         <div style="display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:12px;">
           <sc-for list="{{ shopGames }}" as="sg" hint-placeholder-count="11">
             <div style="background:#ffffff; border-radius:14px; overflow:hidden; display:flex; flex-direction:column;">
-              <div style="display:flex; align-items:center; gap:10px; padding:8px 12px; background:{{ sg.color }};"><img src="{{ sg.icon }}" alt="" style="width:34px; height:34px; background:#015640; border-radius:8px;"><div style="font-weight:700; font-size:15px; color:#121313;">{{ sg.name }}</div></div>
+              <div style="display:flex; align-items:center; gap:10px; padding:8px 12px; background:{{ sg.color }};"><img loading="lazy" src="{{ sg.icon }}" alt="" style="width:34px; height:34px; background:#015640; border-radius:8px;"><div style="font-weight:700; font-size:15px; color:#121313;">{{ sg.name }}</div></div>
               <div style="display:flex; flex-direction:column; gap:8px; padding:10px 12px;">
                 <sc-for list="{{ sg.ups }}" as="u" hint-placeholder-count="2">
                   <div style="display:flex; align-items:center; gap:10px;">
@@ -977,7 +1002,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
           <sc-for list="{{ lbList }}" as="r" hint-placeholder-count="8">
             <div style="display:flex; align-items:center; gap:10px; padding:9px 12px; background:{{ r.bg }}; font-size:14px;">
               <span style="width:26px; height:26px; flex-shrink:0; border-radius:50%; background:{{ r.medal }}; color:{{ r.rankFgDark }}; font-size:12px; font-weight:700; display:flex; align-items:center; justify-content:center;">{{ r.rank }}</span>
-              <img src="{{ r.avImg }}" alt="" style="width:32px; height:32px; flex-shrink:0;">
+              <img loading="lazy" src="{{ r.avImg }}" alt="" style="width:32px; height:32px; flex-shrink:0;">
               <span style="flex:1; min-width:0; font-weight:{{ r.weight }}; color:#015640; overflow:hidden; text-overflow:ellipsis; {{ r.nmCss }}">{{ r.name }}</span>
               <sc-if value="{{ r.hasBadge }}" hint-placeholder-val="{{ false }}"><span style="background:#64CDF5; color:#0b2e24; font-size:10px; font-weight:700; padding:2px 7px; border-radius:999px;">{{ r.badge }}</span></sc-if>
               <span style="font-size:12px; font-weight:500; color:#4a4a4a;">{{ r.date }}</span>
@@ -1850,8 +1875,8 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048').sort((a,b) => a.key0.localeCompare(b.key0, 'en', {numeric:true})); return GAMES.indexOf(DG[h % DG.length]); };   // same order as the old A–Z floor, so the daily game never jumps
-const BUILD = '2026-12-11b';
-const SCRIPTS = ['arcade-core.js','music.js','prizes-more.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','rebirth-road.js','wonders.js','qol.js','live-events.js','moderation.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js','games-secrets.js','games-more.js','games-more2.js','games-more3.js','snow-cast.js','snow-world.js'];
+const BUILD = '2026-12-11d';
+const SCRIPTS_OLD = ['arcade-core.js','music.js','prizes-more.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','rebirth-road.js','wonders.js','qol.js','live-events.js','moderation.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js','games-secrets.js','games-more.js','games-more2.js','games-more3.js','snow-cast.js','snow-world.js'];
 const fmt = n => fmtN(Math.round(n));
 
 class Component extends DCLogic {
@@ -2006,7 +2031,10 @@ class Component extends DCLogic {
       if (m && m[1] !== BUILD) { const b = document.createElement('button'); b.id = 'wl-update'; b.textContent = '🆕 The arcade was updated — tap to reload (your progress is saved)';
         Object.assign(b.style, {position:'fixed', left:'50%', bottom:'14px', transform:'translateX(-50%)', zIndex:2000, background:'#D5F367', color:'#015640', font:'800 15px "Uncut Sans",system-ui,sans-serif', border:'2px solid #015640', borderRadius:'999px', padding:'10px 18px', cursor:'pointer', boxShadow:'0 6px 20px rgba(0,0,0,.35)', maxWidth:'94vw'});
         b.onclick = () => { try { if (this.snapFn) this.saveGame(); } catch(e){} setTimeout(() => location.reload(), 300); }; document.body.appendChild(b); } } catch(e){} }, 180000);
-    (async()=>{ for (const s of SCRIPTS) await new Promise(r=>{ const e=document.createElement('script'); e.src=s+'?v='+BUILD; e.onload=r; e.onerror=r; document.head.appendChild(e); }); this.ready=true; })();
+    { const F = window.WL_FILES || {core:SCRIPTS_OLD, games:[]}; window.WL_RUN = 0;
+      const runPre = list => Promise.all(list.map(s => new Promise(r => { const e = document.createElement('script'); e.src = s+'?v='+BUILD; e.async = false; e.onload = e.onerror = r; document.head.appendChild(e); })));
+      const run = list => Promise.all(list.map(s => new Promise(r => { const e = document.createElement('script'); e.src = s+'?v='+BUILD; e.async = false; e.onload = e.onerror = () => { window.WL_RUN = Math.min(1, (window.WL_RUN||0) + 1/F.core.length); window.WL_BOOT_SAY && window.WL_BOOT_SAY(); r(); }; document.head.appendChild(e); })));
+      (window.WL_T = window.WL_T || {}).mount = performance.now(); (async()=>{ if (window.WL_CORE) await window.WL_CORE; else await run(F.core); window.WL_T.core = performance.now(); this.ready = true; this.forceUpdate(); requestAnimationFrame(() => window.WL_BOOT_DONE && window.WL_BOOT_DONE()); await (window.WL_CORE ? runPre(F.games) : run(F.games)); this.allReady = true; this.forceUpdate(); })(); }
     this.kd = e => {
       const k = e.key.length==1 ? e.key.toLowerCase() : e.key;
       if (k=='Escape') { if (this.state.menuOpen) { this.setState({menuOpen:false}); return; } if (this.state.fsOpts) { this.setState({fsOpts:false}); return; } if (this.state.chatOpen) { this.closeChat(); return; } this.closeAll(); this.setState({codeOpen:false}); return; }
@@ -2107,8 +2135,9 @@ class Component extends DCLogic {
     if (!this.state.prizesOpen && this._pzOff) { try { this._pzOff(); } catch(e){} this._pzOff = null; }
     if (this._fx !== LOWFX) { this._fx = LOWFX; applyLowFx(LOWFX); if (window.Arcade) window.Arcade.lowFx = LOWFX; }
     if ((this.P.cursor||'') !== this._cursor) { this._cursor = this.P.cursor||''; applyCursor(this._cursor); }
-    const {game} = this.state;
-    if (game && this.gameRef.current && this.mounted != game && this.ready) {
+    const {game} = this.state; if (!!game !== this._ingame) { this._ingame = !!game; document.documentElement.classList.toggle('wl-ingame', !!game); }
+    if (game && this.gameRef.current && this.mounted != game && this.ready && !(window.Arcade && window.Arcade.games && window.Arcade.games[game])) { const el = this.gameRef.current; if (!el.querySelector('#wl-gload')) { el.insertAdjacentHTML('beforeend', '<div id="wl-gload" style="min-height:300px;display:flex;align-items:center;justify-content:center;color:#D5F367;font:800 18px system-ui,sans-serif;background:#0b2e24">Loading game…</div>'); } }
+    if (game && this.gameRef.current && this.mounted != game && this.ready && window.Arcade && window.Arcade.games && window.Arcade.games[game]) { { const gl = this.gameRef.current.querySelector('#wl-gload'); if (gl) gl.remove(); }
       this.unmountGame(); this.mounted = game; if (window.WLMusic) window.WLMusic.mood(MUSIC_MOOD[game] || 'action');
       clearTimeout(this._saveChk); this._saveChk = setTimeout(() => { if (this.mounted === game && !this.snapFn && !['idle','secrets'].includes(game)) { console.error('[save-check] '+game+' never registered a save'); if (this.state.admin) this.toast('⚠ SAVE CHECK · '+game+' HAS NO SAVE'); } }, 1500);
       const A = window.Arcade; A.lowFx = LOWFX; A.rebirths = this.P.rebirths||0; A.upg = upgFor(this.P, game); A.immortal = this.state.admin && this.state.immortal; A.diff = (RIVAL(this.P.difficulty) && game!='connect4') ? 'hard' : this.P.difficulty; A.speed = SPEEDS[this.P.speed] || 1; A.muted = this.state.muted || this.props.sound === false;
@@ -2126,7 +2155,7 @@ class Component extends DCLogic {
       if (this.gro && this.gameRef.current !== this._gEl) { if (this._gEl) this.gro.unobserve(this._gEl); this._gEl = this.gameRef.current; this.gro.observe(this._gEl); } if (window.Arcade && window.WLH) window.Arcade.petGems = window.WLH.petGems(this.P);
       if (resume) { this.stat('resumes',1,'add'); this.toast('SAVED GAME LOADED'); }
     }
-    if (game && !this.ready) setTimeout(()=>this.forceUpdate(), 150);
+    if (game && (!this.ready || !(window.Arcade && window.Arcade.games && window.Arcade.games[game]))) setTimeout(()=>this.forceUpdate(), 150);
   }
   tabOffScreen(){ if (document.getElementById('wl-taboff')) return; try { this.closeAll && this.closeAll(); } catch(e){}
     const d = document.createElement('div'); d.id = 'wl-taboff'; Object.assign(d.style, {position:'fixed', inset:0, zIndex:3000, background:'rgba(1,40,30,.94)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:'14px', color:'#EDE9D8', font:'700 18px "Uncut Sans",system-ui,sans-serif', textAlign:'center', padding:'20px'});
