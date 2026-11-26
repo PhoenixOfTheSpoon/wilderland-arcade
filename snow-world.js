@@ -130,6 +130,12 @@ const genMap = () => { if (MAPC) return MAPC; const old = genOld(), M = new Uint
   for (let tries = 0; chests.length < 70 && tries < 8000; tries++) { const x = 3 + Math.floor(rnd()*(N - 6)), y = 3 + Math.floor(rnd()*(N - 6)), v = get(x, y); if (x < N0 && y < N0) continue; const r = regionAt(x, y);
     if (SOLID[v] || v == HOLE || v == WATER || REG[r].safe || Object.values(LM2).some(L => Math.hypot(L.x - x, L.y - y) < 6) || chests.some(C => Math.hypot(C.tx - x, C.ty - y) < 6)) continue;
     chests.push({id:chests.length, tx:x, ty:y, x:(x + .5)*TS, y:(y + .5)*TS, tier:Math.max(1, REG[r].tier)}); }
+  // every chest can be reached from camp: if rocks or trees box one in, open a path to it
+  { const seen = new Uint8Array(N*N), ok = v => v == GATE || v == VEIL || !SOLID[v], q = [[50, 88]]; seen[88*N + 50] = 1;
+    const fill = () => { while (q.length) { const [x, y] = q.pop(); for (const [a, b] of [[1,0],[-1,0],[0,1],[0,-1]]) { const nx = x + a, ny = y + b; if (nx < 0 || ny < 0 || nx >= N || ny >= N || seen[ny*N + nx] || !ok(M[ny*N + nx])) continue; seen[ny*N + nx] = 1; q.push([nx, ny]); } } }; fill();
+    chests.forEach(c => { if (seen[c.ty*N + c.tx]) return; const prev = new Int32Array(N*N).fill(-1), bq = [c.ty*N + c.tx]; prev[bq[0]] = bq[0]; let hit = -1;
+      for (let h = 0; h < bq.length && hit < 0; h++) { const i = bq[h], x = i % N, y = (i - x)/N; for (const [a, b] of [[1,0],[-1,0],[0,1],[0,-1]]) { const nx = x + a, ny = y + b, j = ny*N + nx; if (nx < 1 || ny < 1 || nx >= N - 1 || ny >= N - 1 || prev[j] >= 0 || M[j] == HOUSE || M[j] == WALL) continue; prev[j] = i; if (seen[j]) { hit = j; break; } bq.push(j); } }
+      for (let i = hit; i >= 0 && prev[i] != i; i = prev[i]) { if (SOLID[M[i]] && M[i] != GATE && M[i] != VEIL) M[i] = SNOW; } M[c.ty*N + c.tx] = M[c.ty*N + c.tx] || SNOW; q.push([c.tx, c.ty]); seen[c.ty*N + c.tx] = 1; fill(); }); }
   MAPC = {M, chests}; return MAPC; };
 A.snowWorld = function(X) {
   const {host, api, c, K, PERM} = X, g = c.getContext('2d'), {M, chests} = genMap();
