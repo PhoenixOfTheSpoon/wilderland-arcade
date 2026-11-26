@@ -221,12 +221,12 @@ A.snowSaga = S => {
     if (C.R.wx.wind && (mode == 'glide' || wind.f > 0)) { const push = (mode == 'glide' ? 120 : 30)*C.R.wx.wind*(wind.f > 0 ? 1 : .3); p.vx += Math.cos(wind.a)*push*dt; p.vy += Math.sin(wind.a)*push*dt; }
     if (PW.drift) { p.vx += PW.drift.x*dt; p.vy += PW.drift.y*dt; } if (PW.pull) { const a = Math.atan2(PW.pull.y - p.y, PW.pull.x - p.x), dd = Math.hypot(PW.pull.x - p.x, PW.pull.y - p.y); if (dd < 520) { p.vx += Math.cos(a)*PW.pull.f*dt; p.vy += Math.sin(a)*PW.pull.f*dt; } }
     const nx = p.x + p.vx*dt, ny = p.y + p.vy*dt; if (!blockedFor(nx, p.y, 12, how)) p.x = nx; else p.vx = 0; if (!blockedFor(p.x, ny, 12, how)) p.y = ny; else p.vy = 0;
-    const v2 = tl(Math.floor(p.x/TS), Math.floor(p.y/TS)); if (v2 != CLIFF && v2 != CHASM && v2 != SWIM && !T0.SOLID[v2]) { if (!lastSafe || Math.hypot(lastSafe.x - p.x, lastSafe.y - p.y) > 40) lastSafe = {x:p.x, y:p.y}; }
+    const v2 = tl(Math.floor(p.x/TS), Math.floor(p.y/TS)); if (v2 != CLIFF && v2 != CHASM && v2 != SWIM && !T0.SOLID[v2] && !blockedFor(p.x, p.y, 13, {climb:false, glide:false})) { if (!lastSafe || Math.hypot(lastSafe.x - p.x, lastSafe.y - p.y) > 40) lastSafe = {x:p.x, y:p.y}; }
     if (mode == 'climb' && moving) p.walk += dt*.6;
-    if (blockedFor(p.x, p.y, 10, how) && lastSafe) { p.x = lastSafe.x; p.y = lastSafe.y; p.vx = p.vy = 0; S.say('🧭 Unstuck!', 1.4); }
+    const ALL = {climb:true, glide:true}; if (blockedFor(p.x, p.y, 8, ALL)) { inSolidT += dt; if (inSolidT > .4 && lastSafe && !blockedFor(lastSafe.x, lastSafe.y, 8, ALL)) { inSolidT = 0; p.x = lastSafe.x; p.y = lastSafe.y; p.vx = p.vy = 0; S.say('🧭 Unstuck!', 1.4); } } else inSolidT = 0;
     if (moving) { stuckT = Math.hypot(p.x - (stuckAt.x || 0), p.y - (stuckAt.y || 0)) < 6 ? stuckT + dt : 0; if (stuckT == 0) stuckAt = {x:p.x, y:p.y}; if (stuckT > 2 && (mode == 'climb' || mode == 'swim') && lastSafe) { stuckT = 0; p.x = lastSafe.x; p.y = lastSafe.y; p.vx = p.vy = 0; S.say('🧭 Unstuck! Back to solid ground', 2); } } else stuckT = 0;
     return true; };
-  let stuckT = 0, stuckAt = {};
+  let stuckT = 0, stuckAt = {}, inSolidT = 0;
   // ---------- things you can use in the lands ----------
   const fireAt = i => W2T(C.fires[i]);
   const things = L => {

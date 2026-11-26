@@ -55,10 +55,10 @@ SAGA.postInit = api => {
   // ---------- godlike Dumpling: floating, glowing, a halo of ice, constellations, spectral tails, galaxy eyes ----------
   const drawGod = (x, y, s, o = {}) => { const t = S.t, lo = S.low(), fy = y + Math.sin(t*1.6)*6; g.save(); if (o.alpha != null) g.globalAlpha = o.alpha;
     if (!lo) { const gr = g.createRadialGradient(x, fy, 10, x, fy, 90*s); gr.addColorStop(0, 'rgba(180,160,255,.55)'); gr.addColorStop(1, 'rgba(120,100,255,0)'); g.fillStyle = gr; g.beginPath(); g.arc(x, fy, 90*s, 0, TAU); g.fill(); }
-    for (let i = 0; i < 3; i++) { g.strokeStyle = 'rgba(190,220,255,' + (.35 - i*.08) + ')'; g.lineWidth = 9*s - i*2; g.lineCap = 'round'; g.beginPath(); g.moveTo(x, fy + 16*s); for (let k = 1; k <= 7; k++) g.lineTo(x + Math.sin(t*2 + k*.8 + i*2)*14*s*(k/7) + (i - 1)*16*s*(k/7), fy + 16*s + k*9*s); g.stroke(); }
-    g.restore(); api.drawGecko(x, fy, {s, galaxy:1, col:'#a8c0f8', dark:'#2a2a6a', belly:'#e8f0ff', noSeal:1, noTail:1, mood:o.mood || 'smug', alpha:o.alpha});
+    const fl = o.flip ? -1 : 1; for (let i = 0; i < 3; i++) { g.strokeStyle = 'rgba(190,220,255,' + (.35 - i*.08) + ')'; g.lineWidth = 8*s - i*2; g.lineCap = 'round'; g.beginPath(); g.moveTo(x - 18*s*fl, fy); for (let k = 1; k <= 7; k++) g.lineTo(x - (18 + k*7)*s*fl, fy + Math.sin(t*2 + k*.8 + i*2)*5*s*(k/7) + (i - 1)*9*s*(k/7)); g.stroke(); }
+    g.restore(); api.drawGecko(x, fy, {s, flip:o.flip, galaxy:1, col:'#a8c0f8', dark:'#2a2a6a', belly:'#e8f0ff', noSeal:1, noTail:1, mood:o.mood || 'smug', alpha:o.alpha});
     g.save(); if (o.alpha != null) g.globalAlpha = o.alpha; g.fillStyle = '#fff'; g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = 1; const st = [[-8, 0], [-2, 6], [6, 2], [10, 10], [-6, 12]]; g.beginPath(); st.forEach(([a, b], i) => { const px = x + a*s, py = fy + b*s; if (i) g.lineTo(px, py); else g.moveTo(px, py); }); g.stroke(); st.forEach(([a, b]) => { g.beginPath(); g.arc(x + a*s, fy + b*s, 1.3*s/2 + 1, 0, TAU); g.fill(); });
-    for (let i = 0; i < 8; i++) { const a = i/8*TAU + t*.8, hx = x + Math.cos(a)*22*s, hy = fy - 30*s + Math.sin(a)*6*s; g.fillStyle = '#d8f4ff'; g.beginPath(); g.moveTo(hx, hy - 5*s/2); g.lineTo(hx + 2*s/2, hy); g.lineTo(hx, hy + 5*s/2); g.lineTo(hx - 2*s/2, hy); g.fill(); } g.restore(); };
+    for (let i = 0; i < 8; i++) { const a = i/8*TAU + t*.8, hx = x + 24*s*fl + Math.cos(a)*16*s, hy = fy - 20*s + Math.sin(a)*5*s; g.fillStyle = '#d8f4ff'; g.beginPath(); g.moveTo(hx, hy - 5*s/2); g.lineTo(hx + 2*s/2, hy); g.lineTo(hx, hy + 5*s/2); g.lineTo(hx - 2*s/2, hy); g.fill(); } g.restore(); };
   const drawOswald = (x, y, o = {}) => SC.hcat(g, x, y, {fur:'#9aa0aa', belly:'#ffffff', stripe:'#6a707a', eye:'#F9BF01', seed:9, s:o.s || 1, ghost:o.ghost, glow:'#fff6c0', alpha:o.alpha}, S.t);
   // ---------- god-fight brains ----------
   const hz = gx.hz; const haz = (x, y, r, t, dmg, o = {}) => { if (hz.length < 40) hz.push({x, y, r, t, t0:t, dmg, ...o}); };
@@ -129,7 +129,7 @@ SAGA.postInit = api => {
     if (B.ph == 10) { const tw2 = 280, tx = VW/2 - tw2/2, ty = top + 62; g.fillStyle = 'rgba(0,0,0,.45)'; rr(g, tx, ty, tw2, 12, 6); g.fill(); g.fillStyle = gx.teamReady ? '#D5F367' : '#64CDF5'; rr(g, tx, ty, tw2*gx.team, 12, 6); g.fill(); g.fillStyle = '#fff'; g.font = '800 11px ' + A2.font; g.fillText(gx.teamReady ? '💥 EVERYONE ATTACK: press E' : 'Everyone together: keep hitting!', VW/2, ty + 26); } };
   const fmtT = s => Math.floor(s/60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
   const rematchT = () => rematch ? (Date.now() - rematch.t0)/1000 : 0;
-  const drawBoss = B => { const sc = BOSS[B.k].gg ? 3 : 2.2, al = B.flash > 0 ? .6 : 1; gx.copies.forEach(c => drawGod(B.hx + Math.cos(c.a)*180, B.hy - 60 + Math.sin(c.a)*90, sc*.9, {alpha:.75})); drawGod(B.x, B.y, sc, {alpha:al, mood:B.ph >= 3 ? 'angry' : 'smug'});
+  const drawBoss = B => { const sc = BOSS[B.k].gg ? 3 : 2.2, al = B.flash > 0 ? .6 : 1; gx.copies.forEach(c => drawGod(B.hx + Math.cos(c.a)*180, B.hy - 60 + Math.sin(c.a)*90, sc*.9, {alpha:.75})); drawGod(B.x, B.y, sc, {alpha:al, flip:p.x < B.x, mood:B.ph >= 3 ? 'angry' : 'smug'});
     if (B.talk && B.talkT > 0) S.bubble(B.x, B.y - 110, B.talk.replace(/^Dumpling[^:]*: /, '')); };
   // ---------- when a god-bar runs out ----------
   const godDown = B => { const n = BOSS[B.k].god; hz.length = 0; gx.copies = []; PW.invert = false; PW.drift = null; PW.pull = null; PW.slow = 1; S.foes = []; S.splat(B.x, B.y, 40, '#c9b0ff');
@@ -235,6 +235,6 @@ SAGA.postInit = api => {
   SAGA.postModal = () => !!credits; SAGA.postThings = things; SAGA.postUpdate = update; SAGA.postDrawCamp = drawCamp; SAGA.postDrawTop = drawTop; SAGA.postKey = pkey; SAGA.postDown = pdown; SAGA.postRows = rows;
   // portraits for the new faces
   const portrait0 = S.portraitBase;
-  SAGA.postPortrait = (who, x, y, mood) => { if (who == 'dumpG') { drawGod(x, y + 4, .9, {mood}); return true; } if (who == 'oswald') { drawOswald(x, y + 8, {s:1.2}); return true; } if (who.slice(0, 4) == 'kid:' && ['Nell', 'Bram', 'Ivy', 'Gus'].includes(who.slice(4))) { S.kid(x, y + 12, {Nell:'#ff9ad5', Bram:'#8D5B1D', Ivy:'#2fa8e0', Gus:'#9aa0aa'}[who.slice(4)], {face:0}); return true; } return false; };
+  SAGA.postPortrait = (who, x, y, mood) => { if (who == 'dumpG') { drawGod(x - 8, y + 4, .65, {mood}); return true; } if (who == 'oswald') { drawOswald(x, y + 8, {s:1.2}); return true; } if (who.slice(0, 4) == 'kid:' && ['Nell', 'Bram', 'Ivy', 'Gus'].includes(who.slice(4))) { S.kid(x, y + 12, {Nell:'#ff9ad5', Bram:'#8D5B1D', Ivy:'#2fa8e0', Gus:'#9aa0aa'}[who.slice(4)], {face:0}); return true; } return false; };
 };
 })();

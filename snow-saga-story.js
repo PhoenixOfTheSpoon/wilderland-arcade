@@ -204,37 +204,47 @@ SAGA.storyInit = (S, SG) => {
       g.fillStyle = 'rgba(255,255,255,.75)'; g.font = '600 14px ' + A2.font; g.fillText(k < 1 ? '' : 'Tap or press any key', VW/2, VH - 30); if (k >= .85) { g.fillStyle = '#ff6ad5'; g.font = '900 20px ' + A2.font; g.fillText('…crack.', VW/2, VH/2 - 110); } } };
   // ---------- drawing ----------
   const rr = S.rr;
-  const drawGecko = (x, y, o = {}) => { const s = o.s || 1, t = S.t; g.save(); g.translate(x, y); g.scale(s, s); if (o.alpha != null) g.globalAlpha = o.alpha;
-    const body = o.col || '#efe2a2', dark = o.dark || '#1e1e24', belly = o.belly || '#fbf6e4', bob = Math.sin(t*3)*1.2;
-    g.fillStyle = 'rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(0, 24, 24, 6, 0, 0, TAU); g.fill();
-    if (!o.noTail) { for (let i = 0; i < 7; i++) { const u = i/6, tx = Math.sin(t*4 + i*.9)*7*u, ty = 14 + i*5.5; g.fillStyle = i % 2 ? dark : body; g.beginPath(); g.arc(tx, ty, 7.5 - i*.8, 0, TAU); g.fill(); if (i % 2 == 0) { g.fillStyle = dark; g.beginPath(); g.arc(tx - 2, ty, 1.3, 0, TAU); g.arc(tx + 2.5, ty + 1, 1.1, 0, TAU); g.fill(); } } }
-    if (!o.noCloak) { g.fillStyle = '#26304e'; g.beginPath(); g.moveTo(-14, -6 + bob); g.quadraticCurveTo(-26, 16, -20, 26); g.lineTo(20, 26); g.quadraticCurveTo(26, 16, 14, -6 + bob); g.fill(); g.fillStyle = 'rgba(230,245,255,.85)'; for (let i = -18; i <= 18; i += 6) { g.beginPath(); g.arc(i, 25 + (i % 12 ? 1 : -1), 2.4, 0, TAU); g.fill(); }
-      // the seal mark on his back (seen on the cloak), cracked
-      g.strokeStyle = 'rgba(249,191,1,.9)'; g.lineWidth = 1.6; g.beginPath(); g.arc(0, 14, 7, 0, TAU); g.stroke(); g.beginPath(); g.moveTo(-3, 9); g.lineTo(1, 14); g.lineTo(-1, 19); g.stroke(); }
-    if (o.back) { const k = o.crackK || 0; g.strokeStyle = '#F9BF01'; g.lineWidth = 2; g.beginPath(); g.arc(0, 4, 12, 0, TAU); g.stroke(); g.strokeStyle = 'rgba(255,106,213,' + k + ')'; g.lineWidth = 1.6; g.beginPath(); g.moveTo(-8, -6); g.lineTo(-2, 2); g.lineTo(-6, 10); g.moveTo(2, -8); g.lineTo(5, 0); g.lineTo(10, 4); g.moveTo(0, 6); g.lineTo(3, 14); g.stroke(); }
-    // legs and sticky toe pads
-    [[-15, 6], [15, 6], [-13, 18], [13, 18]].forEach(([lx, ly], i) => { g.fillStyle = body; g.beginPath(); g.ellipse(lx, ly + bob*.5, 5, 4, 0, 0, TAU); g.fill(); g.fillStyle = dark; g.beginPath(); g.arc(lx + (lx < 0 ? -1 : 1), ly - 1 + bob*.5, 1.1, 0, TAU); g.fill(); g.fillStyle = '#f6eed0'; for (let k2 = -1; k2 <= 1; k2++) { g.beginPath(); g.arc(lx + (lx < 0 ? -4 : 4) + k2*2.2, ly + 3 + bob*.5 + Math.abs(k2), 1.6, 0, TAU); g.fill(); } });
-    // pudgy round body, speckled
-    g.fillStyle = body; g.beginPath(); g.ellipse(0, 4 + bob, 18, 16, 0, 0, TAU); g.fill(); g.fillStyle = belly; g.beginPath(); g.ellipse(0, 9 + bob, 10, 8, 0, 0, TAU); g.fill();
-    g.fillStyle = dark; [[-11, -3, 2.4, 1.6], [-5, -7, 2, 1.4], [3, -6, 2.6, 1.7], [10, -2, 2.2, 1.5], [13, 6, 1.8, 2.2], [-14, 5, 1.8, 2.4], [-8, 3, 2.2, 1.4], [7, 3, 2.3, 1.5], [-1, 1, 1.6, 1.2], [-12, 12, 1.6, 1.3], [11, 12, 1.7, 1.3], [-4, 15, 1.3, 1], [5, 15, 1.4, 1]].forEach(([sx, sy, rx, ry], i) => { g.beginPath(); g.ellipse(sx, sy + bob, rx, ry, i*.7, 0, TAU); g.fill(); });
-    // the seal: chains of light wrapped around him
-    if (!o.noSeal) { g.strokeStyle = 'rgba(255,236,160,' + (.65 + .25*Math.sin(t*3)) + ')'; g.lineWidth = 2; g.setLineDash([3, 2]); g.beginPath(); g.ellipse(0, 4 + bob, 21, 6, .35, 0, TAU); g.stroke(); g.beginPath(); g.ellipse(0, 6 + bob, 20, 5, -.4, 0, TAU); g.stroke(); g.setLineDash([]); }
-    // head + big glossy eyes
-    g.fillStyle = body; g.beginPath(); g.ellipse(0, -14 + bob, 16, 13, 0, 0, TAU); g.fill(); g.fillStyle = dark; [[-11, -9, 1.6], [11, -10, 1.5], [-4, -25, 1.3], [5, -24, 1.4], [0, -21, 1.1], [-12, -16, 1.1], [12, -16, 1.2], [-6, -7, 1], [6, -6, 1]].forEach(([sx, sy, r]) => { g.beginPath(); g.arc(sx, sy + bob, r, 0, TAU); g.fill(); });
-    for (const sx of [-8, 8]) { g.fillStyle = '#121212'; g.beginPath(); g.arc(sx, -17 + bob, 6.4, 0, TAU); g.fill(); if (o.galaxy) { g.fillStyle = '#5a2aa0'; g.beginPath(); g.arc(sx, -17 + bob, 5, 0, TAU); g.fill(); g.fillStyle = '#fff'; g.fillRect(sx - 2, -19 + bob, 1, 1); g.fillRect(sx + 1, -16 + bob, 1, 1); }
-      g.fillStyle = '#fff'; g.beginPath(); g.arc(sx - 2, -19.5 + bob, 2.1, 0, TAU); g.fill(); g.beginPath(); g.arc(sx + 2, -15 + bob, .9, 0, TAU); g.fill();
-      if (o.sleep) { g.fillStyle = body; g.beginPath(); g.arc(sx, -17 + bob, 6.8, 0, TAU); g.fill(); g.strokeStyle = dark; g.lineWidth = 1.5; g.beginPath(); g.arc(sx, -17 + bob, 4, .2, Math.PI - .2); g.stroke(); }
-      else if (o.mood == 'smug' || (!o.mood && !o.smile)) { g.fillStyle = body; g.beginPath(); g.ellipse(sx, -21 + bob, 7.4, 4.4, 0, Math.PI, 0); g.fill(); } }
-    if (o.lick) { g.strokeStyle = '#ff7aa8'; g.lineWidth = 2.6; g.lineCap = 'round'; g.beginPath(); g.moveTo(2, -8 + bob); g.quadraticCurveTo(14, -10 + bob, 9, -19 + bob); g.stroke(); }
-    g.strokeStyle = '#4a3a2a'; g.lineWidth = 1.4; g.beginPath(); if (o.smile) g.arc(0, -10 + bob, 5, .2, Math.PI - .2); else { g.moveTo(-4, -7 + bob); g.quadraticCurveTo(1, -5 + bob, 5, -8 + bob); } g.stroke();
+  // Dumpling, side view, lying flat like a real leopard gecko (faces right; flip:true faces left)
+  const drawGecko = (x, y, o = {}) => { const s = o.s || 1, t = S.t; g.save(); g.translate(x, y); g.scale(o.flip ? -s : s, s); if (o.alpha != null) g.globalAlpha = o.alpha;
+    const body = o.col || '#efe2a2', dark = o.dark || '#1e1e24', belly = o.belly || '#fbf6e4', br = Math.sin(t*3)*.8, walk = o.walk ? Math.sin(t*12) : 0;
+    const spot = (sx, sy, rx, ry, a) => { g.beginPath(); g.ellipse(sx, sy, rx, ry, a || 0, 0, TAU); g.fill(); };
+    g.fillStyle = 'rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(-6, 12, 40, 6, 0, 0, TAU); g.fill();
+    // thick banded tail, wiggling behind him
+    if (!o.noTail) { for (let i = 0; i < 9; i++) { const u = i/8, tx = -20 - i*4.4, ty = 2 + Math.sin(t*3 + i*.7)*2.4*u - u*u*4; g.fillStyle = i % 2 ? dark : body; g.beginPath(); g.arc(tx, ty, 7.2 - i*.62, 0, TAU); g.fill(); } }
+    // far legs (behind), then body
+    const leg = (lx, front, near) => { const k = (front ? 1 : -1)*walk*2.5; g.fillStyle = near ? body : '#d8cc90'; g.beginPath(); g.ellipse(lx + k, 7, 3.4, 5, front ? .5 : -.5, 0, TAU); g.fill(); g.fillStyle = near ? '#f6eed0' : '#cfc490'; for (let q = -1; q <= 1; q++) { g.beginPath(); g.arc(lx + k + (front ? 3 : -3) + q*2.2, 11.5, 1.4, 0, TAU); g.fill(); } if (near) { g.fillStyle = dark; spot(lx + k, 5, 1.1, 1.1); } };
+    leg(-11, false, false); leg(13, true, false);
+    g.fillStyle = body; g.beginPath(); g.ellipse(0, br*.3, 21, 10.5, 0, 0, TAU); g.fill();
+    g.fillStyle = belly; g.beginPath(); g.ellipse(1, 5 + br*.3, 17, 4.6, 0, 0, Math.PI); g.fill();
+    g.fillStyle = dark; [[-14, -4, 2.2, 1.4], [-8, -7, 1.8, 1.2], [-2, -6, 2.4, 1.5], [5, -7, 2, 1.3], [11, -4, 2.2, 1.4], [-11, 1, 1.6, 1.1], [-4, 0, 2, 1.2], [3, 1, 1.8, 1.1], [9, 0, 1.7, 1.1], [15, 1, 1.4, 1], [-17, -1, 1.3, 1]].forEach(([a, b2, rx, ry], i) => spot(a, b2 + br*.3, rx, ry, i*.6));
+    // the frost-stained cloak over his back, with the seal mark
+    if (!o.noCloak) { g.fillStyle = '#26304e'; g.beginPath(); g.moveTo(-15, -6 + br*.3); g.quadraticCurveTo(0, -15 + br*.3, 15, -6 + br*.3); g.lineTo(13, 4); g.quadraticCurveTo(0, 7, -14, 4); g.closePath(); g.fill(); g.fillStyle = 'rgba(230,245,255,.85)'; for (let i = -12; i <= 12; i += 5) { g.beginPath(); g.arc(i, 4.5 + (i % 2 ? .6 : -.4), 1.5, 0, TAU); g.fill(); }
+      g.strokeStyle = 'rgba(249,191,1,.9)'; g.lineWidth = 1.4; g.beginPath(); g.arc(0, -4, 4.6, 0, TAU); g.stroke(); g.beginPath(); g.moveTo(-1.5, -8); g.lineTo(.8, -4); g.lineTo(-.6, -.6); g.stroke();
+      if (o.back) { const k = o.crackK || 0; g.strokeStyle = 'rgba(255,106,213,' + k + ')'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(-4, -10); g.lineTo(-1, -5); g.lineTo(-5, -1); g.moveTo(2, -10); g.lineTo(4, -5); g.lineTo(8, -3); g.stroke(); } }
+    // the seal: chains of light wrapped around his body
+    if (!o.noSeal) { g.strokeStyle = 'rgba(255,236,160,' + (.65 + .25*Math.sin(t*3)) + ')'; g.lineWidth = 1.8; g.setLineDash([3, 2]); g.beginPath(); g.ellipse(-7, br*.3, 4.5, 11.5, .25, 0, TAU); g.stroke(); g.beginPath(); g.ellipse(8, br*.3, 4.5, 11.5, -.25, 0, TAU); g.stroke(); g.setLineDash([]); }
+    // near legs
+    leg(-9, false, true); leg(15, true, true);
+    // head and snout
+    const hy = -3 + br*.5; g.fillStyle = body; g.beginPath(); g.ellipse(26, hy, 12.5, 8.6, -.08, 0, TAU); g.fill(); g.beginPath(); g.ellipse(18, hy + 1, 7, 7.5, 0, 0, TAU); g.fill();
+    g.fillStyle = dark; [[20, hy - 5, 1.3], [29, hy - 6, 1.2], [33, hy - 3, 1], [24, hy + 4, 1.1], [17, hy - 2, 1]].forEach(([a, b2, r]) => spot(a, b2, r, r*.8));
+    g.strokeStyle = '#4a3a2a'; g.lineWidth = 1.2; g.beginPath(); if (o.smile) { g.moveTo(25, hy + 3); g.quadraticCurveTo(31, hy + 6.5, 37, hy + 2); } else { g.moveTo(24, hy + 3.5); g.quadraticCurveTo(31, hy + 5, 38, hy + 2.6); } g.stroke();
+    g.fillStyle = dark; spot(36.5, hy - 1.6, .8, .6);
+    // big glossy eye
+    g.fillStyle = '#121212'; g.beginPath(); g.arc(29, hy - 3.2, 4.6, 0, TAU); g.fill();
+    if (o.galaxy) { g.fillStyle = '#5a2aa0'; g.beginPath(); g.arc(29, hy - 3.2, 3.6, 0, TAU); g.fill(); g.fillStyle = '#fff'; g.fillRect(28, hy - 5, 1, 1); g.fillRect(30, hy - 2, 1, 1); }
+    g.fillStyle = '#fff'; g.beginPath(); g.arc(27.6, hy - 4.8, 1.6, 0, TAU); g.fill(); g.beginPath(); g.arc(30.4, hy - 1.8, .7, 0, TAU); g.fill();
+    if (o.sleep) { g.fillStyle = body; g.beginPath(); g.arc(29, hy - 3.2, 4.9, 0, TAU); g.fill(); g.strokeStyle = dark; g.lineWidth = 1.2; g.beginPath(); g.arc(29, hy - 3.2, 3, .3, Math.PI - .3); g.stroke(); }
+    else if (o.mood == 'smug' || (!o.mood && !o.smile)) { g.fillStyle = body; g.beginPath(); g.ellipse(29, hy - 6, 5.3, 3, 0, Math.PI, 0); g.fill(); }
+    if (o.lick) { g.strokeStyle = '#ff7aa8'; g.lineWidth = 2.2; g.lineCap = 'round'; g.beginPath(); g.moveTo(37, hy + 2.5); g.quadraticCurveTo(41, hy - 4, 31.5, hy - 5.5); g.stroke(); }
     // tiny dark crown
-    if (!o.noCrown) { g.fillStyle = '#2a1a3a'; g.beginPath(); g.moveTo(-7, -25 + bob); g.lineTo(-7, -31 + bob); g.lineTo(-4, -28 + bob); g.lineTo(0, -33 + bob); g.lineTo(4, -28 + bob); g.lineTo(7, -31 + bob); g.lineTo(7, -25 + bob); g.closePath(); g.fill(); g.fillStyle = '#9fe8ff'; g.beginPath(); g.arc(0, -27.5 + bob, 1.5, 0, TAU); g.fill(); }
+    if (!o.noCrown) { const cx = 24, cy = hy - 8; g.fillStyle = '#2a1a3a'; g.beginPath(); g.moveTo(cx - 5, cy); g.lineTo(cx - 5, cy - 5); g.lineTo(cx - 2.5, cy - 2.6); g.lineTo(cx, cy - 6.5); g.lineTo(cx + 2.5, cy - 2.6); g.lineTo(cx + 5, cy - 5); g.lineTo(cx + 5, cy); g.closePath(); g.fill(); g.fillStyle = '#9fe8ff'; g.beginPath(); g.arc(cx, cy - 2, 1.2, 0, TAU); g.fill(); }
     g.restore(); };
   const drawOwl = (x, y, s) => { s = s || 1; g.save(); g.translate(x, y); g.scale(s, s); g.fillStyle = 'rgba(0,0,0,.15)'; g.beginPath(); g.ellipse(0, 20, 16, 5, 0, 0, TAU); g.fill(); g.fillStyle = '#f4f6fa'; g.beginPath(); g.ellipse(0, 0, 16, 21, 0, 0, TAU); g.fill(); g.fillStyle = '#c8d0dc'; for (let i = 0; i < 6; i++) { g.beginPath(); g.arc(-8 + (i % 3)*8, 6 + Math.floor(i/3)*7, 1.6, 0, TAU); g.fill(); }
     for (const sx of [-6, 6]) { g.fillStyle = '#F9BF01'; g.beginPath(); g.arc(sx, -6, 5, 0, TAU); g.fill(); g.fillStyle = '#121212'; g.beginPath(); g.arc(sx, -6, 2.4, 0, TAU); g.fill(); g.strokeStyle = '#6b4a2b'; g.lineWidth = 1.3; g.beginPath(); g.arc(sx, -6, 6.5, 0, TAU); g.stroke(); }
     g.fillStyle = '#ff9a3c'; g.beginPath(); g.moveTo(-2, -1); g.lineTo(2, -1); g.lineTo(0, 3); g.fill(); g.fillStyle = '#e8ecf4'; g.beginPath(); g.moveTo(-12, -16); g.lineTo(-8, -24); g.lineTo(-4, -17); g.fill(); g.beginPath(); g.moveTo(12, -16); g.lineTo(8, -24); g.lineTo(4, -17); g.fill(); g.restore(); };
   const drawWho = (who, x, y, mood) => { const pic = who[1], t = S.t; if (pic == 'owl') drawOwl(x, y - 6); else if (pic == 'loki') SC.loki(g, x, y, {s:.85, mood:mood || 'happy'}, t); else if (pic == 'mau') SC.mau(g, x, y, {st:'stand'}, t); else if (pic == 'bau') SC.spirit(g, 'bau', x, y, {mood:mood || 'peaceful'}, t); else if (pic == 'pip') S.penguin(x, y); else if (pic == 'dump') drawGecko(x, y, {mood:'smug'}); else if (pic.slice(0, 4) == 'kid:') S.kid(x, y, {Maya:'#2fa8e0', Leo:'#64CDF5', Ava:'#ff9ad5', Sam:'#2fa8e0', Tamsin:'#8D5B1D'}[pic.slice(4)] || '#8D5B1D', {face:Math.PI/2}); };
-  const portrait = (who, x, y, mood) => { if (who == 'none') return true; if (SAGA.postPortrait && SAGA.postPortrait(who, x, y, mood)) return true; if (who == 'dump') { drawGecko(x, y + 6, {mood, lick:mood == 'smug' && Math.sin(S.t*2) > .7, smile:mood == 'happy'}); return true; } if (who == 'owl') { drawOwl(x, y + 4, 1); return true; } if (who == 'kid:Tamsin') { S.kid(x, y + 12, '#8D5B1D', {face:0}); return true; } return false; };
+  const portrait = (who, x, y, mood) => { if (who == 'none') return true; if (SAGA.postPortrait && SAGA.postPortrait(who, x, y, mood)) return true; if (who == 'dump') { drawGecko(x - 8, y + 4, {s:.72, mood, lick:mood == 'smug' && Math.sin(S.t*2) > .7, smile:mood == 'happy'}); return true; } if (who == 'owl') { drawOwl(x, y + 4, 1); return true; } if (who == 'kid:Tamsin') { S.kid(x, y + 12, '#8D5B1D', {face:0}); return true; } return false; };
   const drawWorld = (cur, C, W2T) => { const s2 = stepNow(), t = S.t, lo = S.low();
     // people standing where their scene happens
     if (s2 && s2.k == 'talk') { const w = where(s2, cur, C, W2T); if (w && w.pos && !w.camp && cur == w.r) { drawWho(s2.who, w.pos.x, w.pos.y, 'happy'); g.fillStyle = '#F9BF01'; g.font = '900 22px ' + A2.font; g.textAlign = 'center'; g.fillText('!', w.pos.x, w.pos.y - 44 + Math.sin(t*5)*3); } }
@@ -250,7 +260,7 @@ SAGA.storyInit = (S, SG) => {
     if (started() && s2 && s2.k == 'talk' && s2.at && s2.at.camp == 'pip' && S.onScreen(S.PIP.x, S.PIP.y)) { g.fillStyle = '#F9BF01'; g.font = '900 22px ' + A2.font; g.textAlign = 'center'; g.fillText('!', S.PIP.x, S.PIP.y - 34 + Math.sin(S.t*5)*3); } if (SAGA.postDrawCamp) SAGA.postDrawCamp(api); };
   const drawBoss = B => { if (PST(B.k)) { SAGA.post.drawBoss(B); return; } const x = B.x, y = B.y, t = S.t; if (B.k.slice(0, 4) == 'dump') { const sc = (B.k == 'dump6' ? 1.5 : 1.25)*(1 + 1.6*(B.giant || 0)), camo = B.camo > 0 ? (B.k == 'dump6' ? .06 : .12) : 1;
       if (B.giant) { g.fillStyle = 'rgba(0,0,0,.2)'; g.beginPath(); g.ellipse(x, y + 40*sc/1.5, 50*sc/1.5, 12*sc/1.5, 0, 0, TAU); g.fill(); }
-      drawGecko(x, y, {s:sc, alpha:(B.flash > 0 ? .6 : 1)*camo, mood:B.ph >= 3 || B.fight == 6 ? 'angry' : 'smug', lick:B.lick > 0, noTail:B.tail > 0});
+      drawGecko(x, y, {s:sc, flip:p.x < x, walk:Math.hypot((B.tx || x) - x, (B.ty || y) - y) > 8, alpha:(B.flash > 0 ? .6 : 1)*camo, mood:B.ph >= 3 || B.fight == 6 ? 'angry' : 'smug', lick:B.lick > 0, noTail:B.tail > 0});
       if (B.giant > .5) wsp.forEach(w => { const wx = x + Math.cos(w.a)*30*sc, wy = y + Math.sin(w.a)*22*sc; g.fillStyle = 'rgba(249,191,1,' + (.6 + .35*Math.sin(t*8)) + ')'; g.beginPath(); g.arc(wx, wy, 13, 0, TAU); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 2; g.stroke(); });
       if (teamFx > 0) { g.strokeStyle = 'rgba(213,243,103,' + Math.min(1, teamFx) + ')'; g.lineWidth = 6; for (let i = 0; i < 7; i++) { const a = i/7*TAU + t*2; g.beginPath(); g.moveTo(x + Math.cos(a)*240, y + Math.sin(a)*240); g.lineTo(x, y); g.stroke(); } }
       if (B.talk && B.talkT > 0) S.bubble(x, y - 50*sc, B.talk.replace(/^Dumpling: /, ''));
@@ -258,7 +268,7 @@ SAGA.storyInit = (S, SG) => {
     const R0 = RB[BOSS[B.k].region] || {e:'❄', col:'#fff'}; g.save(); if (B.flash > 0) g.globalAlpha = .6; g.fillStyle = 'rgba(0,0,0,.2)'; g.beginPath(); g.ellipse(x, y + 36, 40, 10, 0, 0, TAU); g.fill();
     g.fillStyle = R0.col; g.globalAlpha *= .35; g.beginPath(); g.arc(x, y, 46 + Math.sin(t*3)*3, 0, TAU); g.fill(); g.globalAlpha = B.flash > 0 ? .6 : 1; g.font = '72px ' + A2.font; g.textAlign = 'center'; g.fillText(R0.e, x, y + 26 + Math.sin(t*2.4)*3);
     if (B.ph >= 3) { g.fillStyle = '#FF4539'; g.font = '900 16px ' + A2.font; g.fillText('!!', x + 34, y - 30); } g.restore(); if (B.talk && B.talkT > 0) S.bubble(x, y - 62, B.talk); };
-  const drawFoe = f => { const F = S.FOE[f.k]; drawGecko(f.x, f.y, {s:f.k == 'geckspit' ? .62 : .52, col:f.k == 'geckspit' ? '#f4c27a' : '#e8dcb0', noCrown:1, noCloak:1, noSeal:1, alpha:f.flash > 0 ? .6 : 1, mood:'angry'}); };
+  const drawFoe = f => { const F = S.FOE[f.k]; drawGecko(f.x, f.y, {flip:p.x < f.x, walk:1, s:f.k == 'geckspit' ? .62 : .52, col:f.k == 'geckspit' ? '#f4c27a' : '#e8dcb0', noCrown:1, noCloak:1, noSeal:1, alpha:f.flash > 0 ? .6 : 1, mood:'angry'}); };
   // ---------- boss bars ----------
   const drawBar = (B, TY) => { if (PST(B.k)) { SAGA.post.drawBar(B, TY); return; } const VW = S.VW;
     if (B.k != 'dump6') { // the FAKE bar: it looks like his whole life. It isn't.
