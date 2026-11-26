@@ -6,7 +6,7 @@ const stat = (api,k,v,m) => { try { api.stat && api.stat(k,v,m); } catch(e){} };
 const pt = (c, e, w, h) => { const r = c.getBoundingClientRect(); w = c._lw || w; h = c._lh || h; return {x:(e.clientX-r.left)*w/r.width, y:(e.clientY-r.top)*h/r.height}; };
 const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
 const learn2 = (host, api, title, yes, no) => { if (!A.learnOn || !A.learnOn()) { no(); return false; } A.quiz(host, title, ok => { try { api.edu && api.edu(ok); } catch(e){} ok ? yes() : no(); }); return true; };
-const keysDown = () => { const k = {}; const d = e => { k[e.key] = true; }, u = e => { k[e.key] = false; }; window.addEventListener('keydown', d); window.addEventListener('keyup', u); return {k, off:() => { window.removeEventListener('keydown', d); window.removeEventListener('keyup', u); }}; };
+const keysDown = () => { const k = {}; const d = e => { k[e.key] = true; }, u = e => { k[e.key] = false; if (e.key.length == 1) k[e.key.toLowerCase()] = k[e.key.toUpperCase()] = false; }; const bl = () => { for (const q in k) k[q] = false; }; window.addEventListener('keydown', d); window.addEventListener('keyup', u); window.addEventListener('blur', bl); return {k, off:() => { window.removeEventListener('keydown', d); window.removeEventListener('keyup', u); window.removeEventListener('blur', bl); }}; };
 const shuffle = a => { for (let i = a.length-1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
 const wrap = (g, s, x, y, mw, lh) => { let line = ''; s.split(' ').forEach(wd => { const t = line ? line+' '+wd : wd; if (g.measureText(t).width > mw) { g.fillText(line, x, y); y += lh; line = wd; } else line = t; }); g.fillText(line, x, y); };
 

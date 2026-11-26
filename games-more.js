@@ -21,7 +21,7 @@ A.register('bounce', { mount(host, api){
   const addPlat = y => { const lvl = Math.max(0, -y)/1500, r = Math.random(); const kind = r < Math.min(.25, .05+lvl*.04) ? 'm' : r < Math.min(.4, .1+lvl*.05) ? 'b' : r < .5 ? 's' : 'n';
     plats.push({x: 20 + Math.random()*(w-120), y, w: Math.max(52, 84 - lvl*6), kind, vx: kind=='m' ? (60+lvl*20)*(Math.random()<.5?-1:1) : 0, broke:false, coin: Math.random() < .18}); };
   const offK = A.keys(e => { if (e.type == 'keydown') { keys[e.key] = true; if (st != 'play' && st != 'quiz' && (e.key==' '||e.key=='Enter')) { reset(); st = 'play'; } } });
-  const ku = e => { keys[e.key] = false; }; window.addEventListener('keyup', ku);
+  const ku = e => { keys[e.key] = false; if (e.key.length == 1) keys[e.key.toLowerCase()] = keys[e.key.toUpperCase()] = false; }; window.addEventListener('keyup', ku);
   c.addEventListener('pointerdown', e => { if (st == 'quiz') return; if (st != 'play') { reset(); st = 'play'; return; } dragX = pt(c, e, w, h).x; });
   c.addEventListener('pointermove', e => { if (dragX != null) dragX = pt(c, e, w, h).x; });
   const upP = () => { dragX = null; }; c.addEventListener('pointerup', upP); c.addEventListener('pointercancel', upP);
@@ -189,7 +189,7 @@ A.register('comets', { mount(host, api){
   const reset = () => { if (__skip) { __skip = false; return; } ship = {x:w/2, y:h/2, vx:0, vy:0, a:-Math.PI/2}; shots = []; parts = []; score = 0; lives = A.lives(3 + A.U('life')); wave = 0; inv = 2 + 2*A.U('shield'); spawnWave(); api.score(0); };
   const boom = (x, y, col, n) => { if (low()) n = Math.min(n, 4); for (let i=0;i<n;i++) { const a = Math.random()*TAU, s = 40 + Math.random()*140; parts.push({x, y, vx:Math.cos(a)*s, vy:Math.sin(a)*s, t:.5+Math.random()*.4, col}); } };
   const offK = A.keys(e => { keys[e.key] = true; if (st != 'play' && st != 'quiz' && (e.key == ' ' || e.key == 'Enter')) { reset(); st = 'play'; } });
-  const ku = e => { keys[e.key] = false; }; window.addEventListener('keyup', ku);
+  const ku = e => { keys[e.key] = false; if (e.key.length == 1) keys[e.key.toLowerCase()] = keys[e.key.toUpperCase()] = false; }; window.addEventListener('keyup', ku);
   c.addEventListener('pointerdown', e => { if (st == 'quiz') return; if (st != 'play') { reset(); st = 'play'; return; } touch = pt(c, e, w, h); });
   c.addEventListener('pointermove', e => { if (touch) touch = pt(c, e, w, h); });
   const tup = () => { touch = null; }; c.addEventListener('pointerup', tup); c.addEventListener('pointercancel', tup);

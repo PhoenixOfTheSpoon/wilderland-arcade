@@ -9,7 +9,7 @@ const low = () => !!A.lowFx;
 const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
 // Learn mode: answer a question for a second chance (otherwise run `no`). Returns true while the quiz is open.
 const learn2 = (host, api, title, yes, no) => { if (!A.learnOn || !A.learnOn()) { no(); return false; } A.quiz(host, title, ok => { try { api.edu && api.edu(ok); } catch(e){} ok ? yes() : no(); }); return true; };
-const keysDown = () => { const k = {}; const d = e => { k[e.key] = true; }, u = e => { k[e.key] = false; }; window.addEventListener('keydown', d); window.addEventListener('keyup', u); return {k, off:() => { window.removeEventListener('keydown', d); window.removeEventListener('keyup', u); }}; };
+const keysDown = () => { const k = {}; const d = e => { k[e.key] = true; }, u = e => { k[e.key] = false; if (e.key.length == 1) k[e.key.toLowerCase()] = k[e.key.toUpperCase()] = false; }; const bl = () => { for (const q in k) k[q] = false; }; window.addEventListener('keydown', d); window.addEventListener('keyup', u); window.addEventListener('blur', bl); return {k, off:() => { window.removeEventListener('keydown', d); window.removeEventListener('keyup', u); window.removeEventListener('blur', bl); }}; };
 const sky = (g, w, h, a, b) => { const gr = g.createLinearGradient(0,0,0,h); gr.addColorStop(0,a); gr.addColorStop(1,b); g.fillStyle = gr; g.fillRect(0,0,w,h); };
 
 // =====================================================================================================
@@ -611,7 +611,7 @@ A.register('fishing', { mount(host, api){
   // ---------- one dive ----------
   let st = 'ready', phase = 'surface', score = 0, t = 0, hx = W/2, tx = null, hd = 0, camD = 0, maxD = 0, skipD = 0, caught = [], fish = [], genTo = 0, ghostN = 0, shieldN = 0,
     combo = 0, lastCatch = -9, msg = '', msgT = 0, quiz = false, tally = null, zoneShow = '', zoneT = 0, lastZone = -1, ptrDown = false, panel = null, panelTab = 'up', armPearl = false, flash = 0, buddyAcc = 0;
-  const K = {}; const kd = e => { K[e.key] = true; }, ku = e => { K[e.key] = false; }; window.addEventListener('keydown', kd); window.addEventListener('keyup', ku);
+  const K = {}; const kd = e => { K[e.key] = true; }, ku = e => { K[e.key] = false; if (e.key.length == 1) K[e.key.toLowerCase()] = K[e.key.toUpperCase()] = false; }; window.addEventListener('keydown', kd); window.addEventListener('keyup', ku);
   const say = (s, d) => { msg = s; msgT = d || 1.6; };
   let slowHeld = false; const slowF = () => (K[' '] || slowHeld) ? .3 : 1;   // hold Space (or the 🐢 button) to go slow
   // ---- bait mix: the player picks how much of each rarity they want; aiming at rarer fish means fewer fish ----
