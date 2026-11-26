@@ -954,7 +954,7 @@ A.snowWorld = function(X) {
     const L = Math.hypot(mx, my); if (L) { mx /= L; my /= L; if (!charge) p.face = Math.atan2(my, mx); p.walk += dt; }
     if (!(SG && SG.move(dt, mx, my))) { const tl = tileAt(Math.floor(p.x/TS), Math.floor(p.y/TS)), spd = 215 * X.spd() * (tl == PATH || tl == CAMP || tl == FLOOR ? 1.2 : tl == DEEP ? .62 : 1) * (charge ? .6 : 1), k2 = tl == ICE ? 2.2 + .8*X.gStat('boots') : 14;
     const k3 = raid && raid.mods.some(m2 => m2.ice) ? Math.min(k2, 2.4) : k2; if (!(p.roll > 0)) { p.vx += (mx*spd - p.vx) * Math.min(1, k3*dt); p.vy += (my*spd - p.vy) * Math.min(1, k3*dt); } else splat(p.x, p.y + 10, 1, '#ffffff');
-    const nx = p.x + p.vx*dt, ny = p.y + p.vy*dt; if (!blocked(nx, p.y, 12)) p.x = nx; else p.vx = 0; if (!blocked(p.x, ny, 12)) p.y = ny; else p.vy = 0; }
+    const nx = p.x + p.vx*dt, ny = p.y + p.vy*dt, rB = blocked(p.x, p.y, 12) ? 3 : 12; if (!blocked(nx, p.y, rB)) p.x = nx; else p.vx = 0; if (!blocked(p.x, ny, rB)) p.y = ny; else p.vy = 0; }
     if (!gateOpen() && Math.abs(p.x - (83.5*TS)) < 90 && Math.abs(p.y - 31*TS) < 40) { gateT -= dt; if (gateT <= 0) { gateT = 4; say('🔒 The gate is sealed: ' + runesN() + '/3 Moon Runes' + (W.mau ? '' : ' · Royal Guard Mau Mau has the key') , 3); } }
     // timers, ammo, healing
     p.inv = Math.max(0, p.inv - dt); p.hitT = Math.max(0, p.hitT - dt); p.ab = Math.max(0, p.ab - dt); p.shieldT = Math.max(0, p.shieldT - dt); p.eye = Math.max(0, p.eye - dt); p.fortT = Math.max(0, p.fortT - dt); p.throwT = Math.max(0, (p.throwT || 0) - dt);
