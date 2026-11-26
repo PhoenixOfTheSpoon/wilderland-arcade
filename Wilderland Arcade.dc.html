@@ -1850,7 +1850,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048').sort((a,b) => a.key0.localeCompare(b.key0, 'en', {numeric:true})); return GAMES.indexOf(DG[h % DG.length]); };   // same order as the old A–Z floor, so the daily game never jumps
-const BUILD = '2026-12-11a';
+const BUILD = '2026-12-11b';
 const SCRIPTS = ['arcade-core.js','music.js','prizes-more.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','rebirth-road.js','wonders.js','qol.js','live-events.js','moderation.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js','games-secrets.js','games-more.js','games-more2.js','games-more3.js','snow-cast.js','snow-world.js'];
 const fmt = n => fmtN(Math.round(n));
 
@@ -1859,7 +1859,7 @@ class Component extends DCLogic {
     super(p);
     let acct = null; try { acct = localStorage.getItem(SESSION_KEY) || sessionStorage.getItem(SESSION_KEY); } catch(e){}
     if (acct && !getAccts()[acct]) acct = null;
-    this.acct = acct; this.P = loadP(this.profKey()); { const b = pickBest([this.P, getJSON(BK+this.profKey(), null)]); if (b && b !== this.P) this.P = normP(b); }
+    this.acct = acct; this._rawAtLoad = getJSON(this.profKey(), null); this.P = loadP(this.profKey()); { const b = pickBest([this.P, getJSON(BK+this.profKey(), null)]); if (b && b !== this.P) this.P = normP(b); }
     this.state = Object.assign({}, this.P, {account:acct,
       calOpen:(typeof location!='undefined' && location.hash=='#calendar'),immortal:false,autoHint:true,codeOpen:false,codeVal:'',codeMsg:'',admin:false,px:834,py:270,fQ:'',fZone:'all',fSort:'az',fFav:false,hsQ:'',hsOpen:{},sideTab:(()=>{ try { return localStorage.getItem('wl-side-tab') || 'profile'; } catch(e) { return 'profile'; } })(),gridMode:(()=>{ try { return localStorage.getItem('wl-grid') === '1'; } catch(e) { return false; } })(),vw:(typeof window!='undefined'?window.innerWidth:1200),gameH:480,padOn:(()=>{ try { const v = localStorage.getItem('wl-pad'); if (v) return v == '1'; } catch(e){} return typeof window!='undefined'&&(('ontouchstart' in window)||(window.matchMedia&&window.matchMedia('(pointer: coarse)').matches)); })(),learnOpen:false,pinIn:'',pinNew:'',pinNew2:'',pinMsg:'',pinAsk:'',pinFails:0,pinLock:0,pinMode:'',lbOpen:false,lbGame:'_ov',lbMode:'all',uOpen:false,uVal:'',uMsg:'',clearArm:false,dir:[0,1],game:null,liveScore:0,payout:'',prizesOpen:false,toasts:[],scale:1,muted:false,
       authOpen:false,authMode:'signup',aEmail:'',aPass:'',aPass2:'',aName:'',aShow:false,aRemember:true,aBring:true,aMsg:'',aBusy:false,aFails:0,aLock:0,aTouched:false,
@@ -1947,7 +1947,7 @@ class Component extends DCLogic {
     } catch(e){}
     if (carry) { try { localStorage.removeItem(KEY); } catch(e){} }
     try { localStorage.removeItem(SESSION_KEY); sessionStorage.removeItem(SESSION_KEY); } catch(e){}
-    this.cloudBoard = {}; this.stat('account',1); setTimeout(() => this.checkBackup(), 500); }
+    this.cloudBoard = {}; this.stat('account',1); setTimeout(() => this.checkBackup(), 500); setTimeout(() => this.snapSave('when you opened the arcade'), 1500); }
   cloudReset(){ this.persist(true); this.cloudUid = null; this.cloudMeta = null; this.acct = null; this.P = loadP(KEY); this.cloudBoard = {}; this.setState({...this.P, account:null, authOpen:false}); }
   async cloudAuth(kind, email, pw, name){ const s = this.state, C = window.WLCloud; this.setState({aBusy:true, aMsg:'', aInfo:''}); this._cloudPending = true;
     try { const u = kind=='google' ? await C.google(s.aRemember) : kind=='signup' ? await C.signUp(email, pw, s.aRemember) : await C.signIn(email, pw, s.aRemember);
@@ -1977,9 +1977,24 @@ class Component extends DCLogic {
     if (mode=='add') this.setP({stats:{...st, sum:{...st.sum, [k]:(st.sum[k]||0)+v}}});
     else { if ((st.max[k]||0) >= v) return; this.setP({stats:{...st, max:{...st.max, [k]:v}}}); } }
   // the IndexedDB copy is read after loading; if it has more lifetime tickets, it wins
+  // ---------- SAVE SAFETY NET: up to 6 earlier copies of this profile (IndexedDB), Restore, Export and Import ----------
+  snapKey(){ return 'wl-prev:'+this.profKey(); }
+  curData(){ const o = {}; PFIELDS.forEach(k => o[k] = this.P[k]); return JSON.parse(JSON.stringify(o)); }
+  async snapSave(reason, data, force){ try { const d = data || this.curData(); if (!d || typeof d != 'object' || !(d.savedAt || d.tickets || d.earned)) return; const key = this.snapKey(), list = (await idb.get(key)) || [];
+      const last = list[0]; if (!force && last && Date.now() - last.at < 3*3600e3 && reason == 'when you opened the arcade') return;
+      list.unshift({at:Date.now(), reason, tix:d.tickets||0, rb:d.rebirths||0, savedAt:d.savedAt||0, data:d}); await idb.put(key, list.slice(0, 6)); } catch(e){ console.error('[save backup]', e); } }
+  async listSnaps(){ const list = (await idb.get(this.snapKey())) || []; return list.map((x, i) => ({i, at:x.at, reason:x.reason, tix:x.tix, rb:x.rb, ok:(x.savedAt||0) >= (this.P.wipeAt||0)})); }
+  loadData(d, why){ if (this.state.game) this.closeAll(); const life = Math.max(this.P.lifeTix||0, d.lifeTix||0, d.tickets||0);
+    this.P = normP({...d, lifeTix:life, wipeAt:this.P.wipeAt||0, username:this.P.username || d.username || ''}); this._bkForce = true; this.persist(true); this.setState({...this.P}); this.toast(why, true); }
+  async restoreSnap(i){ const list = (await idb.get(this.snapKey())) || [], x = list[i]; if (!x) return 'That backup is gone.'; if ((x.savedAt||0) < (this.P.wipeAt||0)) return 'That backup is from before a reset, so it can’t come back.';
+    await this.snapSave('before you restored an older save', null, true); this.loadData(x.data, 'SAVE RESTORED · '+fmtN(x.tix||0)+' TICKETS'); return ''; }
+  exportSave(){ return JSON.stringify({wilderlandSave:1, at:Date.now(), user:this.P.username||'', data:this.curData()}); }
+  async importSave(txt){ let o = null; try { txt = String(txt||'').trim(); if (/^WL1:/.test(txt)) txt = decodeURIComponent(escape(atob(txt.slice(4)))); o = JSON.parse(txt); } catch(e){ return 'That isn’t a Wilderland save file.'; }
+    const d = o && o.wilderlandSave ? o.data : null; if (!d || typeof d != 'object' || Array.isArray(d) || typeof (d.tickets ?? 0) != 'number' || (d.best && typeof d.best != 'object')) return 'That isn’t a Wilderland save file.';
+    await this.snapSave('before you imported a save', null, true); this.loadData(d, 'SAVE IMPORTED · '+fmtN(d.tickets||0)+' TICKETS'); return ''; }
   checkBackup(){ const key = BK+this.profKey(); idb.get(key).then(b => { if (!b || this.profKey() !== key.slice(BK.length)) return; const best = pickBest([this.P, b]);
     if (best === b && (b.lifeTix||0) > (this.P.lifeTix||0)) { this.P = normP(b); this.setState({...this.P}); this.persist(true); this.toast('RESTORED YOUR BEST SAVE · '+fmtN(b.tickets||0)+' TICKETS', true); } }); }
-  componentDidMount(){ setTimeout(() => this.checkBackup(), 800);
+  componentDidMount(){ setTimeout(() => this.checkBackup(), 800); setTimeout(() => this.snapSave('when you opened the arcade', this._rawAtLoad), 300);
     this.onDown = e => { const d = (e && e.detail) || {}; this.setState({downUntil:d.until||0, downMsg:d.msg||''}); setTimeout(()=>{ if (!this.downPassOK() && this.state.game) { this.closeAll(); if (this.state.fs) this.setFs(false); } }, 0); };
     window.addEventListener('wl-down', this.onDown); this.onCtrl = () => { this.applyAdj(); this.checkKick(); }; window.addEventListener('wl-ctrl', this.onCtrl); if (window.WLCloud && window.WLCloud.down) this.onDown({detail:window.WLCloud.down()});
     this.downIv = setInterval(()=>{ if (this.state.kickUntil) { if (Date.now() > this.state.kickUntil) this.setState({kickUntil:0}); else this.setState({downTick:Date.now()}); } const u = this.state.downUntil||0; if (u && Date.now() < u + 1500) this.setState({downTick:Date.now()}); else if (u && Date.now() >= u + 1500) this.setState({downUntil:0}); if (u > Date.now() && this.state.game && !this.downPassOK()) { this.closeAll(); if (this.state.fs) this.setFs(false); } }, 1000);
@@ -2292,7 +2307,7 @@ class Component extends DCLogic {
     this.setP({tickets:P.tickets - spent, upg, stats:{...P.stats, sum:{...P.stats.sum, upgrades:(P.stats.sum.upgrades||0) + n}}}); window.Arcade && window.Arcade.sfx('win'); this.toast('BOUGHT '+n+' WORKSHOP LEVEL'+(n>1?'S':'')+' · '+fmtN(spent)+' TICKETS'); return n; }
   anim(){ try { if (document.documentElement.classList.contains('wl-noanim')) return 'off'; } catch(e){} return LOWFX ? 'reduced' : 'full'; }
   setAnim(k){ LOWFX = k != 'full'; try { localStorage.setItem('wl-arcade-lowfx', LOWFX?'1':'0'); localStorage.setItem('wl-anim', k); } catch(e){} applyLowFx(LOWFX); if (window.Arcade) window.Arcade.lowFx = LOWFX; document.documentElement.classList.toggle('wl-noanim', k == 'off'); this.setState({ftick:Date.now()}); }
-  openSettings(){ if (!window.WLQ) return; window.WLQ.settings({...this.roadApi(), anim:()=>this.anim(), setAnim:k=>this.setAnim(k), refresh:()=>this.forceUpdate(), notif:()=>this.notifMode(), toggleNotif:()=>this.renderVals().toggleNotif(), keys:()=>this.hotkeyHelp()}); }
+  openSettings(){ if (!window.WLQ) return; window.WLQ.settings({...this.roadApi(), anim:()=>this.anim(), setAnim:k=>this.setAnim(k), refresh:()=>this.forceUpdate(), notif:()=>this.notifMode(), toggleNotif:()=>this.renderVals().toggleNotif(), keys:()=>this.hotkeyHelp(), saves:{list:()=>this.listSnaps(), restore:i=>this.restoreSnap(i), exp:()=>this.exportSave(), imp:t=>this.importSave(t), user:()=>this.P.username||'player'}}); }
   // notification dots: something new on the Rebirth Road, Challenges ready to claim, a Wilderland Wonder you can afford, new achievements
   dots(){ const P = this.P, now = Date.now(); if (this._dotsC && now - this._dotsC.t < 1500 && this._dotsC.P === P) return this._dotsC.v;
     const R2 = window.WLR, W2 = window.WLW, rb = P.rebirths||0, road = !!R2 && (R2.pending(P).length > 0 || rb > ((P.road||{}).seen||0) && R2.prev(P) > ((P.road||{}).seen||0));
@@ -2315,7 +2330,7 @@ class Component extends DCLogic {
   econApi(){ return { P:()=>this.P, setP:pt=>this.setP(pt), toast:t=>this.toast(t), sfx:n=>window.Arcade && window.Arcade.sfx(n), admin:()=>!!this.state.admin, addTix:(n,f)=>this.addTix(n,f) }; }
   // One-time move to the new economy. Nothing is wiped: tickets, prizes, scores, stars and achievements all stay.
   // One-time moves to the new economy. Nothing is wiped: tickets, prizes, scores, stars and achievements all stay.
-  migrateEcon(){ const P = this.P, v = P.econV||0; if (v >= 5) return; const E2 = window.WLE, W2 = window.WLP; if (!E2 || !W2) return;
+  migrateEcon(){ const P = this.P, v = P.econV||0; if (v >= 5) return; const E2 = window.WLE, W2 = window.WLP; if (!E2 || !W2) return; this.snapSave('before a save update', null, true);
     const had = (P.tickets||0) > 0 || Object.keys(P.played||{}).length > 0;
     // 1) Golden Ticket is gone: refund every ticket spent on click-only expansions, keep the other expansions.
     const refund = E2.clickRefund(P), exp = {...(P.exp||{})}, expUp = {...(P.expUp||{})}; E2.clickKeys.forEach(k => { delete exp[k]; delete expUp[k]; });

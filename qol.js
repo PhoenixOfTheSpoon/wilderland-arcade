@@ -60,8 +60,46 @@ Q.settings = api => { css(); const o = el('div', {cls:'wlq-ov'}), close = () => 
       row('👑', 'Admin event effects', 'Calm keeps every event reward but skips the big visuals (flips, disco, snow, stampedes)', seg(window.WLLive ? window.WLLive.fxMode() : 'full', [['full', 'Full'], ['calm', 'Calm']], k => window.WLLive && window.WLLive.setFx(k))),
       row('🔔', 'Notifications', 'Pop-up messages while you play', el('button', {cls:'wlq-btn sm alt', onclick:() => { api.toggleNotif && api.toggleNotif(); render(); }}, (api.notif ? api.notif() : 'all').toUpperCase())),
       row('⌨️', 'Hotkeys', 'Y full screen · M music · R Rebirth Road · U Workshop · P Prize Counter · ? help', el('button', {cls:'wlq-btn sm alt', onclick:() => { close(); api.keys && api.keys(); }}, 'Show')),
+      api.saves ? row('💾', 'Your save', 'Export a backup, import one, or go back to an earlier save', el('button', {cls:'wlq-btn sm', onclick:() => { close(); Q.savePanel(api.saves); }}, 'Open')) : null,
       row('🆕', 'What’s new', 'The latest update', el('button', {cls:'wlq-btn sm alt', onclick:() => { close(); Q.whatsNew(true); }}, 'Show'))); };
   render(); o.onclick = e => { if (e.target === o) close(); }; document.addEventListener('keydown', kd, true); document.body.appendChild(o); };
+
+// ---------------- Save safety net: Export / Import / Restore previous save ----------------
+Q.savePanel = S => { css(); const o = el('div', {cls:'wlq-ov'}), card = el('div', {cls:'wlq-card', style:{textAlign:'left'}}); o.appendChild(card);
+  const close = () => { o.remove(); document.removeEventListener('keydown', kd, true); }, kd = e => { if (e.key == 'Escape') { e.stopPropagation(); close(); } else e.stopPropagation(); };
+  let msg = '', snaps = null, armed = -1, code = '';
+  const when = t => new Date(t).toLocaleString([], {month:'short', day:'numeric', hour:'numeric', minute:'2-digit'});
+  const fmt = n => window.WLP && window.WLP.fmt ? window.WLP.fmt(n) : String(n);
+  const download = async (name, text) => { try { const cl = window.claude && window.claude.use ? await Promise.race([window.claude.use('downloads'), new Promise(r => setTimeout(() => r(null), 1500))]) : null;
+      if (cl && cl.save) { await cl.save({filename:name, data:text}); return true; } } catch(e){}
+    try { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], {type:'application/json'})); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000); return true; } catch(e){ return false; } };
+  const render = () => { card.innerHTML = '';
+    const sec = t => el('div', {style:{fontWeight:900, fontSize:'13px', letterSpacing:'.06em', color:'#4a4a4a', margin:'14px 0 6px'}}, t);
+    card.append(el('div', {style:{display:'flex', alignItems:'center', gap:'8px'}}, el('div', {cls:'wlq-h1', style:{margin:0}}, '💾 Your save'), el('button', {cls:'wlq-x', onclick:close}, '✕')),
+      el('div', {cls:'wlq-sub'}, 'Everything you’ve earned: tickets, prizes, pets, homes, stars, rebirths, game progress and settings.'),
+      msg ? el('div', {style:{fontWeight:800, color:'#015640', background:'#eaf7d0', borderRadius:'10px', padding:'8px 10px', margin:'6px 0'}}, msg) : null);
+    // export
+    card.append(sec('⬇️ EXPORT A BACKUP'), el('div', {style:{display:'flex', gap:'8px', flexWrap:'wrap'}},
+      el('button', {cls:'wlq-btn sm', onclick:async () => { const ok = await download('wilderland-save-' + S.user().replace(/[^a-z0-9_-]/gi, '') + '-' + new Date().toISOString().slice(0, 10) + '.json', S.exp()); msg = ok ? '✓ Save file downloaded. Keep it somewhere safe.' : 'Download was blocked here. Use “Copy save code” instead.'; render(); }}, 'Download save file'),
+      el('button', {cls:'wlq-btn sm alt', onclick:async () => { const t = 'WL1:' + btoa(unescape(encodeURIComponent(S.exp()))); let ok = false; try { await navigator.clipboard.writeText(t); ok = true; } catch(e){} code = t; msg = ok ? '✓ Save code copied. Paste it into a note or email to yourself.' : 'Copy the code in the box below.'; render(); }}, 'Copy save code')));
+    if (code) { const ta = el('textarea', {readonly:true, style:{width:'100%', height:'64px', fontSize:'11px', fontFamily:'ui-monospace,monospace', marginTop:'6px', borderRadius:'8px', border:'2px solid #d9d3bd', padding:'6px'}}); ta.value = code; card.append(ta); setTimeout(() => ta.select(), 0); }
+    // import
+    const fi = el('input', {type:'file', accept:'.json,.txt,application/json,text/plain', style:{display:'none'}}), paste = el('textarea', {placeholder:'…or paste a save code here', style:{width:'100%', height:'54px', fontSize:'12px', borderRadius:'8px', border:'2px solid #d9d3bd', padding:'6px', marginTop:'6px'}});
+    const doImp = async t => { msg = '…'; render(); const e = await S.imp(t); msg = e ? '✖ ' + e : '✓ Save imported. Your old save is kept below under “Restore”, just in case.'; snaps = null; load(); };
+    fi.onchange = () => { const f = fi.files && fi.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => doImp(r.result); r.readAsText(f); };
+    card.append(sec('⬆️ IMPORT A BACKUP'), el('div', {style:{fontSize:'12px', color:'#4a4a4a'}}, 'Replaces this save with the backup. Your current save is backed up first, so you can always come back to it.'),
+      el('div', {style:{display:'flex', gap:'8px', flexWrap:'wrap', marginTop:'6px'}}, el('button', {cls:'wlq-btn sm', onclick:() => fi.click()}, 'Choose save file'), fi), paste,
+      el('button', {cls:'wlq-btn sm alt', style:{marginTop:'6px'}, onclick:() => { if (paste.value.trim()) doImp(paste.value); }}, 'Import pasted code'));
+    // restore
+    card.append(sec('⏪ RESTORE A PREVIOUS SAVE'), el('div', {style:{fontSize:'12px', color:'#4a4a4a'}}, 'Copies kept on this device: when you open the arcade (every few hours), before every save update, and before an import or restore.'));
+    if (!snaps) card.append(el('div', {cls:'wlq-sub'}, 'Loading…'));
+    else if (!snaps.length) card.append(el('div', {cls:'wlq-sub'}, 'No earlier saves on this device yet.'));
+    else snaps.forEach(x => card.append(el('div', {cls:'wlq-row'}, el('div', {style:{flex:1, minWidth:0}}, el('b', null, when(x.at)), el('div', {style:{fontSize:'12px', color:'#4a4a4a'}}, 'Saved ' + x.reason + ' · 🎟 ' + fmt(x.tix) + (x.rb ? ' · ' + x.rb + ' rebirths' : ''))),
+      x.ok ? el('button', {cls:'wlq-btn sm' + (armed == x.i ? '' : ' alt'), onclick:async () => { if (armed != x.i) { armed = x.i; render(); return; } armed = -1; msg = '…'; render(); const e = await S.restore(x.i); msg = e ? '✖ ' + e : '✓ Restored. The save you had a moment ago is now at the top of this list.'; snaps = null; load(); }}, armed == x.i ? 'Tap again to restore' : 'Restore')
+        : el('div', {style:{fontSize:'11px', color:'#8a8a8a'}}, 'before a reset'))));
+  };
+  const load = () => S.list().then(l => { snaps = l; render(); }).catch(() => { snaps = []; render(); });
+  render(); load(); o.onclick = e => { if (e.target === o) close(); }; document.addEventListener('keydown', kd, true); document.body.appendChild(o); };
 
 // ---------------- styles ----------------
 let done = false;
