@@ -349,8 +349,8 @@ A.snowWorld = function(X) {
     if (d < B.r + 12 && B.k != 'icefang') hurtMe(1);
     if (dist(p, {x:B.hx, y:B.hy}) > 1150) { boss = null; tornado = null; sticks = []; balls = balls.filter(b => b.mine); save(); say(BOSS[B.k].n.toLowerCase().replace(/\b\w/g, m => m.toUpperCase()) + ' waits for you. Its health stays where you left it', 3); } };
   // =====================================================================================================
-  // SPIRITS OF THE SNOW — after Loki. Bau Bau's brothers: Minccino (gentle and brave), Little Mow (small and shy)
-  // and Chao Chao (the fallen). Eerie and sad, never gory. W.sp: 0 not started · 1 Strange Lights · 2 The Driveway Shrine ·
+  // SPIRITS OF THE SNOW — after Loki. Bau Bau's brothers: Minccino (gentle and brave) and Chao Chao (the fallen).
+  // Little Mow is NOT family: he's a small, shy stray cat that nobody ever really knew. Eerie and sad, never gory. W.sp: 0 not started · 1 Strange Lights · 2 The Driveway Shrine ·
   // 3 Whispers on the Road · 4 The Fallen · 5 The Last Storm · 6 epilogue (Hall of Paws, spirit companions, post-game)
   // =====================================================================================================
   const BAUQ = ['Lord Emperor Bau Bau', 'bau'], MINCQ = ['Minccino', 'mincG'], MOWQ = ['Little Mow', 'mowG'], CHAOQ = ['Chao Chao', 'chaoG'], NAR = ['', 'snow'];
@@ -381,10 +381,11 @@ A.snowWorld = function(X) {
   const shrineDone = () => talk([[...MINCQ, '...You came. Little brother. You got so big.', 'peaceful'], [...BAUF, 'Minccino?! Is it really you?', 'surprised'],
       [...MINCQ, 'Shh. I can’t stay long. Listen. Chao Chao has come back. But he is not himself. He is the storm now.', 'sad'],
       [...MINCQ, 'He can’t be saved, Bau Bau. What’s left of him is only hurting and cold. The only kind thing left is to let the storm end.', 'sad'],
-      [...MINCQ, 'Take my blessing. It will keep you warm and mend your hurts. And please... find our littlest brother on the Old Road. Nobody ever found him.', 'peaceful']],
+      [...MINCQ, 'Take my blessing. It will keep you warm and mend your hurts. And please... there is a little lost cat on the Old Road. Nobody ever knew him. Someone should.', 'peaceful']],
     () => { W.sp = 3; W.bless = 1; save(); A.sfx('win'); say('💙 Minccino’s Blessing: you and your team slowly heal · Chapter 3: Whispers on the Road', 4.5); });
   const mowFound = () => talk([[...MOWQ, '...', 'frightened'], [...BAUF, 'It’s okay. We won’t hurt you. You’re safe now.', 'peaceful'], [...MOWQ, '...mow?', 'sad'],
-      [...BAUF, 'This is Little Mow. He was the smallest of us. He wandered off one day and... he never came back. Nobody even knew his name for sure.', 'sad'],
+      [...BAUF, 'A little stray cat... I don’t know him. I don’t think anyone ever did. He just walked this road, all alone.', 'sad'],
+      [...BAUF, 'Nobody even gave him a name. Let’s call him Little Mow. Because that’s the only thing he ever says.', 'peaceful'],
       [...BAUF, 'He never had a name tag. Every cat should have a name tag.', 'sad'], [...NAR, '*You fasten a little red name tag around Little Mow’s neck. It says LITTLE MOW.*', ''], [...MOWQ, '...mow.', 'peaceful'], [...BAUF, 'He likes it. Look. He’s purring.', 'happy']],
     () => { W.tag = 1; W.sp = 4; save(); A.sfx('win'); say('🏷️ Little Mow has a name tag now · Chapter 4: The Fallen', 4.5); setTimeout(() => talk([[...MAUF, 'Hero! The storms are getting worse! They’re heading for Camp Cocoa!', 'frightened'], [...MAUF, 'The Royal Guard will hold the kingdom. Come back to camp and help us hold the line! (Then find out what happened to Chao Chao.)', 'angry']]), 300); });
   const endStory = () => { const lines = [[...NAR, '*The storm goes quiet. Chao Chao stops. He looks at Bau Bau for a long moment.*', ''], [...CHAOQ, '...Bau Bau.', 'peaceful'], [...NAR, '*Then he fades away into the falling snow. He does not come back.*', ''],
