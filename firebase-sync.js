@@ -1,8 +1,8 @@
 // Wilderland Arcade · Firebase connection (accounts, cloud saves, usernames, global leaderboard).
 // Loaded as an ES module. If it can't load (offline, blocked), the arcade keeps working in on-device mode.
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, setPersistence, GoogleAuthProvider, signInWithPopup, browserLocalPersistence, browserSessionPersistence } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
-import { getFirestore, doc, getDoc, setDoc, deleteDoc, where, collection, addDoc, query, orderBy, limit, getDocs, runTransaction, serverTimestamp, increment, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+import { connectAuthEmulator, signInWithCredential, getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, setPersistence, GoogleAuthProvider, signInWithPopup, browserLocalPersistence, browserSessionPersistence } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+import { connectFirestoreEmulator, getFirestore, doc, getDoc, setDoc, deleteDoc, where, collection, addDoc, query, orderBy, limit, getDocs, runTransaction, serverTimestamp, increment, onSnapshot, writeBatch } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
 
 const firebaseConfig = {
   apiKey: "AIzaSyCVBNMAm4oDibHmWru9LIYnnT898NXFNu0",
@@ -16,17 +16,24 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+// Local testing only: on localhost with wl-emu set, talk to the Firebase emulators instead of the real database.
+const EMU = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) && (() => { try { return localStorage.getItem('wl-emu') == '1'; } catch (e) { return false; } })();
+if (EMU) { connectFirestoreEmulator(db, '127.0.0.1', 8085); connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true }); }
 // ADMIN CONTROL RECORD — lives at usernames/~admin so it works with the database rules the arcade already has
 // (anyone can read usernames; only the account that created a name can change it). The admin's game creates it the first
 // time jonah@wilderland.academy logs in, so after that nobody else can edit it. It holds: the leaderboard season, full-reset
 // time, reload time, shutdown timer, chat mutes/hidden messages, hidden scores and per-player admin adjustments.
-const CTRL = doc(db, 'usernames', '~admin');
+// Stability & Security update: the control record moved to config/control, which ONLY the admin's Google account can
+// write (enforced by firestore.rules). The old usernames/~admin record is still read until the new one exists.
+const CTRL = doc(db, 'config', 'control'), LEGACY = doc(db, 'usernames', '~admin');
+const ctrlGet = async () => { const c = await getDoc(CTRL); if (c.exists()) return c; return getDoc(LEGACY); };
 let SEASON = 's2', RESET_AT = 0, FROZEN = false, DOWN = {until:0, msg:''}, MUTES = [], C = {};
 const setDown = d => { MUTES = d.mutes || []; DOWN = {until: d.downUntil || 0, msg: d.downMsg || ''}; window.dispatchEvent(new CustomEvent('wl-down', {detail: DOWN})); };
-try { const c = await Promise.race([getDoc(CTRL), new Promise((_, no) => setTimeout(() => no(new Error('slow')), 4000))]); if (c && c.exists()) { C = c.data(); if (C.season) SEASON = C.season; RESET_AT = C.resetAt || 0; DOWN = {until: C.downUntil || 0, msg: C.downMsg || ''}; MUTES = C.mutes || []; } } catch (e) {}
+try { const c = await Promise.race([ctrlGet(), new Promise((_, no) => setTimeout(() => no(new Error('slow')), 4000))]); if (c && c.exists()) { C = c.data(); if (C.season) SEASON = C.season; RESET_AT = C.resetAt || 0; DOWN = {until: C.downUntil || 0, msg: C.downMsg || ''}; MUTES = C.mutes || []; } } catch (e) {}
 const board = game => collection(db, 'boards', game + '@' + SEASON, 'scores');
 
 const PL = {rows:null, at:0};   // shared cache for the player boards
+const POSTED = {}, TIXAT = {};   // best score already on the board this session, per game
 const WLCloud = {
   ready: true,
   onAuth: cb => onAuthStateChanged(auth, cb),
@@ -42,12 +49,18 @@ const WLCloud = {
       if (s.exists() && s.data().uid !== uid) throw Object.assign(new Error('taken'), { code: 'taken' });
       tx.set(ref, { uid, name }); if (old && old.toLowerCase() !== key) tx.delete(doc(db, 'usernames', old.toLowerCase())); }); },
   // Leaderboard season: bump SEASON to start a fresh, empty leaderboard.
-  postScore(game, row) { return addDoc(board(game), { ...row, s: Math.min(Number(row.s) || 0, 9.99e299) }); },
+  postScore(game, row, cap) { const s2 = Math.min(Number(row.s) || 0, 9.99e299); if (!ME || !(s2 > 0)) return Promise.resolve();
+    if (cap && s2 > cap) return addDoc(collection(db, 'flags'), { uid: ME.uid, u: String(row.u || '').slice(0, 16), g: String(game).slice(0, 20), s: s2, at: serverTimestamp() });
+    const k = game + '@' + SEASON; if ((POSTED[k] || 0) >= s2) return Promise.resolve();
+    const ref = doc(board(game), ME.uid);
+    return runTransaction(db, async tx => { const cur = await tx.get(ref); const old = cur.exists() ? (cur.data().s || 0) : 0; POSTED[k] = Math.max(old, s2); if (old >= s2) return;
+      tx.set(ref, { ...row, uid: ME.uid, s: s2, ts: serverTimestamp() }); }); },
   // Overall ticket board: ONE always-current row per player, kept on the player's own username record
   // (the existing rules let each player update the name they own). This replaced a row-per-game board that filled up
   // with one player's old rows and stopped showing everyone else.
   setTix(uid, row) { if (!row || !row.u) return Promise.resolve(); const key = String(row.u).toLowerCase();
-    return setDoc(doc(db, 'usernames', key), { uid, name: row.u, s: Math.min(Number(row.s) || 0, 9.99e299), av: row.av || '', al: row.al || 0, d: row.d || '', rb: row.rb || 0, db: row.db || 0, ov: Math.min(Number(row.ov) || 0, 9.99e299), ss: SEASON, at: Date.now() }, { merge: true }); },
+    const now = Date.now(); if (now - (TIXAT[key] || 0) < 3500) return Promise.resolve(); TIXAT[key] = now;
+    return setDoc(doc(db, 'usernames', key), { uid, name: row.u, s: Math.min(Number(row.s) || 0, 9.99e299), av: row.av || '', al: row.al || 0, d: row.d || '', rb: row.rb || 0, db: row.db || 0, ov: Math.min(Number(row.ov) || 0, 9.99e299), ss: SEASON, at: now, ts: serverTimestamp() }, { merge: true }); },
   // Every player's progress row (rebirths, prestige, achievements) for the Overall / Rebirths / Diamond Stars / Achievements boards.
   // One shared fetch (cached a minute) feeds all of them, to keep reads low.
   async players() { if (PL.at && Date.now() - PL.at < 60000 && PL.rows) return PL.rows;
@@ -73,20 +86,20 @@ const WLCloud = {
 // ---------- admin (writes go to the control record; only its owner can change it) ----------
 let ME = null; onAuthStateChanged(auth, u => { ME = u; });
 const ctrlSet = async patch => { if (!ME) throw Object.assign(new Error('Log in first'), { code: 'not-logged-in' });
-  const cur = await getDoc(CTRL); if (cur.exists() && cur.data().uid !== ME.uid) throw Object.assign(new Error('The admin control record belongs to a different account.'), { code: 'permission-denied' });
-  return setDoc(CTRL, { ...patch, uid: ME.uid, name: '~admin' }, { merge: true }); };
-WLCloud.ensureAdmin = async () => { if (!ME) return false; const cur = await getDoc(CTRL); if (!cur.exists()) { await setDoc(CTRL, { uid: ME.uid, name: '~admin', email: ME.email || '' }); return true; } return cur.data().uid === ME.uid; };
-const hide = async (field, vals) => { const cur = await getDoc(CTRL); const list = new Set((cur.exists() && cur.data()[field]) || []); [].concat(vals).forEach(v => list.add(v)); return ctrlSet({ [field]: [...list].slice(-5000) }); };
+  const cur = await getDoc(CTRL); if (!cur.exists()) { const old = await getDoc(LEGACY); const base = old.exists() ? { ...old.data() } : {}; delete base.uid; delete base.name; delete base.email; return setDoc(CTRL, { ...base, ...patch }); }
+  return setDoc(CTRL, patch, { merge: true }); };
+WLCloud.ensureAdmin = async () => { if (!ME) return false; try { const cur = await getDoc(CTRL); if (!cur.exists()) await ctrlSet({ adminSince: Date.now() }); return true; } catch (e) { return false; } };
+const hide = async (field, vals) => { const cur = await ctrlGet(); const list = new Set((cur.exists() && cur.data()[field]) || []); [].concat(vals).forEach(v => list.add(v)); return ctrlSet({ [field]: [...list].slice(-5000) }); };
 // Real deletes still work if the newer rules are ever published; otherwise the score is hidden for everyone.
 WLCloud.deleteScore = async (game, id) => { try { await deleteDoc(doc(db, 'boards', game + '@' + SEASON, 'scores', id)); } catch (e) { await hide('hiddenScores', id); } };
 WLCloud.deleteUserScores = async (game, uid) => { if (game == '_tix') { const r = await getDocs(query(collection(db, 'usernames'), where('uid', '==', uid))); const names = r.docs.map(d => d.id).filter(id => id !== '~admin'), ids = []; try { const o = await getDocs(query(board('_tix'), where('uid', '==', uid))); o.docs.forEach(d => ids.push(d.id)); } catch (e) {}
   // A player's ticket row is hidden only until their game posts a fresh total (so nobody vanishes from the board for good).
-  if (names.length) { const cur = await getDoc(CTRL); const ht = { ...((cur.exists() && cur.data().hiddenTix) || {}) }; names.forEach(n => ht[n] = Date.now()); await ctrlSet({ hiddenTix: ht }); }
+  if (names.length) { const cur = await ctrlGet(); const ht = { ...((cur.exists() && cur.data().hiddenTix) || {}) }; names.forEach(n => ht[n] = Date.now()); await ctrlSet({ hiddenTix: ht }); }
   if (ids.length) await hide('hiddenScores', ids); return names.length + ids.length; }
   const r = await getDocs(query(board(game), where('uid', '==', uid))); const failed = [];
   for (const d of r.docs) { try { await deleteDoc(d.ref); } catch (e) { failed.push(d.id); } } if (failed.length) await hide('hiddenScores', failed); return r.size; };
 // Per-player adjustments: a list of {id, rm|all|upg|full}. The player's game applies any it hasn't seen yet.
-const addAdj = async (uid, item) => { const cur = await getDoc(CTRL); const adj = { ...((cur.exists() && cur.data().adj) || {}) }; adj[uid] = [...(adj[uid] || []), { id: Date.now(), ...item }].slice(-20); return ctrlSet({ adj }); };
+const addAdj = async (uid, item) => { const cur = await ctrlGet(); const adj = { ...((cur.exists() && cur.data().adj) || {}) }; adj[uid] = [...(adj[uid] || []), { id: Date.now(), ...item }].slice(-20); return ctrlSet({ adj }); };
 WLCloud.adjust = (uid, amount) => addAdj(uid, amount < 0 ? { all: true } : { rm: amount });
 WLCloud.adminFlag = (uid, data) => addAdj(uid, data);
 WLCloud.adjList = uid => ((C.adj || {})[uid] || []);
@@ -101,12 +114,12 @@ const onCtrl = d => { C = d; CTRL_AT = Date.now(); setDown(d);
   window.dispatchEvent(new CustomEvent('wl-ctrl', { detail: d }));
   if (RELOAD_AT === null) { RELOAD_AT = d.reloadAt || 0; return; }
   if ((d.resetAt || 0) > RESET_AT || (d.reloadAt || 0) > RELOAD_AT) { if ((d.resetAt || 0) > RESET_AT) FROZEN = true; RELOAD_AT = d.reloadAt || 0; RESET_AT = d.resetAt || 0; setTimeout(() => location.reload(), 600 + Math.random() * 1500); } };
-const listenCtrl = () => { try { onSnapshot(CTRL, snap => { CTRL_OK = true; ctrlRetry = 0; onCtrl(snap.exists() ? snap.data() : {}); },
+const listenCtrl = () => { try { onSnapshot(CTRL, async snap => { CTRL_OK = true; ctrlRetry = 0; if (snap.exists()) onCtrl(snap.data()); else { try { const o = await getDoc(LEGACY); onCtrl(o.exists() ? o.data() : {}); } catch (e) { onCtrl({}); } } },
   e => { CTRL_OK = false; console.warn('[cloud] control listener stopped:', e && (e.code || e.message)); ctrlRetry = Math.min(ctrlRetry + 1, 6); setTimeout(listenCtrl, 15000 * ctrlRetry); }); } catch (e) {} };
 listenCtrl();
 // Backup check so a shutdown still arrives if the live listener died (bad wifi, iPad asleep, database busy).
 const pollCtrl = async force => { if (document.hidden) return; if (!force && CTRL_OK && Date.now() - CTRL_AT < 600000) return;
-  try { const c = await getDoc(CTRL); onCtrl(c.exists() ? c.data() : {}); } catch (e) {} };
+  try { const c = await ctrlGet(); onCtrl(c.exists() ? c.data() : {}); } catch (e) {} };
 setInterval(() => pollCtrl(false), 60000);
 document.addEventListener('visibilitychange', () => { if (!document.hidden && Date.now() - CTRL_AT > 30000) pollCtrl(true); });
 WLCloud.down = () => DOWN;
@@ -115,12 +128,29 @@ WLCloud.shutdown = async (minutes, msg) => { const until = minutes > 0 ? Date.no
 const CHAT = collection(db, 'boards', '_chat', 'scores');
 WLCloud.chatListen = cb => onSnapshot(query(CHAT, orderBy('at', 'desc'), limit(60)), snap => { const hid = new Set(C.hiddenChat || []);
   cb(snap.docs.filter(d => !hid.has(d.id)).map(d => ({ id: d.id, ...d.data(), at: d.data().at && d.data().at.toMillis ? d.data().at.toMillis() : Date.now() })).reverse()); }, () => cb(null));
-WLCloud.chatSend = row => addDoc(CHAT, { ...row, s: 0, d: new Date().toISOString().slice(0, 10), at: serverTimestamp() });
+WLCloud.chatSend = row => { if (!ME) return Promise.reject(Object.assign(new Error('login'), { code: 'not-logged-in' })); const b = writeBatch(db);
+  b.set(doc(db, 'chatRate', ME.uid), { ts: serverTimestamp() }); b.set(doc(CHAT), { ...row, uid: ME.uid, s: 0, d: new Date().toISOString().slice(0, 10), at: serverTimestamp() }); return b.commit(); };
+WLCloud.chatOff = () => !!C.chatOff;
+WLCloud.setChatOff = off => ctrlSet({ chatOff: !!off });
+WLCloud.report = m => ME ? addDoc(collection(db, 'reports'), { mid: String(m.id || ''), t: String(m.t || '').slice(0, 200), u: String(m.u || '').slice(0, 16), uid: String(m.uid || ''), by: ME.uid, byU: String(m.byU || '').slice(0, 16), at: serverTimestamp() }) : Promise.reject(Object.assign(new Error('login'), { code: 'not-logged-in' }));
+// ---------- admin moderation (all of these are refused by the rules unless you're the admin's Google account) ----------
+const rows = s => s.docs.map(d => ({ id: d.id, ...d.data(), at: d.data().at && d.data().at.toMillis ? d.data().at.toMillis() : (d.data().at || 0) }));
+WLCloud.mod = {
+  reports: cb => onSnapshot(query(collection(db, 'reports'), orderBy('at', 'desc'), limit(100)), s => cb(rows(s)), e => cb(null, e)),
+  clearReport: id => deleteDoc(doc(db, 'reports', id)),
+  flags: cb => onSnapshot(query(collection(db, 'flags'), orderBy('at', 'desc'), limit(100)), s => cb(rows(s)), e => cb(null, e)),
+  clearFlag: id => deleteDoc(doc(db, 'flags', id)),
+  // remove every leaderboard row a player has this season (all games), and zero their overall ticket row
+  resetPlayer: async (uid, games) => { let n = 0; for (const g of games) { try { const r = await getDocs(query(board(g), where('uid', '==', uid))); for (const d of r.docs) { await deleteDoc(d.ref); n++; } } catch (e) {} }
+    const u = await getDocs(query(collection(db, 'usernames'), where('uid', '==', uid))); for (const d of u.docs) if (d.id !== '~admin') { await setDoc(d.ref, { s: 0, ov: 0 }, { merge: true }); n++; } return n; },
+  findPlayer: async name => { const d = await getDoc(doc(db, 'usernames', String(name).toLowerCase())); return d.exists() ? { id: d.id, ...d.data() } : null; },
+  clearChat: async () => { const r = await getDocs(query(CHAT, orderBy('at', 'desc'), limit(200))); for (const d of r.docs) await deleteDoc(d.ref); return r.size; },
+};
 WLCloud.chatDelete = async id => { try { await deleteDoc(doc(db, 'boards', '_chat', 'scores', id)); } catch (e) { await hide('hiddenChat', id); } };
 WLCloud.setMutes = mutes => ctrlSet({ mutes });
 WLCloud.mutes = () => MUTES;
 // Temporary kick: the player's tabs show a countdown screen until the time is up.
-WLCloud.kick = async (uid, minutes) => { const cur = await getDoc(CTRL); const kicks = { ...((cur.exists() && cur.data().kicks) || {}) }; const now = Date.now();
+WLCloud.kick = async (uid, minutes) => { const cur = await ctrlGet(); const kicks = { ...((cur.exists() && cur.data().kicks) || {}) }; const now = Date.now();
   Object.keys(kicks).forEach(k => { if (kicks[k] < now) delete kicks[k]; }); if (minutes > 0) kicks[uid] = now + minutes * 60000; else delete kicks[uid]; return ctrlSet({ kicks }); };
 WLCloud.kickedUntil = uid => ((C.kicks || {})[uid]) || 0;
 // Admin activity tracker: short notes about what signed-in players do (games finished, rebirths, big prizes, coming online).
@@ -161,5 +191,6 @@ WLCloud.ev = {
     if (d.t1 && d.t1 < Date.now() - 60000) throw Object.assign(new Error('expired'), { code: 'expired' }); if (!(d.left > 0)) throw Object.assign(new Error('gone'), { code: 'gone' });
     tx.update(ref, { left: d.left - 1, who: [...(d.who || []), ME.uid] }); return d; }),
 };
+if (EMU) WLCloud._emuGoogle = (email, sub) => signInWithCredential(auth, GoogleAuthProvider.credential(JSON.stringify({ sub: sub || email, email, email_verified: true })));
 window.WLCloud = WLCloud;
 window.dispatchEvent(new Event('wlcloud-ready'));

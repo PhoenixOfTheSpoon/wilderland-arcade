@@ -1,85 +1,160 @@
 rules_version = '2';
+// =====================================================================================================
+// WILDERLAND ARCADE · FIRESTORE SECURITY RULES (Stability, Security & Speed update)
+// Plain-English summary is in SECURITY.md. The short version:
+//   · Anyone can READ public things (leaderboards, chat, usernames, events). Writing needs a signed-in account.
+//   · Players can only create or change their OWN data. Nobody can edit or delete anyone else's.
+//   · Admin powers (maintenance, events, moderation, leaderboard edits) need jonah@wilderland.academy signed in WITH GOOGLE.
+//   · Scores are numbers, capped per game, can only go up, and can't be sent more than once every 5 seconds.
+//   · Chat: signed-in, short, no links/emails/phone numbers/bad words, one message every 4 seconds, mutes and "chat off".
+// =====================================================================================================
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // The admin account. Firebase allows only one account per email, so this email can't be claimed by anyone else.
+    // ---------- helpers ----------
+    // The admin: the real Google account jonah@wilderland.academy (a password account with that email can't pass).
     function isAdmin() {
-      return request.auth != null && request.auth.token.email == 'jonah@wilderland.academy';
-    }
-
-    // Each player's saved progress: only they can read or write it.
-    match /profiles/{uid} {
-      allow read: if request.auth != null && request.auth.uid == uid;
-      allow write: if request.auth != null && request.auth.uid == uid
-                   && request.resource.data.data is string && request.resource.data.data.size() < 900000;
-    }
-
-    // Leaderboard usernames: public to read, each name owned by one player.
-    match /usernames/{name} {
-      allow read: if true;
-      allow create: if request.auth != null && request.resource.data.uid == request.auth.uid
-                    && request.resource.data.name is string && request.resource.data.name.size() <= 16;
-      allow update: if request.auth != null && resource.data.uid == request.auth.uid
-                    && request.resource.data.uid == request.auth.uid;
-      allow delete: if request.auth != null && resource.data.uid == request.auth.uid;
-    }
-
-    // Admin ticket adjustments: an admin queues a removal; the player's own game applies it on next load, then clears it.
-    match /adjust/{uid} {
-      allow read, delete: if request.auth != null && request.auth.uid == uid;
-      allow create, update: if isAdmin();
-    }
-
-    // Global settings (current leaderboard season, full-reset time): everyone reads, only admins write.
-    match /config/{id} {
-      allow read: if true;
-      allow write: if isAdmin();
-    }
-
-    // Arcade chat: anyone can read; signed-in players post short messages as themselves; muted players can't post; admin deletes.
-    match /chat/{id} {
-      allow read: if true;
-      allow create: if request.auth != null
-        && request.resource.data.uid == request.auth.uid
-        && request.resource.data.t is string && request.resource.data.t.size() > 0 && request.resource.data.t.size() <= 140
-        && request.resource.data.u is string && request.resource.data.u.size() <= 16
-        && (!exists(/databases/$(database)/documents/config/global)
-            || !(request.auth.uid in get(/databases/$(database)/documents/config/global).data.get('mutes', [])));
-      allow delete: if isAdmin();
-    }
-
-    // Leaderboards: anyone can read; signed-in players can post their own scores.
-    match /boards/{game}/scores/{id} {
-      function validScore() {
-        return request.auth != null
-          && request.resource.data.uid == request.auth.uid
-          && request.resource.data.s is number && request.resource.data.s >= 0 && request.resource.data.s < math.pow(10, 300)
-          && request.resource.data.u is string && request.resource.data.u.size() <= 16;
-      }
-      allow read: if true;
-      allow create: if validScore() && (game != '_tix' || id == request.auth.uid);
-      allow update: if validScore() && game == '_tix' && id == request.auth.uid && resource.data.uid == request.auth.uid;
-      allow delete: if isAdmin();
-    }
-
-    // Suggestion box: anyone can send an idea — signed-in players as themselves, guests with an empty uid and the name "guest".
-    // Only the admin can delete. (Reading is covered by the leaderboard rule above.)
-    match /boards/_suggest/scores/{id} {
-      allow create: if request.resource.data.t is string && request.resource.data.t.size() > 0 && request.resource.data.t.size() <= 800
-        && request.resource.data.u is string && request.resource.data.u.size() <= 30
-        && ((request.auth == null && request.resource.data.uid == '' && request.resource.data.u == 'guest')
-            || (request.auth != null && request.resource.data.uid == request.auth.uid));
-    }
-
-    // ================= ADMIN ABUSE: LIVE EVENTS =================
-    // Only the admin's real Google account can start, change or end events. Checked here on Google's servers,
-    // so editing the page can't get around it. Players can only READ events.
-    function isEventAdmin() {
       return request.auth != null
         && request.auth.token.email == 'jonah@wilderland.academy'
         && request.auth.token.email_verified == true
         && request.auth.token.firebase.sign_in_provider == 'google.com';
     }
+    function signedIn() { return request.auth != null; }
+    function me() { return request.auth.uid; }
+    function data() { return request.resource.data; }
+    // The admin's control record: maintenance mode, chat on/off, mutes, kicks, leaderboard season.
+    function control() { return get(/databases/$(database)/documents/config/control).data; }
+    function hasControl() { return exists(/databases/$(database)/documents/config/control); }
+    function muted() { return hasControl() && me() in control().get('mutes', []); }
+    function chatOff() { return hasControl() && control().get('chatOff', false) == true; }
+    // Friendly text only: no bad words, and no links, emails or phone numbers.
+    function friendly(t) { return !t.lower().matches('.*(fuck|shit|bitch|cunt|dick|nigg|fag|slut|whore|porn|nazi|rape|penis|vagina|boob|asshole|bastard|retard|kys|kill yourself).*'); }
+    function noPersonalInfo(t) {
+      return !t.lower().matches('.*(https?:|www[.]|[a-z0-9-]+[.](com|net|org|io|gg|me|co|xyz|ly|tv|us|uk|ca|edu|app|dev)([^a-z]|$)).*')
+        && !t.matches('.*[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+[.][A-Za-z]{2,}.*')
+        && !t.matches('.*[0-9][0-9 ()./-]{6,}[0-9].*');
+    }
+    // Usernames: 3-16 letters/numbers/_, start with a letter, friendly, and can't pretend to be staff.
+    function goodName(n) {
+      return n is string && n.size() >= 3 && n.size() <= 16 && n.matches('^[A-Za-z][A-Za-z0-9_]*$') && friendly(n)
+        && (isAdmin() || !n.lower().matches('.*(jonah|admin|moderator|mod_|_mod|staff|official|wilderland|owner|support|system).*'));
+    }
+    // The highest score each game can really reach (the arcade itself never shows more). Unknown games: 100 million.
+    function cap(game) {
+      return game == 'idle' ? math.pow(10, 300) : {'snake': 1000000, 'breakout': 1200000, 'flappy': 1000000, 'pong': 1000000, 'memory': 1200000, 'whack': 1200000, '2048': 32000000, 'tictactoe': 1000000, 'reaction': 1000000, 'typing': 1000000, 'simon': 5100000, 'mines': 1800000, 'connect4': 1000000, 'td': 16000000, 'crossing': 3000000, 'stack': 6000000, 'rootout': 2400000, 'trace': 3200000, 'space': 30000000, 'secrets': 40000000, 'bounce': 6000000, 'gems': 20000000, 'maze': 12000000, 'comets': 16000000, 'lumber': 1000000, 'runner': 8000000, 'pinball': 120000000, 'fishing': 6000000, 'rhythm': 80000000, 'platformer': 12000000, 'racing': 5000000, 'bubble': 24000000, 'sokoban': 12000000, 'airhockey': 3000000, 'skeeball': 1200000, 'words': 6000000, 'pipes': 16000000, 'snowball': 8000000, 'farm': 5000000, 'cardbattle': 10000000}.get(game, 100000000);
+    }
+
+    // ---------- player saves: only the owner can read or write their own ----------
+    match /profiles/{uid} {
+      allow read: if signedIn() && me() == uid;
+      allow write: if signedIn() && me() == uid
+                   && data().data is string && data().data.size() < 900000;
+    }
+
+    // ---------- usernames + the overall ticket leaderboard row (one per player) ----------
+    // Doc id = the lowercase name. Owner creates/updates it; numbers must be numbers; at most every 3 seconds.
+    match /usernames/{name} {
+      function validRow() {
+        return data().uid == me() && goodName(data().name) && data().name.lower() == name
+          && (!('s' in data()) || (data().s is number && data().s >= 0 && data().s < math.pow(10, 300)))
+          && (!('ov' in data()) || (data().ov is number && data().ov >= 0 && data().ov < math.pow(10, 300)))
+          && (!('rb' in data()) || (data().rb is number && data().rb >= 0 && data().rb < 1000000))
+          && (!('db' in data()) || (data().db is number && data().db >= 0 && data().db < 1000000));
+      }
+      allow read: if true;
+      allow create: if signedIn() && validRow() && (!('ts' in data()) || data().ts == request.time);
+      allow update: if signedIn() && resource.data.uid == me() && validRow()
+        && (!('ts' in data()) || (data().ts == request.time
+            && (!('ts' in resource.data) || request.time > resource.data.ts + duration.value(3, 's'))));
+      allow delete: if (signedIn() && resource.data.uid == me()) || isAdmin();
+      // The admin can reset or remove any player's leaderboard row
+      allow update: if isAdmin();
+    }
+
+    // ---------- game leaderboards: boards/{game}@{season}/scores/{uid} — one best score per player ----------
+    match /boards/{board}/scores/{id} {
+      function game() { return board.split('@')[0]; }
+      function special() { return board in ['_chat', '_activity', '_suggest', '_tix'] || board.matches('^_.*'); }
+      allow read: if !(board == '_activity');
+      allow create: if signedIn() && !special() && id == me()
+        && data().uid == me() && data().u is string && data().u.size() <= 16
+        && data().s is number && data().s >= 0 && data().s <= cap(game())
+        && data().ts == request.time;
+      allow update: if signedIn() && !special() && id == me() && resource.data.uid == me()
+        && data().uid == me() && data().u is string && data().u.size() <= 16
+        && data().s is number && data().s >= resource.data.s && data().s <= cap(game())
+        && data().ts == request.time
+        && (!('ts' in resource.data) || request.time > resource.data.ts + duration.value(5, 's'));
+      allow delete: if isAdmin();
+    }
+
+    // ---------- impossible scores go here for the admin to check, instead of onto the leaderboard ----------
+    match /flags/{id} {
+      allow create: if signedIn() && data().uid == me() && data().g is string && data().g.size() <= 20
+        && data().s is number && data().u is string && data().u.size() <= 16 && data().at == request.time;
+      allow read, delete: if isAdmin();
+    }
+
+    // ---------- chat (stored next to the boards) ----------
+    // Signed-in players only, as their own username, 1-140 characters, friendly, no links/emails/phone numbers,
+    // not muted, chat switched on, and at most one message every 4 seconds (checked with chatRate below).
+    match /boards/_chat/scores/{id} {
+      allow read: if true;
+      allow create: if signedIn() && data().uid == me()
+        && data().u is string && data().u.size() <= 16
+        && exists(/databases/$(database)/documents/usernames/$(data().u.lower()))
+        && get(/databases/$(database)/documents/usernames/$(data().u.lower())).data.uid == me()
+        && data().t is string && data().t.size() > 0 && data().t.size() <= 140
+        && friendly(data().t) && noPersonalInfo(data().t)
+        && !muted() && !chatOff()
+        && data().at == request.time
+        && getAfter(/databases/$(database)/documents/chatRate/$(me())).data.ts == request.time;
+      allow delete: if isAdmin();
+    }
+    // One small "last message time" record per player, so nobody can flood the chat.
+    match /chatRate/{uid} {
+      allow read: if signedIn() && me() == uid;
+      allow write: if signedIn() && me() == uid && data().keys().hasOnly(['ts']) && data().ts == request.time
+        && (resource == null || request.time > resource.data.ts + duration.value(4, 's'));
+    }
+    // Report a chat message: any signed-in player; only the admin can read and clear reports.
+    match /reports/{id} {
+      allow create: if signedIn() && data().by == me() && data().keys().hasOnly(['mid', 't', 'u', 'uid', 'by', 'byU', 'at'])
+        && data().t is string && data().t.size() <= 200 && data().at == request.time;
+      allow read, delete: if isAdmin();
+    }
+
+    // ---------- admin activity feed (players write their own short notes; only the admin reads them) ----------
+    match /boards/_activity/scores/{id} {
+      allow create: if signedIn() && data().uid == me() && data().t is string && data().t.size() <= 200;
+      allow read, delete: if isAdmin();
+    }
+
+    // ---------- suggestion box: anyone can send an idea; only the admin reads and deletes ----------
+    match /boards/_suggest/scores/{id} {
+      allow create: if data().t is string && data().t.size() > 0 && data().t.size() <= 800
+        && data().u is string && data().u.size() <= 30
+        && ((request.auth == null && data().uid == '' && data().u == 'guest')
+            || (signedIn() && data().uid == me()));
+      allow delete: if isAdmin();
+    }
+
+    // ---------- admin-only records ----------
+    // Admin ticket adjustments: the admin queues a change; the player's own game applies it, then clears it.
+    match /adjust/{uid} {
+      allow read, delete: if signedIn() && me() == uid;
+      allow create, update: if isAdmin();
+    }
+    // Settings everyone reads (control record, season, maintenance, chat on/off, mutes); only the admin writes.
+    match /config/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // ================= ADMIN ABUSE: LIVE EVENTS =================
+    // Only the admin's real Google account can start, change or end events. Checked here on Google's servers,
+    // so editing the page can't get around it. Players can only READ events.
+    function isEventAdmin() { return isAdmin(); }
     // events/live (what's running) and events/history (the log): everyone reads, only the admin writes.
     match /events/{id} {
       allow read: if true;
@@ -126,7 +201,6 @@ service cloud.firestore {
 
     // ================= WILDERLAND BUSINESS TYCOON =================
     // Nothing here can touch profiles (tickets, prizes, stars, pets, homes, avatars) — those stay owner-only above.
-    function signedIn() { return request.auth != null; }
     function bizPath(uid) { return /databases/$(database)/documents/biz/$(uid); }
     function hasBiz(uid) { return exists(bizPath(uid)); }
     function biz(uid) { return get(bizPath(uid)).data; }

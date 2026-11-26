@@ -738,6 +738,7 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
             <img src="{{ m.avImg }}" alt="" style="width:30px; height:30px; flex-shrink:0;">
             <div style="flex:1; min-width:0;"><div style="display:flex; justify-content:space-between; gap:6px;"><span style="font-weight:700; font-size:13px; color:#015640;">{{ m.name }}</span><span style="font-size:10px; color:#8a8a8a;">{{ m.time }}</span></div>
               <div style="font-size:14px; line-height:1.3; overflow-wrap:anywhere;">{{ m.text }}</div>
+              <sc-if value="{{ m.canReport }}" hint-placeholder-val="{{ false }}"><button onClick="{{ m.report }}" title="Report this message to the admin" style="border:none; background:transparent; color:#8a8a8a; font-size:11px; font-weight:700; cursor:pointer; padding:2px 0;">{{ m.reportLabel }}</button></sc-if>
               <sc-if value="{{ chatAdmin }}" hint-placeholder-val="{{ false }}"><div style="display:flex; gap:6px; margin-top:4px;"><button onClick="{{ m.del }}" style="border:none; border-radius:999px; padding:2px 9px; font-size:11px; font-weight:700; background:#B3001B; color:#fff; cursor:pointer;">Delete</button><button onClick="{{ m.mute }}" style="border:none; border-radius:999px; padding:2px 9px; font-size:11px; font-weight:700; background:#121313; color:#fff; cursor:pointer;">{{ m.muteLabel }}</button><button onClick="{{ m.kick }}" style="border:none; border-radius:999px; padding:2px 9px; font-size:11px; font-weight:700; background:#FF8A3C; color:#121313; cursor:pointer;">{{ m.kickLabel }}</button></div></sc-if>
             </div>
           </div>
@@ -1149,8 +1150,10 @@ const KIOSKS = [{id:'prize',x:850,y:50,w:230,h:200},{id:'daily',x:850,y:290,w:23
 const BOARD_KEY = 'wl-arcade-board-v3', UNAME_KEY = 'wl-arcade-usernames';
 const getJSON = (k,d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch(e) { return d; } };
 const putJSON = (k,v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e){} };
-const BADW = ['fuck','shit','bitch','cunt','dick','nigg','fag','slut','whore','porn','nazi','rape'];
-const unameRules = (v, taken) => [['3–16 characters', v.length>=3 && v.length<=16], ['Starts with a letter', /^[A-Za-z]/.test(v)], ['Letters, numbers or _', v.length>0 && /^[A-Za-z0-9_]+$/.test(v)], ['Not already taken', v.length>0 && !taken], ['Friendly words only', v.length>0 && !BADW.some(b=>v.toLowerCase().includes(b))]];
+const BADW = ['fuck','shit','bitch','cunt','dick','nigg','fag','slut','whore','porn','nazi','rape','penis','vagina','boob','asshole','bastard','retard','kys'];
+// names that could pretend to be staff (the database rules refuse these too, except for the admin's own account)
+const RESERVED_NAME = /(jonah|admin|moderator|mod_|_mod|staff|official|wilderland|owner|support|system)/i;
+const unameRules = (v, taken) => [['3–16 characters', v.length>=3 && v.length<=16], ['Starts with a letter', /^[A-Za-z]/.test(v)], ['Letters, numbers or _', v.length>0 && /^[A-Za-z0-9_]+$/.test(v)], ['Not already taken', v.length>0 && !taken], ['Friendly words only', v.length>0 && !BADW.some(b=>v.toLowerCase().includes(b))], ['Not a staff name (admin, moderator…)', v.length>0 && !RESERVED_NAME.test(v)]];
 const fmtDur = s => s>=3600 ? (s/3600).toFixed(1)+' h' : s>=60 ? Math.round(s/60)+' min' : Math.round(s)+' s';
 const PARENT_KEY = 'wl-arcade-parent';
 const pinRules = (a,b) => [['4–8 digits', /^\d{4,8}$/.test(a)], ['Not all one digit', a.length>0 && !/^(\d)\1+$/.test(a)], ['Not a straight run (1234)', a.length>0 && !'0123456789012345678909876543210987654321'.includes(a)], ['Codes match', a.length>0 && a===b]];
@@ -1847,8 +1850,8 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048').sort((a,b) => a.key0.localeCompare(b.key0, 'en', {numeric:true})); return GAMES.indexOf(DG[h % DG.length]); };   // same order as the old A–Z floor, so the daily game never jumps
-const BUILD = '2026-12-10c';
-const SCRIPTS = ['arcade-core.js','music.js','prizes-more.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','rebirth-road.js','wonders.js','qol.js','live-events.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js','games-secrets.js','games-more.js','games-more2.js','games-more3.js','snow-cast.js','snow-world.js'];
+const BUILD = '2026-12-10d';
+const SCRIPTS = ['arcade-core.js','music.js','prizes-more.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','rebirth-road.js','wonders.js','qol.js','live-events.js','moderation.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js','games-secrets.js','games-more.js','games-more2.js','games-more3.js','snow-cast.js','snow-world.js'];
 const fmt = n => fmtN(Math.round(n));
 
 class Component extends DCLogic {
@@ -1899,7 +1902,7 @@ class Component extends DCLogic {
     this.setP({edu:{...this.P.edu, ...patch}}); window.Arcade && window.Arcade.sfx('blip'); if (remount) this.setState({liveScore:0, payout:''}); }
   addScore(g, s, edu){ if (!this.P.username || (g!='_none' && !(s>0))) return;
     if (this.state.cloud) { const C = window.WLCloud; if (!this.cloudUid || !C) return; const row = {uid:this.cloudUid, u:this.P.username, s:Math.max(0,Math.round(s)), edu:!!edu, d:today(), av:avFull(this.P), al:(this.P.ach||[]).length};
-      if (g!='_none') C.postScore(g, row).catch(()=>{}); C.setTix(this.cloudUid, {...row, s:Math.max(0,Math.round(this.P.earned)), rb:this.P.rebirths||0, db:this.P.diaBonus||0, fr:this.P.rbFast||0, ov:ovScore({rb:this.P.rebirths, db:this.P.diaBonus, al:(this.P.ach||[]).length})}).catch(()=>{});
+      if (g!='_none') C.postScore(g, row, scoreCap(g)).catch(()=>{}); C.setTix(this.cloudUid, {...row, s:Math.max(0,Math.round(this.P.earned)), rb:this.P.rebirths||0, db:this.P.diaBonus||0, fr:this.P.rbFast||0, ov:ovScore({rb:this.P.rebirths, db:this.P.diaBonus, al:(this.P.ach||[]).length})}).catch(()=>{});
       this._bAt = {}; return; } const B = getJSON(BOARD_KEY,{e:[]}), k = this.profKey(), u = this.P.username;
     const av = avEnc(this.P.avatar), al = (this.P.ach||[]).length; if (g!='_none') { B.e.push({u, k, g, s, edu:!!edu, d:today(), av, al}); const mine = B.e.filter(x=>x.g==g).sort((a,b)=>b.s-a.s).slice(0,60); B.e = B.e.filter(x=>x.g!=g).concat(mine); }
     B.e = B.e.filter(x=>!(x.g=='_tix' && x.k==k)); B.e.push({u, k, g:'_tix', s:this.P.earned, edu:false, d:today(), av, al, rb:this.P.rebirths||0, db:this.P.diaBonus||0, fr:this.P.rbFast||0}); putJSON(BOARD_KEY, B); }
@@ -2079,6 +2082,7 @@ class Component extends DCLogic {
         games:()=>GAMES, icon:id=>ICON(id), autoRb:()=>this.P.autoRb !== false, setAutoRb:on=>{ this.setP({autoRb:on}); if (on) setTimeout(()=>this.checkRebirth(), 50); }, rebirthNow:()=>this.checkRebirth(true), upgrades:()=>this.upgData(), buyUpg:(g,k,n)=>this.buyUpg(g,k,n), upgPlan:(g,k,n)=>this.upgPlan(g,k,n), undoMark:(prev,label,refund)=>this.undoMark(prev,label,refund), buyAllUpg:()=>this.buyAllUpg(), cats:()=>this.multCats(), avatar:el=>window.WLAV ? window.WLAV.mount(el, this.avApi()) : null, openAv:()=>{ this.setState({prizesOpen:false}); setTimeout(()=>this.setState({avOpen:true}), 30); }, classicArt: Object.fromEntries(PRIZES.map(pz=>[pz.id, PZ(pz.art)])) }); }
     if (window.WLE && !this._econAttached) { this._econAttached = true; window.WLE.attach(this.econApi()); }
     if (window.WLLive && !this._liveAttached) { this._liveAttached = true; window.WLLive.attach(this.liveApi()); }
+    if (window.WLMod && !this._modAttached) { this._modAttached = true; window.WLMod.attach(()=>this.modApi()); }
     if (window.WLR && !this._roadAttached) { this._roadAttached = true; window.WLR.attach(this.roadApi()); this._abT = setInterval(()=>this.autoBuyTick(), 3000); }
     if (window.WLW && !this._wwAttached) { this._wwAttached = true; window.WLW.attach(this.roadApi()); }
     if (window.WLQ && !this._wnT) { this._wnT = 1; try { if (localStorage.getItem('wl-anim') == 'off') document.documentElement.classList.add('wl-noanim'); } catch(e){}
@@ -2182,11 +2186,14 @@ class Component extends DCLogic {
     if (!this.cloudUid) return this.setState({chatErr:'Log in (Sign up / Log in at the top) to chat.'});
     if (!this.P.username) return this.setState({chatErr:'Create a username first — that’s the name people see in chat.'});
     if ((C.mutes ? C.mutes() : []).includes(this.cloudUid)) return this.setState({chatErr:'You’ve been muted by an admin.'});
+    if (C.chatOff && C.chatOff()) return this.setState({chatErr:'Chat is switched off by the admin right now. Try again later.'});
     if (chatPrivate(raw)) return this.setState({chatErr:'For safety, no links, emails, phone numbers or where you live. Keep it about the games!'});
     const now = Date.now(); if (now - (this._chatT||0) < 4000) return this.setState({chatErr:'Slow down a little — one message every few seconds.'});
     const t = chatClean(raw); if (!t) return; this._chatT = now;
     try { await C.chatSend({uid:this.cloudUid, u:this.P.username, t, av:avFull(this.P), al:(this.P.ach||[]).length}); this.setState({chatVal:'', chatErr:''}); }
-    catch(e) { this.setState({chatErr: String(e && e.code||'').includes('permission') ? 'Couldn’t send (you may be muted).' : 'Couldn’t send: '+(e && (e.code||e.message))}); } }
+    catch(e) { this.setState({chatErr: String(e && e.code||'').includes('permission') ? 'Couldn’t send. Wait a few seconds between messages, and keep it friendly (no links, emails, numbers or bad words).' : 'Couldn’t send: '+(e && (e.code||e.message))}); } }
+  async reportChat(m){ const C = window.WLCloud; if (!C || !C.report || !this.cloudUid) { this.toast('LOG IN TO REPORT MESSAGES'); return; } this._reported = this._reported || {}; if (this._reported[m.id]) return;
+    try { await C.report({...m, byU:this.P.username||''}); this._reported[m.id] = 1; this.toast('THANKS · AN ADMIN WILL TAKE A LOOK'); this.setState({chatTick:Date.now()}); } catch(e) { this.toast('COULDN’T REPORT RIGHT NOW'); } }
   async chatAdmin(m, kind){ const C = window.WLCloud; if (!this.state.admin || !C) return;
     try { if (kind=='del') await C.chatDelete(m.id); else { const mutes = new Set(C.mutes ? C.mutes() : []); if (mutes.has(m.uid)) mutes.delete(m.uid); else mutes.add(m.uid); await C.setMutes([...mutes]); this.toast((mutes.has(m.uid)?'MUTED ':'UNMUTED ')+m.u.toUpperCase()); } }
     catch(e) { this.toast('ADMIN: '+(e && (e.code||e.message))); } }
@@ -2298,6 +2305,7 @@ class Component extends DCLogic {
       if (!best) break; upg[best.g] = {...(upg[best.g]||{}), [best.u.k]:best.lv + 1}; budget -= best.c; spent += best.c; n++; }
     if (!n) return; this.setP({tickets:P.tickets - spent, upg, stats:{...P.stats, sum:{...P.stats.sum, upgrades:(P.stats.sum.upgrades||0) + n}}}); }
   // Admin Abuse live events (live-events.js): what the event engine may read and give. It can only ever ADD tickets/prizes.
+  modApi(){ return { toast:t=>this.toast(t, true), games:()=>GAMES.map(g=>g.id), refresh:()=>{ this._bAt = {}; this.cloudBoard = {}; this.setState({lbTick:Date.now()}); } }; }
   liveApi(){ return { P:()=>this.P, setP:pt=>this.setP(pt), toast:(t,f)=>this.toast(t,f), sfx:n=>window.Arcade && window.Arcade.sfx(n), stat:(k,v,m)=>this.stat(k,v,m),
     game:()=>this.state.game || '', admin:()=>!!this.state.admin, uname:()=>this.P.username || (this.cloudMeta && this.cloudMeta.name) || '', lowFx:()=>LOWFX,
     grant:(n, from)=>this.addTix(n, null), avImg:av=>avSVG(avDec(av), 0, {full:true, noPet:true}), myAv:()=>avEnc(this.P.avatar),
@@ -2747,10 +2755,10 @@ class Component extends DCLogic {
       reloadAll: ()=>this.adminReloadAll(), downMin: s.downMin||'', inDownMin: e=>this.setState({downMin:e.target.value.slice(0,6)}), downText: s.downText||'', inDownText: e=>this.setState({downText:e.target.value.slice(0,140)}),
       chatOpen: !!s.chatOpen, openChat: ()=>this.openChat(), closeChat: ()=>this.closeChat(), chatVal: s.chatVal||'', inChat: e=>this.setState({chatVal:e.target.value.slice(0,140), chatErr:''}),
       chatKey: e=>{ e.stopPropagation(); if (e.key=='Enter') { e.preventDefault(); this.sendChat(); } if (e.key=='Escape') this.closeChat(); }, sendChat: ()=>this.sendChat(), chatErr: s.chatErr||'',
-      chatNote: !s.cloud ? 'Chat works on the online arcade (arcade.wilderland.academy).' : !this.cloudUid ? 'Log in to chat. Anyone can read along.' : !P.username ? 'Create a username to chat.' : 'Be kind · no personal info · keep it about the games',
+      chatNote: !s.cloud ? 'Chat works on the online arcade (arcade.wilderland.academy).' : !this.cloudUid ? 'Log in to chat. Anyone can read along.' : !P.username ? 'Create a username to chat.' : (window.WLCloud && window.WLCloud.chatOff && window.WLCloud.chatOff()) ? 'Chat is switched off by the admin right now.' : 'Be kind · no personal info · keep it about the games · ⚑ report anything mean',
       chatEmpty: (s.chatMsgs||[]).length==0, chatAdmin: !!s.admin,
       chatList: (s.chatMsgs||[]).filter(m=>!((window.WLCloud && window.WLCloud.mutes ? window.WLCloud.mutes() : []).includes(m.uid)) || s.admin).map(m=>({key:m.id, avImg: avSVG(avDec(m.av), m.al||0), name:m.u||'?', text:chatClean(m.t), time: new Date(m.at).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}), mine: m.uid===this.cloudUid, bg: m.uid===this.cloudUid ? '#e4f7a8' : '#ffffff',
-        del: ()=>this.chatAdmin(m,'del'), mute: ()=>this.chatAdmin(m,'mute'), kick: ()=>this.adminKick(m, m.uid, m.u||'player'), kickLabel: s.admArm=='kick:'+m.uid ? 'Confirm kick' : 'Kick', muteLabel: ((window.WLCloud && window.WLCloud.mutes ? window.WLCloud.mutes() : []).includes(m.uid)) ? 'Unmute' : 'Mute'})),
+        del: ()=>this.chatAdmin(m,'del'), mute: ()=>this.chatAdmin(m,'mute'), kick: ()=>this.adminKick(m, m.uid, m.u||'player'), kickLabel: s.admArm=='kick:'+m.uid ? 'Confirm kick' : 'Kick', muteLabel: ((window.WLCloud && window.WLCloud.mutes ? window.WLCloud.mutes() : []).includes(m.uid)) ? 'Unmute' : 'Mute', canReport: !!this.cloudUid && m.uid !== this.cloudUid, report: ()=>this.reportChat(m), reportLabel: (this._reported||{})[m.id] ? '✓ Reported' : '⚑ Report'})),
       adminOff: ()=>{ try { localStorage.setItem('wl-admin-off','1'); } catch(e){} if (window.Arcade) { window.Arcade.infiniteHints = false; window.Arcade.immortal = false; } this.closeAll(); this.setState({admin:false, immortal:false, adminMult:1, adminOpen:false, codeOpen:false}); this.toast('ADMIN MODE OFF · TICKETS, SCORES AND SAVES COUNT AGAIN'); },
       doShutdown: ()=>this.adminShutdown(false), doReopen: ()=>this.adminShutdown(true), doPreview: ()=>this.previewDown(), shutLabel: s.admArm=='down' ? 'YES · CLOSE IT' : 'Close for maintenance',
       downStatus: (s.downUntil||0) > Date.now() ? 'CLOSED · reopens in '+fmtDur2((s.downUntil-Date.now())/1000) : 'Open',
@@ -2865,7 +2873,7 @@ class Component extends DCLogic {
       H('SETTINGS'), I('settings', '⚙️', 'Settings panel', ()=>{ this.setState({menuOpen:false}); this.openSettings(); }, {val:'numbers · volume', valFg:'#9fb8ad'}, true), I('wnew', '🆕', 'What’s new', ()=>{ this.setState({menuOpen:false}); window.WLQ && window.WLQ.whatsNew(true); }), I('keys', '⌨️', 'Hotkeys', ()=>{ this.setState({menuOpen:false}); this.hotkeyHelp(); }, {val:'?', valFg:'#9fb8ad'}), I('sound', s.muted ? '🔇' : '🔊', 'Sound', stay('toggleSound'), onv(s.muted ? 'OFF' : 'ON', !s.muted)), I('music', '🎵', 'Music', stay('toggleMusic'), onv(musicNow.replace(/^MUSIC\s*·?\s*/i, '') || 'ON', !/off/i.test(musicNow))), I('grid', '▦', 'Classic grid', stay('toggleGrid'), onv(s.gridMode ? 'ON' : 'OFF', !!s.gridMode)), I('mnext', '⏭', /^PLAYLIST/.test(musicNow) ? 'Next song' : 'Wilderland Playlist', stay('nextSong'), onv(/^PLAYLIST/.test(musicNow) ? (window.WLMusic.songs ? window.WLMusic.songs().length : 18) + ' songs' : 'PLAY', true)), I('mcredit', '🎼', 'Music credits', ()=>{ const L = window.WLMusic && window.WLMusic.locked ? window.WLMusic.locked() : []; this.toast((window.WLMusic && window.WLMusic.allCredits ? window.WLMusic.allCredits() : 'Kevin MacLeod (incompetech.com)') + (L.length ? ' · 🔒 ' + L.join(' · ') : '')); }),
         I('notif', '🔔', 'Notifications', stay('toggleNotif'), onv({all:'ALL', few:'FEW', off:'OFF'}[notifM] || 'ALL', notifM != 'off')), I('fx', '🐢', 'Performance mode', stay('toggleFx'), onv(LOWFX ? 'ON' : 'OFF', LOWFX)),
         I('fs', '⛶', 'Full screen', go('siteFsBtn'), {val:'Y', valFg:'#9fb8ad'}),
-      H('ADMIN'), ...(window.WLLive && window.WLLive.isAdmin() ? [I('abuse', '👑', 'Admin Abuse', ()=>{ this.setState({menuOpen:false}); window.WLLive.panel(); }, {val:'F9', valFg:'#F9BF01'}, true)] : []), I('code', s.admin ? '🛠️' : '🔑', s.admin ? 'Admin tools' : 'Enter a code', go('openCode'), s.admin ? {val:'∞', valFg:'#F9BF01'} : null)];
+      H('ADMIN'), ...(window.WLLive && window.WLLive.isAdmin() ? [I('abuse', '👑', 'Admin Abuse', ()=>{ this.setState({menuOpen:false}); window.WLLive.panel(); }, {val:'F9', valFg:'#F9BF01'}, true), I('modp', '🛡️', 'Moderation', ()=>{ this.setState({menuOpen:false}); window.WLMod && window.WLMod.open(this.modApi()); }, {val:'F8', valFg:'#F9BF01'}, true)] : []), I('code', s.admin ? '🛠️' : '🔑', s.admin ? 'Admin tools' : 'Enter a code', go('openCode'), s.admin ? {val:'∞', valFg:'#F9BF01'} : null)];
     R0.menuOn = !!s.menuOpen; R0.menuW = narrow ? '100vw' : '340px';
     R0.openMenu = () => { this.keys = {}; this.setState({menuOpen:true}); }; R0.closeMenu = () => this.setState({menuOpen:false});
     return R0;
