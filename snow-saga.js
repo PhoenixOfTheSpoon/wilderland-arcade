@@ -44,14 +44,14 @@ const genRegion = id => { if (CACHE[id]) return CACHE[id]; const R = REGIONS[RID
   const M = new Uint8Array(RW*RH), set = (x, y, v) => { if (x >= 0 && y >= 0 && x < RW && y < RH) M[y*RW + x] = v; }, get = (x, y) => x < 0 || y < 0 || x >= RW || y >= RH ? ROCK : M[y*RW + x];
   const floor0 = R.sand ? SAND : R.cave ? CAVE : R.temple ? FLOOR : R.voidL ? VOIDF : SNOW;
   for (let y = 0; y < RH; y++) for (let x = 0; x < RW; x++) { const n1 = NZ(x, y, 7, sd), n2 = NZ(x, y, 3, sd + 1), h = H(x, y, sd + 2); let v = floor0;
-    if (id == 'frostfang') v = n1 > .66 ? CLIFF : n1 > .6 && h < .4 ? ROCK : n2 > .78 ? DEEP : h < .03 ? TREE : n1 < .22 ? SLOPE : SNOW;
-    else if (id == 'glaciers') v = Math.abs(n1 - .5) < .025 && n2 > .35 ? CHASM : n2 > .7 ? ICE : n1 > .74 ? CLIFF : h < .02 ? ROCK : n2 < .18 ? SWIM : SNOW;
+    if (id == 'frostfang') v = n1 > .72 ? (n2 > .7 ? DEEP : SNOW) : n1 > .66 ? CLIFF : n1 > .6 && h < .4 ? ROCK : n2 > .78 ? DEEP : h < .03 ? TREE : n1 < .22 ? SLOPE : SNOW;
+    else if (id == 'glaciers') v = Math.abs(n1 - .5) < .025 && n2 > .35 ? CHASM : n2 > .7 ? ICE : n1 > .8 ? SNOW : n1 > .74 ? CLIFF : h < .02 ? ROCK : n2 < .18 ? SWIM : SNOW;
     else if (id == 'sunken') { const cx = x % 12, cy = y % 12; v = (cx == 0 || cy == 0) && h > .22 ? WALL : n1 > .62 ? SWIM : FLOOR; }
     else if (id == 'whisper') v = (n1 > .48 && h < .62) || h < .06 ? TREE : n2 > .82 ? SWIM : n2 < .14 ? DEEP : SNOW;
     else if (id == 'sky' || id == 'above') { const isl = n1 + (n2 - .5)*.25; v = isl > .52 ? (h < .04 ? TREE : h < .06 ? ROCK : id == 'above' && n2 > .6 ? CLOUD : SNOW) : CHASM; }
     else if (id == 'desert') v = n1 > .7 && h < .5 ? CRYST : n2 > .76 ? DEEP : h < .015 ? CRYST : n1 < .2 ? SLOPE : SAND;
-    else if (id == 'hollow') v = n1 > .6 ? (n2 > .5 ? CLIFF : ROCK) : n2 > .8 ? SWIM : CAVE;
-    else if (id == 'citadel') { const inK = x > 30 && x < 66 && y < 34; v = inK ? (x == 31 || x == 65 || y == 33 || (y % 8 == 0 && h > .3)) ? WALL : FLOOR : n1 > .68 ? CLIFF : h < .03 ? DEAD : n2 > .8 ? DEEP : SNOW; }
+    else if (id == 'hollow') v = n1 > .7 ? CAVE : n1 > .6 ? (n2 > .5 ? CLIFF : ROCK) : n2 > .8 ? SWIM : CAVE;
+    else if (id == 'citadel') { const inK = x > 30 && x < 66 && y < 34; v = inK ? (x == 31 || x == 65 || y == 33 || (y % 8 == 0 && h > .3)) ? WALL : FLOOR : n1 > .74 ? SNOW : n1 > .68 ? CLIFF : h < .03 ? DEAD : n2 > .8 ? DEEP : SNOW; }
     else if (id == 'forbidden') { const cx = x % 16, cy = y % 14; v = (cx == 0 || cy == 0) && h > .18 ? WALL : (cx == 8 && cy == 7) ? PILLAR : n1 > .7 ? SWIM : FLOOR; }
     else if (id == 'void') { const isl = n1 + (n2 - .5)*.3; v = isl > .5 ? (h < .03 ? CRYST : n2 > .7 ? ICE : VOIDF) : CHASM; }
     if (x == 0 || y == 0 || x == RW - 1 || y == RH - 1) v = R.sky || R.voidL ? CHASM : CLIFF;
@@ -76,7 +76,7 @@ const genRegion = id => { if (CACHE[id]) return CACHE[id]; const R = REGIONS[RID
   if (id == 'citadel') carve(spawn, {x:48, y:44}, false);
   // and a gap-free back road to the gate from the waystones, so you can always walk home
   ways.slice(1).forEach(w => carve(w, spawn, false)); carve(lair, ways[2], false);
-  clear(spawn.x, spawn.y, 3, ground); clear(lair.x, lair.y, 7, ground); ways.forEach(w => clear(w.x, w.y, 2, ground)); npcs.forEach(q => clear(q.x, q.y, 2, ground)); clear(tower.x, tower.y, 2, ground); set(tower.x, tower.y, TOWER);
+  clear(spawn.x, spawn.y, 3, ground); clear(lair.x, lair.y, id == 'void' || id == 'forbidden' || id == 'above' ? 11 : 7, ground); ways.forEach(w => clear(w.x, w.y, 2, ground)); npcs.forEach(q => clear(q.x, q.y, 2, ground)); clear(tower.x, tower.y, 2, ground); set(tower.x, tower.y, TOWER);
   shrines.forEach(q => { clear(q.x, q.y, 2, ground); set(q.x, q.y, SHRINE); });
   // ingredients, feathers (collectibles) and secret caves
   const ING = R.sand ? ['honey', 'pepper', 'berry'] : R.cave ? ['mush', 'mush', 'fish'] : R.sky ? ['berry', 'honey', 'pepper'] : ['berry', 'pepper', 'fish', 'mush', 'honey'];
@@ -201,27 +201,32 @@ A.snowSaga = S => {
   const passFor = (v, how) => v == CLIFF ? how.climb : v == CHASM ? how.glide : !T0.SOLID[v];
   const blockedFor = (x, y, r, how) => { const c = (xx, yy) => !passFor(tl(Math.floor(xx/TS), Math.floor(yy/TS)), how); return c(x - r, y - r) || c(x + r, y - r) || c(x - r, y + r) || c(x + r, y + r); };
   const fall = (why) => { mode = ''; if (lastSafe) { p.x = lastSafe.x; p.y = lastSafe.y; } p.vx = p.vy = 0; if (!A2.immortal) { p.hp = Math.max(0, p.hp - 1); if (p.hp <= 0) { p.hp = 1; } } p.inv = Math.max(p.inv, 1.2); S.say(why, 2.4); A2.sfx('bad'); S.shakeV = 6; };
-  const move = (dt, mx, my) => { if (!cur) return false;
+  const move = (dt, mx, my) => { if (!cur) return false; const PW = SAGA.pw || {}; if (PW.invert) { mx = -mx; my = -my; }
     const tx = Math.floor(p.x/TS), ty = Math.floor(p.y/TS), v = tl(tx, ty), moving = mx || my, sm = stamMax()*(buffOn('stam') ? 1.5 : 1);
     const ahead = moving ? tl(Math.floor((p.x + mx*20)/TS), Math.floor((p.y + my*20)/TS)) : v;
     const canClimb = stam > 0, canGlide = SV.cloak && stam > 0;
-    const how = {climb:v == CLIFF || (ahead == CLIFF && canClimb), glide:v == CHASM || (ahead == CHASM && canGlide)};
-    mode = v == CLIFF ? 'climb' : v == CHASM ? 'glide' : v == SWIM ? 'swim' : '';
+    const fly = (PW.flyT || 0) > 0, how = {climb:fly || v == CLIFF || (ahead == CLIFF && canClimb), glide:fly || v == CHASM || (ahead == CHASM && canGlide)};
+    mode = fly ? 'fly' : v == CLIFF ? 'climb' : v == CHASM ? 'glide' : v == SWIM ? 'swim' : '';
     // stamina
-    const drain = mode == 'climb' ? 20 : mode == 'glide' ? 13 : mode == 'swim' ? (moving ? 9 : 4) : 0;
+    const drain = mode == 'climb' ? 16 : mode == 'glide' ? (SV.flags.starCloak ? 6.5 : 13) : mode == 'swim' ? (moving ? 9 : 4) : 0;
     if (drain) { stam -= drain*dt*(1 - .08*Math.min(5, (SV.flags.gripLv|0))); stamShow = 2; } else if (stam < sm) { stam = Math.min(sm, stam + dt*(buffOn('stam') ? 60 : 22)); stamShow = Math.max(stamShow, .8); } else stamShow = Math.max(0, stamShow - dt);
     if (stam <= 0) { stam = 0; if (mode == 'climb') { fall('😓 Too tired to keep climbing! (cook a Stamina Soup or earn more stamina at the Aurora Statue)'); return true; } if (mode == 'glide') { fall(SV.cloak ? '💨 Out of stamina mid-air… you drift back down' : '🕳️ You need the Snow Cloak to glide over that'); return true; } if (mode == 'swim') { fall('🌊 Too tired to swim! Back to the shore'); return true; } }
-    if (v == CHASM && !SV.cloak) { fall('🕳️ Careful! You need the Snow Cloak to cross gaps'); return true; }
+    if (v == CHASM && !SV.cloak && !fly) { fall('🕳️ Careful! You need the Snow Cloak to cross gaps'); return true; }
     // speed
-    let spd = 215*X.spd(); if (mode == 'climb') spd = 100 + 8*(SV.flags.gripLv|0); else if (mode == 'glide') spd = 270; else if (mode == 'swim') spd *= .55; else if (v == DEEP) spd *= .62; else if (v == SAND) spd *= .88; else if (v == PATH || v == FLOOR || v == CLOUD) spd *= 1.15;
+    let spd = 215*X.spd()*(PW.slow || 1); if (mode == 'fly') spd = 300; else if (mode == 'climb') spd = 140 + 8*(SV.flags.gripLv|0); else if (mode == 'glide') spd = 270; else if (mode == 'swim') spd *= .55; else if (v == DEEP) spd *= .62; else if (v == SAND) spd *= .88; else if (v == PATH || v == FLOOR || v == CLOUD) spd *= 1.15;
     if (S.riding && W.mount && v == SLOPE) spd *= 1.25;
     const k2 = v == ICE ? 2.2 + .8*X.gStat('boots') : mode == 'glide' ? 3 : 14;
     if (!(p.roll > 0)) { p.vx += (mx*spd - p.vx)*Math.min(1, k2*dt); p.vy += (my*spd - p.vy)*Math.min(1, k2*dt); }
     if (v == SLOPE) { p.vy += (S.riding && W.mount ? 420 : 120)*dt; if (S.riding && W.mount && !S.low() && Math.random() < .5) S.splat(p.x, p.y + 12, 1, '#ffffff'); }
     if (C.R.wx.wind && (mode == 'glide' || wind.f > 0)) { const push = (mode == 'glide' ? 120 : 30)*C.R.wx.wind*(wind.f > 0 ? 1 : .3); p.vx += Math.cos(wind.a)*push*dt; p.vy += Math.sin(wind.a)*push*dt; }
+    if (PW.drift) { p.vx += PW.drift.x*dt; p.vy += PW.drift.y*dt; } if (PW.pull) { const a = Math.atan2(PW.pull.y - p.y, PW.pull.x - p.x), dd = Math.hypot(PW.pull.x - p.x, PW.pull.y - p.y); if (dd < 520) { p.vx += Math.cos(a)*PW.pull.f*dt; p.vy += Math.sin(a)*PW.pull.f*dt; } }
     const nx = p.x + p.vx*dt, ny = p.y + p.vy*dt; if (!blockedFor(nx, p.y, 12, how)) p.x = nx; else p.vx = 0; if (!blockedFor(p.x, ny, 12, how)) p.y = ny; else p.vy = 0;
     const v2 = tl(Math.floor(p.x/TS), Math.floor(p.y/TS)); if (v2 != CLIFF && v2 != CHASM && v2 != SWIM && !T0.SOLID[v2]) { if (!lastSafe || Math.hypot(lastSafe.x - p.x, lastSafe.y - p.y) > 40) lastSafe = {x:p.x, y:p.y}; }
-    if (mode == 'climb' && moving) p.walk += dt*.6; return true; };
+    if (mode == 'climb' && moving) p.walk += dt*.6;
+    if (blockedFor(p.x, p.y, 10, how) && lastSafe) { p.x = lastSafe.x; p.y = lastSafe.y; p.vx = p.vy = 0; S.say('🧭 Unstuck!', 1.4); }
+    if (moving) { stuckT = Math.hypot(p.x - (stuckAt.x || 0), p.y - (stuckAt.y || 0)) < 6 ? stuckT + dt : 0; if (stuckT == 0) stuckAt = {x:p.x, y:p.y}; if (stuckT > 2 && (mode == 'climb' || mode == 'swim') && lastSafe) { stuckT = 0; p.x = lastSafe.x; p.y = lastSafe.y; p.vx = p.vy = 0; S.say('🧭 Unstuck! Back to solid ground', 2); } } else stuckT = 0;
+    return true; };
+  let stuckT = 0, stuckAt = {};
   // ---------- things you can use in the lands ----------
   const fireAt = i => W2T(C.fires[i]);
   const things = L => {
@@ -290,13 +295,13 @@ A.snowSaga = S => {
     if (story() && story().drawWorld) story().drawWorld(cur, C, W2T); };
   const drawStatue = (x, y) => { g.fillStyle = 'rgba(0,0,0,.15)'; g.beginPath(); g.ellipse(x, y + 22, 22, 6, 0, 0, TAU); g.fill(); g.fillStyle = '#d8e4f4'; S.rr(g, x - 16, y + 4, 32, 18, 4); g.fill(); g.fillStyle = '#eef4ff'; g.beginPath(); g.ellipse(x, y - 14, 12, 20, 0, 0, TAU); g.fill(); g.beginPath(); g.arc(x, y - 38, 9, 0, TAU); g.fill(); g.fillStyle = 'rgba(160,240,220,' + (.5 + .3*Math.sin(S.t*2)) + ')'; g.beginPath(); g.arc(x, y - 38, 14, 0, TAU); g.fill(); };
   const ents = L => { if (story() && story().ents) story().ents(L, cur, C, W2T); };
-  const drawScreen = () => { if (!cur) return; const wx = C.R.wx, VW = S.VW, VH = S.VH, cam = S.cam, lo = S.low();
+  const drawScreen = () => { if (!cur) { if (story() && story().drawScreen) story().drawScreen(null); return; } const wx = C.R.wx, VW = S.VW, VH = S.VH, cam = S.cam, lo = S.low();
     if (wx.fog) { const gr = g.createRadialGradient(p.x - cam.x, p.y - cam.y, 120, p.x - cam.x, p.y - cam.y, 520); gr.addColorStop(0, 'rgba(235,240,245,0)'); gr.addColorStop(1, 'rgba(235,240,245,.92)'); g.fillStyle = gr; g.fillRect(0, 0, VW, VH); }
     if (wx.dark && !lo) { const gr = g.createRadialGradient(p.x - cam.x, p.y - cam.y, 100, p.x - cam.x, p.y - cam.y, 460); gr.addColorStop(0, 'rgba(8,10,30,0)'); gr.addColorStop(1, 'rgba(8,10,30,' + (wx.dark > 1 ? .78 : .55) + ')'); g.fillStyle = gr; g.fillRect(0, 0, VW, VH); }
     if (wx.wind && wind.f > 0 && !lo) { g.strokeStyle = 'rgba(255,255,255,.55)'; g.lineWidth = 2; for (let i = 0; i < 24; i++) { const sx = (i*173 + S.t*400*Math.cos(wind.a)) % VW, sy = (i*97 + S.t*400*Math.sin(wind.a)) % VH, x = (sx + VW) % VW, y = (sy + VH) % VH; g.beginPath(); g.moveTo(x, y); g.lineTo(x - Math.cos(wind.a)*34, y - Math.sin(wind.a)*34); g.stroke(); } }
     // stamina wheel next to you
     if (stamShow > 0 || stam < stamMax()) { const sx = p.x - cam.x + 30, sy = p.y - cam.y - 34, sm = stamMax()*(buffOn('stam') ? 1.5 : 1), k = stam/sm; g.lineWidth = 6; g.strokeStyle = 'rgba(0,0,0,.25)'; g.beginPath(); g.arc(sx, sy, 12, 0, TAU); g.stroke(); g.strokeStyle = k < .25 ? (Math.sin(S.t*12) > 0 ? '#FF4539' : '#ff9a8a') : '#00B451'; g.beginPath(); g.arc(sx, sy, 12, -Math.PI/2, -Math.PI/2 + TAU*k); g.stroke(); }
-    if (mode == 'glide') { g.fillStyle = '#fff'; g.font = '800 11px ' + A2.font; g.textAlign = 'center'; g.fillText('🪂 gliding', p.x - cam.x, p.y - cam.y + 40); } else if (mode == 'climb') { g.fillStyle = '#fff'; g.font = '800 11px ' + A2.font; g.textAlign = 'center'; g.fillText('🧗 climbing', p.x - cam.x, p.y - cam.y + 40); } else if (mode == 'swim') { g.fillStyle = '#fff'; g.font = '800 11px ' + A2.font; g.textAlign = 'center'; g.fillText('🏊 swimming', p.x - cam.x, p.y - cam.y + 40); }
+    if (mode == 'glide') { g.fillStyle = '#fff'; g.font = '800 11px ' + A2.font; g.textAlign = 'center'; g.fillText('🪂 gliding', p.x - cam.x, p.y - cam.y + 40); } else if (mode == 'climb') { g.fillStyle = '#fff'; g.font = '800 11px ' + A2.font; g.textAlign = 'center'; g.fillText('🧗 climbing', p.x - cam.x, p.y - cam.y + 40); } else if (mode == 'swim') { g.fillStyle = '#fff'; g.font = '800 11px ' + A2.font; g.textAlign = 'center'; g.fillText('🏊 swimming', p.x - cam.x, p.y - cam.y + 40); } else if (mode == 'fly') { g.fillStyle = '#D5F367'; g.font = '800 11px ' + A2.font; g.textAlign = 'center'; g.fillText('✨ flying', p.x - cam.x, p.y - cam.y + 40); }
     // buffs
     const bl = [['warm', '🍲'], ['stam', '🥣'], ['power', '🍚']].filter(([k]) => buffOn(k)).map(([k, e]) => e + ' ' + Math.ceil((SV.buf[k] - now())/60e3) + 'm'); if (bl.length) { g.font = '800 11px ' + A2.font; g.textAlign = 'left'; const tx = bl.join('  '), tw = g.measureText(tx).width + 16; g.fillStyle = 'rgba(20,32,74,.55)'; S.rr(g, 8, (document.fullscreenElement ? 46 : 8) + 62, tw, 20, 10); g.fill(); g.fillStyle = '#fff'; g.fillText(tx, 16, (document.fullscreenElement ? 46 : 8) + 76); }
     if (story() && story().drawScreen) story().drawScreen(cur, C, W2T); };
@@ -328,7 +333,7 @@ A.snowSaga = S => {
     if (story() && story().key && story().key(e)) return true; return false; };
   const down = q => { if (modal && modal.kind == 'shrine') { for (const r of shR) if (q.x >= r.x && q.x <= r.x + r.w && q.y >= r.y && q.y <= r.y + r.h) { r.fn(); return true; } return true; } if (story() && story().down && story().down(q)) return true; return false; };
   // Escape closes a shrine before the game sees it
-  const escK = e => { if (e.key == 'Escape' && modal) { e.stopPropagation(); e.preventDefault(); modal = null; } }; document.addEventListener('keydown', escK, true);
+  const escK = e => { if (e.key != 'Escape') return; if (modal) { e.stopPropagation(); e.preventDefault(); modal = null; } else if (story() && story().modal && story().modal()) { e.stopPropagation(); e.preventDefault(); story().key(e); } }; document.addEventListener('keydown', escK, true);
   // ---------- resume where you were ----------
   const SG = {cur:() => cur, C:() => C, tile:(tx, ty) => tx >= RX && tx < RX + RW ? tl(tx, ty) : ROCK, inside, bounds:() => ({x0:RX*TS, x1:(RX + RW)*TS, y1:RH*TS}), modal:() => !!modal || !!(story() && story().modal && story().modal()), move, update:dt => { update(dt); wayCheck(); },
     things, goal:() => story() && story().goal ? story().goal(cur, C, W2T) : null, drawTiles, drawWorld, ents, drawScreen, drawTop, drawMini, drawMap, mapDown, key, down, warmHeal:() => !!cur && C.fires.some(q => { const w = W2T(q); return Math.hypot(w.x + 30 - p.x, w.y - p.y) < 110; }),

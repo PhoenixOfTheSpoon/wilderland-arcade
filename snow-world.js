@@ -898,7 +898,7 @@ A.snowWorld = function(X) {
   const journal = () => openPanelUI(() => { const tabs = [{e:'📖', n:'Tabs', d:'Main story · Side quests · Outfits & songs', btn:jTab == 'main' ? '▶ Side quests' : jTab == 'side' ? '▶ Outfits & songs' : '▶ Main story', ok:true, fn:() => { jTab = jTab == 'main' ? 'side' : jTab == 'side' ? 'extra' : 'main'; pnPage = 0; }}];
     if (jTab == 'main') return {title:'📖 Journal · Main story', sub:'Your chapters so far. The gold star on the map and the arrow show the next step.', rows:[...tabs, ...MAIN_CH().map(c => ({e:c.done ? '✅' : c.now ? '▶️' : '⬜', n:c.n, d:c.done ? 'Done' : c.now ? 'In progress' : ''}))]};
     if (jTab == 'extra') { const n = BARD_N(), S = ['Whisperpine Waltz', 'Glimmer Lake Lullaby', 'The Royal Guard March', 'Aurora Nights', 'Shanty of Captain Frostbeard', 'Ballad of the Brave Hero'];
-      const outs = [['none', '🧥', 'Your usual coat', true], ['guard', '🛡️', 'Royal Guard armor', !!W.rgArmor], ['bau', '👑', 'Bau Bau outfit', !!(W.outfits || {}).bau]];
+      const outs = [['none', '🧥', 'Your usual coat', true], ['guard', '🛡️', 'Royal Guard armor', !!W.rgArmor], ['bau', '👑', 'Bau Bau outfit', !!(W.outfits || {}).bau], ['god', '🌌', 'Godlike set (beat the Gecko God)', !!(W.outfits || {}).god]];
       return {title:'🎒 Journal · Outfits & songs', sub:'Rewards from side stories. Songs come from Wren’s lost pages (' + n + '/6 found).', rows:[...tabs,
         ...outs.map(([k, e, nm, ok]) => ({e, n:nm, d:ok ? ((W.outfit || 'none') == k ? 'Wearing' : 'Unlocked') : 'Locked · finish its side story', btn:ok ? ((W.outfit || 'none') == k ? 'Wearing' : 'Wear') : '🔒', ok:ok && (W.outfit || 'none') != k, fn:() => { W.outfit = k; save(); A.sfx('blip'); }})),
         {e:'🎶', n:'Kingdom music', d:W.bardSong ? 'Playing: ' + S[W.bardSong - 1] : 'Normal kingdom music', btn:'Normal music', ok:!!W.bardSong, fn:() => { W.bardSong = 0; regMood = ''; save(); }},
@@ -969,7 +969,8 @@ A.snowWorld = function(X) {
     revealT -= dt; if (revealT <= 0) { revealT = .25; reveal(); }
     saveT -= dt; if (saveT <= 0) { saveT = 15; save(); }
     // bosses wake up when you come close to their lair
-    if (!boss) for (const k in LAIR) { if (BOSS[k] && BOSS[k].saga) { if (!SG || !SG.bossReady(k)) continue; if (!dlg && dist(p, LAIR[k]) < (BOSS[k].wake || 380)) { spawnBoss(k); break; } continue; } if (bossDone(k)) continue; if (k == 'loki' && !gateOpen()) continue; if ((BOSS[k].ai || k == 'chao') && !storyReady(k)) continue; if (dlg) break; if (dist(p, LAIR[k]) < 380) { spawnBoss(k); break; } }
+    if (!boss) for (const k in LAIR) { if (RAIDS.some(R0 => R0.mini == k || R0.boss == k)) continue;   /* raid bosses only appear through the raid itself (they used to wake up again right after dying) */
+      if (BOSS[k] && BOSS[k].saga) { if (!SG || !SG.bossReady(k)) continue; if (!dlg && dist(p, LAIR[k]) < (BOSS[k].wake || 380)) { spawnBoss(k); break; } continue; } if (bossDone(k)) continue; if (k == 'loki' && !gateOpen()) continue; if ((BOSS[k].ai || k == 'chao') && !storyReady(k)) continue; if (dlg) break; if (dist(p, LAIR[k]) < 380) { spawnBoss(k); break; } }
     if (boss) bossAI(boss, dt);
     // Loki's minions roam the land (never inside camp)
     spawnT -= dt; const cap = A.D(6, 8, 10); if (spawnT <= 0 && rg != 'camp' && !REG[rg].safe) { spawnT = 1.1; if (foes.length < cap && !boss) for (let k3 = 0; k3 < 6; k3++) { const a = Math.random()*TAU, r2 = 430 + Math.random()*260, sx = p.x + Math.cos(a)*r2, sy = p.y + Math.sin(a)*r2, rr2 = regAt(sx, sy);
@@ -1041,7 +1042,7 @@ A.snowWorld = function(X) {
     { const RB = inRealm() ? SG.bounds() : null, lo = RB ? RB.x0 : raid ? N*TS : 0, hi = RB ? RB.x1 : raid ? (N + 40)*TS : WORLD, tx = Math.max(lo, Math.min(hi - VW, p.x - VW/2)), ty = Math.max(0, Math.min((RB ? RB.y1 : WORLD) - VH, p.y - VH/2 - 20)); if (Math.abs(tx - cam.x) > 500 || Math.abs(ty - cam.y) > 500) { cam.x = tx; cam.y = ty; } else { const k = Math.min(1, dt*9); cam.x += (tx - cam.x)*k; cam.y += (ty - cam.y)*k; } }
     shakeV = Math.max(0, shakeV - dt*20); cheerT = Math.max(0, cheerT - dt); p.roll = Math.max(0, (p.roll||0) - dt); p.rollCd = Math.max(0, (p.rollCd||0) - dt); };
   // ---------- drawing ----------
-  const kid = (x, y, col, o = {}) => { if (o.outfit == 'guard') { col = '#2f5fd0'; } else if (o.outfit == 'bau') col = '#e8a050'; g.save(); g.translate(x, y); if (o.hit) g.globalAlpha = .55; const bob = o.walk ? Math.sin(o.walk*14)*2 : 0;
+  const kid = (x, y, col, o = {}) => { if (o.outfit == 'guard') { col = '#2f5fd0'; } else if (o.outfit == 'bau') col = '#e8a050'; else if (o.outfit == 'god') col = '#3a2a8a'; g.save(); g.translate(x, y); if (o.hit) g.globalAlpha = .55; const bob = o.walk ? Math.sin(o.walk*14)*2 : 0;
     g.fillStyle = 'rgba(0,0,0,.15)'; g.beginPath(); g.ellipse(0, 16, 13, 4, 0, 0, TAU); g.fill();
     g.fillStyle = '#14204a'; g.fillRect(-8, 6 + bob*.5, 6, 10); g.fillRect(2, 6 - bob*.5, 6, 10);
     g.fillStyle = col; rr(g, -11, -8, 22, 18, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(-11, 1, 22, 3);

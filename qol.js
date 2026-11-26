@@ -10,6 +10,7 @@ const el = (tag, at, ...kids) => { const n = document.createElement(tag); at = a
 
 // ---------------- What's new ----------------
 const WN = {v:'2026-12-12', items:[
+  ['🌌', 'After the credits: the Gecko God', 'Cat Gone Missing: find Oswald, stop the ritual, survive 3 godlike fights (each unlocks a power: Seal-Breaker Snowballs, Starlight Cloak, Flight on X), then the Gecko God with 50 layered bars. Rewards: Gecko God Slayer title, godlike outfit, a statue in the Hall of Paws with a timed rematch.'],
   ['🦎', 'The Dumpling Saga', 'After Spirits of the Snow: a new 9-chapter main story across 8 new lands (Expedition Board at camp). Climb cliffs, glide with the Snow Cloak, sled, swim, solve 66 Ice Shrines, cook at campfires, collect Frost Feathers, and face Dumpling, the sealed gecko king. Press J for the saga journal.'],
   ['⚪', 'Way faster snowballs', 'Snowballs come back much faster: new Snow Factory skill, Snow Well room, Bottomless Mitten and Snow Globe Charm in the village shop, a Snow Machine upgrade that refills you anywhere, Fast Scoop up to level 10, knockouts hand snowballs back, and a ×3 refill when you pause throwing.'],
   ['⚒️', 'Forge gear', 'Forge any gear piece you want in Snowball → Loadout, or at your Ice Fort (the Forge is now the first row and builds itself with one tap). Fuse 3 spare pieces into 1 rarer one.'],

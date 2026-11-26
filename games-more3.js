@@ -958,6 +958,8 @@ A.register('snowball', { mount(host, api){
     {label:'Dumpling Saga: teleport to region (1 Frostfang 2 Glaciers 3 Sunken Temple 4 Whisperwood 5 Sky Islands 6 Crystal Desert 7 Gecko’s Hollow 8 Citadel 9 Forbidden Temple 10 Sky Above 11 Frozen Void)', num:1, min:1, max:11, run:n => { if (!wm) openWorld(); const S2 = A.SAGA && A.SAGA.story; S2 && S2.adm.region(S2.adm.regions()[Math.floor(n) - 1]); }},
     {label:'Dumpling Saga: jump to chapter (1-9)', num:1, min:1, max:9, run:n => { if (!wm) openWorld(); const S2 = A.SAGA && A.SAGA.story; S2 && S2.adm.chapter(n); }},
     {label:'Dumpling Saga: jump to Dumpling fight (1-6)', num:1, min:1, max:6, run:n => { if (!wm) openWorld(); const S2 = A.SAGA && A.SAGA.story; S2 && S2.adm.fight(n); }},
+    {label:'Dumpling Saga: start the post-game (Cat Gone Missing)', run:() => { if (!wm) openWorld(); const S2 = A.SAGA && A.SAGA.story; S2 && S2.adm.post && S2.adm.post(); }},
+    {label:'Dumpling Saga: jump to godlike fight (1-3) or the Gecko God (4)', num:4, min:1, max:4, run:n => { if (!wm) openWorld(); const S2 = A.SAGA && A.SAGA.story; S2 && S2.adm.god && S2.adm.god(n); }},
     {label:'Dumpling Saga: skip boss phase', run:() => { const S2 = A.SAGA && A.SAGA.story; S2 && S2.adm.phase(); }},
     {label:'Dumpling Saga: add stamina', num:50, min:1, run:n => { if (!wm) openWorld(); const S2 = A.SAGA && A.SAGA.story; S2 && S2.adm.stamina(n); }},
     {label:'Kingdom: add Frost', num:100, min:1, run:n => { if (!wm) openWorld(); wm && wm.adm.frost(n); }},

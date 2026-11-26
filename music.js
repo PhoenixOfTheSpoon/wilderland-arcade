@@ -29,6 +29,7 @@ const MOODS = {
   // Dumpling's theme: the same tune, more intense each time (original)
   dump1:  {root:50, sc:HARM,bpm:128, prog:[0,5,1,4], lead:'square',   arp:'triangle', bass:'square',   drums:2, seed:203, vol:.85},
   dump2:  {root:50, sc:HARM,bpm:148, prog:[0,5,1,4], lead:'sawtooth', arp:'square',   bass:'sawtooth', drums:3, seed:203, vol:.8},
+  godchoir:{root:55, sc:HARM,bpm:84, prog:[0,5,3,6], lead:'sine',     arp:'triangle', bass:'sine',     drums:2, seed:233, vol:1},
   dump3:  {root:50, sc:HARM,bpm:170, prog:[0,5,1,6], lead:'sawtooth', arp:'sawtooth', bass:'sawtooth', drums:3, seed:203, vol:.78},
 };
 const mtof = m => 440 * Math.pow(2, (m-69)/12);

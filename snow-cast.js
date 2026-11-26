@@ -166,7 +166,7 @@ C.tornado = (g, x, y, r, t, low) => { g.save(); g.translate(x, y); for (let i = 
 
 // ---------- the cast of "Spirits of the Snow" (looks shared by the world, portraits and memories) ----------
 C.LOOK = {
-  bau:   {fur:'#f6d6a8', belly:'#fffaf0', stripe:'#d9a060', eye:'#6ac0e0', crown:1, cape:'#c8102e', seed:1},
+  bau:   {fur:'#f0c890', belly:'#fffaf0', stripe:'#a8682e', eye:'#6ac0e0', crown:1, cape:'#c8102e', seed:1},
   minc:  {fur:'#8e959e', belly:'#f4f4f6', stripe:'#6a707a', socks:'#f4f4f6', eye:'#8ad0ff', seed:2},
   mow:   {fur:'#8a6a4a', belly:'#d8c2a8', stripe:'#5e4630', eye:'#e0c060', s:.8, ears:.35, seed:5},
   chao:  {fur:'#d8d4cc', belly:'#f2efe8', patch:'#6a6460', mask:'#7a746c', eye:'#e8d060', thin:.8, seed:9},
