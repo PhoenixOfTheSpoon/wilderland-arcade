@@ -800,7 +800,7 @@ A.snowWorld = function(X) {
       if (s2.k == 'go') { const q = spot(s2.at[0], s2.at[1]); L.push({x:q.x, y:q.y, n:s2.act || 'Look', f:() => sqAdvance(id)}); }
       if (s2.k == 'items') s2.items.forEach((it, j) => { const key = id + ':' + W.sq[id] + ':' + j; if (W.sqI[key]) return; const q = spot(it.at[0], it.at[1]);
         L.push({x:q.x, y:q.y, n:'Look', f:() => { W.sqI[key] = 1; save(); A.sfx('coin'); splat(q.x, q.y - 10, 10, '#F9BF01'); const left = s2.items.filter((_, j2) => !W.sqI[id + ':' + W.sq[id] + ':' + j2]).length;
-          talk(it.line, () => { if (!left) sqAdvance(id); else say('📗 ' + (s2.items.length - left) + ' / ' + s2.items.length + ' found', 2); }); }}); });
+          talk(it.line, () => { if (left) say('📗 ' + (s2.items.length - left) + ' / ' + s2.items.length + ' found', 2); }); }}); });
       if (s2.k == 'course' && !course) { const q = spot(s2.pts[0][0], s2.pts[0][1]); L.push({x:q.x, y:q.y, n:'Start the course', f:() => { course = {id, i:1, t:s2.time, pts:s2.pts.map(a => spot(a[0], a[1]))}; A.sfx('blip'); say('🏁 GO! Run through every flag in ' + s2.time + ' seconds!', 2.5); }}); }
       if (s2.k == 'waves' && !waves) { const q = spot(s2.at[0], s2.at[1]); L.push({x:q.x, y:q.y, n:s2.night ? 'Start the night watch' : 'Start the drill', f:() => { waves = {id, i:0, at:q, t:1.5}; if (s2.night) sqNightF = true; talk([[...MAUF, s2.night ? 'Night watch begins. Eyes open. Ears open. Snack bag... closed. For now.' : 'Shield up! Here comes the practice squad!', 'angry']]); }}); }
       if (s2.k == 'chase' && !chase) { const q = spot(s2.path[0][0], s2.path[0][1]); L.push({x:q.x, y:q.y, n:'Sneak up', f:() => { chase = {id, i:0, x:q.x, y:q.y, pts:s2.path.map(a => spot(a[0], a[1])), wait:0}; say('🦝 The thief bolts! Catch it!', 2.2); A.sfx('blip'); }}); }
@@ -810,6 +810,7 @@ A.snowWorld = function(X) {
     if (W.lball && W.lokiReformed && !(boss && boss.k == 'loki')) { const c2 = spot(83, 15); L.push({x:c2.x - 60, y:c2.y, n:'Practice match', f:() => { lokiSpar = true; lokiReady = true; say('🎾 Loki bounces to the middle of the throne room. Step closer!', 2.5); }}); L.push({x:c2.x + 60, y:c2.y, n:'Pet Loki', f:() => talk([[...LOKQ, ['*wag wag wag*', 'Throw the ball! Throw it! ...Please?', 'I’m a good boy now. Right? Right!', 'I keep the castle tidy now. Mostly I nap in it.'][Math.floor(t) % 4], 'happy']])}); }
     return L; };
   const sqUpdate = dt => {
+    if (!dlg) SQK.forEach(id => { const s2 = sqStep(id); if (s2 && s2.k == 'items' && s2.items.every((_, j) => W.sqI[id + ':' + W.sq[id] + ':' + j])) sqAdvance(id); });
     // the masked thief: it runs to the next waypoint whenever you get close, and is caught at the last one
     if (chase) { const C3 = chase, tgt = C3.pts[Math.min(C3.i, C3.pts.length - 1)], d = Math.hypot(tgt.x - C3.x, tgt.y - C3.y);
       if (d > 6) { const sp3 = 250*dt; C3.x += (tgt.x - C3.x)/d*Math.min(d, sp3); C3.y += (tgt.y - C3.y)/d*Math.min(d, sp3); }
@@ -841,7 +842,8 @@ A.snowWorld = function(X) {
       if (chase && chase.id == id) return {x:chase.x, y:chase.y, n:pre + 'Catch the thief!'};
       if (course && course.id == id) return {...course.pts[course.i], n:pre + 'Flag ' + course.i + '/' + (course.pts.length - 1) + ' · ' + Math.ceil(course.t) + ' s'};
       if (s2.k == 'items') { const left = s2.items.map((it, j) => ({...spot(it.at[0], it.at[1]), j})).filter(q => !W.sqI[id + ':' + W.sq[id] + ':' + q.j]); left.sort((a, b) => dist(a, p) - dist(b, p)); if (left.length) return {x:left[0].x, y:left[0].y, n:pre + s2.g + ' (' + (s2.items.length - left.length) + '/' + s2.items.length + ')'}; }
-      const at = s2.k == 'boss' ? LAIR[s2.boss] : s2.k == 'chase' ? spot(s2.path[0][0], s2.path[0][1]) : s2.k == 'course' ? spot(s2.pts[0][0], s2.pts[0][1]) : spot(s2.at[0], s2.at[1]); return {x:at.x, y:at.y, n:pre + s2.g}; } return null; };
+      if (s2.k == 'items') continue; const at = sqAt(s2); if (at) return {x:at.x, y:at.y, n:pre + s2.g}; } return null; };
+  const sqAt = s2 => s2.k == 'boss' ? LAIR[s2.boss] : s2.k == 'chase' ? spot(s2.path[0][0], s2.path[0][1]) : s2.k == 'course' ? spot(s2.pts[0][0], s2.pts[0][1]) : s2.at ? spot(s2.at[0], s2.at[1]) : null;
   // ---------- drawing ----------
   const raccoon = (x, y, o = {}) => { const s = o.s || 1; g.save(); g.translate(x, y); g.scale(o.flip ? -s : s, s); g.fillStyle = 'rgba(0,0,0,.15)'; g.beginPath(); g.ellipse(0, 12, 14, 4, 0, 0, TAU); g.fill();
     g.fillStyle = '#7a7a84'; g.beginPath(); g.ellipse(0, 2, 13, 10, 0, 0, TAU); g.fill(); for (let i = 0; i < 4; i++) { g.fillStyle = i % 2 ? '#3a3a42' : '#9a9aa4'; g.beginPath(); g.arc(-14 - i*5, -2 - i*3, 5, 0, TAU); g.fill(); }
@@ -871,8 +873,8 @@ A.snowWorld = function(X) {
   const sqEnts = ents => { if (chase || !SQK.some(id => sqStep(id) && sqStep(id).k == 'boss' && sqStep(id).boss == 'sq_raccoon')) return; };
   // ---------- map: side quest givers have a purple "!" (main story uses the gold star) ----------
   const sqMap = ms => { SQK.forEach(id => { const Q = SQ[id]; let at = null, ic = '';
-      if (!W.sqD[id] && W.sq[id] == null && Q.avail()) { at = spot(Q.giver[0], Q.giver[1]); ic = '❕'; } else { const s2 = sqStep(id); if (s2 && s2.k != 'items') { at = s2.k == 'boss' ? LAIR[s2.boss] : s2.k == 'chase' ? spot(s2.path[0][0], s2.path[0][1]) : s2.k == 'course' ? spot(s2.pts[0][0], s2.pts[0][1]) : spot(s2.at[0], s2.at[1]); ic = '◆'; } }
-      if (!at) return; const q = ms({x:at.x/TS - .5, y:at.y/TS - .5}); g.fillStyle = 'rgba(166,75,224,.95)'; g.beginPath(); g.arc(q.x, q.y, 8, 0, TAU); g.fill(); g.fillStyle = '#fff'; g.font = '900 10px ' + A.font; g.textAlign = 'center'; g.fillText(ic == '❕' ? '!' : '◆', q.x, q.y + 4); }); };
+      if (!W.sqD[id] && W.sq[id] == null && Q.avail()) { at = spot(Q.giver[0], Q.giver[1]); ic = '❕'; } else { const s2 = sqStep(id); if (s2 && s2.k != 'items') { at = sqAt(s2); ic = '◆'; } }
+      if (!at || !isFinite(at.x)) return; const q = ms({x:at.x/TS - .5, y:at.y/TS - .5}); g.fillStyle = 'rgba(166,75,224,.95)'; g.beginPath(); g.arc(q.x, q.y, 8, 0, TAU); g.fill(); g.fillStyle = '#fff'; g.font = '900 10px ' + A.font; g.textAlign = 'center'; g.fillText(ic == '❕' ? '!' : '◆', q.x, q.y + 4); }); };
   // ---------- the quest journal (J): main story chapters + Side Quests tab + outfits + Wren's songs ----------
   let jTab = 'side';
   const albumPanel = () => openPanelUI(() => ({title:'📔 Bau Bau’s memory album', sub:'Every memory, one page each. So nobody forgets the good parts.', rows:SQ.baumem.steps[0].items.map(it => ({e:it.e, n:it.line[0][2].slice(0, 60) + (it.line[0][2].length > 60 ? '…' : ''), d:'Bau Bau'})).concat([{e:'🕯️', n:'Minccino · gentle and brave · Chao Chao · the fastest of us all', d:'The brothers'}])}));

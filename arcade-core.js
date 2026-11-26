@@ -87,7 +87,14 @@ A.canvas = (host, w=480, h=480) => {
   host.appendChild(c); const g = c.getContext('2d'); g.scale(dpr,dpr); return {c, g, w, h};
 };
 A.keys = (handler) => { const f = e => { if (handler(e) !== false && ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault(); }; window.addEventListener('keydown', f); return () => window.removeEventListener('keydown', f); };
-A.loop = (fn) => { let id, last = performance.now(), live = true; const t = now => { if(!live) return; const dt = Math.min(50, now-last); last = now; fn(dt/1000*A.speed*(A.liveSpeed || 1)); id = requestAnimationFrame(t); }; id = requestAnimationFrame(t); return () => { live=false; cancelAnimationFrame(id); }; };
+// The shared game loop never dies from one bad frame: an error skips that frame (logged once), and a game that keeps
+// failing frame after frame is handed to A.crashed, which saves, closes it and says so instead of freezing the page.
+A.loop = (fn) => { let id, last = performance.now(), live = true, bad = 0, said = ''; const stop = () => { live=false; cancelAnimationFrame(id); };
+  const t = now => { if(!live) return; id = requestAnimationFrame(t); const dt = Math.min(50, now-last); last = now;
+    try { fn(dt/1000*A.speed*(A.liveSpeed || 1)); bad = 0; }
+    catch (e) { bad++; const m = String(e && e.message); if (m != said) { said = m; console.error('[Arcade] game frame error (skipped):', e); }
+      if (bad >= 30) { stop(); try { const h = A.crashed || window.WLOnCrash; h && h(e); } catch (e2) {} } } };
+  id = requestAnimationFrame(t); return stop; };
 A.overlayText = (g, w, h, big, small) => {
   g.fillStyle = 'rgba(1,86,64,0.82)'; g.fillRect(0,0,w,h);
   g.fillStyle = '#D5F367'; g.textAlign='center'; g.font = '700 34px '+A.font; g.fillText(big, w/2, h/2-8);
