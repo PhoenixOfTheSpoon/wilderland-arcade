@@ -54,7 +54,9 @@ const WLCloud = {
     const k = game + '@' + SEASON; if ((POSTED[k] || 0) >= s2) return Promise.resolve();
     const ref = doc(board(game), ME.uid);
     return runTransaction(db, async tx => { const cur = await tx.get(ref); const old = cur.exists() ? (cur.data().s || 0) : 0; POSTED[k] = Math.max(old, s2); if (old >= s2) return;
-      tx.set(ref, { ...row, uid: ME.uid, s: s2, ts: serverTimestamp() }); }); },
+      tx.set(ref, { ...row, uid: ME.uid, s: s2, ts: serverTimestamp() }); })
+      // (until the new database rules are published, the old ones only allow a new row per score)
+      .catch(e => { if (String(e && e.code).includes('permission')) return addDoc(board(game), { ...row, s: s2 }); throw e; }); },
   // Overall ticket board: ONE always-current row per player, kept on the player's own username record
   // (the existing rules let each player update the name they own). This replaced a row-per-game board that filled up
   // with one player's old rows and stopped showing everyone else.
@@ -129,7 +131,10 @@ const CHAT = collection(db, 'boards', '_chat', 'scores');
 WLCloud.chatListen = cb => onSnapshot(query(CHAT, orderBy('at', 'desc'), limit(60)), snap => { const hid = new Set(C.hiddenChat || []);
   cb(snap.docs.filter(d => !hid.has(d.id)).map(d => ({ id: d.id, ...d.data(), at: d.data().at && d.data().at.toMillis ? d.data().at.toMillis() : Date.now() })).reverse()); }, () => cb(null));
 WLCloud.chatSend = row => { if (!ME) return Promise.reject(Object.assign(new Error('login'), { code: 'not-logged-in' })); const b = writeBatch(db);
-  b.set(doc(db, 'chatRate', ME.uid), { ts: serverTimestamp() }); b.set(doc(CHAT), { ...row, uid: ME.uid, s: 0, d: new Date().toISOString().slice(0, 10), at: serverTimestamp() }); return b.commit(); };
+  const msg = { ...row, uid: ME.uid, s: 0, d: new Date().toISOString().slice(0, 10), at: serverTimestamp() };
+  b.set(doc(db, 'chatRate', ME.uid), { ts: serverTimestamp() }); b.set(doc(CHAT), msg);
+  // (until the new database rules are published, the old ones don't know chatRate; then a plain message still works)
+  return b.commit().catch(e => { if (String(e && e.code).includes('permission') && !C.rulesV2) return addDoc(CHAT, msg); throw e; }); };
 WLCloud.chatOff = () => !!C.chatOff;
 WLCloud.setChatOff = off => ctrlSet({ chatOff: !!off });
 WLCloud.report = m => ME ? addDoc(collection(db, 'reports'), { mid: String(m.id || ''), t: String(m.t || '').slice(0, 200), u: String(m.u || '').slice(0, 16), uid: String(m.uid || ''), by: ME.uid, byU: String(m.byU || '').slice(0, 16), at: serverTimestamp() }) : Promise.reject(Object.assign(new Error('login'), { code: 'not-logged-in' }));
