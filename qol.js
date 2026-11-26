@@ -9,7 +9,8 @@ const el = (tag, at, ...kids) => { const n = document.createElement(tag); at = a
   kids.flat().forEach(c => { if (c == null || c === false) return; n.appendChild(typeof c == 'object' ? c : document.createTextNode(String(c))); }); return n; };
 
 // ---------------- What's new ----------------
-const WN = {v:'2026-12-11', items:[
+const WN = {v:'2026-12-12', items:[
+  ['🦎', 'The Dumpling Saga', 'After Spirits of the Snow: a new 9-chapter main story across 8 new lands (Expedition Board at camp). Climb cliffs, glide with the Snow Cloak, sled, swim, solve 66 Ice Shrines, cook at campfires, collect Frost Feathers, and face Dumpling, the sealed gecko king. Press J for the saga journal.'],
   ['⚪', 'Way faster snowballs', 'Snowballs come back much faster: new Snow Factory skill, Snow Well room, Bottomless Mitten and Snow Globe Charm in the village shop, a Snow Machine upgrade that refills you anywhere, Fast Scoop up to level 10, knockouts hand snowballs back, and a ×3 refill when you pause throwing.'],
   ['⚒️', 'Forge gear', 'Forge any gear piece you want in Snowball → Loadout, or at your Ice Fort (the Forge is now the first row and builds itself with one tap). Fuse 3 spare pieces into 1 rarer one.'],
   ['📗', 'Snow Kingdom side stories', 'Ten new side quests after Loki and Spirits of the Snow: The Great Snack Heist, Trials of the Royal Guard, Loki’s Lost Ball, Bau Bau’s Memories, The Cat Nobody Knew, Teammate Tales and The Frozen Bard. Look for the purple ! and open your journal with J.'],

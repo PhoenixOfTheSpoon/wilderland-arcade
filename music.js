@@ -26,6 +26,10 @@ const MOODS = {
   // super dramatic (original): last life, and boss fights — they take over from the game's own tune until it's over
   danger: {root:57, sc:HARM,bpm:168, prog:[0,5,6,4], lead:'sawtooth', arp:'square',   bass:'sawtooth', drums:3, seed:66, vol:.8},
   boss:   {root:52, sc:PHRY,bpm:150, prog:[0,1,0,6], lead:'sawtooth', arp:'sawtooth', bass:'square',   drums:3, seed:91, vol:.8},
+  // Dumpling's theme: the same tune, more intense each time (original)
+  dump1:  {root:50, sc:HARM,bpm:128, prog:[0,5,1,4], lead:'square',   arp:'triangle', bass:'square',   drums:2, seed:203, vol:.85},
+  dump2:  {root:50, sc:HARM,bpm:148, prog:[0,5,1,4], lead:'sawtooth', arp:'square',   bass:'sawtooth', drums:3, seed:203, vol:.8},
+  dump3:  {root:50, sc:HARM,bpm:170, prog:[0,5,1,6], lead:'sawtooth', arp:'sawtooth', bass:'sawtooth', drums:3, seed:203, vol:.78},
 };
 const mtof = m => 440 * Math.pow(2, (m-69)/12);
 const rnd = seed => () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
