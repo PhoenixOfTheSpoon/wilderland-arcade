@@ -244,8 +244,9 @@ A.snowWorld = function(X) {
   // ---------- the quest arrow ----------
   const goal = () => { if (raid) { const f = raid.open == 0 ? 'Floor 1: step on the rune plates in order (' + raid.step + '/4)' : raid.open == 1 ? 'Floor 2: defeat the guardian' : 'Floor 3: defeat ' + BOSS[raid.R.boss].n.toLowerCase().replace(/\b\w/g, m => m.toUpperCase()); const tg = raid.open == 0 ? rpx(raid.plates[raid.order[raid.step]].x, raid.plates[raid.order[raid.step]].y) : raid.open == 1 ? rpx(20, 14) : rpx(20, 23); return {...tg, n:'⚔ ' + raid.R.n + ' · ' + f}; }
     if (siege) return {x:BELL.x, y:BELL.y, n:siege.phase == 'build' ? '⚔ Siege: build snow turrets at the glowing spots (' + Math.ceil(siege.t) + ' s)' : '⚔ Siege: protect the village bell · wave ' + siege.wave + '/5 · bell ' + Math.ceil(siege.hp) + '/' + siege.max};
+    if (W.sqTrack) { const sg = sqGoal(); if (sg) return sg; }
     if (!W.met) return {x:PIP.x, y:PIP.y, n:'Talk to Old Pip at Camp Cocoa'};
-    if (W.bau) return storyGoal();
+    if (W.bau) return storyGoal() || sqGoal() || sqNext();
     if (W.loki) return {x:BAUCAGE.x, y:BAUCAGE.y, n:'Open Lord Emperor Bau Bau’s cage'};
     if (gateOpen()) return {x:LAIR.loki.x, y:LAIR.loki.y, n:'Storm the Shadow Castle and defeat Loki the Evil Sorcerer'};
     const left = []; if (!W.mau) left.push({...LAIR.rufus, n:'Free Royal Guard Mau Mau at Howling Pass'});
@@ -835,6 +836,7 @@ A.snowWorld = function(X) {
   const throwBall = () => { if (!W.lball) return; if (lballCd > 0) { say('🎾 Loki’s Ball is coming back… ' + Math.ceil(lballCd) + ' s', 1.2); return; } const wa = toWorld(aim), a = Math.atan2(wa.y - p.y, wa.x - p.x); lb.x = p.x; lb.y = p.y - 10; lb.vx = Math.cos(a)*520; lb.vy = Math.sin(a)*520; lballT = 6; lballCd = 18; A.sfx('blip'); say('🎾 Go get it!', 1.4); };
   const lballLure = () => lballT > 0 ? lb : null;
   // ---------- quest arrow ----------
+  const sqNext = () => { const av = SQK.filter(id => !W.sqD[id] && W.sq[id] == null && SQ[id].avail()).map(id => ({id, ...spot(SQ[id].giver[0], SQ[id].giver[1])})); if (!av.length) return null; av.sort((a, b) => dist(a, p) - dist(b, p)); return {x:av[0].x, y:av[0].y, n:'📗 New side story: ' + SQ[av[0].id].n + ' (purple !)'}; };
   const sqGoal = () => { const ids = W.sqTrack && sqStep(W.sqTrack) ? [W.sqTrack] : SQK.filter(id => sqStep(id) && !sqStep(id).optional); for (const id of ids) { const Q = SQ[id], s2 = sqStep(id); const pre = '📗 ' + Q.n + ' · ';
       if (chase && chase.id == id) return {x:chase.x, y:chase.y, n:pre + 'Catch the thief!'};
       if (course && course.id == id) return {...course.pts[course.i], n:pre + 'Flag ' + course.i + '/' + (course.pts.length - 1) + ' · ' + Math.ceil(course.t) + ' s'};
