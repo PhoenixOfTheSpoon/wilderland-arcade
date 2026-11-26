@@ -188,7 +188,8 @@ WW.attach = a => { api = a; ensureCss(); if (WW._t) return; WW._t = setInterval(
 const tick = () => { if (!api) return; const P = api.P(); if (!P || (api.ready && !api.ready()) || (api.admin && api.admin())) return;
   if (P.founderChk) return; const founding = Date.now() < FOUNDER_CUTOFF && ((P.earned||0) > 0 || (P.rebirths||0) > 0 || Object.keys(P.played||{}).length > 0);
   api.setP({founderChk:1, ...(founding ? {wonders:{...own(P), fpin:1}} : {})});
-  if (founding) setTimeout(() => show(FOUNDER[0], 1, 'YOU’RE A FOUNDER!'), 1500); };
+  let seen = false; try { seen = localStorage.getItem('wl-founder-shown') == '1'; localStorage.setItem('wl-founder-shown', '1'); } catch(e) {}
+  if (founding && !seen) setTimeout(() => show(FOUNDER[0], 1, 'YOU’RE A FOUNDER!'), 1500); };
 
 // ---------------- styles ----------------
 let cssDone = false;

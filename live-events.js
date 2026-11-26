@@ -396,7 +396,7 @@ L.history = async () => { css(); const o = el('div', {cls:'wlx-ov'}), card = el(
 // write would be refused by the Firestore rules.)
 // =====================================================================================================
 const log = []; let pnl = null, chaosTimer = null, chaosUntil = 0, onlineRows = null, onlineAt = 0;
-const addLog = s => { log.unshift(new Date().toLocaleTimeString()+'  '+s); log.length = Math.min(log.length, 80); if (pnl) pnl.renderLog(); };
+const addLog = s => { const t = new Date().toLocaleTimeString(); if (log.length && log[0].slice(log[0].indexOf('  ') + 2).replace(/ \(×\d+\)$/, '') == s) { const m = log[0].match(/ \(×(\d+)\)$/); log[0] = t+'  '+s+' (×'+((m ? +m[1] : 1) + 1)+')'; } else log.unshift(t+'  '+s); log.length = Math.min(log.length, 80); if (pnl) pnl.renderLog(); };
 const mutate = async fn => { const cur = norm(await ev().get()); fn(cur); const t = now();
   cur.list = cur.list.filter(e => e.t1 > t - 15*60000);   // finished events stay 15 min so late tabs still hand out rewards, then drop off
   cur.open = cur.list.filter(e => (e.k == 'boss' || e.k == 'avs' || e.k == 'tourney') && e.t1 > t - 60000).map(e => e.id);
@@ -439,6 +439,7 @@ L.panel = () => { if (!api) return; if (!isMeAdmin()) { api.toast('ADMIN ABUSE I
   let logBox = null, onlineBox = null, runBox = null;
   const render = () => { card.innerHTML = ''; const m = ev() && ev().me();
     card.append(el('div', {cls:'wlx-row'}, el('div', {cls:'wlx-h1'}, '👑 Admin Abuse'), el('span', {cls:'wlx-pill'}, adminReady() ? '✅ '+ADMIN+' via Google' : '⚠️ not ready'), el('button', {cls:'wlx-x', onclick:close}, '✕')));
+    if (adminReady() && rulesOff) card.append(el('div', {cls:'wlx-warn', style:{background:'#ffe3e0', borderColor:'#c8102e'}}, el('b', null, '⚠️ The new database rules aren’t published yet, so the database refuses every event. '), 'Firebase console → project arcade-14b1a → Firestore Database → Rules → paste everything from firestore.rules (GitHub repo) → Publish. Then reopen this panel (F9).'));
     if (!adminReady()) card.append(el('div', {cls:'wlx-warn'}, m && m.email == ADMIN && !m.google ? 'You’re logged in as '+ADMIN+' with a password. Events need the Google account: log out, then use “Continue with Google” as '+ADMIN+'.' : 'Log in with Google as '+ADMIN+' (Menu → Account) to run events. The database only accepts events from that account.'));
     onlineBox = el('div'); runBox = el('div'); card.append(el('div', {cls:'wlx-sec'}, 'ONLINE NOW'), onlineBox);
     const durIn = el('input', {type:'range', min:1, max:30, value:dur}), durL = el('b', null, dur+' min'); durIn.oninput = () => { dur = +durIn.value; durL.textContent = dur+' min'; };
@@ -463,9 +464,10 @@ L.panel = () => { if (!api) return; if (!isMeAdmin()) { api.toast('ADMIN ABUSE I
   const renderRun = () => { if (!runBox) return; const rows = S.list.filter(e => e.t1 > now()).sort((a, b) => a.t0 - b.t0); runBox.innerHTML = '';
     runBox.append(rows.length ? el('div', {cls:'wlx-list'}, rows.map(e => { const P = plays[e.id]; return el('div', {cls:'it'}, el('span', {style:{fontSize:'20px'}}, evIcon(e)), el('div', {style:{flex:1}}, el('b', null, evName(e)), ' ', e.k == 'code' ? el('span', {cls:'wlx-pill'}, 'code '+(e.o||{}).code) : null, (e.k == 'boss' || e.k == 'avs') && P ? el('span', {cls:'wlx-pill'}, fmt(total(e))+' / '+fmt(bossHp(e))+' HP done') : null, e.k == 'tourney' && P ? el('span', {cls:'wlx-pill'}, ranks(e).length+' players') : null),
       el('span', {style:{fontSize:'12px', fontWeight:700}}, e.t0 > now() ? 'starts in '+mmss(e.t0 - now()) : mmss(e.t1 - now())+' left'), el('button', {cls:'wlx-btn red', style:{padding:'5px 10px'}, onclick:() => endEv(e.id).then(render).catch(err)}, 'End')); })) : el('div', {style:{fontSize:'13px', color:'#4a4a4a'}}, 'No events running.')); };
-  const renderOnline = () => { if (!onlineBox) return; onlineBox.innerHTML = ''; if (!onlineRows) { onlineBox.textContent = adminReady() ? 'Checking…' : 'Log in with Google to see who’s online.'; return; }
+  const renderOnline = () => { if (!onlineBox) return; onlineBox.innerHTML = ''; if (!onlineRows) { onlineBox.textContent = !adminReady() ? 'Log in with Google to see who’s online.' : rulesOff ? 'Can’t check yet: publish the new database rules first.' : 'Checking…'; return; }
     const G = id => id ? gameTitle(id) : 'arcade floor'; onlineBox.append(el('div', {style:{fontWeight:900, fontSize:'15px'}}, '🟢 '+onlineRows.length+' signed-in player'+(onlineRows.length == 1 ? '' : 's')+' online'), el('div', null, onlineRows.map(r => el('span', {cls:'wlx-pill'}, (r.u || 'player')+' · '+G(r.g)))), el('div', {style:{fontSize:'11px', color:'#4a4a4a'}}, 'Players who aren’t logged in still see every event, they just don’t show up in this list.')); };
-  const pollOnline = async () => { if (!adminReady()) return; try { onlineRows = await ev().online(); onlineAt = Date.now(); } catch(x) { onlineRows = []; err(x); } renderOnline(); };
+  let rulesOff = false;
+  const pollOnline = async () => { if (!adminReady()) return; onlineAt = Date.now(); try { onlineRows = await ev().online(); rulesOff = false; } catch(x) { onlineRows = null; if (String(x && (x.code || x.message)).includes('permission')) { if (!rulesOff) { rulesOff = true; render(); } } else err(x); } renderOnline(); };
   const iv = setInterval(() => { renderRun(); if (Date.now() - onlineAt > 20000) pollOnline(); }, 1000);
   pnl = {render, renderLog}; render(); pollOnline(); setTimeout(() => { if (pnl) document.addEventListener('keydown', kd, true); }, 0); o.onclick = e2 => { if (e2.target === o) close(); }; document.body.appendChild(o);
   if (adminReady() && !(S.admin && S.admin.name)) setAdmin({name:api.uname() || 'jonah', av:api.myAv()}).catch(() => {}); };

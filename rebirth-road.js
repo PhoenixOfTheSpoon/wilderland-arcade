@@ -332,7 +332,8 @@ R.attach = a => { api = a; ensureCss(); wrapTitles(); if (R._t) return;
 const tick = () => { if (!api) return; const P = api.P(); if (!P || (api.ready && !api.ready())) return; wrapTitles();
   if (api.admin && api.admin()) return;
   if (!P.rbAt) { api.setP({rbAt:Date.now(), rbEarned:P.earned||0}); return; }
-  if (!P.road) { const list = R.pending(P); api.setP(grantPatch(P, list)); if (list.length) queue(() => welcome(list)); return; }
+  // the catch-up welcome shows once per device, even if an old (cloud) copy of the save without the road ever loads again
+  if (!P.road) { const list = R.pending(P); api.setP(grantPatch(P, list)); let seen = false; try { seen = localStorage.getItem('wl-road-welcomed') == '1'; localStorage.setItem('wl-road-welcomed', '1'); } catch(e) {} if (list.length && !seen) queue(() => welcome(list)); return; }
   const pend = R.pending(P); if (pend.length && !(api.busy && api.busy())) { api.setP(grantPatch(P, pend)); queue(() => celebrate(pend)); refresh(); } };
 R.debug = {celebrate, welcome, grantPatch, cum};
 
