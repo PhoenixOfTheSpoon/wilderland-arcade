@@ -81,6 +81,14 @@ A.init = ctx => { if (FAM.length) return; const G = ctx.games || [], NG = G.leng
   sp('evStorm','🎟','Caught in the Storm', n => 'Catch '+n+' tickets in a Ticket Storm', s => sm(s,'evStorm'), [1,50,250,1000]);
   sp('evBoss','👹','Boss Slayer', n => 'Help defeat '+n+' World Boss'+(n==1?'':'es'), s => sm(s,'evBoss'), [1,5,15,40]);
   sp('evTourney','🏁','Flash Champion', n => 'Finish in the top 3 of '+n+' Flash Tournament'+(n==1?'':'s'), s => sm(s,'evTourney'), [1,3,10]);
+  sp('sqHeist','🍪','Snack Detective', n => 'Solve The Great Snack Heist', s => mx(s,'sqHeist'), [1], {titles:{0:'Snack Detective'}});
+  sp('sqTrials','🛡️','Royal Guard', n => 'Pass the Trials of the Royal Guard', s => mx(s,'sqTrials'), [1], {titles:{0:'Royal Guard'}});
+  sp('sqLoki','🎾','Good Boy', n => 'Find Loki’s Lost Ball', s => mx(s,'sqLoki'), [1], {titles:{0:'Ball Finder'}});
+  sp('sqBau','📔','Memory Keeper', n => 'Walk through Bau Bau’s Memories', s => mx(s,'sqBau'), [1], {titles:{0:'Memory Keeper'}});
+  sp('sqMow','🏷️','The Cat Nobody Knew', n => 'Help Little Mow’s spirit learn who he was', s => mx(s,'sqMow'), [1], {titles:{0:'Friend of Strays'}});
+  sp('sqTeam','🤝','Teammate Tales', n => 'Finish '+n+' Teammate Tale'+(n==1?'':'s'), s => mx(s,'sqTeam'), [1,2,3,4], {titles:{3:'Team Captain'}});
+  sp('sqBard','🎵','The Frozen Bard', n => 'Find all of Wren’s song pages', s => mx(s,'sqBard'), [1], {titles:{0:'Muse of the Snow'}});
+  sp('sqAll','📚','Storyteller', n => 'Finish every Snow Kingdom side story', s => mx(s,'sqAll'), [1], {titles:{0:'Storyteller'}});
   sp('snowSiege','🔔','Bell Defender', n => 'Win '+n+' village siege'+(n==1?'':'s'), s => sm(s,'snowSiege'), [1,3,10,25]);
   sp('snowRaids','⚔️','Raid Party', n => 'Beat '+n+' raid boss'+(n==1?'':'es'), s => sm(s,'snowRaids'), [1,5,15,40,100]);
   sp('snowKLv','📈','Kingdom Hero', n => 'Reach kingdom level '+n, s => mx(s,'snowKLv'), [5,10,20,35]);

@@ -16,6 +16,13 @@ const MOODS = {
   mines:  {root:64, sc:MIN, bpm:100, prog:[0,3,6,4], lead:'triangle', arp:'square',   bass:'triangle', drums:1, seed:12, vol:1},
   calm:   {root:67, sc:PENT,bpm:84,  prog:[0,3,4,2], lead:'sine',     arp:'triangle', bass:'sine',     drums:0, seed:3,  vol:1.1},
   story:  {root:62, sc:MIN, bpm:76,  prog:[0,5,3,4], lead:'triangle', arp:'sine',     bass:'sine',     drums:0, seed:44, vol:1.1},
+  // Wren the Frozen Bard's six songs (Snow Kingdom side story "The Frozen Bard")
+  bard1:  {root:64, sc:MAJ, bpm:96,  prog:[0,3,4,0], lead:'triangle', arp:'sine',     bass:'triangle', drums:0, seed:101, vol:1.05},
+  bard2:  {root:69, sc:PENT,bpm:72,  prog:[0,5,3,4], lead:'sine',     arp:'triangle', bass:'sine',     drums:0, seed:117, vol:1.1},
+  bard3:  {root:60, sc:MAJ, bpm:120, prog:[0,4,0,4], lead:'square',   arp:'triangle', bass:'square',   drums:1, seed:131, vol:.95},
+  bard4:  {root:62, sc:DOR, bpm:88,  prog:[0,6,3,4], lead:'triangle', arp:'sine',     bass:'triangle', drums:0, seed:149, vol:1.05},
+  bard5:  {root:57, sc:MIN, bpm:116, prog:[0,5,6,4], lead:'square',   arp:'square',   bass:'triangle', drums:1, seed:163, vol:.95},
+  bard6:  {root:65, sc:MAJ, bpm:104, prog:[0,4,5,3], lead:'sawtooth', arp:'triangle', bass:'triangle', drums:1, seed:181, vol:.9},
   // super dramatic (original): last life, and boss fights — they take over from the game's own tune until it's over
   danger: {root:57, sc:HARM,bpm:168, prog:[0,5,6,4], lead:'sawtooth', arp:'square',   bass:'sawtooth', drums:3, seed:66, vol:.8},
   boss:   {root:52, sc:PHRY,bpm:150, prog:[0,1,0,6], lead:'sawtooth', arp:'sawtooth', bass:'square',   drums:3, seed:91, vol:.8},

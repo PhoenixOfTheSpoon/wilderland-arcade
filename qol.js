@@ -9,7 +9,8 @@ const el = (tag, at, ...kids) => { const n = document.createElement(tag); at = a
   kids.flat().forEach(c => { if (c == null || c === false) return; n.appendChild(typeof c == 'object' ? c : document.createTextNode(String(c))); }); return n; };
 
 // ---------------- What's new ----------------
-const WN = {v:'2026-12-09', items:[
+const WN = {v:'2026-12-10', items:[
+  ['📗', 'Snow Kingdom side stories', 'Ten new side quests after Loki and Spirits of the Snow: The Great Snack Heist, Trials of the Royal Guard, Loki’s Lost Ball, Bau Bau’s Memories, The Cat Nobody Knew, Teammate Tales and The Frozen Bard. Look for the purple ! and open your journal with J.'],
   ['👑', 'Admin events', 'Live events for everyone online at once: Ticket Storms, Multiplier Madness, Gift Drops, World Bosses you hit by playing any game, Flash Tournaments, disco, frogs and more. See them in Menu → Admin events. Calm visuals: Menu → Settings.'],
   ['❄️', 'Snow Kingdom: raids & sieges', 'Five raid dungeons with rune puzzles, guardians and big bosses (Empowered Loki is in the Sunken Library) that reset every week with new modifiers. Defend Frostpine Village from catapults, rams and giant snowmen alongside Royal Guard Mau Mau.'],
   ['🏰', 'Your Ice Fort', 'Grow your base from Snow Camp to Crystal Castle and build rooms that boost you everywhere. Plus kingdom levels with a skill tree (K), mounts (V), a dodge-roll (Shift), team combos and % explored per land on the map.'],

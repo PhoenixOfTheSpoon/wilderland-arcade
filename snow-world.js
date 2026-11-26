@@ -181,7 +181,7 @@ A.snowWorld = function(X) {
   // hidden snacks all over the kingdom: only Mau Mau can sniff them out
   const SNACKS = (() => { const out = []; let sd = 77; const rnd = () => (sd = (sd*16807) % 2147483647) / 2147483647; for (let k = 0; out.length < 36 && k < 4000; k++) { const x = 4 + Math.floor(rnd()*(N - 8)), y = 4 + Math.floor(rnd()*(N - 8)), v = tileAt(x, y); if (SOLID[v] || v == HOLE || regionAt(x, y) == 'camp' || out.some(o => Math.hypot(o.tx - x, o.ty - y) < 7)) continue; out.push({id:out.length, tx:x, ty:y, x:(x + .5)*TS, y:(y + .5)*TS, e:['🐟', '🍗', '🧀', '🥛'][out.length % 4]}); } return out; })();
   const feedMau = () => { if (!W.mau) { say('Free Royal Guard Mau Mau first. He’s caged at Howling Pass', 2.4); return; } if ((W.treats||0) <= 0) { say('🐟 No treats! Chests, enemies and Mau Mau’s nose (“!”) find more', 2.6); mauSay('Was that... a no-snack button?', 2.2); A.sfx('bad'); return; }
-    W.treats--; mau.st2 = 'dance'; mau.stT = 2.8; buffT = 20 + 5*RL('pantry'); p.hp = Math.min(p.max, p.hp + 2); mates.forEach(m => { if (!m.ko) m.hp = m.max; }); splat(mau.x, mau.y - 10, 18, '#F9BF01'); A.sfx('win');
+    W.treats--; mau.st2 = 'dance'; mau.stT = 2.8; buffT = (20 + 5*RL('pantry')) * (W.spoon ? 2 : 1); p.hp = Math.min(p.max, p.hp + 2); mates.forEach(m => { if (!m.ko) m.hp = m.max; }); splat(mau.x, mau.y - 10, 18, '#F9BF01'); A.sfx('win');
     mauSay(['Om nom nom! ROYAL POWER!', 'This fish was guarded... into my belly.', 'Royal Guard rule #1: never skip lunch!', 'Mmm! The team feels STRONGER!'][Math.floor(Math.random()*4)], 3); say('🐟 Mau Mau ate a treat! The team hits harder for 20 seconds, +♥', 2.6); X.stat('snowFeed', 1, 'add'); save(); };
   // teammates from your upgrades (Upgrade Workshop teammates + Snow Friends, levelled by Team Captain) come along too
   const MI = X.mates ? X.mates() : {n:0, lv:1, names:[]}, ROLES = ['thrower', 'builder', 'medic'], RCOL = {thrower:'#2fa8e0', builder:'#64CDF5', medic:'#ff9ad5'}, RE = {thrower:'🎯', builder:'🔨', medic:'➕'};
@@ -189,9 +189,10 @@ A.snowWorld = function(X) {
   const mateHome = () => mates.forEach((m, i) => { m.x = p.x + (i - 1.5)*30; m.y = p.y + 40; });
   let sticks = [], tornado = null, blizzard = 0, blizT = 120 + Math.random()*180, regMood = '';
   // day and night: one full day every 12 minutes (night = darker, northern lights in the sky)
-  const nightAmt = () => { const ph = (Date.now()/720000) % 1; return Math.max(0, Math.min(1, (Math.cos(ph*TAU) + .25)*1.2)) * .9; };
+  let sqNightF = false;
+  const nightAmt = () => { if (sqNightF) return .85; const ph = (Date.now()/720000) % 1; return Math.max(0, Math.min(1, (Math.cos(ph*TAU) + .25)*1.2)) * .9; };
   let foes = [], balls = [], fx = [], nums = [], drops = [], boss = null, dlg = null, mapOpen = false, travel = false, quiz = false, msg = '', msgT = 0, t = 0, score = 0;
-  let saveT = 10, revealT = 0, spawnT = 1, dead = 0, lastReg = '', gateT = 0, lokiReady = !!W.bau, charge = null, aim = {x:300, y:200}, mouseIn = false, healT = 0;
+  let saveT = 10, revealT = 0, spawnT = 1, dead = 0, lastReg = '', gateT = 0, lokiReady = !!W.bau, lokiSpar = false, charge = null, aim = {x:300, y:200}, mouseIn = false, healT = 0;
   const pads = new Map(); const pad = k => { for (const v of pads.values()) if (v == k) return 1; return 0; };
   const cam = {x:0, y:0};
   const say = (s2, d = 2.6) => { msg = s2; msgT = d; };
@@ -236,8 +237,8 @@ A.snowWorld = function(X) {
     for (const ch of chests) if (!W.chests[ch.id]) L.push({x:ch.x, y:ch.y, n:'Open', f:() => openChest(ch)});
     if (W.loki && !W.bau) L.push({x:BAUCAGE.x, y:BAUCAGE.y, n:'Free', f:freeBau});
     if (W.bau) L.push({x:THRONE.x, y:THRONE.y, n:'Talk', f:talkBau});
-    if (W.mau) L.push({x:mau.x, y:mau.y, n:'Talk', f:talkMau, quiet:1});   // tap Mau Mau to chat; he follows you, so no pop-up label
-    return p3Things(storyThings(L)); };
+    if (W.mau && !(boss && boss.k == 'sq_mau')) L.push({x:mau.x, y:mau.y, n:'Talk', f:talkMau, quiet:1});   // tap Mau Mau to chat; he follows you, so no pop-up label
+    return sqThings(p3Things(storyThings(L))); };
   const nearThing = () => { let best = null, bd = 74; for (const T2 of things()) { if (T2.quiet) continue; const d = dist(T2, p); if (d < bd) { bd = d; best = T2; } } return best; };
   const use = () => { if (dlg) return nextLine(); const T2 = nearThing(); if (T2) T2.f(); };
   // ---------- the quest arrow ----------
@@ -278,12 +279,12 @@ A.snowWorld = function(X) {
       if (!X.learn2('SNOWED UNDER! ANSWER RIGHT TO GET BACK UP RIGHT HERE', () => { quiz = false; p.hp = Math.ceil(p.max/2); p.inv = 2.5; say('Back on your feet!', 1.6); }, () => { quiz = false; dead = 1.8; say('❄ Snowed under! Waking up at Camp Cocoa...', 2.4); A.sfx('over'); })) quiz = false; } };
   const respawn = () => { if (siege) siegeEnd(false); raid = null; riding = false; tornado = null; sticks = []; p.stick = 0; p.x = CAMPX.x; p.y = CAMPX.y; p.vx = p.vy = 0; p.hp = p.max; p.inv = 2.5; p.ammo = X.maxAmmo(); foes = []; balls = []; if (boss) { boss = null; } mau.x = p.x - 40; mau.y = p.y + 10; mates.forEach(m => { m.ko = 0; m.hp = m.max; }); mateHome(); save(); say('🏕 Back at Camp Cocoa. Everything you found is safe!', 3); };
   // ---------- bosses ----------
-  const bossDone = k => k == 'loki' ? (W.loki > 0 && !lokiReady) : (BOSS[k].ai || k == 'chao') ? storyDone(k) : !!W.down[k];
+  const bossDone = k => k == 'loki' ? (W.loki > 0 && !lokiReady) || (W.lokiReformed && !lokiSpar) : (BOSS[k].ai || k == 'chao') ? storyDone(k) : !!W.down[k];
   const phOf = (hp, max, np) => Math.min(np, 1 + Math.floor((1 - Math.max(0, hp)/max) * np));
   const spawnBoss = k => { W.bhp = W.bhp || {}; const B = BOSS[k], H = LAIR[k], hp = B.hp * A.D(.8, 1, 1.2) * (1 + .05*(X.lv() - 1)) * (k == 'loki' && W.loki ? 1.15 : 1);
     const left = W.bhp[k] != null ? Math.max(1, Math.min(hp, W.bhp[k])) : hp;
     const np = B.phases || 3; boss = {k, n:B.n, x:H.x, y:H.y - 40, hx:H.x, hy:H.y, hp:left, max:hp, r:B.r, phases:np, ph:phOf(left, hp, np), cd:2, t:0, st:'walk', a:0, sum:6, tp:4, ring:3, rock:3, flash:0, talk:B.intro, talkT:4.5, castT:0};
-    if (k == 'loki' || k == 'loki2') { boss.phn = LOKI_PH[boss.ph]; sticks = []; if (W.loki) boss.talk = 'Loki: “Back for more? Wonderful! I do love an audience.”'; }
+    if (k == 'loki' || k == 'loki2') { boss.phn = LOKI_PH[boss.ph]; sticks = []; if (W.loki) boss.talk = W.lokiReformed ? 'Loki: “A practice match? Yay! I’ll go easy on you. (I will not go easy on you.)”' : 'Loki: “Back for more? Wonderful! I do love an audience.”'; }
     if (left < hp) { say('💪 ' + BOSS[k].n.toLowerCase().replace(/\b\w/g, m => m.toUpperCase()) + ' is still hurt from last time!', 2.6); } A.sfx('bad'); };
   const hurtBoss = dmg => { const B = boss; if (!B) return; if (B.fetch && B.fetch.t > 0) dmg *= 2; B.hp -= dmg; W.bhp = W.bhp || {}; W.bhp[B.k] = Math.max(0, B.hp); B.flash = .1; addNum(B.x + (Math.random() - .5)*30, B.y - B.r - 10, '-' + Math.round(dmg*10)/10, '#FF4539');
     if (B.fetch && B.fetch.t > 0) dmg *= 1;   // (fetching doubles damage, applied by the caller below)
@@ -297,8 +298,8 @@ A.snowWorld = function(X) {
     if (raidBossDown(B)) { cheerT = 2.5; shakeV = 8; save(); return; }
     if (B.k == 'chao') { chaoFade = {x:B.x, y:B.y, t:5}; A.tone(440, 1.2, 'sine', .03); X.stat('snowGuard', 1, 'add'); save(); return; }
     splat(B.x, B.y, 40, '#ffe9a0'); A.sfx('win'); X.stat('snowGuard', 1, 'add');
-    cheerT = 2.5; shakeV = 8; if (BOSS[B.k].ai) { if (B.k == 'snowking') { W.down.snowking = 1; give({frost:20, xp:80}); say('👑 The Siege King melts away!', 2.6); save(); return; } storyBossDown(B); save(); return; }
-    if (B.k == 'loki') { const first = !W.loki; W.loki = (W.loki || 0) + 1; lokiReady = false; X.stat('snowLoki', 1, 'add');
+    cheerT = 2.5; shakeV = 8; if (BOSS[B.k].ai) { if (sqBossDown(B)) { save(); return; } if (B.k == 'snowking') { W.down.snowking = 1; give({frost:20, xp:80}); say('👑 The Siege King melts away!', 2.6); save(); return; } storyBossDown(B); save(); return; }
+    if (B.k == 'loki') { const first = !W.loki; W.loki = (W.loki || 0) + 1; lokiReady = false; lokiSpar = false; X.stat('snowLoki', 1, 'add');
       const it = give(first ? {frost:40 + X.PU('frost'), flakes:600, xp:120, score:4000, gear:3} : {frost:15 + X.PU('frost'), flakes:250, xp:60, score:1500, gear:Math.random() < .4 ? 2 : null});
       tornado = null; sticks = [];
       if (first) talk([['Loki the Evil Sorcerer', 'loki', 'Aroooo! My beautiful robe is SOAKED! Fine. FINE. You win... this time.', 'sad'], ['Loki the Evil Sorcerer', 'loki', '*Loki trots off into the snow. His tail is still wagging a tiny bit.*', 'smug'], [...MAUF, 'He dropped the cage key! Quick, open Lord Emperor Bau Bau’s cage! ...Is anyone else hungry?', 'happy']], save);
@@ -432,8 +433,8 @@ A.snowWorld = function(X) {
     frostbeard:{n:'CAPTAIN FROSTBEARD', hp:200, r:30, intro:'Captain Frostbeard: “Yarr! This shipwreck be haunted... by ME! And I be very bored!”', ai:{walk:70, spread:1.6, dash:1, summon:'goon', summonT:9}},
     serpent:{n:'THE AURORA SERPENT', hp:210, r:30, intro:'The Aurora Serpent ripples across the sky like the northern lights.', ai:{walk:110, spiral:1, spread:2.4}}});
   Object.assign(LAIR, {wraith:L2('hollow'), guardian:{x:121*TS, y:28.5*TS}, fog:{x:133.5*TS, y:48.5*TS}, elite_hurt:MEMS[0], elite_changed:MEMS[1], elite_ran:MEMS[2], chao:L2('peak'), echo:L2('peak'), yeti:L2('yeti'), giant:L2('ruins'), frostbeard:L2('coast'), serpent:L2('aurora')});
-  const storyReady = k => { const sp = W.sp|0; return k == 'wraith' ? sp == 1 : k == 'guardian' ? sp == 2 && (W.lan|0) >= 3 && dist(p, LAIR.guardian) < 230 : k == 'fog' ? sp == 3 && Object.keys(W.clue).length >= 3 : k.slice(0, 6) == 'elite_' ? sp == 4 && !!W.held && !W.mem[k.slice(6)] : k == 'chao' ? sp == 5 : k == 'echo' ? sp >= 6 && Date.now() > (W.echoAt||0) : true; };
-  const storyDone = k => k == 'wraith' ? (W.sp|0) >= 2 : k == 'guardian' ? (W.sp|0) >= 3 : k == 'fog' ? (W.sp|0) >= 4 : k.slice(0, 6) == 'elite_' ? !!W.down[k] : k == 'chao' ? (W.sp|0) >= 6 : k == 'echo' ? false : !!W.down[k];
+  const storyReady = k => { const sp = W.sp|0; if (k.slice(0, 3) == 'sq_') return sqReady(k); return k == 'wraith' ? sp == 1 : k == 'guardian' ? sp == 2 && (W.lan|0) >= 3 && dist(p, LAIR.guardian) < 230 : k == 'fog' ? sp == 3 && Object.keys(W.clue).length >= 3 : k.slice(0, 6) == 'elite_' ? sp == 4 && !!W.held && !W.mem[k.slice(6)] : k == 'chao' ? sp == 5 : k == 'echo' ? sp >= 6 && Date.now() > (W.echoAt||0) : true; };
+  const storyDone = k => k.slice(0, 3) == 'sq_' ? !sqReady(k) : k == 'wraith' ? (W.sp|0) >= 2 : k == 'guardian' ? (W.sp|0) >= 3 : k == 'fog' ? (W.sp|0) >= 4 : k.slice(0, 6) == 'elite_' ? !!W.down[k] : k == 'chao' ? (W.sp|0) >= 6 : k == 'echo' ? false : !!W.down[k];
   const storyBossDown = B => { const k = B.k;
     if (k == 'wraith') { give({frost:30, flakes:500, xp:100, score:3000, gear:3}); W.sp = 2; save(); talk([[...BAUF, 'These lights... they smell like home. Like the warm window on the porch.', 'sad'], [...BAUF, 'They’re pointing north, past the Old Road. To the old driveway. I remember it.', 'peaceful']], () => say('📖 Chapter 2: The Driveway Shrine · light its three spirit lanterns', 4)); return; }
     if (k == 'guardian') { give({frost:35, flakes:600, xp:110, score:3500, gear:3}); save(); shrineDone(); return; }
@@ -572,7 +573,7 @@ A.snowWorld = function(X) {
   let siege = null;
   Object.assign(FOE, {catapult:{n:'Snow Catapult', hp:8, sp:40, r:20, pts:90, siege:1, lob:1}, ram:{n:'Ice Ram', hp:7, sp:120, r:20, pts:80, siege:1, ram:1}, snowman:{n:'Giant Snowman', hp:22, sp:45, r:26, pts:150, siege:1, melee:2, big:1}});
   BOSS.snowking = {n:'THE SNOWMAN SIEGE KING', hp:240, r:36, intro:'The Snowman Siege King: “Your little bell will be MINE! Catapults, FIRE!”', ai:{walk:35, spread:2, ring:4.5, summon:'ram', summonT:8}};
-  const startSiege = () => { if (siege) return; const hpMax = Math.round(60*(1 + .25*RL('defenses'))); siege = {phase:'build', t:20, wave:0, hp:hpMax, max:hpMax, turrets:TSPOT.slice(0, RL('defenses')).map(s2 => ({...s2, cool:1})), guards:[{x:BELL.x - 60, y:BELL.y + 40, cool:1}, {x:BELL.x + 60, y:BELL.y + 40, cool:1.5}]};
+  const startSiege = () => { if (siege) return; const hpMax = Math.round(60*(1 + .25*RL('defenses'))); siege = {phase:'build', t:20, wave:0, hp:hpMax, max:hpMax, turrets:TSPOT.slice(0, RL('defenses')).map(s2 => ({...s2, cool:1})), guards:[{x:BELL.x - 60, y:BELL.y + 40, cool:1}, {x:BELL.x + 60, y:BELL.y + 40, cool:1.5}, ...(W.recruits ? [{x:BELL.x - 120, y:BELL.y - 10, cool:.8}, {x:BELL.x + 120, y:BELL.y - 10, cool:1.2}] : [])]};
     foes = []; talk([[...MAUF, 'ROYAL GUARD! Frostpine Village is under siege! Protect the village bell!', 'angry'], [...MAUF, 'You have 20 seconds to build snow turrets at the glowing spots. Then hold them off for 5 waves!', 'angry']]); };
   const siegeEnd = win => { const S2 = siege; siege = null; foes = foes.filter(f => !FOE[f.k].siege); if (win) { W.village = Math.min(5, W.village + 1); W.siegeWins = (W.siegeWins|0) + 1; const it = give({frost:30 + 10*W.village, flakes:800 + 300*W.village, xp:120, gear:Math.random() < .5 ? 3 : 4}); X.stat('snowSiege', 1, 'add'); save(); A.sfx('win');
       talk([[...MAUF, 'VICTORY! The bell still rings! Frostpine Village is safe!', 'happy'], [...NAR, 'Frostpine Village grew to level ' + W.village + '! The shop has new things. +' + (30 + 10*W.village) + ' Frost Crystals' + (it ? ' · ' + it.name : ''), '']]); }
@@ -671,6 +672,225 @@ A.snowWorld = function(X) {
   const roll = () => { if ((p.rollCd||0) > 0 || dead > 0) return; const kk = K.k; let mx = ((kk.ArrowRight || kk.d || kk.D) ? 1 : 0) - ((kk.ArrowLeft || kk.a || kk.A) ? 1 : 0), my = ((kk.ArrowDown || kk.s || kk.S) ? 1 : 0) - ((kk.ArrowUp || kk.w || kk.W) ? 1 : 0); const a = mx || my ? Math.atan2(my, mx) : p.face;
     p.roll = .26; p.rollCd = 1; p.vx = Math.cos(a)*640; p.vy = Math.sin(a)*640; p.inv = Math.max(p.inv, .32); A.tone(260, .06, 'triangle', .03); };
   let holdMates = false, cheerT = 0, shakeV = 0;
+  // =====================================================================================================
+  // SIDE STORIES — quest chains that run alongside the main story (after Loki / after Spirits of the Snow).
+  // Each chain is a list of steps: go (reach a place and talk), items (find things), chase, boss, waves, course.
+  // Saved in W.sq (current step), W.sqD (finished), W.sqI (items found), W.sqR (rewards granted, once each).
+  // =====================================================================================================
+  W.sq = W.sq || {}; W.sqD = W.sqD || {}; W.sqI = W.sqI || {}; W.sqR = W.sqR || {};
+  const spot = (tx, ty) => { for (let r = 0; r < 8; r++) for (let dy = -r; dy <= r; dy++) for (let dx = -r; dx <= r; dx++) { if (Math.max(Math.abs(dx), Math.abs(dy)) != r) continue; const x = tx + dx, y = ty + dy, v = tileAt(x, y); if (!SOLID[v] && v != HOLE && v != WATER && x >= 0 && x < N) return {x:(x + .5)*TS, y:(y + .5)*TS}; } return {x:(tx + .5)*TS, y:(ty + .5)*TS}; };
+  const RACQ = ['Rocco the Raccoon', 'rac'], BARDQ = ['Wren the Frozen Bard', 'bard'], LOKQ = ['Loki', 'loki'], VILQ = ['Villager', 'pip'], TEAMQ = n => [n, 'kid:' + n];
+  const TEAMCOL = {Maya:'#2fa8e0', Leo:'#64CDF5', Ava:'#ff9ad5', Sam:'#2fa8e0'};
+  const mateIdx = n => mates.findIndex(m => m.name == n);
+  const afterLoki = () => !!W.bau && (W.loki|0) > 0, afterSpirits = () => (W.sp|0) >= 6;
+  // ---------- the chains ----------
+  const SQ = {
+    heist:{e:'🍪', n:'The Great Snack Heist', who:'Mau Mau', tone:'funny', giver:[53, 89], avail:() => afterLoki() && !!W.mau, lock:'Defeat Loki and free Mau Mau first', reward:'Mau Mau’s Golden Spoon (food buffs last twice as long) · title “Snack Detective”',
+      intro:[[...MAUF, 'HERO. Code red. CODE RED. Someone has been stealing from the Royal Guard pantry.', 'angry'], [...MAUF, 'Three fish. Two cocoa biscuits. One entire wheel of snow cheese. GONE.', 'frightened'], [...MAUF, 'As Royal Guard, I am opening a very serious investigation. Detective Mau Mau, on the case.', 'happy']],
+      steps:[
+        {k:'items', g:'Search Camp Cocoa for clues', items:[
+          {at:[51, 90], e:'🍪', line:[[...MAUF, 'Clue one: cookie crumbs. Small ones. *sniff* ...Chocolate chip. *crunch* — I mean. Evidence. I have secured the evidence.', 'happy']]},
+          {at:[56, 87], e:'🐾', line:[[...MAUF, 'Tiny hand prints. Little fingers. Five of them. Who has HANDS and steals SNACKS?', 'surprised']]},
+          {at:[47, 85], e:'🧀', line:[[...MAUF, 'A bite mark in the cheese wheel. ...Hm. That one might be mine, actually. From earlier. For testing.', 'sad']]},
+          {at:[49, 92], e:'🎭', line:[[...MAUF, 'A tiny black mask! The thief wears a MASK. This is the most serious crime the kingdom has ever seen.', 'angry'], [...MAUF, 'Footprints lead west, toward Whisperpine Forest. After them! ...Right after I finish this biscuit.', 'happy']]}]},
+        {k:'chase', g:'Chase the masked thief toward the forest', path:[[46, 84], [40, 78], [33, 73], [26, 68], [21, 64]], e:'🦝', done:[[...RACQ, 'Eep! Okay, okay! You caught me! Nobody catches Rocco!', 'surprised'], [...RACQ, '...Except you, apparently. Boss! BOSS! We got company!', 'frightened']]},
+        {k:'boss', g:'Defeat the Raccoon Bandit King at the forest hideout', boss:'sq_raccoon', at:[19, 61], done:[[...RACQ, 'Fine, FINE! We give up! We were just hungry. Winter is long and the forest is empty.', 'sad'], [...MAUF, '...Hungry? You were hungry?', 'surprised'], [...MAUF, 'Hmph. The Royal Guard does not forgive thieves. ...But the Royal Guard does share snacks. Come by the camp. Bring plates.', 'happy']]},
+        {k:'go', g:'Report back to the Royal Guard pantry at Camp Cocoa', at:[53, 89], act:'Report', done:[[...MAUF, 'Case closed! The raccoons now have a weekly snack ration and a job: Assistant Pantry Guards.', 'happy'], [...MAUF, 'For your excellent detective work, you get the highest honor of the Royal Guard: my Golden Spoon.', 'peaceful'], [...MAUF, 'Food makes you stronger, and with this spoon, it lasts TWICE as long. Use it wisely. And often.', 'happy']]}],
+      finish:() => { W.spoon = 1; give({frost:40, flakes:1500, xp:150}); X.stat('sqHeist', 1, 'max'); return '🥄 Mau Mau’s Golden Spoon: food buffs last twice as long · title “Snack Detective”'; }},
+    trials:{e:'🛡️', n:'Trials of the Royal Guard', who:'Mau Mau', tone:'funny', giver:[47, 91], avail:() => afterLoki() && !!W.mau, lock:'Defeat Loki and free Mau Mau first', reward:'Royal Guard armor for you · Royal Guard recruits help in village sieges · title “Royal Guard”',
+      intro:[[...MAUF, 'Hero. You have fought bravely. You have eaten bravely. I think... you are ready.', 'peaceful'], [...MAUF, 'Ready to try out for THE ROYAL GUARD. Four trials. Obstacle course, shield drills, night watch, and a duel. With me.', 'happy'], [...MAUF, 'Do not worry. I will go easy on you. (I will not go easy on you.)', 'angry']],
+      steps:[
+        {k:'course', g:'Trial 1: run the obstacle course through every flag in time', pts:[[47, 88], [42, 86], [40, 81], [44, 77], [50, 76], [56, 79], [58, 84], [54, 92], [48, 94]], time:55, done:[[...MAUF, 'Fast feet! The Royal Guard approves. Mostly of your feet.', 'happy']]},
+        {k:'waves', g:'Trial 2: shield drills — hold the training yard against the practice squad', at:[47, 91], waves:[['goon', 'goon', 'goon'], ['goon', 'pup', 'goon', 'pup'], ['pup', 'pup', 'goon', 'goon', 'imp']], done:[[...MAUF, 'You held the line! That is what the shield is for. Also for snacks. It is a very good tray.', 'happy']]},
+        {k:'waves', g:'Trial 3: night watch — guard the lookout until dawn', at:[50, 78], night:1, waves:[['wisp', 'wisp', 'stormling'], ['wisp', 'wisp', 'stormling', 'wisp'], ['stormling', 'stormling', 'wisp', 'wisp', 'wisp']], done:[[...MAUF, 'The sun is up. You did not fall asleep once. I fell asleep twice. Do not tell anyone.', 'surprised']]},
+        {k:'boss', g:'Final trial: duel Royal Guard Mau Mau in the camp arena', boss:'sq_mau', at:[52, 81], done:[[...MAUF, '*puff* *puff* ...Enough! I yield! You have bested the Royal Guard.', 'surprised'], [...MAUF, 'Kneel, hero. ...Okay, you can stand up. That is the ceremony. It is short because I am tired.', 'peaceful']]}],
+      finish:() => { W.rgArmor = 1; W.outfit = 'guard'; W.recruits = 1; give({frost:50, flakes:2000, xp:200}); X.stat('sqTrials', 1, 'max'); return '🛡️ You are a Royal Guard! Royal Guard armor (change outfits in the journal, J) · 2 recruits join every village siege'; }},
+    lokiball:{e:'🎾', n:'Loki’s Lost Ball', who:'Loki', tone:'mysterious', giver:[83, 15], avail:afterLoki, lock:'Defeat Loki first', reward:'Loki’s Ball: throw it (B) and enemies chase it instead of you',
+      intro:[[...NAR, '*The Shadow Castle is empty now. Snow drifts through the broken windows. In the corner of the throne room, something small is half-buried in the snow.*', ''], [...NAR, '*A chewed-up leather collar with a tag: LOKI · GOOD BOY. And a note in shaky handwriting: “I lost my ball. The cold voice said it could help me find it.”*', ''], [...BAUF, '...Loki was a dog. A normal, happy dog. What happened to him?', 'sad']],
+      steps:[
+        {k:'items', g:'Find pieces of Loki’s past around the kingdom', items:[
+          {at:[18, 64], e:'🐾', line:[[...NAR, '*Old paw prints under the pines, frozen in the ice. Big, happy, bouncing ones.*', ''], [...BAUF, 'He used to play here. You can tell from how they zig-zag. Happy dogs never walk straight.', 'peaceful']]},
+          {at:[78, 70], e:'📷', line:[[...NAR, '*A frozen photograph: a golden retriever with a red ball in his mouth, sitting on a lake shore, tail a blur.*', ''], [...BAUF, 'That’s him. That’s Loki. Look how happy he is.', 'sad']]},
+          {at:[48, 26], e:'❄️', line:[[...NAR, '*A crack in the rock, where the frost is darker than it should be. It hums.*', ''], [...NAR, '*A whisper in the ice: “Take the cold, little dog. The cold will find your ball for you.”*', ''], [...BAUF, 'Someone tricked him. Someone small... and very, very cold.', 'frightened']]},
+          {at:[20, 22], e:'🎾', line:[[...NAR, '*Deep in the Crystal Caves, wedged between two glowing crystals: a faded red ball, chewed soft at one end.*', ''], [...BAUF, 'His ball! It was here all along. But it’s covered in dark frost... something is guarding it.', 'surprised']]}]},
+        {k:'boss', g:'Defeat the Dark Frost that clings to Loki’s ball in Howling Pass', boss:'sq_frost', at:[48, 24], done:[[...NAR, '*The dark frost shrieks and scatters. For a moment you hear a voice, bored and far away: “Hmph. A toy. How dull.” Then nothing.*', ''], [...BAUF, 'The ball is clean now. Just a ball. A good ball.', 'peaceful'], [...NAR, '🎾 You can throw Loki’s Ball (press B). Enemies can’t resist chasing it.', '']]},
+        {k:'go', g:'(Optional) Return the ball to Loki’s empty castle', at:[83, 15], act:'Return the ball', optional:1, done:[[...NAR, '*You set the red ball on the empty throne. The snow stops falling. A golden shape steps out of the shadows.*', ''], [...LOKQ, '...My ball? You found my ball?', 'surprised'], [...LOKQ, 'I... I remember now. I just wanted my ball back. The cold voice promised. It lied.', 'sad'], [...LOKQ, 'I’m sorry. For the castle. For the storms. For all of it. ...Can I keep being a good boy now?', 'sad'], [...BAUF, 'Yes, Loki. You can.', 'peaceful'], [...LOKQ, 'Here. I have a spare one. Every good dog has a spare. Throw it for me sometime?', 'happy']]}],
+      // the ball is earned after the boss step; returning it is an optional ending
+      stepDone:(i) => { if (i == 1) { W.lball = 1; save(); } if (i == 2) { W.lokiReformed = 1; } },
+      finish:() => { W.lball = 1; give({frost:45, flakes:1600, xp:180}); X.stat('sqLoki', 1, 'max'); return W.lokiReformed ? '🎾 Loki is a good boy again · Loki’s Ball is yours (B)' : '🎾 Loki’s Ball is yours (press B)'; }},
+    baumem:{e:'📔', n:'Bau Bau’s Memories', who:'Bau Bau', tone:'quiet', giver:[127, 68], avail:afterSpirits, lock:'Finish Spirits of the Snow first', reward:'A memory album in the Hall of Paws · a Bau Bau outfit',
+      intro:[[...BAUF, 'I found something in my old blanket. A whisker. One of Minccino’s, I think. Long and white.', 'peaceful'], [...BAUF, 'It made me remember things. Little things. Will you walk with me? I want to visit the places from when we were small.', 'sad']],
+      steps:[
+        {k:'items', g:'Visit the places Bau Bau remembers', items:[
+          {at:[27, 113], e:'🪟', line:[[...BAUF, 'The warm window. Minccino always got the sunny spot first. He’d move over for me, though. Every time.', 'peaceful']]},
+          {at:[120, 35], e:'🚗', line:[[...BAUF, 'The driveway. Chao Chao used to race the leaves here. He always won. Even against the wind.', 'peaceful']]},
+          {at:[110, 84], e:'🌿', line:[[...BAUF, 'The fence with the soft grass. We napped here in a pile, the three of us. Minccino purred so loud the birds flew off.', 'peaceful']]},
+          {at:[51, 91], e:'🧶', line:[[...BAUF, 'And this... our blanket. Chao Chao pulled every thread out of one corner. Minccino tried to put them back.', 'sad'], [...BAUF, 'Let’s go to the Hall of Paws. I want to put these somewhere safe.', 'peaceful']]}]},
+        {k:'go', g:'Bring the memories to the Hall of Paws', at:[127, 66], act:'Remember', done:[[...BAUF, 'I made an album. Every memory, one page each. So I don’t forget the good parts.', 'peaceful'], [...MINCQ, '(a soft purr in the candlelight)', 'peaceful'], [...BAUF, 'Thank you for walking with me. ...Here. You should have something to remember us by too.', 'happy']]}],
+      finish:() => { W.album = 1; W.outfits = {...(W.outfits || {}), bau:1}; give({frost:35, flakes:1200, xp:140}); X.stat('sqBau', 1, 'max'); return '📔 The memory album is in the Hall of Paws · Bau Bau outfit unlocked (journal, J)'; }},
+    mowtale:{e:'🏷️', n:'The Cat Nobody Knew', who:'Little Mow', tone:'quiet', giver:[114, 50], avail:afterSpirits, lock:'Finish Spirits of the Snow first', reward:'Little Mow’s name tag in the Hall of Paws · a calm blue spirit trail',
+      intro:[[...MOWQ, '...mow?', 'sad'], [...NAR, '*Little Mow’s spirit waits by the Old Road, as if he wants to show you something. Nobody ever knew who he was. Maybe he’d like someone to know.*', '']],
+      steps:[
+        {k:'items', g:'Follow Little Mow along the Old Road and learn who he was', items:[
+          {at:[110, 51], e:'📦', line:[[...NAR, '*An old cardboard box under a bush, lined with leaves. Just the right size for a very small cat.*', ''], [...MOWQ, '...mow.', 'peaceful'], [...NAR, '*This is where he slept.*', '']]},
+          {at:[116, 47], e:'🪨', line:[[...NAR, '*A flat rock that catches the afternoon sun. It’s still a little warm.*', ''], [...NAR, '*This is what he liked: warm spots, quiet afternoons.*', '']]},
+          {at:[122, 51], e:'📬', line:[[...VILQ, 'Oh, that little gray one? I used to see him every morning on my route. I’d leave him a bit of my sandwich.', 'peaceful'], [...VILQ, 'He never let me pet him. But he always waited by this mailbox. Every single day.', 'sad']]},
+          {at:[127, 48], e:'✏️', line:[[...NAR, '*A child’s drawing, frozen to a post: a tiny cat, and the words “I SAW THE KITTY AGAIN TODAY!”*', '']]},
+          {at:[132, 50], e:'💡', line:[[...NAR, '*A porch light at the end of the road. Someone left it on every night, “just in case the little cat gets cold.”*', ''], [...MOWQ, '...mow.', 'happy'], [...NAR, '*People did know him. A little. Enough to leave a light on.*', '']]}]},
+        {k:'go', g:'Bring Little Mow’s story to the Hall of Paws', at:[127, 66], act:'Hang the tag', done:[[...NAR, '*You hang a new name tag in the Hall of Paws, under his memorial. It says: LITTLE MOW · liked warm rocks, sandwiches, and porch lights.*', ''], [...MOWQ, '...mow.', 'peaceful'], [...NAR, '*A soft blue glow drifts around your feet. It feels like being remembered.*', '']]}],
+      finish:() => { W.mowTag = 1; W.trail = 'spirit'; give({frost:35, flakes:1200, xp:140}); X.stat('sqMow', 1, 'max'); return '🏷️ Little Mow’s name tag hangs in the Hall of Paws · calm blue spirit trail unlocked'; }},
+    bard:{e:'🎵', n:'The Frozen Bard', who:'Wren', tone:'funny', giver:[30, 113], avail:afterLoki, lock:'Defeat Loki first', reward:'6 new Snow Kingdom music tracks · title “Muse of the Snow”',
+      intro:[[...BARDQ, 'Ah! The hero of the Snow Kingdom! I write songs about your adventures, you know. Ballads! Epics! One limerick.', 'happy'], [...BARDQ, 'But a gust of wind stole my songbook and scattered the pages all over the kingdom. Six songs, lost!', 'sad'], [...BARDQ, 'Find them, and I’ll play them for the whole kingdom. Each page you find, I can play right away!', 'happy']],
+      steps:[
+        {k:'items', g:'Find Wren’s six lost song pages', items:[
+          {at:[16, 60], e:'📜', line:[[...NAR, '🎵 Song page: “Whisperpine Waltz” · you can hear it in the Snow Kingdom now', '']]},
+          {at:[82, 64], e:'📜', line:[[...NAR, '🎵 Song page: “Glimmer Lake Lullaby”', '']]},
+          {at:[50, 26], e:'📜', line:[[...NAR, '🎵 Song page: “The Royal Guard March” (it has a verse about snacks)', '']]},
+          {at:[60, 118], e:'📜', line:[[...NAR, '🎵 Song page: “Aurora Nights”', '']]},
+          {at:[32, 131], e:'📜', line:[[...NAR, '🎵 Song page: “Shanty of Captain Frostbeard”', '']]},
+          {at:[118, 120], e:'📜', line:[[...NAR, '🎵 Song page: “Ballad of the Brave Hero” (it’s about you)', '']]}]},
+        {k:'go', g:'Bring the song pages back to Wren in Frostpine Village', at:[30, 113], act:'Give the pages', done:[[...BARDQ, 'My songs! All of them! Gather round, Frostpine! A concert for the hero!', 'happy'], [...NAR, '*The whole village claps along. Mau Mau dances. Badly. Happily.*', ''], [...BARDQ, 'From now on, my songs play all across the Snow Kingdom. Pick your favorite in your journal (J).', 'happy']]}],
+      finish:() => { W.bardAll = 1; give({frost:40, flakes:1500, xp:160}); X.stat('sqBard', 1, 'max'); return '🎵 Six Snow Kingdom songs unlocked · pick them in the journal (J)'; }},
+  };
+  // Teammate Tales: one short chain per teammate, each unlocking a new ability
+  const TALES = {
+    Maya:{ab:'Eagle Eye', abD:'every 8 s Maya fires a long, piercing shot for triple damage', place:[78, 66], items:[[74, 64], [82, 70], [86, 64]], e:'🎯',
+      intro:'I learned to throw on Glimmer Lake. My grandma set up tin cans on the ice. I missed every single one, for a whole winter.', mid:'These are the old cans! Still here. Let’s knock them over. For grandma.', end:'I hit all three. Grandma would be so proud. I joined you because she said: “Aim for the thing that matters.” That’s you guys.'},
+    Leo:{ab:'Ice Wall', abD:'every 14 s Leo freezes nearby enemies in place for a moment', place:[18, 20], items:[[14, 16], [22, 22], [18, 26]], e:'🔨',
+      intro:'I build things. Forts, walls, snowmen with hats. I built my first fort in the Crystal Caves, where nobody could knock it down.', mid:'The old fort fell apart. Help me find the three foundation stones?', end:'Good as new. Better, actually. I joined because I want to build a kingdom where nobody’s house gets knocked over.'},
+    Ava:{ab:'Warm Hug', abD:'every 20 s Ava heals you and every teammate by one heart', place:[28, 112], items:[[24, 110], [32, 116], [26, 118]], e:'➕',
+      intro:'Frostpine Village is where I grew up. Every winter, people got sick from the cold. I started bringing them warm cocoa.', mid:'Old Mrs. Fir and her two neighbors are freezing again. Let’s bring them cocoa!', end:'Everyone’s warm. I joined you because a warm kingdom starts with warm people. And a lot of cocoa.'},
+    Sam:{ab:'Snow Volley', abD:'every 7 s Sam throws a fan of five snowballs at the nearest enemy', place:[62, 118], items:[[58, 116], [66, 122], [64, 114]], e:'⚪',
+      intro:'I used to be the slowest kid in snowball fights. Everyone hit me first. So I practiced at Aurora Fields. Every night. Under the lights.', mid:'My old practice targets are still out here. Three of them. Watch this.', end:'Five at once! I joined you because I don’t want anyone to be the kid who gets hit first ever again.'}};
+  Object.keys(TALES).forEach(nm => { const T2 = TALES[nm]; SQ['tale' + nm] = {e:T2.e, n:'Teammate Tales: ' + nm, who:nm, tone:'warm', giver:[49 + Object.keys(TALES).indexOf(nm)*2, 87], tale:nm, avail:() => afterLoki() && mateIdx(nm) >= 0, lock:'Defeat Loki, and have ' + nm + ' on your team (Snowball Showdown upgrades: teammates)', reward:'New ability for ' + nm + ': ' + T2.ab + ' (' + T2.abD + ')',
+    intro:[[...TEAMQ(nm), T2.intro, 'peaceful'], [...TEAMQ(nm), 'Come with me? I want to show you.', 'happy']],
+    steps:[{k:'go', g:nm + '’s tale: go to the place from ' + nm + '’s past', at:T2.place, act:'Listen', done:[[...TEAMQ(nm), T2.mid, 'happy']]},
+      {k:'items', g:nm + '’s tale: help ' + nm, items:T2.items.map((a, i) => ({at:a, e:T2.e, line:[[...TEAMQ(nm), ['One!', 'Two!', 'Three!'][i], 'happy']]})), done:[[...TEAMQ(nm), T2.end, 'peaceful'], [...NAR, '✨ ' + nm + ' learned ' + T2.ab + ': ' + T2.abD + '.', '']]}],
+    finish:() => { W.abil = {...(W.abil || {}), [nm]:1}; give({frost:20, flakes:800, xp:100}); const n = Object.keys(W.abil).length; X.stat('sqTeam', n, 'max'); return '✨ ' + nm + ' learned ' + T2.ab; }}; });
+  const SQK = Object.keys(SQ);
+  // which tracks belong to each bard page
+  const BARD_N = () => W.bardAll ? 6 : SQ.bard.steps[0].items.filter((_, i) => W.sqI['bard:0:' + i]).length;
+  // ---------- side-quest bosses ----------
+  Object.assign(BOSS, {
+    sq_raccoon:{n:'ROCCO’S BOSS: THE RACCOON BANDIT KING', hp:260, r:32, intro:'The Raccoon Bandit King: “Who dares interrupt SNACK TIME?! Bandits, attack! Politely!”', ai:{walk:90, spread:1.6, dash:1, summon:'pup', summonT:8}},
+    sq_mau:{n:'ROYAL GUARD MAU MAU (DUEL)', hp:320, r:30, phases:3, intro:'Mau Mau: “En garde! The Royal Guard does not hold back! (A little bit.)”', ai:{walk:70, spread:1.9, dash:1, ring:4.5}},
+    sq_frost:{n:'THE DARK FROST', hp:300, r:34, phases:3, intro:'The Dark Frost hisses. It smells like old magic, and something small and smug.', ai:{walk:40, ring:3.4, spiral:1, summon:'wisp', summonT:9, fade:1}}});
+  Object.assign(LAIR, {sq_raccoon:spot(19, 61), sq_mau:spot(52, 81), sq_frost:spot(48, 24)});
+  const sqStep = id => W.sqD[id] || W.sq[id] == null ? null : SQ[id].steps[W.sq[id]];
+  const sqReady = k => SQK.some(id => { const s2 = sqStep(id); return s2 && s2.k == 'boss' && s2.boss == k; });
+  // ---------- running the chains ----------
+  let chase = null, course = null, waves = null;
+  const sqStart = id => { const Q = SQ[id]; talk(Q.intro, () => { W.sq[id] = 0; W.sqTrack = id; save(); A.sfx('win'); say('📗 Side story: ' + Q.n + ' · track it in the journal (J)', 3.5); }); };
+  const sqAdvance = (id, lines) => { const Q = SQ[id], i = W.sq[id], s2 = Q.steps[i]; const next = () => { if (Q.stepDone) Q.stepDone(i); W.sq[id] = i + 1; chase = course = waves = null; sqNightF = false;
+      if (W.sq[id] >= Q.steps.length) sqFinish(id); else { save(); A.sfx('coin'); say('📗 ' + Q.n + ' · ' + Q.steps[i + 1].g, 3.2); } };
+    const L3 = lines || s2.done; if (L3 && L3.length) talk(L3, next); else next(); };
+  const sqFinish = id => { const Q = SQ[id]; W.sqD[id] = 1; delete W.sq[id]; if (W.sqTrack == id) W.sqTrack = null; let txt = '';
+    if (!W.sqR[id]) { W.sqR[id] = 1; txt = Q.finish(); } save(); A.sfx('win'); cheerT = 2.5;
+    const all = SQK.filter(k => !SQ[k].tale).every(k => W.sqD[k]) && Object.keys(TALES).every(nm => W.sqD['tale' + nm] || mateIdx(nm) < 0);
+    if (all) X.stat('sqAll', 1, 'max');
+    say('🏅 Side story complete: ' + Q.n + (txt ? ' · ' + txt : ''), 6); };
+  // skip the optional ending of Loki's Lost Ball and finish it from the journal
+  const sqSkipOptional = id => { const s2 = sqStep(id); if (s2 && s2.optional) sqFinish(id); };
+  const sqBossDown = B => { const id = SQK.find(q => { const s2 = sqStep(q); return s2 && s2.k == 'boss' && s2.boss == B.k; }); if (!id) return false; give({frost:15, flakes:500, xp:80}); sqAdvance(id); return true; };
+  const sqThings = L => { if (raid || siege) return L;
+    SQK.forEach(id => { const Q = SQ[id];
+      if (!W.sqD[id] && W.sq[id] == null) { if (!Q.avail()) return; const g2 = spot(Q.giver[0], Q.giver[1]); if (Q.tale && dist(g2, p) > 900) return; L.push({x:g2.x, y:g2.y, n:'❕ ' + Q.n, f:() => sqStart(id)}); return; }
+      const s2 = sqStep(id); if (!s2) return;
+      if (s2.k == 'go') { const q = spot(s2.at[0], s2.at[1]); L.push({x:q.x, y:q.y, n:s2.act || 'Look', f:() => sqAdvance(id)}); }
+      if (s2.k == 'items') s2.items.forEach((it, j) => { const key = id + ':' + W.sq[id] + ':' + j; if (W.sqI[key]) return; const q = spot(it.at[0], it.at[1]);
+        L.push({x:q.x, y:q.y, n:'Look', f:() => { W.sqI[key] = 1; save(); A.sfx('coin'); splat(q.x, q.y - 10, 10, '#F9BF01'); const left = s2.items.filter((_, j2) => !W.sqI[id + ':' + W.sq[id] + ':' + j2]).length;
+          talk(it.line, () => { if (!left) sqAdvance(id); else say('📗 ' + (s2.items.length - left) + ' / ' + s2.items.length + ' found', 2); }); }}); });
+      if (s2.k == 'course' && !course) { const q = spot(s2.pts[0][0], s2.pts[0][1]); L.push({x:q.x, y:q.y, n:'Start the course', f:() => { course = {id, i:1, t:s2.time, pts:s2.pts.map(a => spot(a[0], a[1]))}; A.sfx('blip'); say('🏁 GO! Run through every flag in ' + s2.time + ' seconds!', 2.5); }}); }
+      if (s2.k == 'waves' && !waves) { const q = spot(s2.at[0], s2.at[1]); L.push({x:q.x, y:q.y, n:s2.night ? 'Start the night watch' : 'Start the drill', f:() => { waves = {id, i:0, at:q, t:1.5}; if (s2.night) sqNightF = true; talk([[...MAUF, s2.night ? 'Night watch begins. Eyes open. Ears open. Snack bag... closed. For now.' : 'Shield up! Here comes the practice squad!', 'angry']]); }}); }
+      if (s2.k == 'chase' && !chase) { const q = spot(s2.path[0][0], s2.path[0][1]); L.push({x:q.x, y:q.y, n:'Sneak up', f:() => { chase = {id, i:0, x:q.x, y:q.y, pts:s2.path.map(a => spot(a[0], a[1])), wait:0}; say('🦝 The thief bolts! Catch it!', 2.2); A.sfx('blip'); }}); }
+    });
+    // the memory album and Little Mow's name tag in the Hall of Paws
+    if (W.album) { const H2 = L2('hall'); L.push({x:H2.x - 140, y:H2.y + 30, n:'Memory album', f:albumPanel}); }
+    if (W.lball && W.lokiReformed && !(boss && boss.k == 'loki')) { const c2 = spot(83, 15); L.push({x:c2.x - 60, y:c2.y, n:'Practice match', f:() => { lokiSpar = true; lokiReady = true; say('🎾 Loki bounces to the middle of the throne room. Step closer!', 2.5); }}); L.push({x:c2.x + 60, y:c2.y, n:'Pet Loki', f:() => talk([[...LOKQ, ['*wag wag wag*', 'Throw the ball! Throw it! ...Please?', 'I’m a good boy now. Right? Right!', 'I keep the castle tidy now. Mostly I nap in it.'][Math.floor(t) % 4], 'happy']])}); }
+    return L; };
+  const sqUpdate = dt => {
+    // the masked thief: it runs to the next waypoint whenever you get close, and is caught at the last one
+    if (chase) { const C3 = chase, tgt = C3.pts[Math.min(C3.i, C3.pts.length - 1)], d = Math.hypot(tgt.x - C3.x, tgt.y - C3.y);
+      if (d > 6) { const sp3 = 250*dt; C3.x += (tgt.x - C3.x)/d*Math.min(d, sp3); C3.y += (tgt.y - C3.y)/d*Math.min(d, sp3); }
+      else if (dist(C3, p) < (C3.i >= C3.pts.length - 1 ? 60 : 230)) { if (C3.i >= C3.pts.length - 1) { const id = C3.id; chase = null; sqAdvance(id); } else C3.i++; }
+      if (dist(C3, p) > 900) { chase = null; say('🦝 The thief got away... it ran back to the pantry. Try again!', 3); } }
+    if (course) { const C3 = course; C3.t -= dt; const q = C3.pts[C3.i]; if (dist(q, p) < 52) { C3.i++; A.sfx('coin'); splat(q.x, q.y - 20, 10, '#D5F367'); if (C3.i >= C3.pts.length) { const id = C3.id; course = null; sqAdvance(id); } }
+      else if (C3.t <= 0) { course = null; A.sfx('bad'); talk([[...MAUF, 'Too slow! The obstacle course waits for no one. Except me. Try again!', 'angry']]); } }
+    if (waves) { const W3 = waves, s2 = sqStep(W3.id); if (!s2) { waves = null; sqNightF = false; } else { const alive = foes.filter(f => f.sqw).length;
+      if (dist(p, W3.at) > 900) { waves = null; sqNightF = false; foes = foes.filter(f => !f.sqw); say('📗 You left the post. Start again when you’re ready.', 3); }
+      else if (!alive) { W3.t -= dt; if (W3.t <= 0) { if (W3.i >= s2.waves.length) { const id = W3.id; waves = null; sqAdvance(id); } else { s2.waves[W3.i].forEach((k2, j) => { const a = j/s2.waves[W3.i].length*TAU + Math.random(); spawnFoe(k2, W3.at.x + Math.cos(a)*340, W3.at.y + Math.sin(a)*300); const f = foes[foes.length - 1]; if (f) { f.sqw = 1; f.hurt = 99; } }); W3.i++; W3.t = 1.5; say('⚔ Wave ' + W3.i + ' of ' + s2.waves.length, 1.8); } } } } }
+    // teammate abilities from Teammate Tales
+    if (W.abil) mates.forEach(m => { if (m.ko || !W.abil[m.name]) return; m.abT = (m.abT == null ? 3 : m.abT) - dt; if (m.abT > 0) return; const near = (r2) => { let tg = boss && dist(boss, m) < r2 ? boss : null; if (!tg) { let bd = r2; for (const f of foes) { const d3 = dist(f, m); if (d3 < bd) { bd = d3; tg = f; } } } return tg; };
+      if (m.name == 'Sam') { const tg = near(320); if (!tg) { m.abT = .5; return; } m.abT = 7; const a = Math.atan2(tg.y - m.y, tg.x - m.x); for (let i = -2; i <= 2; i++) balls.push({team:1, x:m.x, y:m.y - 10, vx:Math.cos(a + i*.16)*480, vy:Math.sin(a + i*.16)*480, mine:1, dmg:X.armM()*.7, r:5, life:.9, hits:[], col:'#e8f8ff'}); addNum(m.x, m.y - 40, 'Snow Volley!', '#2fa8e0'); }
+      else if (m.name == 'Maya') { const tg = near(560); if (!tg) { m.abT = .5; return; } m.abT = 8; const a = Math.atan2(tg.y - m.y, tg.x - m.x); balls.push({team:1, x:m.x, y:m.y - 10, vx:Math.cos(a)*760, vy:Math.sin(a)*760, mine:1, dmg:X.armM()*3, r:6, life:1.1, hits:[], pierce:1, col:'#F9BF01'}); addNum(m.x, m.y - 40, 'Eagle Eye!', '#c48a00'); }
+      else if (m.name == 'Leo') { const hit = foes.filter(f => dist(f, m) < 170); if (!hit.length) { m.abT = .5; return; } m.abT = 14; hit.forEach(f => { f.stun = Math.max(f.stun || 0, 1.6); f.slow = 3; }); splat(m.x, m.y, 18, '#bfe9ff'); addNum(m.x, m.y - 40, 'Ice Wall!', '#2a6ab0'); }
+      else if (m.name == 'Ava') { m.abT = 20; if (p.hp < p.max) p.hp++; mates.forEach(m2 => { if (!m2.ko && m2.hp < m2.max) m2.hp++; }); addNum(p.x, p.y - 46, '🤗 Warm Hug +♥', '#d0408a'); } });
+    // Loki's Ball: enemies chase it while it bounces around
+    if (lballT > 0) { lballT -= dt; lb.x += lb.vx*dt; lb.y += lb.vy*dt; lb.vx *= Math.pow(.25, dt); lb.vy *= Math.pow(.25, dt); if (solidAt(lb.x, lb.y)) { lb.vx *= -.6; lb.vy *= -.6; } }
+    lballCd = Math.max(0, lballCd - dt);
+    // blue spirit trail
+    if (W.trail == 'spirit' && !low() && Math.hypot(p.vx, p.vy) > 40 && Math.random() < dt*14) fx.push({x:p.x + (Math.random() - .5)*12, y:p.y + 14, vx:(Math.random() - .5)*20, vy:-20 - Math.random()*20, t:.9, col:'rgba(120,200,255,.8)', r:3}); };
+  // Loki's Ball (B): throw it where you aim; nearby enemies run after it for a few seconds
+  let lballT = 0, lballCd = 0; const lb = {x:0, y:0, vx:0, vy:0};
+  const throwBall = () => { if (!W.lball) return; if (lballCd > 0) { say('🎾 Loki’s Ball is coming back… ' + Math.ceil(lballCd) + ' s', 1.2); return; } const wa = toWorld(aim), a = Math.atan2(wa.y - p.y, wa.x - p.x); lb.x = p.x; lb.y = p.y - 10; lb.vx = Math.cos(a)*520; lb.vy = Math.sin(a)*520; lballT = 6; lballCd = 18; A.sfx('blip'); say('🎾 Go get it!', 1.4); };
+  const lballLure = () => lballT > 0 ? lb : null;
+  // ---------- quest arrow ----------
+  const sqGoal = () => { const ids = W.sqTrack && sqStep(W.sqTrack) ? [W.sqTrack] : SQK.filter(id => sqStep(id) && !sqStep(id).optional); for (const id of ids) { const Q = SQ[id], s2 = sqStep(id); const pre = '📗 ' + Q.n + ' · ';
+      if (chase && chase.id == id) return {x:chase.x, y:chase.y, n:pre + 'Catch the thief!'};
+      if (course && course.id == id) return {...course.pts[course.i], n:pre + 'Flag ' + course.i + '/' + (course.pts.length - 1) + ' · ' + Math.ceil(course.t) + ' s'};
+      if (s2.k == 'items') { const left = s2.items.map((it, j) => ({...spot(it.at[0], it.at[1]), j})).filter(q => !W.sqI[id + ':' + W.sq[id] + ':' + q.j]); left.sort((a, b) => dist(a, p) - dist(b, p)); if (left.length) return {x:left[0].x, y:left[0].y, n:pre + s2.g + ' (' + (s2.items.length - left.length) + '/' + s2.items.length + ')'}; }
+      const at = s2.k == 'boss' ? LAIR[s2.boss] : s2.k == 'chase' ? spot(s2.path[0][0], s2.path[0][1]) : s2.k == 'course' ? spot(s2.pts[0][0], s2.pts[0][1]) : spot(s2.at[0], s2.at[1]); return {x:at.x, y:at.y, n:pre + s2.g}; } return null; };
+  // ---------- drawing ----------
+  const raccoon = (x, y, o = {}) => { const s = o.s || 1; g.save(); g.translate(x, y); g.scale(o.flip ? -s : s, s); g.fillStyle = 'rgba(0,0,0,.15)'; g.beginPath(); g.ellipse(0, 12, 14, 4, 0, 0, TAU); g.fill();
+    g.fillStyle = '#7a7a84'; g.beginPath(); g.ellipse(0, 2, 13, 10, 0, 0, TAU); g.fill(); for (let i = 0; i < 4; i++) { g.fillStyle = i % 2 ? '#3a3a42' : '#9a9aa4'; g.beginPath(); g.arc(-14 - i*5, -2 - i*3, 5, 0, TAU); g.fill(); }
+    g.fillStyle = '#8a8a94'; g.beginPath(); g.arc(9, -8, 9, 0, TAU); g.fill(); g.fillStyle = '#e8e8ee'; g.beginPath(); g.ellipse(13, -5, 5, 4, 0, 0, TAU); g.fill(); g.fillStyle = '#2a2a30'; g.fillRect(3, -12, 14, 5); g.fillStyle = '#fff'; g.beginPath(); g.arc(7, -10, 1.6, 0, TAU); g.arc(13, -10, 1.6, 0, TAU); g.fill();
+    g.fillStyle = '#5a5a64'; g.beginPath(); g.moveTo(3, -15); g.lineTo(5, -21); g.lineTo(8, -15); g.moveTo(11, -16); g.lineTo(14, -22); g.lineTo(15, -15); g.fill(); g.fillStyle = '#14204a'; g.beginPath(); g.arc(17, -5, 1.6, 0, TAU); g.fill();
+    if (o.crown) { g.fillStyle = '#F9BF01'; g.beginPath(); g.moveTo(3, -17); g.lineTo(3, -24); g.lineTo(7, -20); g.lineTo(10, -27); g.lineTo(13, -20); g.lineTo(17, -24); g.lineTo(17, -17); g.fill(); }
+    if (o.sack) { g.fillStyle = '#c8a070'; g.beginPath(); g.arc(-6, -8, 7, 0, TAU); g.fill(); g.fillStyle = '#8D5B1D'; g.fillRect(-8, -16, 4, 3); } g.restore(); };
+  const bardDraw = (x, y) => { kid(x, y, '#a64be0', {hat:'#F9BF01', face:0, walk:0}); g.fillStyle = '#c48a4a'; g.beginPath(); g.ellipse(x + 12, y - 2, 7, 9, .4, 0, TAU); g.fill(); g.strokeStyle = '#8D5B1D'; g.lineWidth = 2; g.beginPath(); g.moveTo(x + 14, y - 8); g.lineTo(x + 22, y - 22); g.stroke();
+    if (!low()) { g.font = '12px ' + A.font; g.textAlign = 'center'; g.fillText('🎵', x + 18 + Math.sin(t*2)*4, y - 34 - (t*20 % 16)); } };
+  const sqDraw = () => {
+    SQK.forEach(id => { const Q = SQ[id];
+      if (!W.sqD[id] && W.sq[id] == null && Q.avail()) { const q = spot(Q.giver[0], Q.giver[1]); if (!onScreen(q.x, q.y)) return; if (Q.tale && dist(q, p) > 900) return;
+        g.fillStyle = 'rgba(166,75,224,.9)'; g.beginPath(); g.arc(q.x, q.y - 56 + Math.sin(t*4)*3, 11, 0, TAU); g.fill(); g.fillStyle = '#fff'; g.font = '900 15px ' + A.font; g.textAlign = 'center'; g.fillText('!', q.x, q.y - 51 + Math.sin(t*4)*3); }
+      const s2 = sqStep(id); if (!s2) return;
+      if (s2.k == 'items') s2.items.forEach((it, j) => { if (W.sqI[id + ':' + W.sq[id] + ':' + j]) return; const q = spot(it.at[0], it.at[1]); if (!onScreen(q.x, q.y)) return; g.globalAlpha = .75 + .25*Math.sin(t*3 + j); g.font = '20px ' + A.font; g.textAlign = 'center'; g.fillText(it.e, q.x, q.y + 6); g.globalAlpha = 1; g.fillStyle = '#a64be0'; g.font = '900 13px ' + A.font; g.fillText('◆', q.x, q.y - 18 + Math.sin(t*5 + j)*3); });
+      if (s2.k == 'go' || s2.k == 'waves') { const q = spot(s2.at[0], s2.at[1]); if (onScreen(q.x, q.y)) { g.strokeStyle = 'rgba(166,75,224,' + (.5 + .3*Math.sin(t*4)) + ')'; g.lineWidth = 3; g.beginPath(); g.arc(q.x, q.y, 26, 0, TAU); g.stroke(); } }
+      if (s2.k == 'chase' && !chase) { const q = spot(s2.path[0][0], s2.path[0][1]); if (onScreen(q.x, q.y)) raccoon(q.x, q.y, {sack:1}); }
+      if (s2.k == 'course') { const pts = course ? course.pts : s2.pts.map(a => spot(a[0], a[1])); pts.forEach((q, j) => { if (!onScreen(q.x, q.y) || (course && j < course.i)) return; const next = course ? j == course.i : j == 0; g.fillStyle = '#8D5B1D'; g.fillRect(q.x - 2, q.y - 34, 3, 36); g.fillStyle = next ? '#D5F367' : '#ff9ad5'; g.beginPath(); g.moveTo(q.x + 1, q.y - 34); g.lineTo(q.x + 20, q.y - 28); g.lineTo(q.x + 1, q.y - 22); g.fill(); if (next) { g.strokeStyle = '#D5F367'; g.lineWidth = 3; g.beginPath(); g.arc(q.x, q.y, 30 + Math.sin(t*6)*3, 0, TAU); g.stroke(); } }); } });
+    if (chase && onScreen(chase.x, chase.y)) raccoon(chase.x, chase.y, {sack:1, flip:chase.pts[chase.i] && chase.pts[chase.i].x < chase.x});
+    if (lballT > 0) { g.fillStyle = '#c8102e'; g.beginPath(); g.arc(lb.x, lb.y, 7, 0, TAU); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 1.5; g.beginPath(); g.arc(lb.x, lb.y, 5, .3, 2.6); g.stroke(); }
+    // NPCs: Wren the bard in Frostpine, the reformed Loki at his castle
+    { const q = spot(30, 113); if (onScreen(q.x, q.y) && (W.sq.bard != null || W.sqD.bard || afterLoki())) bardDraw(q.x - 30, q.y); }
+    if (W.lokiReformed && !(boss && boss.k == 'loki')) { const c2 = spot(83, 15); if (onScreen(c2.x + 60, c2.y)) SC.loki(g, c2.x + 60, c2.y, {s:1.1, mood:'happy', ph:1}, t); }
+    const H2 = L2('hall'); if (onScreen(H2.x, H2.y, 400)) {
+      if (W.album) { const ax = H2.x - 140, ay = H2.y + 30; g.fillStyle = '#8D5B1D'; g.fillRect(ax - 14, ay - 4, 28, 14); g.fillStyle = '#c84a4a'; rr(g, ax - 12, ay - 14, 24, 12, 2); g.fill(); g.fillStyle = '#F9BF01'; g.font = '700 7px ' + A.font; g.textAlign = 'center'; g.fillText('ALBUM', ax, ay - 5); }
+      if (W.mowTag) { const tx2 = H2.x, ty2 = H2.y + 22; g.strokeStyle = '#8a8270'; g.lineWidth = 1; g.beginPath(); g.moveTo(tx2, ty2 - 6); g.lineTo(tx2, ty2); g.stroke(); g.fillStyle = '#c8102e'; rr(g, tx2 - 26, ty2, 52, 14, 4); g.fill(); g.fillStyle = '#fff'; g.font = '800 8px ' + A.font; g.fillText('LITTLE MOW', tx2, ty2 + 10); } } };
+  const sqEnts = ents => { if (chase || !SQK.some(id => sqStep(id) && sqStep(id).k == 'boss' && sqStep(id).boss == 'sq_raccoon')) return; };
+  // ---------- map: side quest givers have a purple "!" (main story uses the gold star) ----------
+  const sqMap = ms => { SQK.forEach(id => { const Q = SQ[id]; let at = null, ic = '';
+      if (!W.sqD[id] && W.sq[id] == null && Q.avail()) { at = spot(Q.giver[0], Q.giver[1]); ic = '❕'; } else { const s2 = sqStep(id); if (s2 && s2.k != 'items') { at = s2.k == 'boss' ? LAIR[s2.boss] : s2.k == 'chase' ? spot(s2.path[0][0], s2.path[0][1]) : s2.k == 'course' ? spot(s2.pts[0][0], s2.pts[0][1]) : spot(s2.at[0], s2.at[1]); ic = '◆'; } }
+      if (!at) return; const q = ms({x:at.x/TS - .5, y:at.y/TS - .5}); g.fillStyle = 'rgba(166,75,224,.95)'; g.beginPath(); g.arc(q.x, q.y, 8, 0, TAU); g.fill(); g.fillStyle = '#fff'; g.font = '900 10px ' + A.font; g.textAlign = 'center'; g.fillText(ic == '❕' ? '!' : '◆', q.x, q.y + 4); }); };
+  // ---------- the quest journal (J): main story chapters + Side Quests tab + outfits + Wren's songs ----------
+  let jTab = 'side';
+  const albumPanel = () => openPanelUI(() => ({title:'📔 Bau Bau’s memory album', sub:'Every memory, one page each. So nobody forgets the good parts.', rows:SQ.baumem.steps[0].items.map(it => ({e:it.e, n:it.line[0][2].slice(0, 60) + (it.line[0][2].length > 60 ? '…' : ''), d:'Bau Bau'})).concat([{e:'🕯️', n:'Minccino · gentle and brave · Chao Chao · the fastest of us all', d:'The brothers'}])}));
+  const MAIN_CH = () => [{n:'Kingdom Quest: rescue Bau Bau and Mau Mau, defeat Loki', done:!!W.bau}, ...STORY_N.slice(1).map((n, i) => ({n:'Spirits of the Snow · ' + n, done:(W.sp|0) > i + 1 || ((W.sp|0) >= 6 && i == 5), now:(W.sp|0) == i + 1}))];
+  const journal = () => openPanelUI(() => { const tabs = [{e:'📖', n:'Tabs', d:'Main story · Side quests · Outfits & songs', btn:jTab == 'main' ? '▶ Side quests' : jTab == 'side' ? '▶ Outfits & songs' : '▶ Main story', ok:true, fn:() => { jTab = jTab == 'main' ? 'side' : jTab == 'side' ? 'extra' : 'main'; pnPage = 0; }}];
+    if (jTab == 'main') return {title:'📖 Journal · Main story', sub:'Your chapters so far. The gold star on the map and the arrow show the next step.', rows:[...tabs, ...MAIN_CH().map(c => ({e:c.done ? '✅' : c.now ? '▶️' : '⬜', n:c.n, d:c.done ? 'Done' : c.now ? 'In progress' : ''}))]};
+    if (jTab == 'extra') { const n = BARD_N(), S = ['Whisperpine Waltz', 'Glimmer Lake Lullaby', 'The Royal Guard March', 'Aurora Nights', 'Shanty of Captain Frostbeard', 'Ballad of the Brave Hero'];
+      const outs = [['none', '🧥', 'Your usual coat', true], ['guard', '🛡️', 'Royal Guard armor', !!W.rgArmor], ['bau', '👑', 'Bau Bau outfit', !!(W.outfits || {}).bau]];
+      return {title:'🎒 Journal · Outfits & songs', sub:'Rewards from side stories. Songs come from Wren’s lost pages (' + n + '/6 found).', rows:[...tabs,
+        ...outs.map(([k, e, nm, ok]) => ({e, n:nm, d:ok ? ((W.outfit || 'none') == k ? 'Wearing' : 'Unlocked') : 'Locked · finish its side story', btn:ok ? ((W.outfit || 'none') == k ? 'Wearing' : 'Wear') : '🔒', ok:ok && (W.outfit || 'none') != k, fn:() => { W.outfit = k; save(); A.sfx('blip'); }})),
+        {e:'🎶', n:'Kingdom music', d:W.bardSong ? 'Playing: ' + S[W.bardSong - 1] : 'Normal kingdom music', btn:'Normal music', ok:!!W.bardSong, fn:() => { W.bardSong = 0; regMood = ''; save(); }},
+        ...S.map((s3, i) => ({e:i < n ? '🎵' : '🔒', n:s3, d:i < n ? 'Wren’s song' : 'Find this song page', btn:i < n ? (W.bardSong == i + 1 ? 'Playing' : 'Play') : '🔒', ok:i < n && W.bardSong != i + 1, fn:() => { W.bardSong = i + 1; regMood = ''; save(); A.sfx('blip'); }}))]}; }
+    const rows = SQK.map(id => { const Q = SQ[id], s2 = sqStep(id), done = !!W.sqD[id], on = !!s2, av = Q.avail();
+      const prog = done ? '✅ Complete' : on ? 'Step ' + (W.sq[id] + 1) + '/' + Q.steps.length + ': ' + s2.g : av ? 'Ready: find the purple ! on the map' : '🔒 ' + Q.lock;
+      return {e:Q.e, n:Q.n + ' · ' + Q.who, d:prog + ' · Reward: ' + Q.reward, btn:done ? 'Done' : on ? (W.sqTrack == id ? (s2.optional ? 'Skip ending' : 'Tracking') : 'Track') : av ? 'Show on arrow' : '🔒', ok:!done && (on ? (W.sqTrack != id || !!s2.optional) : av),
+        fn:() => { if (on) { if (W.sqTrack == id && s2.optional) sqSkipOptional(id); else W.sqTrack = id; } else W.sqTrack = null; save(); A.sfx('blip'); }}; });
+    const nd = SQK.filter(id => W.sqD[id]).length;
+    return {title:'📗 Journal · Side quests (' + nd + '/' + SQK.length + ')', sub:'Side stories run alongside the main story. Purple ! marks a new one on the map. “Track” puts it on your arrow.', rows:[...tabs, {e:'🧭', n:'Arrow shows', d:W.sqTrack ? 'Side story: ' + SQ[W.sqTrack].n : 'Main story first', btn:'Main story', ok:!!W.sqTrack, fn:() => { W.sqTrack = null; save(); }}, ...rows]}; });
+  // admin: finish a side story's current step (for testing)
+  const sqAdminStep = () => { const id = W.sqTrack || SQK.find(q => sqStep(q)); if (!id) { const av = SQK.find(q => !W.sqD[q] && W.sq[q] == null && SQ[q].avail()); if (av) { W.sq[av] = 0; W.sqTrack = av; save(); say('Admin: started ' + SQ[av].n, 2); } return; } chase = course = waves = null; sqAdvance(id, []); };
   // ---------- map / fast travel ----------
   const openMap = tr => { if (raid) { say('🗺 No map down here! Finish the raid, or leave from the entrance on floor 1', 2.4); return; } mapOpen = true; travel = !!tr; A.sfx('blip'); };
   const MAPR = {x:20, y:66, s:5.6};
@@ -685,16 +905,16 @@ A.snowWorld = function(X) {
   const down = (q, e) => { if (e && e.pointerType) { const was = touchUI; touchUI = e.pointerType == 'touch' || e.pointerType == 'pen'; if (was != touchUI) layout(); }
     mouseIn = true; aim = q; if (quiz) return; if (panel) { panelDown(q); return; } if (mapOpen) return mapDown(q); if (dlg) return nextLine(); if (dead > 0) return;
     if (inR(q, hudR)) { W.hudMin = W.hudMin ? 0 : 1; A.sfx('blip'); return; } if (inR(q, mmR)) { openMap(false); return; }
-    for (const b of btnR) if (inR(q, b)) { if (b.id == 'ride') { toggleMount(); return; } if (b.id == 'roll') { roll(); return; } if (b.id == 'skills') { skillPanel(); return; } if (b.id == 'ab') useAbility(); else if (b.id == 'use') use(); else if (b.id == 'feed') feedMau(); else openMap(false); return; }
+    for (const b of btnR) if (inR(q, b)) { if (b.id == 'ride') { toggleMount(); return; } if (b.id == 'roll') { roll(); return; } if (b.id == 'skills') { skillPanel(); return; } if (b.id == 'journal') { journal(); return; } if (b.id == 'ball') { throwBall(); return; } if (b.id == 'ab') useAbility(); else if (b.id == 'use') use(); else if (b.id == 'feed') feedMau(); else openMap(false); return; }
     if (touchUI && q.y > BAR) { const i = Math.floor(q.x/(VW/BTN.length)); if (i < 4) pads.set(e.pointerId, ['l', 'u', 'd', 'r'][i]); else if (i == 4) useAbility(); else if (i == 5) use(); else if (i == 6) feedMau(); else openMap(false); return; }
     const wq = toWorld(q); if (!boss) for (const T2 of things()) if (Math.hypot(T2.x - wq.x, T2.y - wq.y) < 30 && dist(T2, p) < 110) { T2.f(); return; }
     charge = {id:e.pointerId, t:0}; };
   const move = (q, e) => { if (e && e.pointerType == 'mouse' && touchUI && !e.buttons) { touchUI = false; layout(); } mouseIn = q.y < BAR; if (!charge || charge.id == e.pointerId) aim = q; };
   const up = e => { pads.delete(e.pointerId); if (charge && charge.id == e.pointerId) { const pk = Math.min(1, charge.t); charge = null; if (!dlg && !mapOpen && !quiz && dead <= 0) { const wa = toWorld(aim); throwAt(wa.x, wa.y, pk > .25 ? pk : 0); } } };
-  const key = e => { const k = e.key; if (quiz) return; if (panel) { if (k == 'Escape' || k == 'e' || k == 'E' || k == 'Enter' || k == 'k' || k == 'K') panel = null; return; }
+  const key = e => { const k = e.key; if (quiz) return; if (panel) { if (k == 'Escape' || k == 'e' || k == 'E' || k == 'Enter' || k == 'k' || k == 'K' || k == 'j' || k == 'J') panel = null; return; }
     if (mapOpen) { if (k == 'm' || k == 'M' || k == 'Enter' || k == ' ') { mapOpen = false; travel = false; } return; }
     if (dlg) { if (k == ' ' || k == 'Enter' || k == 'e' || k == 'E') nextLine(); return; }
-    if (k == 'm' || k == 'M') openMap(false); else if (k == 'e' || k == 'E' || k == 'Enter') use(); else if (k == ' ' || k == 'q' || k == 'Q') useAbility(); else if (k == 'g' || k == 'G') feedMau(); else if (k == 'v' || k == 'V') toggleMount(); else if (k == 'k' || k == 'K') skillPanel(); else if (k == 'Shift') roll(); else if (k == 'c' || k == 'C') { holdMates = !holdMates; say(holdMates ? '✋ Teammates: hold this position (C to follow)' : '👣 Teammates: follow me', 1.8); } else if (k == 'h' || k == 'H') { W.hudMin = W.hudMin ? 0 : 1; }
+    if (k == 'm' || k == 'M') openMap(false); else if (k == 'e' || k == 'E' || k == 'Enter') use(); else if (k == ' ' || k == 'q' || k == 'Q') useAbility(); else if (k == 'g' || k == 'G') feedMau(); else if (k == 'v' || k == 'V') toggleMount(); else if (k == 'j' || k == 'J') journal(); else if (k == 'b' || k == 'B') throwBall(); else if (k == 'k' || k == 'K') skillPanel(); else if (k == 'Shift') roll(); else if (k == 'c' || k == 'C') { holdMates = !holdMates; say(holdMates ? '✋ Teammates: hold this position (C to follow)' : '👣 Teammates: follow me', 1.8); } else if (k == 'h' || k == 'H') { W.hudMin = W.hudMin ? 0 : 1; }
     else if ((k == 'f' || k == 'F') && dead <= 0) { const wa = mouseIn ? toWorld(aim) : {x:p.x + Math.cos(p.face)*300, y:p.y + Math.sin(p.face)*300}; throwAt(wa.x, wa.y, 0); } };
   // ---------- update ----------
   const update = dt => { t += dt; msgT = Math.max(0, msgT - dt);
@@ -716,10 +936,11 @@ A.snowWorld = function(X) {
     if (X.PU('regen') && p.hp < p.max) { p.regT = (p.regT || 0) + dt; if (p.regT >= 40 - 5*X.PU('regen')) { p.regT = 0; p.hp++; addNum(p.x, p.y - 40, '☕ +♥', '#8D5B1D'); } }
     if (dist(p, FIRE) < 110 && p.hp < p.max) { healT -= dt; if (healT <= 0) { healT = 1; p.hp++; addNum(p.x, p.y - 40, '+♥', '#FF4539'); } }
     for (const d2 of drops) { d2.life -= dt; if (dist(d2, p) < 34) { d2.life = 0; if (d2.k == 'fish') { W.treats = (W.treats||0) + 1; addNum(p.x, p.y - 40, '+1 🐟 treat', '#c4601a'); } else { p.hp = Math.min(p.max, p.hp + 1); addNum(p.x, p.y - 40, '☕ +♥', '#8D5B1D'); } A.sfx('coin'); } } drops = drops.filter(d2 => d2.life > 0);
-    storyUpdate(dt); p3Update(dt);
+    storyUpdate(dt); p3Update(dt); sqUpdate(dt);
     blizT -= dt; if (blizT <= 0) { if (blizzard > 0) { blizzard = 0; blizT = 150 + Math.random()*200; } else { blizzard = 40 + Math.random()*30; blizT = blizzard; } } if (blizzard > 0) blizzard = Math.max(.01, blizzard - dt);
     // where am I
-    const rg = regAt(p.x, p.y); if (rg != lastReg) { if (lastReg) say('📍 ' + REG[rg].n, 2); const md = REG[rg].haunt ? 'story' : REG[rg].mood || 'action'; if (md != regMood && window.WLMusic && window.WLMusic.mood) { regMood = md; try { window.WLMusic.mood(md); } catch(e){} } if (rg != 'castle' && W.bau) lokiReady = true; lastReg = rg; }
+    const rg = regAt(p.x, p.y); if (rg != lastReg) { if (lastReg) say('📍 ' + REG[rg].n, 2); const md = REG[rg].haunt ? 'story' : W.bardSong ? 'bard' + W.bardSong : REG[rg].mood || 'action'; if (md != regMood && window.WLMusic && window.WLMusic.mood) { regMood = md; try { window.WLMusic.mood(md); } catch(e){} } if (rg != 'castle' && W.bau) lokiReady = true; lastReg = rg; }
+    { const md3 = REG[rg].haunt ? 'story' : W.bardSong ? 'bard' + W.bardSong : REG[rg].mood || 'action'; if (md3 != regMood && window.WLMusic && window.WLMusic.mood) { regMood = md3; try { window.WLMusic.mood(md3); } catch(e){} } }
     for (const k in WAYS) if (!W.ways[k] && dist(p, px(WAYS[k])) < 80) { W.ways[k] = 1; say('✨ Waystone found: ' + WAYS[k].n + '! Use any waystone to travel here', 3); A.sfx('win'); save(); }
     for (let i = sticks.length - 1; i >= 0; i--) if (!p.stick && dist(sticks[i], p) < 30) { sticks.splice(i, 1); p.stick = 1; say('🪵 You picked up a stick! Throw it near Loki and watch what happens…', 2.6); A.sfx('coin'); }
     if (tornado) { tornado.t += dt; tornado.life -= dt; const ta = Math.atan2(p.y - tornado.y, p.x - tornado.x); tornado.x += Math.cos(ta)*70*dt; tornado.y += Math.sin(ta)*70*dt; const td = dist(tornado, p);
@@ -733,7 +954,7 @@ A.snowWorld = function(X) {
     // Loki's minions roam the land (never inside camp)
     spawnT -= dt; const cap = A.D(6, 8, 10); if (spawnT <= 0 && rg != 'camp' && !REG[rg].safe) { spawnT = 1.1; if (foes.length < cap && !boss) for (let k3 = 0; k3 < 6; k3++) { const a = Math.random()*TAU, r2 = 430 + Math.random()*260, sx = p.x + Math.cos(a)*r2, sy = p.y + Math.sin(a)*r2, rr2 = regAt(sx, sy);
         if (sx < TS*2 || sy < TS*2 || sx > WORLD - TS*2 || sy > WORLD - TS*2 || rr2 == 'camp' || REG[rr2].safe || (rr2 == 'oldroad' && Math.random() < .5) || blocked(sx, sy, 16) || (!spiritsOpen() && Math.floor(sx/TS) >= N0 && sy < N0*TS) || Math.hypot(sx - FIRE.x, sy - FIRE.y) < 600) continue; const pool = REG[rr2].pool; spawnFoe(pool[Math.floor(Math.random()*pool.length)], sx, sy); break; } }
-    for (const f of foes) { const F = FOE[f.k], TG = siege && F.siege && dist(f, p) > 120 ? BELL : p, d = dist(f, TG), ang = Math.atan2(TG.y - f.y, TG.x - f.x); f.flash = Math.max(0, (f.flash || 0) - dt); f.hurt = Math.max(0, f.hurt - dt); f.flap += dt*12; f.cool -= dt;
+    for (const f of foes) { const F = FOE[f.k], TG = lballT > 0 && dist(f, lb) < 420 ? lb : siege && F.siege && dist(f, p) > 120 ? BELL : p, d = dist(f, TG), ang = Math.atan2(TG.y - f.y, TG.x - f.x); f.flash = Math.max(0, (f.flash || 0) - dt); f.hurt = Math.max(0, f.hurt - dt); f.flap += dt*12; f.cool -= dt;
       if (d > 1150 && !F.clone) { f.dead = 1; continue; }
       if (f.kb > 0) { f.kb -= dt; const nx2 = f.x + f.kbx*dt, ny2 = f.y + f.kby*dt; if (F.fly || !blocked(nx2, ny2, 10)) { f.x = nx2; f.y = ny2; } }
       if (f.stun > 0) { f.stun -= dt; continue; }
@@ -753,7 +974,7 @@ A.snowWorld = function(X) {
     foes = foes.filter(f => !f.dead);
     // ROYAL GUARD MAU MAU: follows you, throws, Shield Belly, Spear Charge, Snack Break, sniffs out snacks, naps when you stand still
     buffT = Math.max(0, buffT - dt);
-    if (W.mau) { mau.stT = Math.max(0, mau.stT - dt); mau.sayT = Math.max(0, mau.sayT - dt); mau.blockCd -= dt; mau.chargeCd -= dt; mau.snackCd -= dt; mau.quipT -= dt;
+    if (W.mau && !(boss && boss.k == 'sq_mau')) { mau.stT = Math.max(0, mau.stT - dt); mau.sayT = Math.max(0, mau.sayT - dt); mau.blockCd -= dt; mau.chargeCd -= dt; mau.snackCd -= dt; mau.quipT -= dt;
       const pm = Math.hypot(p.vx, p.vy) > 30; mau.idle = pm || boss || foes.some(f => dist(f, p) < 300) ? 0 : mau.idle + dt; if (pm && mau.idle == 0 && mau.wasSleep) { mau.wasSleep = 0; mauSay('Huh?! I was guarding! With my eyes closed!', 2.4); } if (mau.idle > 16) mau.wasSleep = 1;
       if (mau.dash) { mau.dash.t -= dt; const nx = mau.x + Math.cos(mau.dash.a)*520*dt, ny = mau.y + Math.sin(mau.dash.a)*520*dt; if (!blocked(nx, ny, 10)) { mau.x = nx; mau.y = ny; }
         for (const f of foes) if (!f.dead && !mau.dash.hit.includes(f) && dist(f, mau) < FOE[f.k].r + 18) { mau.dash.hit.push(f); hurtFoe(f, 3*X.armM()); f.stun = 1; splat(f.x, f.y, 8, '#F9BF01'); }
@@ -800,7 +1021,7 @@ A.snowWorld = function(X) {
     { const lo = raid ? N*TS : 0, hi = raid ? (N + 40)*TS : WORLD, tx = Math.max(lo, Math.min(hi - VW, p.x - VW/2)), ty = Math.max(0, Math.min(WORLD - VH, p.y - VH/2 - 20)); if (Math.abs(tx - cam.x) > 500 || Math.abs(ty - cam.y) > 500) { cam.x = tx; cam.y = ty; } else { const k = Math.min(1, dt*9); cam.x += (tx - cam.x)*k; cam.y += (ty - cam.y)*k; } }
     shakeV = Math.max(0, shakeV - dt*20); cheerT = Math.max(0, cheerT - dt); p.roll = Math.max(0, (p.roll||0) - dt); p.rollCd = Math.max(0, (p.rollCd||0) - dt); };
   // ---------- drawing ----------
-  const kid = (x, y, col, o = {}) => { g.save(); g.translate(x, y); if (o.hit) g.globalAlpha = .55; const bob = o.walk ? Math.sin(o.walk*14)*2 : 0;
+  const kid = (x, y, col, o = {}) => { if (o.outfit == 'guard') { col = '#2f5fd0'; } else if (o.outfit == 'bau') col = '#e8a050'; g.save(); g.translate(x, y); if (o.hit) g.globalAlpha = .55; const bob = o.walk ? Math.sin(o.walk*14)*2 : 0;
     g.fillStyle = 'rgba(0,0,0,.15)'; g.beginPath(); g.ellipse(0, 16, 13, 4, 0, 0, TAU); g.fill();
     g.fillStyle = '#14204a'; g.fillRect(-8, 6 + bob*.5, 6, 10); g.fillRect(2, 6 - bob*.5, 6, 10);
     g.fillStyle = col; rr(g, -11, -8, 22, 18, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(-11, 1, 22, 3);
@@ -808,7 +1029,10 @@ A.snowWorld = function(X) {
     if (o.charge > 0) { g.fillStyle = '#fff'; g.beginPath(); g.arc(8 + Math.cos(aa)*14, -4 + Math.sin(aa)*14, 4 + 5*Math.min(1, o.charge), 0, TAU); g.fill(); }
     g.fillStyle = '#f2c9a0'; g.beginPath(); g.arc(0, -16, 9, 0, TAU); g.fill();
     g.fillStyle = o.hat || col; g.beginPath(); g.arc(0, -19, 9.5, Math.PI, 0); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(0, -29, 3.5, 0, TAU); g.fill();
-    g.fillStyle = '#14204a'; g.beginPath(); g.arc(-3, -15, 1.6, 0, TAU); g.arc(3, -15, 1.6, 0, TAU); g.fill(); g.restore(); };
+    g.fillStyle = '#14204a'; g.beginPath(); g.arc(-3, -15, 1.6, 0, TAU); g.arc(3, -15, 1.6, 0, TAU); g.fill();
+    if (o.outfit == 'guard') { g.fillStyle = '#F9BF01'; g.fillRect(-11, -8, 22, 3); g.fillRect(-2, -8, 4, 16); g.fillStyle = '#c8d0dc'; g.beginPath(); g.arc(0, -19, 10.5, Math.PI, 0); g.fill(); g.fillStyle = '#9aa4b4'; g.fillRect(-10.5, -20, 21, 3); g.fillStyle = '#c8102e'; g.beginPath(); g.moveTo(-2, -29); g.quadraticCurveTo(6, -38, 12, -30); g.lineTo(2, -27); g.fill(); }
+    else if (o.outfit == 'bau') { g.fillStyle = '#e8a050'; g.beginPath(); g.arc(0, -19, 10.5, Math.PI, 0); g.fill(); for (const sx of [-1, 1]) { g.beginPath(); g.moveTo(sx*9, -22); g.lineTo(sx*7, -33); g.lineTo(sx*2, -26); g.fill(); g.fillStyle = '#ffc0cb'; g.beginPath(); g.moveTo(sx*7.5, -24); g.lineTo(sx*6.6, -30); g.lineTo(sx*4, -26); g.fill(); g.fillStyle = '#e8a050'; } g.fillStyle = '#F9BF01'; g.beginPath(); g.moveTo(-5, -28); g.lineTo(-5, -33); g.lineTo(-2.5, -30.5); g.lineTo(0, -34); g.lineTo(2.5, -30.5); g.lineTo(5, -33); g.lineTo(5, -28); g.fill(); }
+    g.restore(); };
   const cat = (x, y, o) => { const s = o.s || 1; g.save(); g.translate(x, y); g.scale(s, s);
     g.fillStyle = 'rgba(0,0,0,.15)'; g.beginPath(); g.ellipse(0, 17, 13, 4, 0, 0, TAU); g.fill();
     if (o.cape) { g.fillStyle = o.cape; g.beginPath(); g.moveTo(-10, -4); g.lineTo(10, -4); g.lineTo(16, 16); g.lineTo(-16, 16); g.fill(); g.fillStyle = '#fff'; for (let i = -12; i <= 12; i += 6) { g.beginPath(); g.arc(i, 15, 2, 0, TAU); g.fill(); } }
@@ -878,7 +1102,7 @@ A.snowWorld = function(X) {
   // raid bosses + the Siege King: simple, friendly looks (no gore)
   const RLOOK = {r_knight:{f:'knight', c:'#9ab4d8', c2:'#5a6a8a', s:1}, r_warden:{f:'hood', c:'#bfe3ff', c2:'#3a4a7a', s:1.35}, r_lantern:{f:'lantern', c:'#9fe8ff', c2:'#3a5a8a', s:1},
     r_queen:{f:'hood', c:'#e8d8ff', c2:'#7a5ab0', s:1.35, crown:1}, r_sentinel:{f:'golem', c:'#8a8aa8', c2:'#ffe066', s:1}, r_titan:{f:'golem', c:'#6a6a8a', c2:'#9fe8ff', s:1.45, crown:1},
-    r_vgolem:{f:'golem', c:'#f2d27a', c2:'#9fe8ff', s:1.1}, r_book:{f:'book', c:'#7a4ab0', c2:'#ffe066', s:1}, snowking:{f:'snowman', c:'#ffffff', c2:'#F9BF01', s:1.5, crown:1}};
+    r_vgolem:{f:'golem', c:'#f2d27a', c2:'#9fe8ff', s:1.1}, r_book:{f:'book', c:'#7a4ab0', c2:'#ffe066', s:1}, snowking:{f:'snowman', c:'#ffffff', c2:'#F9BF01', s:1.5, crown:1}, sq_frost:{f:'hood', c:'#9fd8ff', c2:'#1c1830', s:1.3}};
   const raidLook = (B, x, y) => { const L = RLOOK[B.k], ang = B.ph >= 2, eye = ang ? '#FF4539' : '#14204a', bob = Math.sin(t*3)*3; g.save(); g.translate(x, y); g.scale(L.s, L.s);
     g.fillStyle = 'rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(0, 30, 28, 7, 0, 0, TAU); g.fill();
     if (L.f == 'knight') { g.fillStyle = L.c2; rr(g, -16, -6, 32, 34, 8); g.fill(); g.fillStyle = L.c; g.beginPath(); g.arc(0, -16, 15, 0, TAU); g.fill(); g.fillStyle = '#14204a'; g.fillRect(-10, -18, 20, 4); g.fillStyle = eye; g.fillRect(-7, -18, 4, 4); g.fillRect(3, -18, 4, 4);
@@ -921,6 +1145,8 @@ A.snowWorld = function(X) {
       g.strokeStyle = 'rgba(255,230,100,' + (.6 + .4*Math.sin(t*12)) + ')'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(x - 8, y - 8); g.lineTo(x + 2, y + 4); g.lineTo(x - 4, y + 18); g.stroke(); g.fillStyle = '#9fe8ff'; g.beginPath(); g.arc(x - 6, y - 32, 3, 0, TAU); g.arc(x + 6, y - 32, 3, 0, TAU); g.fill(); }
     else if (B.k == 'fog') { g.globalAlpha = B.fadeA || .6; for (let i = 0; i < 9; i++) { const a = i*.7 + t*.3; g.fillStyle = 'rgba(220,228,240,.55)'; g.beginPath(); g.arc(x + Math.cos(a)*30, y - 6 + Math.sin(a*1.3)*16, 26, 0, TAU); g.fill(); } g.fillStyle = 'rgba(40,50,80,.8)'; g.beginPath(); g.ellipse(x - 12, y - 10, 4, 7, 0, 0, TAU); g.ellipse(x + 12, y - 10, 4, 7, 0, 0, TAU); g.fill(); g.globalAlpha = 1; }
     else if (B.k.slice(0, 6) == 'elite_') { g.save(); g.translate(x, y); g.scale(1.8, 1.8); g.fillStyle = '#4a5a7a'; for (const [ox, oy, r2] of [[-8, -2, 9], [6, -4, 10], [0, -10, 9], [10, 2, 7], [-10, 4, 7]]) { g.beginPath(); g.arc(ox, oy, r2, 0, TAU); g.fill(); } g.fillStyle = '#ffe066'; g.beginPath(); g.moveTo(-2, 4); g.lineTo(3, 4); g.lineTo(-1, 14); g.closePath(); g.fill(); g.fillStyle = '#ff6a6a'; g.beginPath(); g.arc(-4, -5, 2.2, 0, TAU); g.arc(5, -5, 2.2, 0, TAU); g.fill(); g.restore(); }
+    else if (B.k == 'sq_raccoon') raccoon(x, y, {s:2.4, crown:1});
+    else if (B.k == 'sq_mau') SC.mau(g, x, y, {s:1.35, st:B.ph >= 3 ? 'charge' : 'stand', mood:'angry'}, t);
     else if (RLOOK[B.k]) raidLook(B, x, y);
     else if (B.k == 'yeti' || B.k == 'r_yeti') { g.fillStyle = 'rgba(0,0,0,.18)'; g.beginPath(); g.ellipse(x, y + 40, 40, 10, 0, 0, TAU); g.fill(); g.fillStyle = '#f4f8ff'; g.beginPath(); g.ellipse(x, y + 4, 36, 38, 0, 0, TAU); g.fill(); g.strokeStyle = '#c8d8e8'; g.lineWidth = 2; g.stroke(); const sw2 = Math.sin(t*3)*8; g.beginPath(); g.ellipse(x - 40, y + 8 + sw2, 12, 22, .3, 0, TAU); g.ellipse(x + 40, y + 8 - sw2, 12, 22, -.3, 0, TAU); g.fill();
       g.fillStyle = '#8ab0d0'; g.beginPath(); g.ellipse(x, y - 12, 18, 15, 0, 0, TAU); g.fill(); g.fillStyle = B.ph >= 2 ? '#FF4539' : '#14204a'; g.beginPath(); g.arc(x - 7, y - 16, 3, 0, TAU); g.arc(x + 7, y - 16, 3, 0, TAU); g.fill(); g.fillStyle = '#fff'; g.fillRect(x - 7, y - 6, 4, 6); g.fillRect(x + 3, y - 6, 4, 6); g.fillStyle = '#F9BF01'; g.beginPath(); g.moveTo(x - 16, y - 34); g.lineTo(x - 16, y - 46); g.lineTo(x - 8, y - 40); g.lineTo(x, y - 50); g.lineTo(x + 8, y - 40); g.lineTo(x + 16, y - 46); g.lineTo(x + 16, y - 34); g.fill(); }
@@ -978,7 +1204,7 @@ A.snowWorld = function(X) {
       else if (v == DEAD) { g.strokeStyle = '#3a2a2a'; g.lineWidth = 3; g.lineCap = 'round'; g.beginPath(); g.moveTo(sx + 24, sy + 44); g.lineTo(sx + 24, sy + 10); g.moveTo(sx + 24, sy + 24); g.lineTo(sx + 12, sy + 14); g.moveTo(sx + 24, sy + 18); g.lineTo(sx + 36, sy + 8); g.stroke(); } } };
   const onScreen = (x, y, m = 80) => x > cam.x - m && x < cam.x + VW + m && y > cam.y - m && y < cam.y + VH + m;
   const SC = A.snowCast;
-  const portrait = (who, x, y, mood) => { if (who == 'pip') penguin(x, y); else if (who == 'mau') SC.mau(g, x, y + 2, {s:.9, st:'stand', mood:mood || 'happy'}, t); else if (who == 'loki') SC.loki(g, x, y + 4, {s:.85, mood:mood || 'smug', cast:1}, t);
+  const portrait = (who, x, y, mood) => { if (who.slice(0, 4) == 'kid:') kid(x, y + 12, TEAMCOL[who.slice(4)] || '#2fa8e0', {face:0}); else if (who == 'rac') raccoon(x, y + 8, {s:1.7}); else if (who == 'bard') bardDraw(x, y + 12); else if (who == 'pip') penguin(x, y); else if (who == 'mau') SC.mau(g, x, y + 2, {s:.9, st:'stand', mood:mood || 'happy'}, t); else if (who == 'loki') SC.loki(g, x, y + 4, {s:.85, mood:mood || 'smug', cast:1}, t);
     else if (SC.LOOK[who]) SC.spirit(g, who, x, y, {mood:mood || 'peaceful'}, t); else if (who.slice(-1) == 'G' && SC.LOOK[who.slice(0, -1)]) SC.spirit(g, who.slice(0, -1), x, y + 4, {ghost:1, mood:mood || 'peaceful', jitter: who == 'chaoG' ? 1 : 0}, t); };
   const draw = () => { layout(); g.fillStyle = '#eef5fc'; g.fillRect(0, 0, VW, 720);
     g.save(); g.beginPath(); g.rect(0, 0, VW, VH); g.clip(); g.translate(-cam.x + (shakeV > 0 && !low() ? (Math.random() - .5)*shakeV : 0), -cam.y + (shakeV > 0 && !low() ? (Math.random() - .5)*shakeV : 0)); drawTiles();
@@ -1002,15 +1228,15 @@ A.snowWorld = function(X) {
     for (const sk of sticks) if (onScreen(sk.x, sk.y)) { g.save(); g.translate(sk.x, sk.y); g.rotate(.4); g.fillStyle = '#8D5B1D'; rr(g, -12, -2.5, 24, 5, 2.5); g.fill(); g.fillRect(2, -7, 2.5, 6); g.restore(); if (!low()) { g.strokeStyle = 'rgba(249,191,1,' + (.4 + .3*Math.sin(t*5)) + ')'; g.lineWidth = 2; g.beginPath(); g.arc(sk.x, sk.y, 16, 0, TAU); g.stroke(); } }
     if (W.mau && mau.sniff && !W.snacks[mau.sniff.id] && onScreen(mau.sniff.x, mau.sniff.y)) { const sn = mau.sniff; g.font = '18px ' + A.font; g.textAlign = 'center'; g.fillText(sn.e, sn.x, sn.y + 6); g.fillStyle = '#F9BF01'; g.font = '900 18px ' + A.font; g.fillText('!', sn.x, sn.y - 18 + Math.sin(t*6)*3); }
     if (tornado) SC.tornado(g, tornado.x, tornado.y, tornado.r, t, low());
-    storyDraw(); p3Draw();
+    storyDraw(); p3Draw(); sqDraw();
     // characters, back to front (name tags are placed afterwards so they never overlap)
     const tags = [];
     const ents = foes.filter(f => onScreen(f.x, f.y)).map(f => ({y:f.y, d:() => drawFoe(f)}));
-    storyEnts(ents); if (boss) ents.push({y:boss.y, d:() => drawBoss(boss)}); if (W.mau) ents.push({y:mau.y, d:() => { SC.mau(g, mau.x, mau.y, {st:mauState(), walk:mau.walk}, t); if (mau.say && mau.sayT > 0) bubble(mau.x, mau.y - 52, mau.say); }}); if (W.mau) tags.push({x:mau.x, y:mau.y + 32, t:'Royal Guard Mau Mau', s:'Mau Mau', col:'#2f5fd0'});
+    storyEnts(ents); if (boss) ents.push({y:boss.y, d:() => drawBoss(boss)}); if (W.mau && !(boss && boss.k == 'sq_mau')) ents.push({y:mau.y, d:() => { SC.mau(g, mau.x, mau.y, {st:mauState(), walk:mau.walk}, t); if (mau.say && mau.sayT > 0) bubble(mau.x, mau.y - 52, mau.say); }}); if (W.mau) tags.push({x:mau.x, y:mau.y + 32, t:'Royal Guard Mau Mau', s:'Mau Mau', col:'#2f5fd0'});
     for (const m of mates) if (onScreen(m.x, m.y)) ents.push({y:m.y, d:() => { if (m.ko > 0) { g.fillStyle = RCOL[m.role]; rr(g, m.x - 16, m.y + 4, 32, 12, 6); g.fill(); g.fillStyle = '#f2c9a0'; g.beginPath(); g.arc(m.x + 18, m.y + 8, 7, 0, TAU); g.fill(); g.font = '12px ' + A.font; g.textAlign = 'center'; g.fillText('💫', m.x, m.y - 6); }
       else { kid(m.x, m.y - (cheerT > 0 ? Math.abs(Math.sin(t*10 + m.x))*9 : 0), RCOL[m.role], {walk:m.walk, face:m.face, throwT:m.throwT}); if (cheerT > 0) { g.font = '14px ' + A.font; g.textAlign = 'center'; g.fillText('🎉', m.x, m.y - 40); } } tags.push({x:m.x, y:m.y + 30, t:m.name + ' ' + RE[m.role] + ' ' + m.lv, s:m.name, col:RCOL[m.role]}); }});
     if (dead <= 0) ents.push({y:p.y - 1, d:() => { g.fillStyle = 'rgba(213,243,103,' + (.28 + .12*Math.sin(t*4)) + ')'; g.beginPath(); g.ellipse(p.x, p.y + 16, 24, 8, 0, 0, TAU); g.fill(); g.strokeStyle = '#D5F367'; g.lineWidth = 2; g.stroke(); }});
-    if (dead <= 0 && !(p.inv > 0 && p.inv < 2 && Math.sin(t*25) > 0)) ents.push({y:p.y, d:() => { kid(p.x, p.y, X.CL().col, {hat:X.CL().hat, walk:Math.hypot(p.vx, p.vy) > 30 ? p.walk : 0, face:p.face, throwT:p.throwT, charge:charge ? charge.t : 0, hit:p.hitT > 0});
+    if (dead <= 0 && !(p.inv > 0 && p.inv < 2 && Math.sin(t*25) > 0)) ents.push({y:p.y, d:() => { kid(p.x, p.y, X.CL().col, {outfit:W.outfit, hat:X.CL().hat, walk:Math.hypot(p.vx, p.vy) > 30 ? p.walk : 0, face:p.face, throwT:p.throwT, charge:charge ? charge.t : 0, hit:p.hitT > 0});
       if (p.shieldT > 0) { g.strokeStyle = 'rgba(255,233,120,' + (.5 + .4*Math.sin(t*12)) + ')'; g.lineWidth = 4; g.beginPath(); g.arc(p.x, p.y - 6, 32, 0, TAU); g.stroke(); }
       if (p.fortT > 0) { g.strokeStyle = 'rgba(255,255,255,.9)'; g.lineWidth = 7; g.beginPath(); g.arc(p.x, p.y - 6, 60, 0, TAU); g.stroke(); g.strokeStyle = '#9ec4e8'; g.lineWidth = 2; g.stroke(); }
       if (p.eye > 0) { g.fillStyle = '#2f6a3a'; g.font = '700 11px ' + A.font; g.textAlign = 'center'; g.fillText('🔭 Eagle Eye', p.x, p.y - 44); } }});
@@ -1031,6 +1257,7 @@ A.snowWorld = function(X) {
     g.restore();
     // darker caves and castle, with light around you
     const rg = regAt(p.x, p.y); if ((rg == 'caves' || (rg == 'castle' && tileAt(Math.floor(p.x/TS), Math.floor(p.y/TS)) == FLOOR)) && !low()) { const gr = g.createRadialGradient(p.x - cam.x, p.y - cam.y, 90, p.x - cam.x, p.y - cam.y, 420); gr.addColorStop(0, 'rgba(10,15,40,0)'); gr.addColorStop(1, 'rgba(10,15,40,.5)'); g.fillStyle = gr; g.fillRect(0, 0, VW, VH); }
+    if (sqNightF) { g.fillStyle = 'rgba(8,16,48,.38)'; g.fillRect(0, 0, VW, VH); }
     { const H2 = REG[rg] && REG[rg].haunt, night = nightAmt(); if (H2 || night > .05) { const a2 = Math.max(night*.42, H2 ? (H2 == 2 && (W.sp|0) < 6 ? .5 : .32) : 0); const gr = g.createRadialGradient(p.x - cam.x, p.y - cam.y, 110, p.x - cam.x, p.y - cam.y, Math.max(VW, VH)*.7); gr.addColorStop(0, 'rgba(10,20,50,' + a2*.35 + ')'); gr.addColorStop(1, 'rgba(10,20,50,' + a2 + ')'); g.fillStyle = gr; g.fillRect(0, 0, VW, VH); }
       if (night > .4 && !low()) { for (let b = 0; b < 3; b++) { const yb = 30 + b*26; g.fillStyle = 'rgba(' + ['80,255,190', '120,200,255', '200,140,255'][b] + ',' + (.08 + .06*Math.sin(t*.7 + b))*night + ')'; g.beginPath(); g.moveTo(0, yb); for (let xx = 0; xx <= VW; xx += 40) g.lineTo(xx, yb + Math.sin(xx*.01 + t*.5 + b)*18); g.lineTo(VW, yb + 40); for (let xx = VW; xx >= 0; xx -= 40) g.lineTo(xx, yb + 40 + Math.sin(xx*.012 + t*.4 + b)*14); g.fill(); } }
       if (H2 && !low()) { g.fillStyle = 'rgba(180,230,255,.7)'; for (let i = 0; i < 14; i++) { const sx = (i*173 + t*12 - cam.x*.2) % VW, sy = (i*97 + Math.sin(t + i)*30 - cam.y*.2) % VH; g.beginPath(); g.arc((sx + VW) % VW, (sy + VH) % VH, 2 + (i % 3), 0, TAU); g.fill(); } }
@@ -1066,15 +1293,16 @@ A.snowWorld = function(X) {
     if (touchUI) { g.fillStyle = '#14204a'; g.fillRect(0, BAR, VW, 720 - BAR); const BW = VW/BTN.length;
       BTN.forEach((b, i) => { const on = (i < 4 && pad(['l', 'u', 'd', 'r'][i])) || (i == 4 && p.ab <= 0) || (i == 5 && nt2) || (i == 6 && W.mau && (W.treats||0) > 0), x = i*BW; g.fillStyle = on ? '#D5F367' : 'rgba(255,255,255,.16)'; rr(g, x + 4, BAR + 12, BW - 8, 76, 14); g.fill(); g.fillStyle = on ? '#14204a' : '#fff'; g.textAlign = 'center';
         g.font = '800 ' + (i < 4 ? 24 : 18) + 'px ' + A.font; g.fillText(i == 4 && p.ab > 0 ? Math.ceil(p.ab) + 's' : b, x + BW/2, BAR + (i < 4 ? 58 : 50)); if (i >= 4) { g.font = '700 10px ' + A.font; g.fillText(i == 4 ? X.CL().ab : i == 5 ? (nt2 ? nt2.n : 'Use') : i == 6 ? 'Feed (' + (W.treats||0) + ')' : 'Map', x + BW/2, BAR + 72); } }); }
-    else { const chips = [['⭐ ' + (p.ab > 0 ? Math.ceil(p.ab) + 's' : X.CL().ab), 'Space', 'ab', p.ab <= 0], ['✋ ' + (nt2 ? nt2.n : 'Use'), 'E', 'use', !!nt2], ...(W.mau ? [['🐟 Feed Mau Mau (' + (W.treats||0) + ')', 'G', 'feed', (W.treats||0) > 0]] : []), ...(W.mount && !raid ? [[(MOUNTS.find(m => m.id == W.mount) || {e:'🛷'}).e + (riding ? ' Riding' : ' Ride'), 'V', 'ride', riding]] : []), ['🤸 Roll', 'Shift', 'roll', false], ['📈 Skills' + (kPts() > 0 ? ' (' + kPts() + ')' : ''), 'K', 'skills', kPts() > 0], ['🗺 Map', 'M', 'map', false]];
+    else { const chips = [['⭐ ' + (p.ab > 0 ? Math.ceil(p.ab) + 's' : X.CL().ab), 'Space', 'ab', p.ab <= 0], ['✋ ' + (nt2 ? nt2.n : 'Use'), 'E', 'use', !!nt2], ...(W.mau ? [['🐟 Feed Mau Mau (' + (W.treats||0) + ')', 'G', 'feed', (W.treats||0) > 0]] : []), ...(W.mount && !raid ? [[(MOUNTS.find(m => m.id == W.mount) || {e:'🛷'}).e + (riding ? ' Riding' : ' Ride'), 'V', 'ride', riding]] : []), ['🤸 Roll', 'Shift', 'roll', false], ...(W.lball ? [['🎾 Ball', 'B', 'ball', lballCd <= 0]] : []), ['📗 Journal', 'J', 'journal', false], ['📈 Skills' + (kPts() > 0 ? ' (' + kPts() + ')' : ''), 'K', 'skills', kPts() > 0], ['🗺 Map', 'M', 'map', false]];
       g.font = '800 11px ' + A.font; let tot = 0; const ws = chips.map(([a, k]) => { const w2 = g.measureText(a).width + g.measureText(k).width + 30; tot += w2 + 6; return w2; }); let x = VW/2 - tot/2; const y = VH - 30;
       chips.forEach(([a, k, id, on], i) => { const w2 = ws[i]; g.fillStyle = on ? 'rgba(213,243,103,.92)' : 'rgba(20,32,74,.6)'; rr(g, x, y, w2, 24, 12); g.fill(); g.fillStyle = on ? '#14204a' : '#fff'; g.textAlign = 'left'; g.fillText(a, x + 10, y + 16); const kw = g.measureText(k).width + 8; g.fillStyle = on ? '#14204a' : 'rgba(255,255,255,.85)'; rr(g, x + w2 - kw - 6, y + 4, kw, 16, 5); g.fill(); g.fillStyle = on ? '#D5F367' : '#14204a'; g.textAlign = 'center'; g.fillText(k, x + w2 - 6 - kw/2, y + 16); btnR.push({x, y, w:w2, h:24, id}); x += w2 + 6; }); }
     // map
-    if (mapOpen) { const MS = Math.min((VW - 40)/N, (640 - TY - 62)/N), MXo = VW/2 - N*MS/2; MAPR.x = MXo; MAPR.y = TY + 62; MAPR.s = MS; g.fillStyle = 'rgba(10,16,36,.97)'; g.fillRect(0, 0, VW, 720); g.fillStyle = '#fff'; g.textAlign = 'center'; g.font = '900 22px ' + A.font; g.fillText(travel ? '✨ Fast travel: tap a waystone' : '🗺 The Snow Kingdom', VW/2, TY + 32); g.font = '600 11px ' + A.font; g.fillStyle = '#9fe8ff'; g.fillText(travel ? 'Waystones you have touched glow blue' : (touchUI ? '◀▲▼▶ move · tap to throw (hold = bigger) · ⭐ ability · ✋ use · 🐟 feed Mau Mau' : 'WASD/arrows move · click to throw (hold = bigger) · F throws · Space ability · E use · G feed Mau Mau · Shift roll · V ride · K skills · C team hold · M map'), VW/2, TY + 50);
+    if (mapOpen) { const MS = Math.min((VW - 40)/N, (640 - TY - 62)/N), MXo = VW/2 - N*MS/2; MAPR.x = MXo; MAPR.y = TY + 62; MAPR.s = MS; g.fillStyle = 'rgba(10,16,36,.97)'; g.fillRect(0, 0, VW, 720); g.fillStyle = '#fff'; g.textAlign = 'center'; g.font = '900 22px ' + A.font; g.fillText(travel ? '✨ Fast travel: tap a waystone' : '🗺 The Snow Kingdom', VW/2, TY + 32); g.font = '600 11px ' + A.font; g.fillStyle = '#9fe8ff'; g.fillText(travel ? 'Waystones you have touched glow blue' : (touchUI ? '◀▲▼▶ move · tap to throw (hold = bigger) · ⭐ ability · ✋ use · 🐟 feed Mau Mau' : 'WASD/arrows move · click to throw (hold = bigger) · F throws · Space ability · E use · G feed Mau Mau · Shift roll · V ride · K skills · J journal · B ball · C team hold · M map'), VW/2, TY + 50);
       g.imageSmoothingEnabled = false; g.drawImage(mini, MAPR.x, MAPR.y, N*MAPR.s, N*MAPR.s); g.imageSmoothingEnabled = true;
       const ms = (L2) => ({x:MAPR.x + (L2.x + .5)*MAPR.s, y:MAPR.y + (L2.y + .5)*MAPR.s}), seen = L2 => fog[Math.floor(L2.y/2)*FB + Math.floor(L2.x/2)];
       g.font = '18px ' + A.font; [['camp', '🏕'], ['forest', W.runes.forest ? '🌙' : '🌲'], ['lake', W.runes.lake ? '🌙' : '🧊'], ['caves', W.runes.caves ? '🌙' : '💎'], ['pass', W.mau ? '🐱' : '⛓'], ['castle', W.bau ? '👑' : '🏰']].forEach(([k, e2]) => { if (!seen(LM[k])) return; const q = ms(LM[k]); g.fillText(e2, q.x, q.y + 6); });
       [['village', '🏘'], ['aurora', '🌌'], ['coast', '⚓'], ['ruins', '🗿'], ['yeti', '🏔'], ['hollow', '✨'], ['shrine', '⛩️'], ['oldroad', '🛤️'], ['hall', '🕯️'], ['peak', '🌩️']].forEach(([k, e2]) => { if (!seen(LM2[k])) return; const q = ms(LM2[k]); g.fillText(e2, q.x, q.y + 6); });
+      sqMap(ms);
       for (const k in WAYS) { if (!W.ways[k]) continue; const q = ms(WAYS[k]); g.fillStyle = travel ? '#64CDF5' : 'rgba(100,205,245,.8)'; g.beginPath(); g.arc(q.x, q.y, travel ? 10 : 5, 0, TAU); g.fill(); if (travel) { g.fillStyle = '#fff'; g.font = '700 11px ' + A.font; g.fillText(WAYS[k].n, q.x, q.y - 14); } }
       const pq = {x:MAPR.x + p.x/TS*MAPR.s, y:MAPR.y + p.y/TS*MAPR.s}; g.fillStyle = '#FF4539'; g.beginPath(); g.arc(pq.x, pq.y, 6, 0, TAU); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 2; g.stroke();
       if (G0) { g.fillStyle = '#F9BF01'; g.font = '18px ' + A.font; g.fillText('⭐', MAPR.x + G0.x/TS*MAPR.s, MAPR.y + G0.y/TS*MAPR.s + 6); }
@@ -1097,8 +1325,9 @@ A.snowWorld = function(X) {
     siege:() => { if (raid) leaveRaid(); p.x = BELL.x; p.y = BELL.y + 120; startSiege(); }, raid:n => { const R0 = RAIDS[Math.max(0, Math.min(4, Math.floor(n) - 1))]; if (siege) siegeEnd(false); enterRaid(R0); },
     kxp:n => { give({xp:Math.round(n)}); save(); say('Admin: kingdom level ' + kLv(), 2); }, base:() => { W.base.tier = 3; ROOMS.forEach(r0 => { if (!r0.need || r0.need()) W.base.rooms[r0.id] = 4; }); refreshMax(); save(); say('Admin: Crystal Castle, every room maxed', 2.5); },
     raidReset:() => { W.raidClr = {}; save(); say('Admin: weekly raid clears reset (rewards can be earned again)', 2.5); },
+    sq:() => sqAdminStep(), sqAll:() => { SQK.forEach(id => { if (!W.sqR[id] && SQ[id].avail()) { W.sqD[id] = 1; delete W.sq[id]; W.sqR[id] = 1; SQ[id].finish(); } }); save(); say('Admin: every available side story finished', 2.5); },
     bosses:() => Object.keys(BOSS)};
   if (W.extraHp) { p.max += W.extraHp; p.hp = p.max; }
   return {frame:dt => { update(dt); draw(); drawTop(); }, down, move, up, key, close, adm, admin:{reveal:() => { fog.fill(1); for (let i = 0; i < fog.length; i++) paintBlock(i); explored = fog.length; save(); }, quest:() => { W.met = 1; W.runes = {forest:1, lake:1, caves:1}; W.mau = 1; W.down.grumble = W.down.icefang = W.down.crystal = W.down.rufus = 1; save(); say('Admin: runes + Mau Mau given, gate open'); }, tp:k => { const w2 = px(WAYS[k] || WAYS.camp); p.x = w2.x; p.y = w2.y + 40; foes = []; boss = null; }},
-    dbg:() => ({p3:{raid:() => raid, siege:() => siege, panel:() => panel, startSiege, siegeEnd, enterRaid, leaveRaid, RAIDS, toggleMount, riding:() => riding, skillPanel, fortPanel, raidPanel, shopPanel, panelDown, kLv, RL, roomCost, BELL, FORT, BOARD, rpx, give}, p, W, mates, foes, boss, balls, gateOpen, things, spawnBoss, hurtBoss, chests, LAIR, use, update, dlg:() => dlg, nextLine})}; };
+    dbg:() => ({sq:{SQ, sqStep, sqAdvance, sqStart, journal, throwBall, chase:() => chase, course:() => course, waves:() => waves, spot, lballT:() => lballT}, p3:{raid:() => raid, siege:() => siege, panel:() => panel, startSiege, siegeEnd, enterRaid, leaveRaid, RAIDS, toggleMount, riding:() => riding, skillPanel, fortPanel, raidPanel, shopPanel, panelDown, kLv, RL, roomCost, BELL, FORT, BOARD, rpx, give}, p, W, mates, foes, boss, balls, gateOpen, things, spawnBoss, hurtBoss, chests, LAIR, use, update, dlg:() => dlg, nextLine})}; };
 })();
