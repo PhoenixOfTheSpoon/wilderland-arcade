@@ -1,0 +1,11 @@
+const L = require('./lib.js');
+(async()=>{ const {b,p,errs,app} = await L.start(); const ok = (n, c, v) => console.log((c ? 'PASS ' : 'FAIL ') + n + (v !== undefined ? ' → ' + JSON.stringify(v) : ''));
+ await p.evaluate(()=>{ localStorage.setItem('wl-music-track', 'playlist'); localStorage.setItem('wl-music-gm', 'mine'); localStorage.removeItem('wl-music-gmv'); }); await p.reload(); await p.waitForTimeout(5000);
+ const key = await p.evaluate(()=>Object.keys(localStorage).filter(k => k.includes('music')).join(','));
+ const s0 = await p.evaluate(()=>window.WLMusic._state()); ok('old saved setting reset once to Area music; floor still plays the playlist', s0.gm == 'area' && s0.tk == 'playlist', {s0, key});
+ await p.evaluate(app + '.open("snowball")'); await p.waitForTimeout(800); await p.evaluate(()=>{ window.Arcade._dbg.snow().openWorld(); }); await p.waitForTimeout(1500);
+ const s1 = await p.evaluate(()=>window.WLMusic._state()); ok('inside the Snow Kingdom the area music plays, not the playlist', s1.tk == 'chip' && s1.mood != 'floor', s1);
+ await p.evaluate(()=>window.WLMusic.setGameMusic('mine')); const s2 = await p.evaluate(()=>window.WLMusic._state()); ok('"My playlist" lets the playlist play in games', s2.tk == 'playlist', s2);
+ await p.evaluate(()=>window.WLMusic.setGameMusic('area')); await p.reload(); await p.waitForTimeout(5000); const s3 = await p.evaluate(()=>window.WLMusic._state()); ok('setting saved after reload (not reset again)', s3.gm == 'area', s3);
+ await p.evaluate(()=>window.WLMusic.setGameMusic('mine')); await p.reload(); await p.waitForTimeout(5000); const s4 = await p.evaluate(()=>window.WLMusic._state()); ok('"My playlist" choice survives reload', s4.gm == 'mine', s4);
+ console.log(errs.filter(e => !e.includes('Failed to load')).slice(0, 5)); await b.close(); })();

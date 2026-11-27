@@ -187,7 +187,7 @@ const scheduleSong = () => { if (!songC) { if (track == 'player') { const j = so
     else if (beat == 0 || beat == 4) note(mtof(b), t, e*3.8, S.bassW, .08);
     const dr = (S.drums || '')[beat]; if (dr == 'k' || dr == 'x' || dr == 'S') kick(t, .12); if (dr == 'h' || dr == 'x') hat(t, .022); if (dr == 's' || dr == 'S') snare(t, .06);
     nextT += e; sstep++; } };
-const schedule = () => { if (!cur || !ctx) return; if ((track == 'playlist' || (track == 'player' && !isFileId(curId()))) && !dramatic()) { scheduleSong(); return; } const {M, deg, mel} = cur, e = 60 / M.bpm / 2;   // one eighth note
+const schedule = () => { if (!cur || !ctx) return; if ((tk() == 'playlist' || (tk() == 'player' && !isFileId(curId()))) && !dramatic()) { scheduleSong(); return; } const {M, deg, mel} = cur, e = 60 / M.bpm / 2;   // one eighth note
   while (nextT < ctx.currentTime + .25) { const i = step % mel.length, bar = Math.floor(i / 8) % 4, c = M.prog[bar], t = nextT, beat = i % 8, V = M.vol;
     // melody (hold = let the last note ring)
     const m = mel[i]; if (m && m !== 'h') { let len = 1; while (mel[(i+len) % mel.length] === 'h' && len < 4) len++; note(mtof(m), t, e*len*.95, M.lead, .05*V); }
@@ -210,6 +210,9 @@ const FILES = {monkeys: {src:'assets/music/monkeys-spinning-monkeys.mp3', n:'Mon
   invest: {src:'assets/music/investigations.mp3', n:'Investigations', s:'INVESTIGATIONS', need:40, credit:'“Investigations” Kevin MacLeod (incompetech.com)' + CC},
   cipher: {src:'assets/music/cipher.mp3', n:'Cipher', s:'CIPHER', need:50, credit:'“Cipher” Kevin MacLeod (incompetech.com)' + CC}};
 let rebirths = 0, rbSet = false; const unlocked = k => !FILES[k] || rebirths >= (FILES[k].need || 0);
+// Game music: 'area' (default) = inside games the area's own music always plays; 'mine' = your playlist/player plays in games too. Reset once to 'area' (Dec 14p).
+let gm = 'area'; try { if (localStorage.getItem(KEY + '-gmv') !== '1') { localStorage.setItem(KEY + '-gm', 'area'); localStorage.setItem(KEY + '-gmv', '1'); } gm = localStorage.getItem(KEY + '-gm') == 'mine' ? 'mine' : 'area'; } catch(e){}
+const tk = () => gm == 'area' && baseMood != 'floor' ? 'chip' : track;   // the track that actually plays right now
 let track = 'chip'; try { const t = localStorage.getItem(KEY+'-track'); if (t && (t == 'chip' || t == 'playlist' || t == 'player' || FILES[t])) track = t; } catch(e){}
 // ---- MUSIC PLAYER (unlocked on the Rebirth Road): a queue of tracks — 's:<song name>' (original songs) or 'f:<file key>' (song files)
 let vol = 1; try { const v = localStorage.getItem(KEY+'-vol'); if (v != null && v !== '') vol = Math.max(0, Math.min(1, +v)); } catch(e){}
@@ -222,7 +225,7 @@ const songIdx = id => SONGS.findIndex(S2 => 's:'+S2.n === id);
 const idOk = id => isFileId(id) ? !!FILES[id.slice(2)] && unlocked(id.slice(2)) : songIdx(id) >= 0 && songOk(songIdx(id));
 const advance = () => { if (!queue.length) return; for (let k = 0; k < queue.length; k++) { let n = shuffle && queue.length > 2 ? Math.floor(Math.random()*queue.length) : (qi + 1) % queue.length; if (shuffle && n == qi) n = (n + 1) % queue.length; qi = n; if (idOk(queue[qi])) break; } saveQ(); };
 // the song file that should be playing right now (null = the synth plays)
-const fileNow = () => track == 'player' ? (isFileId(curId()) && idOk(curId()) ? curId().slice(2) : null) : (FILES[track] && unlocked(track) ? track : null);
+const fileNow = () => { const T = tk(); return T == 'player' ? (isFileId(curId()) && idOk(curId()) ? curId().slice(2) : null) : (FILES[T] && unlocked(T) ? T : null); };
 let audio = null, audioKey = '';
 const playFile = () => { const key = fileNow(), F = FILES[key]; if (!F) return; if (!audio || audioKey !== key) { if (audio) audio.pause(); audio = new Audio(F.src); audioKey = key;
     audio.addEventListener('ended', () => { if (track == 'player' && audioKey == key) { if (!repeat1) advance(); songC = null; sstep = 0; stop(); run(); } }); }
@@ -238,7 +241,8 @@ const stop = () => { stopChip(); pauseFile(); };
 
 let moodName = 'floor', baseMood = 'floor', flagsNow = {danger:false, boss:false};
 const WLMusic = {
-  mood(name){ if (!MOODS[name]) name = 'floor'; baseMood = name; if (name == 'floor') flagsNow = {danger:false, boss:false}; this._apply(); },
+  gameMusic: () => gm, setGameMusic(v){ gm = v == 'mine' ? 'mine' : 'area'; try { localStorage.setItem(KEY + '-gm', gm); } catch(e){} songC = null; this._apply(); stop(); if (on) { started = true; if (!cur) cur = build(moodName); run(); } },
+  mood(name){ if (!MOODS[name]) name = 'floor'; const was = tk(); baseMood = name; if (tk() != was) { songC = null; stop(); } if (name == 'floor') flagsNow = {danger:false, boss:false}; this._apply(); },
   // games report "last life" (danger) and "boss fight" (boss); boss music wins over danger music
   flags(o){ flagsNow = {danger:!!o.danger, boss:!!o.boss}; this._apply(); },
   _apply(){ const name = flagsNow.boss ? 'boss' : flagsNow.danger ? 'danger' : baseMood; if (name === moodName && cur) { run(); return; } const wasFile = fileNow() && !['boss','danger'].includes(moodName); moodName = name;
@@ -268,7 +272,8 @@ const WLMusic = {
     track = 'player'; songC = null; sstep = 0; saveQ(); try { localStorage.setItem(KEY+'-track', track); } catch(e){} if (!on) this.setOn(true); else { stop(); started = true; if (!cur) cur = build(moodName); run(); } return true; },
   skip(){ if (track != 'player') { this.next(); return; } advance(); songC = null; sstep = 0; if (!on) this.setOn(true); else { stop(); started = true; if (!cur) cur = build(moodName); run(); } },
   prev(){ if (track != 'player' || !queue.length) return; for (let k = 0; k < queue.length; k++) { qi = (qi - 1 + queue.length) % queue.length; if (idOk(queue[qi])) break; } saveQ(); songC = null; sstep = 0; stop(); run(); },
-  nowPlaying: () => { if (!on) return {id:'', n:''}; if (track == 'player') { const id = curId(), t = WLMusic.tracks().find(x => x.id == id); return t ? {id, n:t.n, credit:t.credit, by:t.by} : {id:'', n:''}; }
+  _state: () => ({tk:tk(), track, gm, mood:baseMood, file:fileNow()}),
+  nowPlaying: () => { if (!on) return {id:'', n:''}; if (tk() == 'chip' && track != 'chip') return {id:'mood:' + baseMood, n:'Area music', credit:WLMusic.ORIGINAL, by:'Wilderland Arcade (original)'}; if (track == 'player') { const id = curId(), t = WLMusic.tracks().find(x => x.id == id); return t ? {id, n:t.n, credit:t.credit, by:t.by} : {id:'', n:''}; }
     if (track == 'playlist') return {id:'s:'+SONGS[si].n, n:SONGS[si].n, credit:WLMusic.ORIGINAL, by:'Wilderland Arcade (original)'}; const f = fileNow(); if (f) return {id:'f:'+f, n:FILES[f].n, credit:FILES[f].credit, by:'Kevin MacLeod (incompetech.com)'};
     return {id:'chip', n:'Arcade chiptune (changes with each game)', credit:WLMusic.ORIGINAL, by:'Wilderland Arcade (original)'}; },
   queue: () => queue.slice(), track: () => track,

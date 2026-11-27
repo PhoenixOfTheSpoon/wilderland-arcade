@@ -9,7 +9,8 @@ const el = (tag, at, ...kids) => { const n = document.createElement(tag); at = a
   kids.flat().forEach(c => { if (c == null || c === false) return; n.appendChild(typeof c == 'object' ? c : document.createTextNode(String(c))); }); return n; };
 
 // ---------------- What's new ----------------
-const WN = {v:'2026-12-14o', items:[
+const WN = {v:'2026-12-14p', items:[
+  ['🎵', 'Every game plays its own music again', 'Your playlist (and Hex Pup Hustle) now only plays on the arcade floor. Inside games and the Snow Kingdom you hear the area\'s own music. Want your playlist everywhere? Settings → Game music → My playlist.'],
   ['♾', 'Endless Dungeon', 'New at the War Table: endless generated floors, each with a time limit. Rewards start at 10 Frost Crystals + 250 snowflakes and DOUBLE every floor, with a guardian every 5th floor. Run out of time and the run ends, but you keep everything you earned. Your best floor is saved.'],
   ['🚪', 'Raid door fix', 'Pressing E at a raid door now takes you to the next floor instead of out of the raid. Leaving a raid needs a second E press, and your floor is saved.'],
   ['🫧', 'The Sunken Ice Temple is underwater', 'The whole temple raid is now underwater: enemies and bosses are twice as strong and every reward is doubled. Watch your air meter (it lasts longer the more stamina you have) and refill it at the bubble vents. Buy a Breathing Mask at the War Table with Frost Crystals to make your air last much longer, and keep upgrading it.'],
@@ -83,6 +84,7 @@ Q.settings = api => { css(); const o = el('div', {cls:'wlq-ov'}), close = () => 
       row('🎬', 'Animations', 'Reduced or Off helps slower computers (same as Performance mode)', seg(anim, [['full', 'Full'], ['reduced', 'Reduced'], ['off', 'Off']], k => api.setAnim && api.setAnim(k))),
       row('🔊', 'Sound effects', A.muted ? 'Sound is muted' : Math.round((A.sfxVol == null ? 1 : A.sfxVol)*100)+'%', slider(A.sfxVol == null ? 1 : A.sfxVol, v => { A.sfxVol = v; LSset('wl-sfx-vol', v); if (A.tone && v > 0) A.tone(880, .05, 'square', .05); })),
       row('🎵', 'Music volume', M && M.on && !M.on() ? 'Music is off (turn it on in the Music Player or with M)' : '', slider(M && M.volume ? M.volume() : 1, v => M && M.setVolume && M.setVolume(v))),
+      row('🎮', 'Game music', 'Area music: every game and area plays its own music (your playlist only plays on the arcade floor). My playlist: your playlist plays in games too', seg(M && M.gameMusic ? M.gameMusic() : 'area', [['area', 'Area music'], ['mine', 'My playlist']], k => M && M.setGameMusic && M.setGameMusic(k))),
       row('🎧', 'Music Player & playlists', 'Every song, its credit, shuffle and playlists', el('button', {cls:'wlq-btn sm', onclick:() => { close(); window.WLR && window.WLR.open('music'); }}, 'Open')),
       row('👑', 'Admin event effects', 'Calm keeps every event reward but skips the big visuals (flips, disco, snow, stampedes)', seg(window.WLLive ? window.WLLive.fxMode() : 'full', [['full', 'Full'], ['calm', 'Calm']], k => window.WLLive && window.WLLive.setFx(k))),
       row('🔔', 'Notifications', 'Pop-up messages while you play', el('button', {cls:'wlq-btn sm alt', onclick:() => { api.toggleNotif && api.toggleNotif(); render(); }}, (api.notif ? api.notif() : 'all').toUpperCase())),
