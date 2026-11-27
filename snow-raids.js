@@ -151,7 +151,7 @@ A.snowRaids = (S, SG0) => {
   // ---------- starting, floors, leaving ----------
   const startRun = (R, d, key, fi = 0, resume) => { if (S.boss) S.boss = null; S.foes = []; S.balls = []; S.riding = false; S.panel = null; S.mapOpen = false;
     run = {R, d, key:key|0, fi, seed:(Math.random()*1e9)|0, t:(resume && resume.t) || 0, deaths:(resume && resume.deaths) || 0, mods:weekMods(), tank:{hp:0, max:0, down:0}, buffT:0, hits:0, spiritT:0, voidT:0};
-    run.tank.max = run.tank.hp = 10 + 2*d + (set4('kitchen') ? 6 : 0); enterFloor(fi); A.sfx('win'); };
+    run.tank.max = run.tank.hp = 10 + 2*d + (set4('kitchen') ? 6 : 0); p.over = S.RL('infirmary'); enterFloor(fi); A.sfx('win'); };   /* Infirmary: gold hearts for this raid */
   const enterFloor = fi => { run.fi = fi; genFloor(fi); hz = []; kicks = []; puffs = []; fx = []; S.foes = []; S.balls = []; S.boss = null; S.holdMates = false; F.t = 0;
     p.x = F.spawn.x; p.y = F.spawn.y; p.vx = p.vy = 0; p.inv = 1.5; S.mateHome(); mau.x = p.x - 46; mau.y = p.y + 6; mates.forEach((m, i) => { m.x = p.x + (i - 1)*60; m.y = p.y + 50; });
     const R = run.R, nm = R.names[fi] || 'Floor ' + (fi + 1), code = F.code, tip = {c:'Defeat the enemies', r:'Read the rune tablet, then step on the plates in that order', b:'Light all 4 braziers (E) at the same time', l:'Ring the bells from the deepest to the highest (E or a snowball)',
@@ -313,8 +313,8 @@ A.snowRaids = (S, SG0) => {
   const victory = () => { const R = run.R, d = run.d, k2 = R.id + ':' + d, secs = Math.round(run.t), first = !RS.lock.got[k2], loot = [], mul = (mod('treasure') ? 2 : 1)*D().loot*(1 + .1*run.key);
     RS.clr[k2] = (RS.clr[k2]|0) + 1; RS.maxD[R.id] = Math.max(RS.maxD[R.id]|0, d + 1); W.raids = W.raids || {}; W.raids[R.id] = (W.raids[R.id]|0) + 1; if (!RS.best[k2] || secs < RS.best[k2]) RS.best[k2] = secs; RS.keys[R.id] = Math.max(RS.keys[R.id]|0, run.key + 1);
     if (run.deaths == 0) RS.nd = (RS.nd|0) + 1; RS.troph[R.id] = Math.max(RS.troph[R.id]|0, d + 1); X.stat && X.stat('snowRaids', 1, 'add');
-    const tok = Math.round((10 + 5*d + run.key)*(mod('treasure') ? 2 : 1)*(set4('vault') ? 1.5 : 1)*(RS.relic == 'vault' ? 1.25 : 1)); RS.tok += tok; loot.push({e:'🎟', n:tok + ' Raid Tokens', c:'#F9BF01'});
-    const fr = Math.round((first ? 60 : 20)*mul), fl = Math.round((first ? 2500 : 700)*mul); S.give({frost:fr, flakes:fl, xp:300 + 100*d, score:8000*(d + 1)}); loot.push({e:'🔷', n:fr + ' Frost Crystals', c:'#64CDF5'}, {e:'❄', n:A.fmt ? A.fmt(fl) + ' snowflakes' : fl + ' snowflakes', c:'#fff'});
+    const wr = S.RL('warroom'); const tok = Math.round((10 + 5*d + run.key)*(mod('treasure') ? 2 : 1)*(set4('vault') ? 1.5 : 1)*(RS.relic == 'vault' ? 1.25 : 1)*(1 + .1*wr)); RS.tok += tok; loot.push({e:'🎟', n:tok + ' Raid Tokens', c:'#F9BF01'});
+    const fr = Math.round((first ? 60 : 20)*mul*(1 + .1*wr)), fl = Math.round((first ? 2500 : 700)*mul*(1 + .1*wr)); S.give({frost:fr, flakes:fl, xp:300 + 100*d, score:8000*(d + 1)}); loot.push({e:'🔷', n:fr + ' Frost Crystals', c:'#64CDF5'}, {e:'❄', n:A.fmt ? A.fmt(fl) + ' snowflakes' : fl + ' snowflakes', c:'#fff'});
     W.treats = (W.treats || 0) + 3 + d; loot.push({e:'🐟', n:(3 + d) + ' Mau Mau treats', c:'#c4601a'});
     if (first) { RS.lock.got[k2] = 1; const it = makeSet(R, [2, 3, 4, 5][d] + (run.key >= 10 ? 1 : 0)); if (it) loot.push({e:'🛡', n:it.name + ' (' + ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary', 'Mythic', 'Snow'][it.rar] + ')', c:'#E9B9F7', big:1});
       const relicCh = [.2, .35, .6, 1][d]; if (!RS.relics[R.id] && Math.random() < relicCh) { RS.relics[R.id] = 1; loot.push({e:'✨', n:'RELIC: ' + R.relic.n + ' · ' + R.relic.d, c:'#ff6ad5', big:1}); }
@@ -323,7 +323,7 @@ A.snowRaids = (S, SG0) => {
     if (d == 3 && !W.titles['Nightmare Conqueror']) { W.titles['Nightmare Conqueror'] = 1; loot.push({e:'🎖', n:'Title: Nightmare Conqueror', c:'#ff4539'}); }
     if (RAIDS.every(R2 => RS.clr[R2.id + ':0'] || RS.clr[R2.id + ':1'] || RS.clr[R2.id + ':2'] || RS.clr[R2.id + ':3']) && !W.titles['Raid Leader']) { W.titles['Raid Leader'] = 1; loot.push({e:'🎖', n:'Title: Raid Leader', c:'#F9BF01'}); }
     if ((RS.keys[R.id]|0) >= 10 && !W.titles.Keymaster) { W.titles.Keymaster = 1; loot.push({e:'🎖', n:'Title: Keymaster', c:'#F9BF01'}); }
-    loot.push({e:'🔑', n:'Key +' + RS.keys[R.id] + ' unlocked for ' + R.n, c:'#9fe8ff'}); if (d < 3 && (RS.maxD[R.id]|0) == d + 1) loot.push({e:'⭐', n:DIFF[d + 1].n + ' difficulty unlocked!', c:DIFF[d + 1].c});
+    if (wr && Math.random() < .05*wr) { RS.keys[R.id]++; loot.push({e:'🗡️', n:'War Room bonus: +1 key level!', c:'#F9BF01'}); } loot.push({e:'🔑', n:'Key +' + RS.keys[R.id] + ' unlocked for ' + R.n, c:'#9fe8ff'}); if (d < 3 && (RS.maxD[R.id]|0) == d + 1) loot.push({e:'⭐', n:DIFF[d + 1].n + ' difficulty unlocked!', c:DIFF[d + 1].c});
     loot.push({e:'🏆', n:'Trophy: ' + R.n + ' (' + DIFF[d].n + ') for your Trophy Hall', c:'#F9BF01'});
     try { const C2 = window.WLCloud; if (C2 && C2.postScore && C2.me && C2.me()) { const u = A.username || 'player'; C2.postScore('raid_' + R.id + '_' + d, {u, s:Math.max(1, 36000 - secs)}, 36000); C2.postScore('raidkey', {u, s:RS.keys[R.id]}, 100000);
       if (d >= 2 && !RS.wfDone[R.id]) { RS.wfDone[R.id] = 1; C2.postScore('raidwf_' + R.id, {u, s:Math.max(1, 1e8 - Math.floor((Date.now() - Date.UTC(2026, 10, 1))/6e4))}, 1e8); } } } catch (e) {}

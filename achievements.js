@@ -92,7 +92,7 @@ A.init = ctx => { if (FAM.length) return; const G = ctx.games || [], NG = G.leng
   sp('snowSiege','🔔','Bell Defender', n => 'Win '+n+' village siege'+(n==1?'':'s'), s => sm(s,'snowSiege'), [1,3,10,25]);
   sp('snowRaids','⚔️','Raid Party', n => 'Beat '+n+' raid boss'+(n==1?'':'es'), s => sm(s,'snowRaids'), [1,5,15,40,100]);
   sp('snowKLv','📈','Kingdom Hero', n => 'Reach kingdom level '+n, s => mx(s,'snowKLv'), [5,10,20,35]);
-  sp('snowFort','🏰','Castle Builder', n => ['','Upgrade your base to an Ice Fort','Upgrade to a Frost Keep','Build the Crystal Castle'][n], s => mx(s,'snowFort'), [1,2,3]);
+  sp('snowFort','🏰','Castle Builder', n => ['','Upgrade your base to an Ice Fort','Upgrade to a Frost Keep','Build the Crystal Castle'][n] || (n == 7 ? 'Reach base level 8: Starfall Spire' : 'Reach base level 12: the Wilderland Winter Kingdom'), s => mx(s,'snowFort'), [1,2,3,7,11], {titles:{4:'Winter Monarch'}});
   sp('snowLoki','🐶','Loki Stopper', n => 'Defeat Loki the Evil Sorcerer '+n+' time'+(n==1?'':'s')+' in Kingdom Quest', s => sm(s,'snowLoki'), [1,3,10,25,50]);
   sp('snowRescue','👑','Snow General', n => 'Rescue Lord Emperor Bau Bau', s => sm(s,'snowRescue'), [1]);
   sp('snowExplore','🗺','Kingdom Explorer', n => 'Explore '+n+'% of the Snow Kingdom', s => mx(s,'snowExplore'), [10,25,50,75,100]);

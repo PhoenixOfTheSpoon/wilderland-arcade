@@ -23,8 +23,8 @@ Paste this whole file into a new chat (or attach it) and say "continue the queue
   - Publish with the Artifact tool, using that `url`, `root` = the repo folder, and `files` keyed `"project/<file name>"`. The HTML must also be listed as `"project/Wilderland Arcade.dc.html"`.
   - Only send the files you changed; the others are kept.
   - If a publish is refused because a file wasn't read as published, read it with action "read", diff it against git, then publish.
-- **BUILD string:** it appears twice in `Wilderland Arcade.dc.html` (the head boot script and `const BUILD`). Bump it on every publish, e.g. `sed -i "s/2026-12-13d/2026-12-13e/g" "Wilderland Arcade.dc.html"`. The current value is **2026-12-13d**.
-- **What's New:** `WN = {v:'2026-12-13', items:[[emoji, title, text], ...]}` in `qol.js`. Add an entry for each big update and bump `v`.
+- **BUILD string:** it appears twice in `Wilderland Arcade.dc.html` (the head boot script and `const BUILD`). Bump it on every publish, e.g. `sed -i "s/2026-12-14a/2026-12-14b/g" "Wilderland Arcade.dc.html"`. The current value is **2026-12-14a**.
+- **What's New:** `WN = {v:'2026-12-14', items:[[emoji, title, text], ...]}` in `qol.js`. Add an entry for each big update and bump `v`.
 - Local test server: `python3 -m http.server 8770` in the repo, run in the background. Playwright and Chromium are preinstalled (`require('playwright')`).
 - `firestore.rules` exists but **is still not published to Firebase**. Publishing it needs a browser, signed in to the Firebase console as the admin. Admin-only events must be enforced by Firestore rules tied to the admin's Google account; players can only read events.
 
@@ -62,7 +62,9 @@ Paste this whole file into a new chat (or attach it) and say "continue the queue
   - 10 raids with floors coded c/r/b/l/k/g/m/G/B. Difficulty and modifier lists are `DIFF` and `MODS`.
   - A mechanics library `MECH`: slam, charge, breath, ring, orbs (reflectable), volley, adds:shield/heal/bomb, int (interrupt), stack, spread, pz (puzzle), dive, wind, mirror, crawl, tail, camo, bh (black hole), bloat. Each boss's kit is in `KIT`.
   - Also: stagger, weak windows, enrage timer, the tank (Mau Mau), checkpoints, War Table panels, the Quartermaster, relics, leaderboards (`WLCloud.postScore`/`top`) and admin (`SG.raidAdm`). Saves are in `W.rs`.
-- `snow-castle.js`: the base is a castle walled around all of Camp Cocoa (tiles 38–62 × 76–96).
+- `snow-castle.js`: the base is a castle walled around all of Camp Cocoa (tiles 38–62 × 76–96). 12 base levels (`W.base.tier` 0–11, shown as Level tier+1 / 12); wall looks per level in `WL`; `keep()` draws the main castle; `SPOTS` places 18 room buildings; levels 5–12 add `dress()` decorations.
+  - Base logic is in snow-world.js (`TIER_N`, `TIER_COST` ×2.5 per level, `ROOMS` with `at:` unlock level, `roomCost`, `buyRoom`, `tierUp`, `upgradeAll`, `MILE` one-time rewards, Frost Crystal Mine `mineHas/mineTake` with `W.mineAt`, Map Room flags `W.mflags`, Infirmary gold hearts `p.over`).
+  - Snow Friends Lodge (`rooms.lodge`) gives teammates in every Snowball game (games-more3 `lodgeN/lodgeUp`).
   - Gates are made in snow-world `genMap`. Walls look different at each of the 4 tiers.
   - There's one building per room, growing at levels 1–4. Pressing E at a building opens `roomPanel`.
 - `music.js` (`window.WLMusic`):
@@ -77,6 +79,10 @@ Paste this whole file into a new chat (or attach it) and say "continue the queue
   - Set `localStorage 'wl-wn' = '2099'` in tests so the What's New popup doesn't block clicks.
 
 ## 3. Recently finished (don't redo)
+- Base to Level 12 (Dec 14): 12 tiers, rooms to 12, 9 new rooms (Lodge, Armory, Map Room, Infirmary, Beacon, Mine, War Room, Royal Hall, Spirit Vault), milestone rewards, Upgrade all + red dot, Level 12 celebration + Castle Builder diamond + Winter Kingdom Crown (Wilderland hat), admin set base/room levels.
+- Snowball Workshop is ticket-only (+2%/level, `tix:1` in UPG_RAW). Old power kept in `P.snowLeg` until the next rebirth.
+- Boss knockout rule (first part of the Boss + Difficulty overhaul): knocked out or leaving = boss refills to the top of its current phase (`spawnBoss`; Dumpling 6 too). Old mid-fight saves kept exact health once (`W.bhpExact`).
+- Touch controls in the Snow Kingdom: floating joystick (left), THROW button with auto-aim (right), new bottom bar.
 - Raid Season: War Table, 10 raids, bosses with tells and counters, Normal–Nightmare, weekly modifiers, keys, sets, relics, tokens, Quartermaster, lockouts, trophies, achievements, titles, leaderboards.
   - Also: objective arrows, hotbar spacing (icons only when it doesn't fit), spread-out teammates, no night sky indoors.
   - The bug where War Table buttons were disabled is fixed.
@@ -87,6 +93,8 @@ Paste this whole file into a new chat (or attach it) and say "continue the queue
 - Fight 6: being knocked out resets him to full health; leaving keeps it.
 
 ## 4. THE QUEUE (in this order)
+**NEXT: Snow Kingdom Boss + Difficulty Overhaul** (the user's spec is in chat; stages): 2) Gear Score + Threat tiers (8), universal boss rules (projectile cap, 0.6 s tells, 2 s gaps, punish windows, leave = knockout, revive in arena at 50% with 3 s invulnerability, no Cocoa heal in fights, hearts after stuns, admin); 3) Dumpling fight 6 rework (black-ice dome, 10 new phases, Give up, reload = inside + knockout); 4) per-boss mechanics in batches.
+
 **A. Snow Kingdom Update** (full spec below). Still to do:
 1. Infinite fusing through 10 grades to PHOENIX, then Phoenix +1, +2… forever.
    - Fusion Forge in Frostpine Village and at the castle, with preview, "Fuse all duplicates", Auto-fuse, a lock on favorite items, and Frost Crystal cost.

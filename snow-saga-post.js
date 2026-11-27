@@ -189,7 +189,7 @@ SAGA.postInit = api => {
     const B = S.boss; if (!B || !BOSS[B.k] || !BOSS[B.k].post) { if (PW.invert || PW.drift || PW.pull || (PW.slow || 1) != 1) { PW.invert = false; PW.drift = null; PW.pull = null; PW.slow = 1; } if (gx.copies.length) gx.copies = []; } };
   // dying in the Gecko God fight: back to the last checkpoint (every 5 layers)
   const respawn = () => { const B = S.boss; if (!B || !BOSS[B.k] || !BOSS[B.k].post) return false; hz.length = 0; gx.copies = []; gx.moments = {}; PW.invert = false; PW.drift = null; PW.pull = null; PW.slow = 1; S.foes = []; S.balls = []; S.boss = null; constellation(false, B);
-    W.bhp = W.bhp || {}; if (BOSS[B.k].gg && !BOSS[B.k].rematch) { const cp = SV.flags.godCp || 1; W.bhp[B.k] = Math.ceil(B.max*(1 - (cp - 1)/10)); gx.fill = 0; S.say('🌌 Back to checkpoint: phase ' + cp + ' · ' + GPH[cp], 3); } else if (BOSS[B.k].rematch) { delete W.bhp[B.k]; rematch = null; S.say('⏱ Rematch over. Try again from the statue!', 3); }
+    W.bhp = W.bhp || {}; if (BOSS[B.k].gg && !BOSS[B.k].rematch) { const cp = SV.flags.godCp || 1; W.bhp[B.k] = B.max*(1 - (cp - 1)/10)*(cp > 1 ? .999 : 1); gx.fill = 0; S.say('🌌 Back to checkpoint: phase ' + cp + ' · ' + GPH[cp], 3); } else if (BOSS[B.k].rematch) { delete W.bhp[B.k]; rematch = null; S.say('⏱ Rematch over. Try again from the statue!', 3); }
     const C = SG.C(); if (C) { const q = SG.W2T(C.lair); p.x = q.x; p.y = q.y + 300; } p.vx = p.vy = 0; p.hp = p.max; p.inv = 3; p.ammo = X.maxAmmo(); S.mateHome(); return true; };
   // ---------- drawing ----------
   const hallStatue = () => ({x:121.5*TS, y:62.5*TS});

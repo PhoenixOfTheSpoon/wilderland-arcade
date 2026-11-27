@@ -25,7 +25,7 @@ V.status = (P, cat, i, adm) => { const o = AVP[cat].o[i]; if (!o) return {own:fa
   else if (o.pr) { how = 'pr'; own = Math.floor((P.rebirths||0)/10) >= o.pr; label = 'Unlocked at Prestige '+o.pr+' ('+(o.pr*10)+' Rebirths)'; rar = 6; }
   else if (o.rb) { how = 'rb'; own = (P.rebirths||0) >= o.rb; label = 'Unlocked at '+o.rb+' Rebirth'+(o.rb>1?'s':''); rar = 5; }
   else if (o.ac) { how = 'ac'; own = (P.ach||[]).length >= o.ac; label = 'Unlocked by: earn '+o.ac+' achievements'; rar = 2; }
-  else if (o.a) { const [fid, t] = o.a.split(':'), f = window.WLA && window.WLA.fam(fid); how = 'ach'; own = ((P.at||{})[fid]|0) > +t; label = 'Unlocked by: '+(f ? f.name : fid)+' · '+((window.WLA && window.WLA.TIERS[+t]) || {n:''}).n; rar = Math.min(5, 1 + +t); }
+  else if (o.a) { const [fid, t] = o.a.split(':'), f = window.WLA && window.WLA.fam(fid); how = 'ach'; own = ((P.at||{})[fid]|0) > +t; label = 'Unlocked by: '+(f ? f.name : fid)+' · '+((window.WLA && window.WLA.TIERS[+t]) || {n:''}).n; rar = o.wr ? 7 : Math.min(5, 1 + +t); }
   else if (o.r) { how = 'shop'; price = V.price(o); own = false; label = 'Avatar Shop · '+fmt(price)+' tickets'; rar = price < 2e3 ? 1 : price < 5e4 ? 2 : price < 1e6 ? 3 : 4; }
   return {own: adm || own || bought, how, label, rar, price, rc: RC[rar], rn: RN[rar]}; };
 V.ownedCount = P => { if (!AVP) return 0; let n = 0; AVK.forEach(k => AVP[k].o.forEach((o,i) => { const st = V.status(P, k, i); if (st.own && st.how !== 'free') n++; })); return n; }; // starter items don't count

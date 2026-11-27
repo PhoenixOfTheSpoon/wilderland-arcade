@@ -1,14 +1,27 @@
 // Wilderland Arcade · Snow Kingdom · YOUR CASTLE (snow-castle.js)
 // The base is a castle around all of Camp Cocoa: walls with gates on every side, and a building for every room.
-// Walls get grander with each base tier (Snow Camp → Ice Fort → Frost Keep → Crystal Castle) and every building
-// grows with its room level (0 = an empty plot with a sign). Drawing only — the map walls are made in snow-world.js.
+// 12 base levels (Snow Camp → … → Wilderland Winter Kingdom): walls, towers, banners, lights and sky effects get grander every level,
+// and every building grows with its room level up to 12 (0 = an empty plot with a sign). Drawing only — the map walls are made in snow-world.js.
 (function(){
 'use strict';
 const A = window.Arcade = window.Arcade || {}, TAU = Math.PI*2;
 const X0 = 38, X1 = 62, Y0 = 76, Y1 = 96;
-const SPOTS = {barracks:[41.5, 79.2], guard:[55.5, 78.6], forge:[59.4, 80], kitchen:[41, 88.6], pantry:[41.5, 93.6], trophy:[48, 93.8], shrine:[59.6, 89], yard:[53.4, 92.8], well:[45.6, 87.4]};
-// wall looks per tier: stone colour, top colour, height, crenellations, glow
-const WL = [{c:'#f4f8fc', top:'#ffffff', line:'#c8d8e8', h:16, cren:0}, {c:'#cfe8fb', top:'#eaf6ff', line:'#8ec0e8', h:26, cren:1}, {c:'#9fb4d0', top:'#c8d6ea', line:'#5a7090', h:34, cren:1, torch:1}, {c:'#b8e4ff', top:'#e8f8ff', line:'#64CDF5', h:42, cren:1, torch:1, glow:1}];
+const SPOTS = {barracks:[41.5, 79.2], guard:[55.5, 78.6], forge:[59.4, 80], kitchen:[41, 88.6], pantry:[41.5, 93.6], trophy:[48, 93.8], shrine:[59.6, 89], yard:[53.4, 92.8], well:[45.6, 87.4],
+  lodge:[44.6, 79.6], armory:[52.6, 80.2], maproom:[43.4, 83.8], infirmary:[47.4, 82], beacon:[39.3, 90.8], mine:[60.7, 83.6], warroom:[47.8, 90.8], hall:[56.6, 82.2], vault:[53.2, 87.9]};
+const NAMES = {barracks:'Barracks', guard:'Royal Guard Post', forge:'Forge', kitchen:'Cocoa Kitchen', pantry:'Mau Mau’s Pantry', trophy:'Trophy Hall', shrine:'Spirit Shrine', yard:'Training Yard', well:'Snow Well',
+  lodge:'Snow Friends Lodge', armory:'Ice Armory', maproom:'Map Room', infirmary:'Infirmary', beacon:'Beacon Tower', mine:'Frost Crystal Mine', warroom:'War Room', hall:'Royal Hall', vault:'Spirit Vault'};
+// wall looks per base level (tier 0–11): stone colour, top colour, line colour, height, crenellations, torch light, glow, and extras
+const WL = [{c:'#f4f8fc', top:'#ffffff', line:'#c8d8e8', h:16, cren:0}, {c:'#cfe8fb', top:'#eaf6ff', line:'#8ec0e8', h:26, cren:1}, {c:'#9fb4d0', top:'#c8d6ea', line:'#5a7090', h:34, cren:1, torch:'255,180,70'},
+  {c:'#b8e4ff', top:'#e8f8ff', line:'#64CDF5', h:42, cren:1, torch:'255,180,70', glow:'100,205,245'},
+  {c:'#8fd3e8', top:'#d9f6ff', line:'#3f9fbf', h:48, cren:1, torch:'255,190,90', glow:'100,205,245', lights:1, butt:1},
+  {c:'#c9c2f0', top:'#efeaff', line:'#8a7ad0', h:52, cren:1, torch:'190,150,255', glow:'190,150,255', lights:1, butt:1, aur:1},
+  {c:'#6f86a8', top:'#b8c8e0', line:'#3a4a68', h:56, cren:1, torch:'120,200,255', glow:'120,200,255', lights:1, butt:1, aur:1, fangs:1},
+  {c:'#3c4f8a', top:'#7d90c8', line:'#202c58', h:60, cren:1, torch:'255,240,160', glow:'160,180,255', lights:1, butt:1, aur:1, fangs:1, stars:1},
+  {c:'#f2f6ff', top:'#ffffff', line:'#c8b070', spire:'#F9BF01', h:64, cren:1, torch:'255,210,90', glow:'255,230,150', lights:1, butt:1, aur:1, gold:'#F9BF01', stars:1},
+  {c:'#9fb8d8', top:'#e0ecf8', line:'#4a6890', spire:'#9fe8ff', h:68, cren:1, torch:'140,230,255', glow:'140,230,255', lights:1, butt:1, aur:1, fangs:1, gold:'#d8e8ff', crys:1, stars:1},
+  {c:'#d8f0ff', top:'#ffffff', line:'#7ac8f0', spire:'#F9BF01', h:72, cren:1, torch:'200,245,255', glow:'180,240,255', lights:1, butt:1, aur:1, gold:'#F9BF01', crys:1, stars:1, beams:1},
+  {c:'#eaf7ff', top:'#ffffff', line:'#8fc8ea', h:76, cren:1, torch:'255,95,210', glow:'200,170,255', lights:1, butt:1, aur:2, gold:'#ff5fd2', spire:'#ff5fd2', crys:1, stars:1, beams:1, wild:1}];
+const FLAG_C = ['#00B451', '#2f5fd0', '#c8102e', '#64CDF5', '#3f9fbf', '#8a5ae0', '#3a4a68', '#F9BF01', '#ffffff', '#64CDF5', '#ff5fd2', '#D5F367'];
 const rr = (g, x, y, w, h, r) => { g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); };
 const circ = (g, x, y, r, c) => { g.fillStyle = c; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); };
 const shadow = (g, x, y, w) => { g.fillStyle = 'rgba(0,0,0,.15)'; g.beginPath(); g.ellipse(x, y, w, w*.28, 0, 0, TAU); g.fill(); };
@@ -48,29 +61,134 @@ const ROOM = {
     if (lv >= 2) { g.fillStyle = '#8D5B1D'; g.fillRect(x - 18, y - 46, 3, 34); g.fillRect(x + 15, y - 46, 3, 34); g.fillStyle = lv >= 3 ? '#2f5fd0' : '#7a4a2a'; g.beginPath(); g.moveTo(x - 24, y - 44); g.lineTo(x, y - 58); g.lineTo(x + 24, y - 44); g.fill(); }
     if (lv >= 4) for (let i = 0; i < 5; i++) { const s = (t + i*.2) % 1; circ(g, x - 8 + i*4, y - 18 - Math.sin(s*Math.PI)*24, 2.5, 'rgba(200,240,255,.9)'); } }};
 
-const draw = (g, o) => { const {TS, t, tier, RL, M, N, WALL, onScreen, low, font} = o, L = WL[Math.min(3, tier)];
+// ---------- the 9 newer rooms: each grows through 4 looks (lv 1–3, 4–6, 7–9, 10–12) ----------
+const st4 = lv => lv <= 3 ? 0 : lv <= 6 ? 1 : lv <= 9 ? 2 : 3;
+const snowman = (g, x, y, s, c) => { shadow(g, x, y, 8*s); circ(g, x, y - 7*s, 8*s, '#fff'); circ(g, x, y - 18*s, 6*s, '#fff'); g.fillStyle = c; g.fillRect(x - 6*s, y - 14*s, 12*s, 3*s); circ(g, x - 2*s, y - 19*s, 1*s, '#14204a'); circ(g, x + 2*s, y - 19*s, 1*s, '#14204a'); g.fillStyle = '#FF8A3C'; g.beginPath(); g.moveTo(x, y - 17.5*s); g.lineTo(x + 5*s, y - 16.5*s); g.lineTo(x, y - 15.5*s); g.fill(); };
+const NEW = {
+  lodge:(g, x, y, lv, t) => { const S = st4(lv), w = 54 + S*10, h = 28 + S*7; shadow(g, x, y + 2, w*.6); g.fillStyle = '#8a5a2a'; rr(g, x - w/2, y - h, w, h, 4); g.fill(); g.strokeStyle = '#6a3a1a'; g.lineWidth = 2;
+      for (let yy = y - h + 6; yy < y; yy += 7) { g.beginPath(); g.moveTo(x - w/2, yy); g.lineTo(x + w/2, yy); g.stroke(); }
+      if (S >= 2) { g.fillStyle = '#7a4a22'; rr(g, x - w/2 + 6, y - h - 22, w - 12, 24, 3); g.fill(); g.fillStyle = '#ffe9a0'; g.fillRect(x - 8, y - h - 16, 16, 10); }
+      const top = y - h - (S >= 2 ? 22 : 0); g.fillStyle = '#5a3a1a'; g.beginPath(); g.moveTo(x - w/2 - 8, top + 2); g.lineTo(x, top - 22 - S*3); g.lineTo(x + w/2 + 8, top + 2); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.moveTo(x - w/2 - 8, top + 2); g.lineTo(x, top - 22 - S*3); g.lineTo(x + w/2 + 8, top + 2); g.lineTo(x + w/2, top - 2); g.lineTo(x, top - 16 - S*3); g.lineTo(x - w/2, top - 2); g.fill();
+      g.fillStyle = '#6a6a7a'; g.fillRect(x + w/2 - 16, top - 22, 9, 18); smoke(g, x + w/2 - 11, top - 24, t); g.fillStyle = '#3a2212'; rr(g, x - 7, y - 17, 14, 17, 5); g.fill(); for (const sx of [-1, 1]) { g.fillStyle = '#ffe9a0'; g.fillRect(x + sx*w*.3 - 6, y - h*.7, 12, 10); }
+      if (S >= 1) { g.fillStyle = '#a0703a'; g.fillRect(x - w/2 - 4, y - 4, w + 8, 4); }
+      [[-w/2 - 13, 3], [w/2 + 13, 3], [w/2 + 2, 16]].slice(0, Math.min(3, lv)).forEach(([dx, dy], i) => snowman(g, x + dx, y + dy, .9, ['#c8102e', '#2f5fd0', '#00B451'][i])); },
+  armory:(g, x, y, lv, t) => { const S = st4(lv), w = 50 + S*10, h = 30 + S*8; shadow(g, x, y + 2, w*.6); g.fillStyle = '#cfeaff'; g.fillRect(x - w/2, y - h, w, h); g.strokeStyle = '#8ec0e8'; g.lineWidth = 1.2;
+      for (let r = 0; r < 3; r++) { const yy = y - h + 8 + r*h/3; g.beginPath(); g.moveTo(x - w/2, yy); g.lineTo(x + w/2, yy); g.stroke(); } for (let k = 0; k < Math.floor(w/12); k++) { g.fillStyle = '#e8f8ff'; g.fillRect(x - w/2 + 2 + k*12, y - h - 7, 8, 8); }
+      circ(g, x, y - h*.55, 10 + S, '#2f5fd0'); circ(g, x, y - h*.55, 7 + S, '#9fe8ff'); g.strokeStyle = '#2f5fd0'; g.lineWidth = 2.5; g.beginPath(); g.moveTo(x - 6, y - h*.55 - 6); g.lineTo(x + 6, y - h*.55 + 6); g.moveTo(x + 6, y - h*.55 - 6); g.lineTo(x - 6, y - h*.55 + 6); g.stroke();
+      g.fillStyle = '#5a7aa0'; rr(g, x - 7, y - 15, 14, 15, 4); g.fill();
+      const rx = x + w/2 + 10; g.fillStyle = '#8D5B1D'; g.fillRect(rx - 10, y - 26, 20, 3); for (let i = 0; i < 2 + S; i++) { g.strokeStyle = '#c8ccd4'; g.lineWidth = 2; g.beginPath(); g.moveTo(rx - 8 + i*5, y); g.lineTo(rx - 8 + i*5, y - 32); g.stroke(); g.fillStyle = '#9fe8ff'; g.beginPath(); g.moveTo(rx - 11 + i*5, y - 32); g.lineTo(rx - 8 + i*5, y - 40); g.lineTo(rx - 5 + i*5, y - 32); g.fill(); }
+      if (S >= 2) { g.fillStyle = '#b8e4ff'; g.fillRect(x - w/2 - 8, y - h - 22, 16, h + 22); g.fillStyle = '#64CDF5'; g.beginPath(); g.moveTo(x - w/2 - 11, y - h - 22); g.lineTo(x - w/2, y - h - 40); g.lineTo(x - w/2 + 11, y - h - 22); g.fill(); } },
+  maproom:(g, x, y, lv, t) => { const S = st4(lv), r = 22 + S*4, h = 30 + S*10; shadow(g, x, y + 2, r); g.fillStyle = '#e8dcc0'; g.fillRect(x - r, y - h, r*2, h); g.fillStyle = '#c8b890'; for (let i = -r + 6; i < r; i += 10) g.fillRect(x + i, y - h, 2, h);
+      g.fillStyle = '#2f5fd0'; g.beginPath(); g.arc(x, y - h, r + 3, Math.PI, 0); g.fill(); g.fillStyle = 'rgba(255,255,255,.4)'; g.beginPath(); g.arc(x - r*.3, y - h - r*.4, r*.35, 0, TAU); g.fill();
+      g.fillStyle = '#5a3a1a'; rr(g, x - 6, y - 16, 12, 16, 5); g.fill(); g.fillStyle = '#ffe9a0'; g.fillRect(x - r + 6, y - h + 8, 9, 8); g.fillRect(x + r - 15, y - h + 8, 9, 8);
+      const tx = x + r*.45, ty = y - h - r*.8; g.save(); g.translate(tx, ty); g.rotate(-.5 + Math.sin(t*.4)*.2); g.fillStyle = '#8D5B1D'; rr(g, -3, -4, 22 + S*3, 8, 3); g.fill(); g.fillStyle = '#F9BF01'; g.fillRect(18 + S*3, -5, 4, 10); g.restore();
+      if (S >= 1) { g.fillStyle = '#f4ead0'; rr(g, x - r - 30, y - 34, 24, 30, 3); g.fill(); g.strokeStyle = '#8D5B1D'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(x - r - 26, y - 26); g.quadraticCurveTo(x - r - 18, y - 32, x - r - 10, y - 20); g.stroke(); circ(g, x - r - 14, y - 16, 2, '#c8102e'); }
+      if (S >= 2) { flag(g, x - r + 2, y - h - 6, '#c8102e', t, 22); flag(g, x + r - 2, y - h - 6, '#F9BF01', t, 22); } if (S >= 3) { const a = t*.8; circ(g, x + Math.cos(a)*(r + 14), y - h - 8 + Math.sin(a)*8, 4, '#D5F367'); } },
+  infirmary:(g, x, y, lv, t) => { const S = st4(lv), w = 56 + S*10, h = 26 + S*7; house(g, x, y, w, h, '#fbfbff', '#e86a9a', {lit:1, roofH:16 + S*4}); const hx = x, hy = y - h - 2;
+      g.fillStyle = '#e8395a'; g.beginPath(); g.moveTo(hx, hy + 5); g.bezierCurveTo(hx - 12, hy - 4, hx - 6, hy - 13, hx, hy - 6); g.bezierCurveTo(hx + 6, hy - 13, hx + 12, hy - 4, hx, hy + 5); g.fill();
+      for (let i = 0; i < 1 + S; i++) { const bx = x + w/2 + 14 + (i % 2)*24, by = y - Math.floor(i/2)*14; g.fillStyle = '#8D5B1D'; g.fillRect(bx - 10, by - 5, 20, 5); g.fillStyle = '#fff'; rr(g, bx - 10, by - 9, 20, 5, 2); g.fill(); g.fillStyle = '#9fd0ff'; rr(g, bx + 2, by - 10, 7, 4, 2); g.fill(); }
+      if (S >= 2) { g.fillStyle = 'rgba(232,57,90,' + (.25 + .2*Math.sin(t*3)) + ')'; g.beginPath(); g.arc(hx, hy - 3, 16, 0, TAU); g.fill(); } },
+  beacon:(g, x, y, lv, t) => { const S = st4(lv), h = 60 + S*26, w = 18 + S*2; shadow(g, x, y, 16); g.fillStyle = '#8a96b0'; g.beginPath(); g.moveTo(x - w/2 - 4, y); g.lineTo(x - w/2 + 2, y - h); g.lineTo(x + w/2 - 2, y - h); g.lineTo(x + w/2 + 4, y); g.fill();
+      g.strokeStyle = '#5a6278'; g.lineWidth = 1; for (let yy = y - 10; yy > y - h; yy -= 10) { g.beginPath(); g.moveTo(x - w/2, yy); g.lineTo(x + w/2, yy); g.stroke(); } for (let k = 0; k < 2 + S; k++) { g.fillStyle = k % 2 ? '#c8102e' : '#fff'; g.fillRect(x - w/2 + 1, y - h + 8 + k*16, w - 2, 6); }
+      g.fillStyle = '#4a5468'; g.fillRect(x - w/2 - 3, y - h - 6, w + 6, 6); g.fillStyle = 'rgba(255,240,180,.95)'; g.fillRect(x - w/2 + 2, y - h - 20, w - 4, 14); g.fillStyle = '#4a5468'; g.beginPath(); g.moveTo(x - w/2 - 2, y - h - 20); g.lineTo(x, y - h - 32); g.lineTo(x + w/2 + 2, y - h - 20); g.fill();
+      const a = t*1.4, L = 70 + S*25; g.fillStyle = 'rgba(255,240,170,.18)'; g.beginPath(); g.moveTo(x, y - h - 13); g.lineTo(x + Math.cos(a - .2)*L, y - h - 13 + Math.sin(a - .2)*L*.35); g.lineTo(x + Math.cos(a + .2)*L, y - h - 13 + Math.sin(a + .2)*L*.35); g.fill(); circ(g, x, y - h - 13, 5, '#fff6c8'); },
+  mine:(g, x, y, lv, t) => { const S = st4(lv), r = 30 + S*5; shadow(g, x, y + 2, r); g.fillStyle = '#7a8296'; g.beginPath(); g.moveTo(x - r, y); g.quadraticCurveTo(x - r*.8, y - r*1.3, x, y - r*1.25); g.quadraticCurveTo(x + r*.9, y - r*1.3, x + r, y); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.ellipse(x, y - r*1.18, r*.5, 5, 0, 0, TAU); g.fill();
+      g.fillStyle = '#1c1c28'; g.beginPath(); g.moveTo(x - 12, y); g.lineTo(x - 12, y - 18); g.quadraticCurveTo(x, y - 30, x + 12, y - 18); g.lineTo(x + 12, y); g.fill(); g.strokeStyle = '#8D5B1D'; g.lineWidth = 4; g.beginPath(); g.moveTo(x - 14, y); g.lineTo(x - 14, y - 22); g.lineTo(x + 14, y - 22); g.lineTo(x + 14, y); g.stroke();
+      for (let i = 0; i < 2 + S*2; i++) { const cx2 = x - r*.7 + (i*37 % (r*1.4)), cy2 = y - 10 - (i*23 % (r*.9)); g.fillStyle = 'rgba(100,205,245,' + (.7 + .3*Math.sin(t*3 + i)) + ')'; g.beginPath(); g.moveTo(cx2, cy2 - 7); g.lineTo(cx2 + 4, cy2); g.lineTo(cx2, cy2 + 4); g.lineTo(cx2 - 4, cy2); g.fill(); }
+      g.strokeStyle = '#5a3a1a'; g.lineWidth = 2; g.beginPath(); g.moveTo(x - 4, y + 2); g.lineTo(x + r + 18, y + 2); g.moveTo(x - 4, y + 7); g.lineTo(x + r + 18, y + 7); g.stroke(); const cx = x + r*.6 + Math.sin(t*.7)*8; g.fillStyle = '#5a5a6a'; rr(g, cx - 9, y - 9, 18, 10, 2); g.fill(); g.fillStyle = '#9fe8ff'; g.beginPath(); g.arc(cx, y - 9, 6, Math.PI, 0); g.fill();
+      if (S >= 2) { g.strokeStyle = '#8D5B1D'; g.lineWidth = 3; g.beginPath(); g.moveTo(x - r + 4, y - 4); g.lineTo(x - r + 4, y - r - 20); g.lineTo(x - r + 26, y - r - 20); g.stroke(); g.strokeStyle = '#c8ccd4'; g.lineWidth = 1; g.beginPath(); g.moveTo(x - r + 24, y - r - 20); g.lineTo(x - r + 24, y - r + 4 + Math.sin(t*2)*4); g.stroke(); } },
+  warroom:(g, x, y, lv, t) => { const S = st4(lv), w = 52 + S*10, h = 22 + S*6; shadow(g, x, y + 2, w*.6); g.fillStyle = '#7a1a2a'; g.beginPath(); g.moveTo(x - w/2, y); g.lineTo(x - w/2, y - h); g.lineTo(x, y - h - 22 - S*4); g.lineTo(x + w/2, y - h); g.lineTo(x + w/2, y); g.fill();
+      g.fillStyle = '#F9BF01'; g.fillRect(x - w/2, y - h - 2, w, 3); g.fillStyle = '#3a0a14'; g.beginPath(); g.moveTo(x - 9, y); g.lineTo(x, y - h + 2); g.lineTo(x + 9, y); g.fill(); flag(g, x, y - h - 22 - S*4, '#F9BF01', t, 18);
+      for (let i = 0; i < S + 1; i++) { const bx = x - w/2 - 10 - i*12; g.fillStyle = '#5a3a1a'; g.fillRect(bx, y - 40, 2.5, 40); g.fillStyle = ['#c8102e', '#2f5fd0', '#00B451', '#8a5ae0'][i]; g.fillRect(bx + 2.5, y - 40, 9, 16); g.beginPath(); g.moveTo(bx + 2.5, y - 24); g.lineTo(bx + 7, y - 20); g.lineTo(bx + 11.5, y - 24); g.fill(); }
+      g.fillStyle = '#8D5B1D'; g.fillRect(x + w/2 + 6, y - 12, 26, 5); g.fillRect(x + w/2 + 8, y - 7, 3, 7); g.fillRect(x + w/2 + 27, y - 7, 3, 7); g.fillStyle = '#e8dcc0'; g.fillRect(x + w/2 + 9, y - 15, 20, 4); circ(g, x + w/2 + 15, y - 14, 1.5, '#c8102e'); },
+  hall:(g, x, y, lv, t) => { const S = st4(lv), w = 60 + S*10, h = 30 + S*8; shadow(g, x, y + 2, w*.6); g.fillStyle = '#eef2fa'; g.fillRect(x - w/2, y - h, w, h); g.fillStyle = '#dfe6f2'; for (let i = 0; i < 5; i++) g.fillRect(x - w/2 + 4 + i*(w - 14)/4, y - h, 6, h);
+      g.fillStyle = '#2f5fd0'; g.beginPath(); g.moveTo(x - w/2 - 6, y - h); g.lineTo(x, y - h - 20 - S*5); g.lineTo(x + w/2 + 6, y - h); g.fill(); g.fillStyle = '#F9BF01'; g.fillRect(x - w/2 - 6, y - h - 2, w + 12, 3);
+      const cy = y - h - 9 - S*2; g.fillStyle = '#F9BF01'; g.beginPath(); g.moveTo(x - 9, cy + 4); g.lineTo(x - 9, cy - 4); g.lineTo(x - 4.5, cy); g.lineTo(x, cy - 6); g.lineTo(x + 4.5, cy); g.lineTo(x + 9, cy - 4); g.lineTo(x + 9, cy + 4); g.fill();
+      g.fillStyle = '#c8102e'; g.fillRect(x - 9, y - 18, 18, 18); g.fillStyle = '#7a0a1a'; g.fillRect(x - 1, y - 18, 2, 18); if (S >= 1) { flag(g, x - w/2, y - h, '#c8102e', t, 24); flag(g, x + w/2, y - h, '#2f5fd0', t, 24); }
+      if (S >= 2) { g.fillStyle = '#c8102e'; g.fillRect(x - 6, y, 12, 14); } },
+  vault:(g, x, y, lv, t) => { const S = st4(lv), w = 40 + S*8, h = 28 + S*7, k = .5 + .5*Math.sin(t*2); shadow(g, x, y + 2, w*.6); g.fillStyle = '#e4e8f4'; g.fillRect(x - w/2, y - h, w, h); g.fillStyle = '#5a3aa0'; g.beginPath(); g.moveTo(x - w/2 - 8, y - h); g.quadraticCurveTo(x, y - h - 30 - S*4, x + w/2 + 8, y - h); g.fill();
+      g.fillStyle = 'rgba(159,232,255,' + (.55 + .35*k) + ')'; g.beginPath(); g.moveTo(x - 9, y); g.lineTo(x - 9, y - 16); g.quadraticCurveTo(x, y - 28, x + 9, y - 16); g.lineTo(x + 9, y); g.fill();
+      for (let i = 0; i < 2 + S; i++) { const a = t*.9 + i*TAU/(2 + S); circ(g, x + Math.cos(a)*(w/2 + 14), y - h*.6 + Math.sin(a)*12, 3.5, 'rgba(200,240,255,' + (.6 + .3*k) + ')'); }
+      if (S >= 2) { g.fillStyle = 'rgba(159,232,255,' + .14*k + ')'; g.beginPath(); g.arc(x, y - h*.6, w*.9, 0, TAU); g.fill(); } }};
+Object.assign(ROOM, NEW);
+const NEWB = Object.keys(NEW);
+// levels 5–12 dress every building up: lanterns, banners, a stone plinth, a crystal, gold trim, a glow, sparkles, a crown
+const dress = (g, x, y, lv, t, low, w, top) => { if (lv < 5) return;
+  if (lv >= 7) { g.fillStyle = '#9aa4b8'; rr(g, x - w/2 - 6, y - 3, w + 12, 7, 3); g.fill(); g.fillStyle = '#c8d0dc'; g.fillRect(x - w/2 - 6, y - 3, w + 12, 2); }
+  for (const sx of [-1, 1]) { const lx = x + sx*(w/2 + 12); g.fillStyle = '#3a3a4a'; g.fillRect(lx - 1.5, y - 26, 3, 26); g.fillStyle = 'rgba(255,220,120,' + (.75 + .25*Math.sin(t*5 + sx)) + ')'; rr(g, lx - 4, y - 34, 8, 9, 2); g.fill(); }
+  if (lv >= 6) { const bx = x - w/2 + 6; g.fillStyle = '#2f5fd0'; g.fillRect(bx, top + 8, 9, 18); g.beginPath(); g.moveTo(bx, top + 26); g.lineTo(bx + 4.5, top + 22); g.lineTo(bx + 9, top + 26); g.fill(); g.fillStyle = '#F9BF01'; g.fillRect(bx + 3, top + 12, 3, 3); }
+  if (lv >= 8) { g.fillStyle = 'rgba(159,232,255,.95)'; g.beginPath(); g.moveTo(x, top - 22); g.lineTo(x + 6, top - 12); g.lineTo(x, top - 4); g.lineTo(x - 6, top - 12); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 1; g.stroke(); }
+  if (lv >= 9) { g.strokeStyle = '#F9BF01'; g.lineWidth = 2; g.beginPath(); g.moveTo(x - w/2, y - 5); g.lineTo(x + w/2, y - 5); g.stroke(); }
+  if (lv >= 11 && !low) for (let i = 0; i < 4; i++) { const a = t*1.1 + i*TAU/4; circ(g, x + Math.cos(a)*(w/2 + 6), top + 10 + Math.sin(a)*10, 2.2, 'rgba(255,255,255,.9)'); }
+  if (lv >= 12) { const cy = top - 30 + Math.sin(t*2)*3; g.fillStyle = '#ff5fd2'; g.beginPath(); g.moveTo(x - 9, cy + 4); g.lineTo(x - 9, cy - 4); g.lineTo(x - 4.5, cy); g.lineTo(x, cy - 7); g.lineTo(x + 4.5, cy); g.lineTo(x + 9, cy - 4); g.lineTo(x + 9, cy + 4); g.fill(); circ(g, x, cy - 7, 2, '#D5F367'); } };
+// rough size of each building at its biggest base look (for the dressing): [width, height]
+const BOX = {barracks:[80, 80], guard:[36, 100], forge:[80, 66], kitchen:[70, 74], pantry:[60, 40], trophy:[76, 66], shrine:[62, 70], yard:[100, 40], well:[44, 58], lodge:[70, 80], armory:[66, 60], maproom:[56, 80], infirmary:[66, 66], beacon:[24, 130], mine:[70, 54], warroom:[66, 60], hall:[76, 70], vault:[54, 70]};
+const building = (g, id, x, y, lv, t, low) => { const [bw, bh] = BOX[id] || [60, 60], sc = lv > 4 ? 1 + .035*(lv - 4) : 1;
+  if (lv >= 10 && !low) { const k = .5 + .5*Math.sin(t*1.6); g.fillStyle = 'rgba(160,230,255,' + (.10 + .08*k) + ')'; g.beginPath(); g.ellipse(x, y - bh*.45*sc, bw*.85*sc, bh*.7*sc, 0, 0, TAU); g.fill(); }
+  g.save(); g.translate(x, y); g.scale(sc, sc); ROOM[id](g, 0, 0, NEWB.includes(id) ? lv : Math.min(4, lv), t); dress(g, 0, 0, lv, t, low, bw, -bh); g.restore(); };
+// ---------- the keep (your castle's main building): grows through all 12 levels ----------
+const keep = (g, fx, fy, T, t, low) => { const L = WL[T], s2 = 1 + Math.min(T, 3)*.25; g.save(); g.translate(fx, fy); g.scale(s2, s2);
+  const body = T >= 3 ? L.c : T >= 1 ? '#e8f4ff' : '#e8f4ff', spire = T >= 2 ? (L.spire || '#64CDF5') : '#9ec4e8';
+  if (L.glow && !low && T >= 3) { g.fillStyle = 'rgba(' + L.glow + ',' + (.16 + .1*Math.sin(t*2)) + ')'; g.beginPath(); g.arc(0, -40, 58, 0, TAU); g.fill(); }
+  g.fillStyle = 'rgba(0,0,0,.15)'; g.beginPath(); g.ellipse(0, 4, 52, 10, 0, 0, TAU); g.fill(); g.fillStyle = body; rr(g, -44, -40, 88, 44, 6); g.fill(); g.strokeStyle = L.line; g.lineWidth = 2; rr(g, -44, -40, 88, 44, 6); g.stroke();
+  for (let i = -44; i < 44; i += 12) { g.fillStyle = body; g.fillRect(i, -48, 8, 9); }
+  if (L.butt) for (const sx of [-1, 1]) { g.fillStyle = L.line; g.beginPath(); g.moveTo(sx*44, 4); g.lineTo(sx*54, 4); g.lineTo(sx*44, -24); g.fill(); }
+  const towers = [-50, 50, -26, 26, ...(T >= 6 ? [-36, 36] : []), ...(T >= 9 ? [0] : [])], nT = Math.min(towers.length, T + 1);
+  for (let i = 0; i < nT; i++) { const tx2 = towers[i], th = 62 + Math.min(i, 3)*4 + Math.max(0, T - 3) + (tx2 == 0 ? 10 : 0); g.fillStyle = T >= 3 ? L.top : '#dcecfa'; rr(g, tx2 - 9, -th, 18, th + 4, 4); g.fill(); g.strokeStyle = L.line; g.lineWidth = 1; g.stroke();
+    g.fillStyle = spire; g.beginPath(); g.moveTo(tx2 - 11, -th); g.lineTo(tx2, -th - 16 - Math.min(i, 3)*2 - Math.max(0, T - 3)); g.lineTo(tx2 + 11, -th); g.fill(); const tip = -th - 16 - Math.min(i, 3)*2 - Math.max(0, T - 3);
+    if (L.fangs) { g.fillStyle = '#e8f8ff'; for (const fx2 of [-7, 0, 7]) { g.beginPath(); g.moveTo(tx2 + fx2 - 2.5, -th + 4); g.lineTo(tx2 + fx2, -th + 12); g.lineTo(tx2 + fx2 + 2.5, -th + 4); g.fill(); } }
+    if (L.crys && !low) circ(g, tx2, tip - 6 + Math.sin(t*2 + i)*2, 3.5, 'rgba(159,232,255,.95)');
+    if (L.stars && i == 0) { g.fillStyle = '#F9BF01'; g.beginPath(); for (let k = 0; k < 10; k++) { const a = -Math.PI/2 + k*Math.PI/5, r2 = k % 2 ? 2.2 : 5; g.lineTo(tx2 + Math.cos(a)*r2, tip - 4 + Math.sin(a)*r2); } g.fill(); }
+    else { g.strokeStyle = '#8D5B1D'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(tx2, tip); g.lineTo(tx2, tip - 14); g.stroke(); g.fillStyle = FLAG_C[(i + T) % FLAG_C.length]; g.beginPath(); g.moveTo(tx2, tip - 14); g.lineTo(tx2 + 10 + Math.sin(t*4 + i)*2, tip - 10); g.lineTo(tx2, tip - 6); g.fill(); } }
+  if (L.gold) { g.strokeStyle = L.gold; g.lineWidth = 2.5; g.beginPath(); g.moveTo(-44, -38); g.lineTo(44, -38); g.stroke(); }
+  if (T >= 4) for (const sx of [-1, 1]) { g.fillStyle = FLAG_C[T]; g.fillRect(sx*22 - 6, -34, 12, 22); g.beginPath(); g.moveTo(sx*22 - 6, -12); g.lineTo(sx*22, -17); g.lineTo(sx*22 + 6, -12); g.fill(); g.fillStyle = '#fff'; g.fillRect(sx*22 - 1.5, -28, 3, 8); }
+  g.fillStyle = '#5a7aa0'; g.beginPath(); g.arc(0, 4, 12, Math.PI, 0); g.fill(); if (T >= 5) { g.fillStyle = 'rgba(255,230,150,.8)'; g.beginPath(); g.arc(0, 4, 8, Math.PI, 0); g.fill(); }
+  if (L.beams && !low) { g.fillStyle = 'rgba(255,255,255,' + (.08 + .05*Math.sin(t*1.3)) + ')'; for (const bx of [-30, 0, 30]) { g.beginPath(); g.moveTo(bx - 4, -60); g.lineTo(bx - 14, -200); g.lineTo(bx + 14, -200); g.lineTo(bx + 4, -60); g.fill(); } }
+  if (L.wild && !low) { for (let i = 0; i < 6; i++) { const a = t*.7 + i*TAU/6; circ(g, Math.cos(a)*64, -60 + Math.sin(a)*14, 3, ['#ff5fd2', '#D5F367', '#64CDF5'][i % 3]); } }
+  g.restore(); };
+// aurora ribbons over the castle (Aurora Citadel and up), stars and string lights
+const sky = (g, o) => { const {TS, t, tier, low, onScreen} = o, L = WL[tier]; if (!L.aur || low) return; const x0 = X0*TS, x1 = (X1 + 1)*TS, yb = Y0*TS - 120; if (!onScreen((x0 + x1)/2, yb, 900)) return;
+  const bands = L.aur == 2 ? [['255,95,210', 0], ['213,243,103', 1.7], ['100,205,245', 3.1]] : [['120,255,190', 0], ['150,120,255', 2]];
+  bands.forEach(([c, ph], bi) => { g.fillStyle = 'rgba(' + c + ',.13)'; g.beginPath(); for (let x = x0; x <= x1; x += 24) { const yy = yb - 40*bi + Math.sin(x*.004 + t*.5 + ph)*36; x == x0 ? g.moveTo(x, yy) : g.lineTo(x, yy); } for (let x = x1; x >= x0; x -= 24) { const yy = yb - 40*bi + 90 + Math.sin(x*.005 + t*.6 + ph)*30; g.lineTo(x, yy); } g.closePath(); g.fill(); });
+  if (L.stars) for (let i = 0; i < 24; i++) { const sx = x0 + (i*1777 % (x1 - x0)), sy = yb - 60 + (i*733 % 220), k = .5 + .5*Math.sin(t*3 + i*1.7); g.fillStyle = 'rgba(255,255,255,' + (.35 + .5*k) + ')'; g.fillRect(sx, sy, 2.5, 2.5); } };
+
+const draw = (g, o) => { const {TS, t, RL, M, N, WALL, onScreen, low, font} = o, tier = Math.max(0, Math.min(WL.length - 1, o.tier|0)), L = WL[tier];
   const isW = (x, y) => M[y*N + x] == WALL, px = x => (x + .5)*TS, py = y => (y + .5)*TS;
+  sky(g, {TS, t, tier, low, onScreen});
   // the walls: one block per wall tile, crenellations on top from the Ice Fort on
   for (let x = X0; x <= X1; x++) for (let y = Y0; y <= Y1; y++) { if (x != X0 && x != X1 && y != Y0 && y != Y1) continue; if (!isW(x, y) || !onScreen(px(x), py(y), 80)) continue;
     const sx = x*TS, sy = Math.min(y*TS, y*TS + TS - L.h - 14); g.fillStyle = 'rgba(0,0,0,.12)'; g.fillRect(sx, y*TS + TS - 6, TS, 8); g.fillStyle = L.c; g.fillRect(sx, sy, TS, y*TS + TS - sy); g.fillStyle = L.top; g.fillRect(sx, sy, TS, 8);
     g.strokeStyle = L.line; g.lineWidth = 1; for (let r = 0; r < 3; r++) { const yy = sy + 10 + r*((L.h + 4)/3); g.beginPath(); g.moveTo(sx, yy); g.lineTo(sx + TS, yy); g.stroke(); const off = r % 2 ? TS/2 : TS/4; g.beginPath(); g.moveTo(sx + off, yy); g.lineTo(sx + off, yy + (L.h + 4)/3); g.stroke(); }
-    if (L.cren) for (let k = 0; k < 3; k++) { g.fillStyle = L.top; g.fillRect(sx + 3 + k*16, sy - 8, 10, 9); }
-    if (L.glow && !low) { g.fillStyle = 'rgba(100,205,245,' + (.12 + .08*Math.sin(t*2 + x + y)) + ')'; g.fillRect(sx, sy - 8, TS, L.h + 22); } }
+    if (L.cren) for (let k = 0; k < 3; k++) { g.fillStyle = L.top; g.fillRect(sx + 3 + k*16, sy - 8, 10, 9); if (L.fangs) { g.fillStyle = '#e8f8ff'; g.beginPath(); g.moveTo(sx + 5 + k*16, sy + 8); g.lineTo(sx + 8 + k*16, sy + 16); g.lineTo(sx + 11 + k*16, sy + 8); g.fill(); } }
+    if (L.gold) { g.fillStyle = L.gold; g.fillRect(sx, sy + 7, TS, 2); }
+    if (L.lights && (x + y) % 2 == 0) { const on2 = Math.sin(t*3 + x*.9 + y) > -.2; circ(g, sx + TS/2, sy - 12, 2.5, on2 ? FLAG_C[(x + y) % FLAG_C.length] : 'rgba(255,255,255,.3)'); }
+    if (L.butt && (x + y) % 6 == 0) { g.fillStyle = L.line; g.fillRect(sx + TS/2 - 5, sy + 8, 10, y*TS + TS - sy - 8); }
+    if (tier >= 4 && (x*7 + y*3) % 9 == 0 && (y == Y0 || y == Y1)) { g.fillStyle = FLAG_C[tier]; g.fillRect(sx + 14, sy + 10, 20, Math.min(30, L.h - 8)); g.beginPath(); g.moveTo(sx + 14, sy + 10 + Math.min(30, L.h - 8)); g.lineTo(sx + 24, sy + 4 + Math.min(30, L.h - 8)); g.lineTo(sx + 34, sy + 10 + Math.min(30, L.h - 8)); g.fill(); g.fillStyle = L.gold || '#fff'; circ(g, sx + 24, sy + 20, 3.5, L.gold || '#fff'); }
+    if (L.glow && !low) { g.fillStyle = 'rgba(' + L.glow + ',' + (.12 + .08*Math.sin(t*2 + x + y)) + ')'; g.fillRect(sx, sy - 8, TS, L.h + 22); }
+    if (L.crys && !low && (x + y) % 5 == 0) { g.fillStyle = 'rgba(159,232,255,.9)'; g.beginPath(); g.moveTo(sx + 24, sy - 30 + Math.sin(t*2 + x)*3); g.lineTo(sx + 29, sy - 20); g.lineTo(sx + 24, sy - 12); g.lineTo(sx + 19, sy - 20); g.fill(); } }
   // gates: posts and an arch over every gap in the walls
   const gates = []; for (const y of [Y0, Y1]) { let run = null; for (let x = X0; x <= X1 + 1; x++) { const open = x <= X1 && !isW(x, y); if (open && !run) run = {a:x, y, h:1}; if (!open && run) { run.b = x - 1; gates.push(run); run = null; } } }
   for (const x of [X0, X1]) { let run = null; for (let y = Y0; y <= Y1 + 1; y++) { const open = y <= Y1 && !isW(x, y); if (open && !run) run = {a:y, x, h:0}; if (!open && run) { run.b = y - 1; gates.push(run); run = null; } } }
+  const torch = (x, y) => { if (L.torch) circ(g, x, y, 5, 'rgba(' + L.torch + ',' + (.6 + .3*Math.sin(t*10 + x + y)) + ')'); };
   for (const G of gates) { if (G.h) { const xa = G.a*TS, xb = (G.b + 1)*TS, yy = G.y*TS + TS, top = yy - L.h - 40; if (!onScreen((xa + xb)/2, yy, 200)) continue;
-      for (const xx of [xa - 10, xb - 6]) { g.fillStyle = L.c; g.fillRect(xx, top, 16, yy - top); g.fillStyle = L.top; g.fillRect(xx - 3, top - 8, 22, 10); if (L.torch) { circ(g, xx + 8, top + 14, 5, 'rgba(255,180,70,' + (.6 + .3*Math.sin(t*10 + xx)) + ')'); } }
-      g.strokeStyle = L.c; g.lineWidth = 8; g.beginPath(); g.moveTo(xa - 2, top + 4); g.quadraticCurveTo((xa + xb)/2, top - 26 - tier*4, xb + 2, top + 4); g.stroke(); flag(g, (xa + xb)/2, top - 18 - tier*4, ['#00B451', '#2f5fd0', '#c8102e', '#64CDF5'][tier], t, 22); }
-    else { const ya = G.a*TS, yb = (G.b + 1)*TS, xx = G.x*TS + TS/2; if (!onScreen(xx, (ya + yb)/2, 200)) continue; for (const yy of [ya - 6, yb + 6]) { g.fillStyle = L.c; g.fillRect(xx - 10, yy - L.h - 30, 20, L.h + 30); g.fillStyle = L.top; g.fillRect(xx - 13, yy - L.h - 38, 26, 10); if (L.torch) circ(g, xx, yy - L.h - 16, 5, 'rgba(255,180,70,' + (.6 + .3*Math.sin(t*10 + yy)) + ')'); } flag(g, xx, ya - L.h - 38, ['#00B451', '#2f5fd0', '#c8102e', '#64CDF5'][tier], t, 20); } }
-  // corner towers (Ice Fort and up), taller every tier; snow turrets on them = Defenses level
-  if (tier >= 1) { const corners = [[X0, Y0], [X1, Y0], [X0, Y1], [X1, Y1], ...(tier >= 2 ? [[X0, 86 - 5], [X1, 86 - 5], [44, Y0], [56, Y0]] : [])]; const def = RL('defenses');
-    corners.forEach(([cx, cy], i) => { const x = px(cx), y = cy*TS + TS, H = 40 + tier*22; if (!onScreen(x, y, 160)) return; shadow(g, x, y, 26); g.fillStyle = L.c; rr(g, x - 20, y - H, 40, H, 4); g.fill(); g.strokeStyle = L.line; g.lineWidth = 1.5; g.stroke();
-      g.fillStyle = tier >= 3 ? '#64CDF5' : tier >= 2 ? '#5a7aa0' : L.top; g.beginPath(); g.moveTo(x - 24, y - H); g.lineTo(x, y - H - 30 - tier*8); g.lineTo(x + 24, y - H); g.fill(); if (tier >= 3 && !low) { g.fillStyle = 'rgba(100,205,245,' + (.25 + .15*Math.sin(t*3 + i)) + ')'; g.beginPath(); g.arc(x, y - H - 20, 26, 0, TAU); g.fill(); }
-      flag(g, x, y - H - 30 - tier*8, ['#00B451', '#2f5fd0', '#c8102e', '#F9BF01'][i % 4], t, 18);
+      for (const xx of [xa - 10, xb - 6]) { g.fillStyle = L.c; g.fillRect(xx, top, 16, yy - top); g.fillStyle = L.top; g.fillRect(xx - 3, top - 8, 22, 10); torch(xx + 8, top + 14); }
+      g.strokeStyle = L.c; g.lineWidth = 8; g.beginPath(); g.moveTo(xa - 2, top + 4); g.quadraticCurveTo((xa + xb)/2, top - 26 - tier*4, xb + 2, top + 4); g.stroke(); if (L.gold) { g.strokeStyle = L.gold; g.lineWidth = 2; g.stroke(); }
+      flag(g, (xa + xb)/2, top - 18 - tier*4, FLAG_C[tier], t, 22); }
+    else { const ya = G.a*TS, yb = (G.b + 1)*TS, xx = G.x*TS + TS/2; if (!onScreen(xx, (ya + yb)/2, 200)) continue; for (const yy of [ya - 6, yb + 6]) { g.fillStyle = L.c; g.fillRect(xx - 10, yy - L.h - 30, 20, L.h + 30); g.fillStyle = L.top; g.fillRect(xx - 13, yy - L.h - 38, 26, 10); torch(xx, yy - L.h - 16); } flag(g, xx, ya - L.h - 38, FLAG_C[tier], t, 20); } }
+  // corner towers (Ice Fort and up), taller every level; snow turrets on them = Defenses level
+  if (tier >= 1) { const corners = [[X0, Y0], [X1, Y0], [X0, Y1], [X1, Y1], ...(tier >= 2 ? [[X0, 86 - 5], [X1, 86 - 5], [44, Y0], [56, Y0]] : []), ...(tier >= 5 ? [[X0, 91], [X1, 91], [56, Y1], [40, Y1]] : [])].filter(([cx, cy]) => isW(cx, cy)), def = RL('defenses');
+    corners.forEach(([cx, cy], i) => { const x = px(cx), y = cy*TS + TS, H = 40 + Math.min(tier, 3)*22 + Math.max(0, tier - 3)*9, tw = 20 + Math.max(0, tier - 3)*1.5; if (!onScreen(x, y, 200)) return; shadow(g, x, y, 26); g.fillStyle = L.c; rr(g, x - tw, y - H, tw*2, H, 4); g.fill(); g.strokeStyle = L.line; g.lineWidth = 1.5; g.stroke();
+      if (L.gold) { g.fillStyle = L.gold; g.fillRect(x - tw, y - H + 6, tw*2, 3); }
+      const roofH = 30 + tier*8; g.fillStyle = L.spire ? L.spire : tier >= 3 ? '#64CDF5' : tier >= 2 ? '#5a7aa0' : L.top; g.beginPath(); g.moveTo(x - tw - 4, y - H); g.lineTo(x, y - H - roofH); g.lineTo(x + tw + 4, y - H); g.fill();
+      if (tier >= 6) { g.fillStyle = L.top; g.beginPath(); g.moveTo(x - tw - 2, y - H); g.lineTo(x - tw*.6, y - H - roofH*.55); g.lineTo(x - tw*.2, y - H); g.fill(); g.beginPath(); g.moveTo(x + tw*.2, y - H); g.lineTo(x + tw*.6, y - H - roofH*.55); g.lineTo(x + tw + 2, y - H); g.fill(); }
+      if (L.glow && tier >= 3 && !low) { g.fillStyle = 'rgba(' + L.glow + ',' + (.25 + .15*Math.sin(t*3 + i)) + ')'; g.beginPath(); g.arc(x, y - H - 20, 26 + tier, 0, TAU); g.fill(); }
+      if (L.crys && !low) { const a = t + i; circ(g, x + Math.cos(a)*18, y - H - roofH - 10 + Math.sin(a)*5, 3.5, 'rgba(200,245,255,.95)'); }
+      if (tier >= 4) for (let k = 0; k < Math.min(4, tier - 3); k++) { g.fillStyle = 'rgba(255,230,150,' + (.6 + .4*Math.sin(t*4 + k + i)) + ')'; g.fillRect(x - 4, y - H + 14 + k*14, 8, 8); }
+      flag(g, x, y - H - roofH, FLAG_C[(i + tier) % FLAG_C.length], t, 18);
       if (i < def) { const a = Math.sin(t*.8 + i)*.6; g.save(); g.translate(x, y - H*.55); g.rotate(a); g.fillStyle = '#4a5468'; rr(g, -6, -6, 26, 12, 4); g.fill(); g.restore(); circ(g, x, y - H*.55, 9, '#e8f4ff'); g.fillStyle = '#fff'; g.font = '700 7px ' + font; g.textAlign = 'center'; g.fillText('TURRET', x, y - H*.55 + 20); } }); }
   // the buildings inside
-  for (const id in SPOTS) { const [tx, ty] = SPOTS[id], x = (tx + .5)*TS, y = (ty + .9)*TS; if (!onScreen(x, y, 200)) continue; const lv = RL(id); if (!lv) { plot(g, x, y, t, font, {barracks:'Barracks', guard:'Guard Post', forge:'Forge', kitchen:'Kitchen', pantry:'Pantry', trophy:'Trophy Hall', shrine:'Shrine', yard:'Training Yard', well:'Snow Well'}[id]); continue; }
-    ROOM[id](g, x, y, lv, t); g.fillStyle = 'rgba(20,32,74,.75)'; const nm = {barracks:'Barracks', guard:'Royal Guard Post', forge:'Forge', kitchen:'Cocoa Kitchen', pantry:'Mau Mau’s Pantry', trophy:'Trophy Hall', shrine:'Spirit Shrine', yard:'Training Yard', well:'Snow Well'}[id] + ' · Lv ' + lv; g.font = '800 9px ' + font; const w = g.measureText(nm).width + 12; rr(g, x - w/2, y + 6, w, 14, 7); g.fill(); g.fillStyle = '#fff'; g.textAlign = 'center'; g.fillText(nm, x, y + 16); } };
-A.snowCastle = {X0, X1, Y0, Y1, SPOTS, draw};
+  for (const id in SPOTS) { const [tx, ty] = SPOTS[id], x = (tx + .5)*TS, y = (ty + .9)*TS; if (!onScreen(x, y, 220)) continue; const lv = RL(id); if (!lv) { if (!o.open || o.open(id)) plot(g, x, y, t, font, NAMES[id].replace('Mau Mau’s ', '').replace('Royal Guard ', 'Guard ').replace('Cocoa ', '').replace('Spirit ', '').replace('Frost Crystal ', '')); continue; }
+    building(g, id, x, y, lv, t, low); g.fillStyle = 'rgba(20,32,74,.75)'; const nm = NAMES[id] + ' · Lv ' + lv; g.font = '800 9px ' + font; const w = g.measureText(nm).width + 12; rr(g, x - w/2, y + 6, w, 14, 7); g.fill(); g.fillStyle = '#fff'; g.textAlign = 'center'; g.fillText(nm, x, y + 16);
+    if (o.dot && o.dot(id)) circ(g, x + w/2 - 2, y + 7, 4.5, '#FF4539'); } };
+A.snowCastle = {X0, X1, Y0, Y1, SPOTS, NAMES, TIERS:WL.length, draw, keep};
 })();

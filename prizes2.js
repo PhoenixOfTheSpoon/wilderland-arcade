@@ -383,7 +383,7 @@ W.doRebirth = P => { const stars = W.rebirthStars(P); if (!stars) return null;
   const hs = W.headStart(P); Object.assign(upg, hs.upg); // Golden Star head starts survive
   // Rebirth Road speed-ups: starting tickets, Quick Start Workshop levels, keep part of your Arcade Expansions
   const road = window.WLR ? window.WLR.head(P, upg, hs.exp) : {tickets:0, exp:hs.exp};
-  return {stars, patch:{tickets:road.tickets, mult:{}, exp:road.exp, expUp:{}, combo:{}, stars:(P.stars||0)+stars, rebirths:(P.rebirths||0)+1, saves:{}, idle, upg}}; };
+  return {stars, patch:{tickets:road.tickets, mult:{}, exp:road.exp, expUp:{}, combo:{}, stars:(P.stars||0)+stars, rebirths:(P.rebirths||0)+1, saves:{}, idle, upg, snowLeg:{}}}; };   // (old Snowball Workshop power ends with the Workshop levels it came from)
 W.rebirthCard = (stars, total, n) => ({n:'+'+W.fmt(stars)+' Golden Star'+(stars>1?'s':''), d:'Every ticket is now worth ×'+W.fmt(Math.pow(1.5,total))+'. Your next milestone is '+W.fmt(1e7*Math.pow(1000,n))+' tickets.', e:'⭐', r:7, colName:'Rebirth #'+n});
 const SKINS = [{id:'',n:'Classic',stars:0},{id:'gold',n:'Gold Trim',stars:1},{id:'neon',n:'Neon Glow',stars:3},{id:'galaxy',n:'Galaxy',stars:6},{id:'rainbow',n:'Wilderland Rainbow',stars:10},{id:'reborn',n:'Reborn Glow',stars:0,rb:2},{id:'goldcab',n:'Golden Arcade',stars:0,rb:50}];
 const skinOk = (P, s) => s.rb ? (P.rebirths||0) >= s.rb : (P.stars||0) >= s.stars;
