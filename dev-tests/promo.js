@@ -1,0 +1,13 @@
+const { chromium } = require('playwright');
+const app = `(()=>{ const el = document.querySelector('header'); const k = Object.keys(el).find(k=>k.startsWith('__reactFiber')); let f = el[k]; while (f && !(f.stateNode && f.stateNode.logic && f.stateNode.logic.logAct)) f = f.return; return f.stateNode.logic; })()`;
+(async()=>{ const b = await chromium.launch(); const ctx = await b.newContext({viewport:{width:1440,height:900}}); await ctx.route(/gstatic\.com|googleapis\.com/, r=>r.abort());
+ const p = await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
+ await p.addInitScript(()=>{ if (!sessionStorage.getItem('x')) { sessionStorage.setItem('x',1); localStorage.setItem('wl-arcade-v1', JSON.stringify({econV:5, achV:2, tickets:5e6, earned:1e9, founderChk:1})); } localStorage.setItem('wl-wn','2099'); localStorage.setItem('wl-road-welcomed','1'); });
+ const go = async () => { await p.goto('http://localhost:8770/Wilderland%20Arcade.dc.html'); await p.waitForTimeout(5000); await p.evaluate(app+'.open("snowball")'); await p.waitForTimeout(1200); await p.evaluate(()=>window.Arcade._dbg.snow().openPanel('loadout')); await p.waitForTimeout(300); };
+ const S = s => p.evaluate('(()=>{ const P = window.Arcade._dbg.snow().PERM; '+s+' })()');
+ await go(); const b0 = await S('return [P.frost, P.bank, P.cr]');
+ const red = async (code) => { await p.fill('input[placeholder="Have a reward code?"]', code); await p.getByText('Redeem', {exact:true}).click({force:true}); await p.waitForTimeout(600); return p.evaluate(()=>(document.body.innerText.match(/(🎉 \+[^\n]*|That code[^\n]*|You already[^\n]*)/)||[])[0]); };
+ console.log('1st:', await red('ALLHAILLORDEMPERORBAUBAU!'), await S('return [P.frost, P.bank, P.cr]'), 'from', b0);
+ await go(); await p.evaluate(()=>document.querySelectorAll('.wlw-pop').forEach(e=>e.remove())); console.log('2nd after reload:', await red('allhaillordemperorbaubau!'), await S('return [P.frost, P.bank, P.cr]'));
+ console.log('wrong:', await red('ALLHAILBAUBAU'));
+ console.log('errors', errs); await b.close(); })();

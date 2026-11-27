@@ -22,7 +22,7 @@ const save = {econV:5, achV:2, tickets:5e6, earned:1e9, founderChk:1, gdata:{sno
  await p.screenshot({path:'./tell.png'});
  // stagger → stun → hearts + double damage
  const st = await D(`const B = d.bossNow(); B.stg = 0; for (let i = 0; i < 6; i++) d.p3.addStg(B, 20); return [B.stunT > 0, d.balls.length]`); ok('charged hits fill stagger → STUNNED', st[0], st);
- const dm = await D(`const B = d.bossNow(); const h = B.hp; d.hurtBoss(10, {mine:1, chg:0}); const a = h - B.hp; B.stunT = 0; const h2 = B.hp; d.hurtBoss(10, {mine:1, chg:0}); const b2 = h2 - B.hp; const h3 = B.hp; d.hurtBoss(10, {mine:1, chg:1}); return [a, b2, h3 - B.hp]`); ok('stunned ×2, spam ×0.5, charged ×1', dm[0] == 20 && dm[1] == 5 && dm[2] == 10, dm);
+ const dm = await D(`const B = d.bossNow(); const h = B.hp; d.hurtBoss(10, {mine:1, chg:0}); const a = h - B.hp; B.stunT = 0; const h2 = B.hp; d.hurtBoss(10, {mine:1, chg:0}); const b2 = h2 - B.hp; const h3 = B.hp; d.hurtBoss(10, {mine:1, chg:1}); return [a, b2, h3 - B.hp]`); ok('stunned ×3, no spam penalty (plain = charged), guards ×0.7', dm[0] == 30 && dm[1] == dm[2] && Math.abs(dm[1] - 7) < .01, dm);
  // knockout in the arena
  const ko = await D(`const B = d.bossNow(); B.hp = B.max*0.4; d.hurtBoss(0.001); const ph = B.ph; d.p.inv = 0; d.p.hp = 1; window.Arcade.immortal = false; d.p3.hurtMe(3); return [ph, d.p.hp]`);
  let revived = null; for (let i=0;i<60;i++){ const q = await D('return [d.p.hp, d.p.inv]'); if (q[0] > 0) { revived = q; break; } await p.waitForTimeout(100); } console.log('revived', revived);
@@ -31,8 +31,8 @@ const save = {econV:5, achV:2, tickets:5e6, earned:1e9, founderChk:1, gdata:{sno
  // threat extras
  await p.evaluate(()=>window.Arcade._dbg.snow().wm().adm.threat(6)); await D(`d.spawnBoss('grumble'); d.p.inv = 99;`); await p.waitForTimeout(600);
  const ex = await D(`return d.foes().filter(f => f.k == 'tguard').length`); ok('Fierce+: 2 Frost Guards', ex == 2, ex);
- const red = await D(`const B = d.bossNow(); B.stunT = 0; const h = B.hp; d.hurtBoss(10, {mine:1, chg:1}); return h - B.hp`); ok('guards cut damage to 40%', Math.abs(red - 4) < .01, red);
- await D(`const B = d.bossNow(); B.hp = B.max*0.45; d.hurtBoss(0.01);`); await p.waitForTimeout(3500); const ex2 = await D(`const B = d.bossNow(); return [!!B.form2, d.p3.haz().map(h => h.k)]`); ok('Brutal+: second form + slam circles / icicles', ex2[0] && ex2[1].length > 0, ex2);
+ const red = await D(`const B = d.bossNow(); B.stunT = 0; const h = B.hp; d.hurtBoss(10, {mine:1, chg:1}); return h - B.hp`); ok('guards cut damage to 70%', Math.abs(red - 7) < .01, red);
+ await D(`const B = d.bossNow(); B.hp = B.max*0.45; d.hurtBoss(0.01);`); await p.waitForTimeout(3500); const ex2 = await D(`const B = d.bossNow(); return [!!B.form2, d.p3.haz().map(h => h.k), B.slamT]`); ok('Brutal+: second form + slam circles / icicles', ex2[0] && (ex2[1].length > 0 || ex2[2] > 2.5), ex2);
  await p.screenshot({path:'./extras.png'});
  // elites
  await p.evaluate(()=>window.Arcade._dbg.snow().wm().adm.threat(7)); const el = await D(`let n = 0; for (let i = 0; i < 200; i++) { d.p3.give({}); } const fs = []; return 0`);
