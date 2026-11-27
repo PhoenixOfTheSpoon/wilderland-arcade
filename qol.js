@@ -9,7 +9,9 @@ const el = (tag, at, ...kids) => { const n = document.createElement(tag); at = a
   kids.flat().forEach(c => { if (c == null || c === false) return; n.appendChild(typeof c == 'object' ? c : document.createTextNode(String(c))); }); return n; };
 
 // ---------------- What's new ----------------
-const WN = {v:'2026-12-14n', items:[
+const WN = {v:'2026-12-14o', items:[
+  ['♾', 'Endless Dungeon', 'New at the War Table: endless generated floors, each with a time limit. Rewards start at 10 Frost Crystals + 250 snowflakes and DOUBLE every floor, with a guardian every 5th floor. Run out of time and the run ends, but you keep everything you earned. Your best floor is saved.'],
+  ['🚪', 'Raid door fix', 'Pressing E at a raid door now takes you to the next floor instead of out of the raid. Leaving a raid needs a second E press, and your floor is saved.'],
   ['🫧', 'The Sunken Ice Temple is underwater', 'The whole temple raid is now underwater: enemies and bosses are twice as strong and every reward is doubled. Watch your air meter (it lasts longer the more stamina you have) and refill it at the bubble vents. Buy a Breathing Mask at the War Table with Frost Crystals to make your air last much longer, and keep upgrading it.'],
   ['⚔️', 'Raids change every run', 'Every raid run now shuffles its floors and changes the shape of the rooms. Harder difficulties add more than bigger numbers: Heroic adds an Elite Pack floor and traps on every floor, Mythic also adds a Guardian\'s Echo floor and floor twists (darkness, slippery ice, a shrinking safe ring), and Nightmare adds a second echo and gives the final boss an extra phase. Extra floors pay extra.'],
   ['⭐', 'Developed Games', 'Snowball Showdown, Fishing Hole, Trailhead Defense and Deep Mines now have their own section at the top of the arcade floor, with big glowing cabinets and brand-new animated artwork.'],
