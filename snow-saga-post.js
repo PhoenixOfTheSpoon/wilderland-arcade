@@ -69,6 +69,7 @@ SAGA.postInit = api => {
     // floats and blinks across the arena
     B.mv = (B.mv || 0) - dt; if (B.mv <= 0) { B.mv = 2.2/sp1; const a = Math.random()*TAU, r = 60 + Math.random()*220; B.tx = B.hx + Math.cos(a)*r; B.ty = B.hy + Math.sin(a)*r; if (Math.random() < .3) { B.x = B.tx; B.y = B.ty; S.splat(B.x, B.y, 12, '#c9b0ff'); } }
     B.x += (B.tx - B.x)*Math.min(1, dt*2); B.y += (B.ty - B.y)*Math.min(1, dt*2);
+    if (window.Arcade.dumpMech && window.Arcade.dumpMech.tick(B, dt, S, [['plates', 'beam'], ['pillars', 'zone'], ['shield', 'beam', 'zone']][n - 1])) return;
     // bullet hell: spiral arms + rings with gaps
     B.sp = (B.sp || 0) - dt; if (B.sp <= 0) { B.sp = .11/sp1; B.a = (B.a || 0) + .23; const arms = 2 + n + (ph >= 3 ? 1 : 0); for (let i = 0; i < arms; i++) S.shot(B, B.a + i*TAU/arms, 150*D3, {r:6, col:'#c9b0ff'}); }
     B.rg = (B.rg == null ? 2 : B.rg) - dt; if (B.rg <= 0) { B.rg = 3/sp1; const gap = Math.random()*TAU; for (let i = 0; i < 28; i++) { const a = i/28*TAU; if (Math.abs(((a - gap + Math.PI*3) % TAU) - Math.PI) < .45) continue; S.shot(B, a, 190*D3, {r:7, col:'#9fe8ff'}); } }

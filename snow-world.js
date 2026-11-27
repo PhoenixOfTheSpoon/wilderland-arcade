@@ -366,7 +366,7 @@ A.snowWorld = function(X) {
     let left = hp; if (sv != null) { if (W.bhpExact && W.bhpExact[k]) { left = Math.max(1, Math.min(hp, sv)); delete W.bhpExact[k]; } else { const ph0 = phOf(sv, hp, np); left = Math.max(1, hp*(1 - (ph0 - 1)/np)*(ph0 > 1 ? .9999 : 1)); } } boss = {k, n:B.n, x:H.x, y:H.y - 40, hx:H.x, hy:H.y, hp:left, max:hp, r:B.r, phases:np, ph:phOf(left, hp, np), cd:2, t:0, st:'walk', a:0, sum:6, tp:4, ring:3, rock:3, flash:0, talk:B.intro, talkT:4.5, castT:0, stg:0, stunT:0, q:[]}; haz = [];
     if (k == 'loki' || k == 'loki2') { boss.phn = LOKI_PH[boss.ph]; sticks = []; if (W.loki) boss.talk = W.lokiReformed ? 'Loki: “A practice match? Yay! I’ll go easy on you. (I will not go easy on you.)”' : 'Loki: “Back for more? Wonderful! I do love an audience.”'; }
     if (left < hp) { say('⚔ ' + BOSS[k].n.toLowerCase().replace(/\b\w/g, m => m.toUpperCase()) + ': phase ' + boss.ph + ' again. Beaten phases stay beaten', 2.6); } A.sfx('bad'); };
-  const hurtBoss = (dmg, src) => { const B = boss; if (!B) return;
+  const hurtBoss = (dmg, src) => { const B = boss; if (!B) return; if (B.mk && A.dumpMech) dmg = A.dumpMech.onHit(B, dmg, src);   // Dumpling mechanics: ice shield, beam struggle
     // punish windows: big damage only while STUNNED; plain (uncharged) snowball spam does half; Frost Guards cut damage until they break
     if (!isRB(B)) { const me = src && src.mine && !src.team; if (B.stunT > 0) dmg *= me ? 3 : 1.5; else if (guardsUp()) dmg *= .7;
       if (me) addStg(B, (src.chg >= .5 ? 8 + 14*src.chg : 1.2) + (B.q && B.q.length ? 6 : 0)); }
@@ -1460,6 +1460,7 @@ A.snowWorld = function(X) {
     for (const n of nums) { g.globalAlpha = Math.min(1, n.t*2); g.fillStyle = n.col; g.font = '800 14px ' + A.font; g.textAlign = 'center'; g.fillText(n.txt, n.x, n.y); } g.globalAlpha = 1;
     // aim line while packing a snowball
     // boss overlay: wind-up aim lines, guard shield links, stagger bar, stun stars, slam circles and icicle shadows
+    if (boss && boss.mk && A.dumpMech) A.dumpMech.draw(g, boss, t, p);
     for (const h of haz) { const k2 = 1 - h.t/h.max; if (h.k == 'slam') { g.fillStyle = 'rgba(255,69,57,' + (.12 + .25*k2) + ')'; g.beginPath(); g.arc(h.x, h.y, h.r, 0, TAU); g.fill(); g.strokeStyle = 'rgba(255,69,57,.9)'; g.lineWidth = 3; g.beginPath(); g.arc(h.x, h.y, h.r*k2, 0, TAU); g.stroke(); }
       else { g.fillStyle = 'rgba(20,40,80,' + (.15 + .3*k2) + ')'; g.beginPath(); g.ellipse(h.x, h.y, h.r*(.4 + .6*k2), h.r*.35*(.4 + .6*k2), 0, 0, TAU); g.fill(); if (k2 > .55) { const iy = h.y - 260*(1 - (k2 - .55)/.45); g.fillStyle = '#d8f6ff'; g.beginPath(); g.moveTo(h.x - 9, iy - 30); g.lineTo(h.x + 9, iy - 30); g.lineTo(h.x, iy + 8); g.fill(); g.strokeStyle = '#64CDF5'; g.lineWidth = 1.5; g.stroke(); } } }
     if (boss && !isRB(boss) && dead <= 0) { const B = boss;

@@ -9,7 +9,8 @@ const el = (tag, at, ...kids) => { const n = document.createElement(tag); at = a
   kids.flat().forEach(c => { if (c == null || c === false) return; n.appendChild(typeof c == 'object' ? c : document.createTextNode(String(c))); }); return n; };
 
 // ---------------- What's new ----------------
-const WN = {v:'2026-12-14p', items:[
+const WN = {v:'2026-12-14q', items:[
+  ['🦎', 'Dumpling fights like a raid boss', 'Every Dumpling fight (1–6) and the three godlike fights now have raid-style mechanics: step on rune plates in order, hide behind ice pillars from his Frost Breath, break the crystals of his ice shield, win a beam struggle by hitting him, and stay inside a turning light. Each one is announced first, his normal attacks pause while it runs, and winning stuns him.'],
   ['🎵', 'Every game plays its own music again', 'Your playlist (and Hex Pup Hustle) now only plays on the arcade floor. Inside games and the Snow Kingdom you hear the area\'s own music. Want your playlist everywhere? Settings → Game music → My playlist.'],
   ['♾', 'Endless Dungeon', 'New at the War Table: endless generated floors, each with a time limit. Rewards start at 10 Frost Crystals + 250 snowflakes and DOUBLE every floor, with a guardian every 5th floor. Run out of time and the run ends, but you keep everything you earned. Your best floor is saved.'],
   ['🚪', 'Raid door fix', 'Pressing E at a raid door now takes you to the next floor instead of out of the raid. Leaving a raid needs a second E press, and your floor is saved.'],

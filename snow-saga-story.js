@@ -137,6 +137,8 @@ SAGA.storyInit = (S, SG) => {
     // darting like a gecko
     B.mv = (B.mv || 0) - dt; if (B.mv <= 0) { B.mv = (1.4 + Math.random())/sp1; const a = Math.random()*TAU, r = 80 + Math.random()*180; B.tx = B.hx + Math.cos(a)*r; B.ty = B.hy + Math.sin(a)*r; }
     const da = Math.atan2(B.ty - B.y, B.tx - B.x), dd = Math.hypot(B.tx - B.x, B.ty - B.y); if (dd > 6) { const nx = B.x + Math.cos(da)*Math.min(dd, 260*dt*sp1), ny = B.y + Math.sin(da)*Math.min(dd, 260*dt*sp1); if (!S.blocked(nx, ny, 14) || F >= 2) { B.x = nx; B.y = ny; } }
+    // raid-style mechanics (snow-dump-mech.js): his attacks pause while one runs
+    if (window.Arcade.dumpMech && window.Arcade.dumpMech.tick(B, dt, S, [['plates', 'pillars'], ['pillars', 'shield'], ['plates', 'beam'], ['shield', 'zone'], ['beam', 'zone', 'plates']][F - 1])) return;
     // 1+: frost strikes
     B.cd2 = (B.cd2 == null ? 1.6 : B.cd2) - dt; if (B.cd2 <= 0) { B.cd2 = (1.7 - .12*F)/sp1; const n = 3 + Math.min(4, F - 1 + ph - 1); for (let i = 0; i < n; i++) S.shot(B, ang + (i - (n - 1)/2)*.16, 250*D3, {r:7, col:'#bfeeff'}); }
     // 2+: wall crawl (vanish into the arena edge and spray from it) and tail decoys
@@ -158,6 +160,7 @@ SAGA.storyInit = (S, SG) => {
     if (B.lastPh != ph) { B.lastPh = ph; SV.fights.cp6 = Math.max(SV.fights.cp6 || 1, ph); S.save(); say2(B, ['', '', 'Dumpling: “Walls are just floors that stand up.”', 'Dumpling: “Which tail is me? Guess.”', 'Dumpling: “Can you see me now? No? Good.”', 'Dumpling: “Sit down. I have a throne for this.”', 'Dumpling: “Let’s see you stand on NOTHING.”', 'Dumpling: “Remember your old friends? I made them.”', 'Dumpling: “I am done being small.”', 'Dumpling: “STOP. HITTING. ME.”', 'Dumpling: “…all of you? Together? How… annoying.”'][ph], 3);
       if (ph >= 2) S.say('⚔ Checkpoint! Phase ' + ph + ': ' + PH6[ph], 3); shatter(ph == 6); B.camo = 0; if (ph == 8) { B.giant = 0; wsp = [0, 1, 2].map(i => ({a:i*TAU/3, hp:1})); } if (ph != 8) { B.giant = 0; } if (ph == 10) { team = 0; teamReady = false; } if (ph == 7) { for (let i = 0; i < 3 && S.foes.length < 10; i++) S.spawnFoe('echo', B.x + (i - 1)*120, B.y + 80); S.tornado = {x:B.x, y:B.y + 80, r:46, t:0, life:12}; }
       if (window.WLMusic && window.WLMusic.mood) try { window.WLMusic.mood(ph >= 9 ? 'dump3' : ph >= 5 ? 'dump2' : 'dump1'); } catch (e) {} }
+    if (window.Arcade.dumpMech && {3:1, 7:1, 9:1}[ph] && window.Arcade.dumpMech.tick(B, dt, S, {3:['plates'], 7:['shield'], 9:['beam']}[ph])) return;
     const goTo = (tx, ty, spd) => { const a = Math.atan2(ty - B.y, tx - B.x), dd = Math.hypot(tx - B.x, ty - B.y); if (dd > 4) { B.x += Math.cos(a)*Math.min(dd, spd*dt); B.y += Math.sin(a)*Math.min(dd, spd*dt); } };
     const dart = () => { B.mv = (B.mv || 0) - dt; if (B.mv <= 0) { B.mv = 1.1/sp1; B.tx = aw.x0 + 60 + Math.random()*(aw.x1 - aw.x0 - 120); B.ty = aw.y0 + 60 + Math.random()*(aw.y1 - aw.y0 - 120); } goTo(B.tx, B.ty, 300*sp1); };
     const volley = (iv, n, spd) => { B.cd2 = (B.cd2 == null ? 1 : B.cd2) - dt; if (B.cd2 <= 0) { B.cd2 = iv; for (let i = 0; i < n; i++) S.shot(B, ang + (i - (n - 1)/2)*.15, spd*D3, {r:7, col:'#bfeeff'}); } };
