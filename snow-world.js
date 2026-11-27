@@ -172,6 +172,7 @@ A.snowWorld = function(X) {
   const gateOpen = () => runesN() >= 3 && !!W.mau;
   const spiritsOpen = () => (W.sp|0) >= 1;
   const solidAt = (x, y) => { const tx = Math.floor(x/TS), ty = Math.floor(y/TS), v = tileAt(tx, ty); return v == 16 ? !(raid && raid.open >= ((ty % 28) >= 18 ? 2 : 1)) : v == GATE ? (regionAt(tx, ty) == 'shrine' ? !((W.sp|0) >= 3 || (W.lan|0) >= 3) : !gateOpen()) : v == VEIL ? !spiritsOpen() : !!SOLID[v] || v == HOLE; };
+  const overGap = (x, y) => { const T2 = SG && SG.T; if (!T2) return false; const v = tileAt(Math.floor(x/TS), Math.floor(y/TS)); return v == T2.CHASM || v == T2.CLIFF; };   // snowballs fly over gaps and cliffs
   const blocked = (x, y, r) => solidAt(x - r, y - r) || solidAt(x + r, y - r) || solidAt(x - r, y + r) || solidAt(x + r, y + r);
   const regAt = (x, y) => regionAt(Math.floor(x/TS), Math.floor(y/TS));
   const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
@@ -279,7 +280,7 @@ A.snowWorld = function(X) {
     let dmg = X.armM() * (1 + pk) * (pk > .5 ? sn : 1) * crit * (p.eye > 0 ? 2 : 1) * (buffT > 0 ? 1.25 : 1), r = 5 + pk*4, sp = 520 + (sn > 1 ? 120 : 0);
     if (p.stick) { p.stick = 0; balls.push({x:p.x, y:p.y - 10, vx:Math.cos(ang)*430, vy:Math.sin(ang)*430, mine:1, dmg:0, r:9, life:.75, kind:'stick', hits:[], col:'#8D5B1D'}); p.reload = .5; p.face = ang; p.throwT = .2; A.tone(300, .08, 'triangle', .04); say('🪵 Stick!', 1); return; }
     if (k == 'boulder') { dmg *= 3; r = 12; sp = 420; }
-    balls.push({x:p.x, y:p.y - 10, vx:Math.cos(ang)*sp, vy:Math.sin(ang)*sp, mine:1, dmg, r, chg:pk, life:.8 + (sn > 1 ? .35 : 0) + pk*.2, kind:k, hits:[], pierce:k == 'shard' || p.eye > 0, col:k == 'shard' ? '#9fe8ff' : k == 'slush' ? '#bfe0ff' : k == 'sparkle' ? '#ffe9a0' : '#ffffff'});
+    balls.push({x:p.x, y:p.y - 10, vx:Math.cos(ang)*sp, vy:Math.sin(ang)*sp, mine:1, dmg, r, chg:pk, life:1.6 + (sn > 1 ? .5 : 0) + pk*.6, kind:k, hits:[], pierce:k == 'shard' || p.eye > 0, col:k == 'shard' ? '#9fe8ff' : k == 'slush' ? '#bfe0ff' : k == 'sparkle' ? '#ffe9a0' : '#ffffff'});
     p.ammo -= cost; p.reload = Math.max(p.reload, .7/Math.min(4, Math.max(1, regenMul()))); p.idleT = 0; p.face = ang; p.throwT = .18; A.tone(520 + pk*200, .04, 'triangle', .03); };
   const useAbility = () => { if (p.ab > 0 || dead > 0) return; const C2 = X.CL(), k = PERM.cls; p.ab = X.abCd(); A.sfx('win'); say('⭐ ' + C2.ab + '!', 1.4);
     const wa = toWorld(aim);
@@ -1033,7 +1034,7 @@ A.snowWorld = function(X) {
         if (ds < 170 && dist(sn, p) < 34) { W.snacks[sn.id] = 1; W.treats = (W.treats||0) + 1; addNum(sn.x, sn.y - 20, '+1 ' + sn.e, '#c4601a'); A.sfx('coin'); X.stat('snowSnack', 1, 'add'); mau.st2 = 'dance'; mau.stT = 1.6; save(); } }
       if (mau.quipT <= 0) { mau.quipT = 28 + Math.random()*20; if (!boss && mau.idle < 7) mauSay(MAU_LINES[Math.floor(Math.random()*MAU_LINES.length)], 3.2); }
       mau.cool -= dt; if (mau.cool <= 0 && !mau.dash && mau.idle < 7) { let tg = boss && dist(boss, mau) < 340 ? boss : null; if (!tg) { let bd = 320; for (const f of foes) { const d3 = dist(f, mau); if (d3 < bd) { bd = d3; tg = f; } } }
-        if (tg) { mau.cool = 1.1; const a = Math.atan2(tg.y - mau.y, tg.x - mau.x); balls.push({x:mau.x, y:mau.y - 10, vx:Math.cos(a)*480, vy:Math.sin(a)*480, mine:1, dmg:(buffT > 0 ? 1.3 : 1)*(1 + .25*RL('guard')), r:5, life:.9, hits:[], col:'#ffe0f0', team:1}); } else mau.cool = .3; } }
+        if (tg) { mau.cool = 1.1; const a = Math.atan2(tg.y - mau.y, tg.x - mau.x); balls.push({x:mau.x, y:mau.y - 10, vx:Math.cos(a)*480, vy:Math.sin(a)*480, mine:1, dmg:(buffT > 0 ? 1.3 : 1)*(1 + .25*RL('guard')), r:5, life:1.4, hits:[], col:'#ffe0f0', team:1}); } else mau.cool = .3; } }
     mates.forEach((m, i) => { m.throwT = Math.max(0, m.throwT - dt);
       if (m.ko > 0) { m.ko -= dt * (dist(m, p) < 50 ? 4 : 1); if (m.ko <= 0) { m.ko = 0; m.hp = m.max; addNum(m.x, m.y - 30, m.name + ' is back!', '#00B451'); } return; }
       if (holdMates && !m.hx) { m.hx = m.x; m.hy = m.y; } if (holdMates && Math.hypot(m.hx - p.x, m.hy - p.y) > 650) { holdMates = false; say('👣 Your team is following you again', 2); } if (!holdMates) m.hx = 0; const ms3 = SG && SG.mateSpot ? SG.mateSpot(m, i) : null; if (m.fa == null) m.fa = p.face; m.fa += Math.atan2(Math.sin(p.face - m.fa), Math.cos(p.face - m.fa))*Math.min(1, dt*1.5);   /* the formation turns slowly, so teammates don't swing through each other */
@@ -1043,12 +1044,12 @@ A.snowWorld = function(X) {
       if (m.role == 'medic') { m.heal -= dt; if (m.heal <= 0 && p.hp < p.max && dead <= 0) { m.heal = Math.max(6, 14 - m.lv); p.hp++; addNum(p.x, p.y - 44, '➕ ' + m.name + ' +♥', '#ff5fa8'); } }
       m.cool -= dt; if (m.cool <= 0) { let tg = boss && dist(boss, m) < 360 ? boss : null; if (!tg) { let bd = 330; for (const f of foes) { const d3 = dist(f, m); if (d3 < bd) { bd = d3; tg = f; } } }
         if (!tg) { m.cool = .3; return; } m.cool = (m.role == 'thrower' ? 1.2 : m.role == 'builder' ? 1.7 : 2.2) / (1 + .1*m.lv); const a2 = Math.atan2(tg.y - m.y, tg.x - m.x); m.face = a2; m.throwT = .18;
-        balls.push({team:1, x:m.x, y:m.y - 10, vx:Math.cos(a2)*470, vy:Math.sin(a2)*470, mine:1, dmg:X.armM()*(.5 + .1*m.lv)*(m.role == 'builder' ? 1.3 : 1)*(buffT > 0 ? 1.25 : 1), r:m.role == 'builder' ? 7 : 5, life:.9, hits:[], kind:m.role == 'builder' ? 'slush' : 'snow', col:m.role == 'builder' ? '#bfe0ff' : '#ffffff'}); } });
+        balls.push({team:1, x:m.x, y:m.y - 10, vx:Math.cos(a2)*470, vy:Math.sin(a2)*470, mine:1, dmg:X.armM()*(.5 + .1*m.lv)*(m.role == 'builder' ? 1.3 : 1)*(buffT > 0 ? 1.25 : 1), r:m.role == 'builder' ? 7 : 5, life:1.4, hits:[], kind:m.role == 'builder' ? 'slush' : 'snow', col:m.role == 'builder' ? '#bfe0ff' : '#ffffff'}); } });
     // snowballs
     for (const b of balls) { b.x += b.vx*dt; b.y += b.vy*dt; b.life -= dt;
       if (b.kind == 'stick') { b.spin = (b.spin||0) + dt*18; if (b.life <= 0 || solidAt(b.x, b.y) || (boss && Math.hypot(boss.x - b.x, boss.y - b.y) < boss.r + 10)) { b.life = 0; if (boss && boss.k == 'loki' && Math.hypot(boss.x - b.x, boss.y - b.y) < 280) { boss.fetch = {x:b.x, y:b.y, t:3.4}; boss.talk = ['Loki: “Is that... a STICK?! Mine mine mine!”', 'Loki: “Don’t you DARE throw that again— ooh, STICK!”', 'Loki: “I can stop any time I want! ...STICK!”'][Math.floor(Math.random()*3)]; boss.talkT = 2.6; A.sfx('point'); } else sticks.push({x:b.x, y:b.y}); } continue; }
       if (b.kind == 'boomer' && !b.ret && b.life < .45) { b.ret = 1; b.hits = []; const a = Math.atan2(p.y - b.y, p.x - b.x); b.vx = Math.cos(a)*560; b.vy = Math.sin(a)*560; b.life = .9; }
-      if (solidAt(b.x, b.y) && !(b.mine && b.ret)) { b.life = 0; splat(b.x, b.y, 5, b.col); continue; }
+      if (solidAt(b.x, b.y) && !(b.mine && b.ret) && !overGap(b.x, b.y)) { b.life = 0; splat(b.x, b.y, 5, b.col); continue; }
       if (b.mine) { for (const f of foes) { if (f.dead || b.hits.includes(f) || Math.hypot(f.x - b.x, f.y - 8 - b.y) > FOE[f.k].r + b.r) continue; b.hits.push(f);
           let dm2 = b.dmg; if (b.team) f.mateHit = t; else if (t - (f.mateHit || -9) < .6) { dm2 *= 1.5; addNum(f.x, f.y - 46, 'TEAM COMBO!', '#EA55AB'); f.mateHit = -9; } hurtFoe(f, dm2); if (b.kind == 'slush') f.slow = 3; if (b.kind == 'sparkle') { for (const f2 of foes) if (f2 !== f && !f2.dead && dist(f2, f) < 70) hurtFoe(f2, b.dmg*.5); splat(b.x, b.y, 12, '#ffe9a0'); }
           const ka = Math.atan2(b.vy, b.vx); f.kbx = Math.cos(ka)*120; f.kby = Math.sin(ka)*120; f.kb = .12; splat(b.x, b.y, 6); A.sfx('hit'); if (!b.pierce) { b.life = 0; break; } }
