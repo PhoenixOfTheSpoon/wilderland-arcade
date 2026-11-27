@@ -1,0 +1,15 @@
+const { chromium } = require('playwright');
+const app = `(()=>{ const el = document.querySelector('header'); const k = Object.keys(el).find(k=>k.startsWith('__reactFiber')); let f = el[k]; while (f && !(f.stateNode && f.stateNode.logic && f.stateNode.logic.logAct)) f = f.return; return f.stateNode.logic; })()`;
+(async()=>{ for (const vp of [{width:1440,height:900},{width:390,height:844}]) { const b = await chromium.launch(); const ctx = await b.newContext({viewport:vp, hasTouch:vp.width<500}); await ctx.route(/gstatic\.com|googleapis\.com/, r=>r.abort());
+ const p = await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
+ await p.addInitScript(()=>{ localStorage.setItem('wl-arcade-v1', JSON.stringify({econV:5, achV:2, tickets:5e6, earned:1e9, founderChk:1})); localStorage.setItem('wl-wn','2099'); localStorage.setItem('wl-road-welcomed','1'); });
+ await p.goto('http://localhost:8770/Wilderland%20Arcade.dc.html'); await p.waitForTimeout(5000); await p.evaluate(app+'.open("snowball")'); await p.waitForTimeout(1200);
+ const S = s => p.evaluate('(()=>{ const sn = window.Arcade._dbg.snow(); const P = sn.PERM; '+s+' })()');
+ await S('P.bank = 1e7; P.frost = 1e5; P.gear = []; P.eq = {}; for (const sl of ["gloves","boots","hat","scarf","pack"]) for (let i=0;i<4;i++) { const it = sn.makeGear(0, sl); it.rar = 3 + (i%3); } sn.openPanel("loadout"); return 1');
+ await p.waitForTimeout(300); await p.evaluate(()=>document.querySelectorAll('.wlw-pop').forEach(e=>e.remove()));
+ const body = () => p.evaluate(()=>{ const bs = [...document.querySelectorAll('div')].filter(d => d.style.overflowY == 'auto' && d.scrollHeight > d.clientHeight); return bs.length ? Math.round(bs[0].scrollTop) : -1; });
+ await p.evaluate(()=>{ const bs = [...document.querySelectorAll('div')].filter(d => d.style.overflowY == 'auto' && d.scrollHeight > d.clientHeight); bs[0].scrollTop = 900; }); await p.waitForTimeout(200);
+ const y0 = await body(); const btn = p.locator('button', {hasText:/^Upgrade ·/}).nth(6); await btn.scrollIntoViewIfNeeded(); const y1 = await body(); await btn.click({force:true}); await p.waitForTimeout(300);
+ const y2 = await body(); await p.locator('button', {hasText:/^Equip$/}).nth(5).click({force:true}); await p.waitForTimeout(300); const y3 = await body();
+ await p.locator('button', {hasText:/Class & skills/}).click({force:true}); await p.waitForTimeout(300); const y4 = await body();
+ console.log('levels', await S('return P.gear.reduce((a,x)=>a+x.lv,0)'), vp.width, 'scrolled', y0, 'before upgrade', y1, 'after upgrade', y2, 'after equip', y3, '| other tab starts at', y4, errs); await b.close(); } })();

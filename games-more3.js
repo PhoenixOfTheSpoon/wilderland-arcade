@@ -621,13 +621,13 @@ A.register('snowball', { mount(host, api){
   // ---------- Class & skills / Loadout & gear panels (HTML, scrollable) ----------
   let panelEl = null;
   const closePanelS = () => { if (panelEl) { panelEl.remove(); panelEl = null; } };
-  const openPanel = tab => { closePanelS(); const el = A.el; panelEl = el('div', {position:'absolute', left:'0', top:'0', width:'600px', height:'720px', background:'rgba(10,20,50,.97)', color:'#fff', zIndex:6, display:'flex', flexDirection:'column', padding:'14px', boxSizing:'border-box', font:'600 14px '+A.font});
+  const openPanel = tab => { const keepY = panelEl && panelEl._tab == tab && panelEl._body ? panelEl._body.scrollTop : 0; closePanelS(); const el = A.el; panelEl = el('div', {position:'absolute', left:'0', top:'0', width:'600px', height:'720px', background:'rgba(10,20,50,.97)', color:'#fff', zIndex:6, display:'flex', flexDirection:'column', padding:'14px', boxSizing:'border-box', font:'600 14px '+A.font});
     panelEl.addEventListener('pointerdown', e => e.stopPropagation()); host.style.position = host.style.position || 'relative'; host.appendChild(panelEl);
     const top = el('div', {display:'flex', gap:'6px', alignItems:'center', marginBottom:'8px'}); panelEl.appendChild(top);
     const B = (txt, fn, bg, fg) => { const b = el('button', {background:bg || '#3f8fd8', color:fg || '#fff', border:'none', borderRadius:'999px', padding:'7px 12px', font:'800 13px '+A.font, cursor:'pointer'}, txt); b.onclick = e => { e.stopPropagation(); fn(); }; return b; };
     [['class', '🎽 Class & skills'], ['loadout', '🎒 Loadout & gear']].forEach(([k, n]) => top.appendChild(B(n, () => openPanel(k), tab == k ? '#D5F367' : 'rgba(255,255,255,.14)', tab == k ? '#14204a' : '#fff')));
     const x = B('✕ Done', closePanelS, '#ffffff', '#14204a'); x.style.marginLeft = 'auto'; top.appendChild(x);
-    const body = el('div', {overflowY:'auto', flex:'1', display:'flex', flexDirection:'column', gap:'8px'}); panelEl.appendChild(body);
+    const body = el('div', {overflowY:'auto', flex:'1', display:'flex', flexDirection:'column', gap:'8px'}); panelEl.appendChild(body); panelEl._tab = tab; panelEl._body = body; if (keepY) Promise.resolve().then(() => { body.scrollTop = keepY; });   // stay where you were after Upgrade / Equip / Fuse
     const card = () => { const r = el('div', {background:'rgba(255,255,255,.07)', borderRadius:'12px', padding:'10px 12px', display:'flex', flexDirection:'column', gap:'6px'}); body.appendChild(r); return r; };
     if (tab == 'class') { CLS_K.forEach(k => { const C2 = CLASSES[k], on = PERM.cls == k, r = card(); if (on) r.style.boxShadow = 'inset 0 0 0 2px #D5F367';
         const h = el('div', {display:'flex', alignItems:'center', gap:'8px'}); h.appendChild(el('div', {font:'800 17px '+A.font, color:on ? '#D5F367' : '#fff', flex:'1'}, C2.e + ' ' + C2.n + ' · Lv ' + clsLv(k) + (on ? ' · playing' : ''))); if (!on) h.appendChild(B('Pick', () => { PERM.cls = k; savePerm(); openPanel('class'); }, '#00B451')); r.appendChild(h);
