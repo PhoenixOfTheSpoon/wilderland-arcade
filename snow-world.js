@@ -219,7 +219,7 @@ A.snowWorld = function(X) {
   const nfmt = d => d >= 1000 && A.fmt ? A.fmt(Math.round(d)) : d >= 100 ? Math.round(d) : Math.round(d*10)/10;
   const addNum = (x, y, txt, col) => { if (nums.length < 40) nums.push({x, y, txt, col:col || '#14204a', t:1}); };
   const splat = (x, y, n, col) => { const k = low() ? Math.ceil(n/3) : n; for (let i = 0; i < k; i++) fx.push({x, y, vx:(Math.random() - .5)*170, vy:(Math.random() - .5)*170, t:.35 + Math.random()*.3, col:col || '#ffffff', r:1.5 + Math.random()*2.5}); };
-  const give = o => { if (o.flakes) PERM.bank += Math.round(o.flakes * (1 + .1*X.PU('flakes')) * (1 + .1*((W.base && W.base.rooms.trophy)|0))); if (o.frost) PERM.frost += Math.round(o.frost*tm('loot')); if (o.xp) { X.addXp(o.xp); W.kxp = (W.kxp||0) + o.xp; } if (o.score) { score += o.score; api.score(score); } let it = null; if (o.gear != null) it = X.makeGear(o.gear); return it; };
+  const give = o => { const og = X.curM ? X.curM() : 1; if (o.flakes) PERM.bank += Math.round(og * o.flakes * (1 + .1*X.PU('flakes')) * (1 + .1*((W.base && W.base.rooms.trophy)|0))); if (o.frost) PERM.frost += Math.round(og * o.frost*tm('loot')); if (o.xp) { X.addXp(o.xp); W.kxp = (W.kxp||0) + o.xp; } if (o.score) { score += o.score; api.score(score); } let it = null; if (o.gear != null) it = X.makeGear(o.gear); return it; };
   // ---------- talking ----------
   const talk = (lines, done) => { if (!lines || !lines.length || !lines[0]) { console.warn('[snow] empty dialogue', new Error().stack); if (done) done(); return; } dlg = {lines, i:0, done}; A.sfx('blip'); };
   const nextLine = () => { if (!dlg) return; dlg.i++; A.sfx('blip'); if (dlg.i >= dlg.lines.length) { const d = dlg.done; dlg = null; d && d(); } };
@@ -670,7 +670,7 @@ A.snowWorld = function(X) {
   // the Frost Crystal Mine: W.mineAt = when you last emptied it; it holds 12 hours
   const mineHas = () => { const lv = RL('mine'); if (!lv) return 0; if (!W.mineAt) W.mineAt = Date.now(); return Math.floor(mineRate(lv)*Math.min(12, Math.max(0, (Date.now() - W.mineAt)/36e5))); };
   const mineFull = () => RL('mine') ? Math.min(1, Math.max(0, (Date.now() - (W.mineAt || Date.now()))/432e5)) : 0;
-  const mineTake = quiet => { const n = mineHas(); W.mineAt = Date.now(); if (n > 0) { PERM.frost += n; if (!quiet) { addNum(p.x, p.y - 44, '+' + A.fmt(n) + ' 🔷 from the mine', '#64CDF5'); A.sfx('coin'); } } return n; };
+  const mineTake = quiet => { const n = Math.round(mineHas()*(X.curM ? X.curM() : 1)); W.mineAt = Date.now(); if (n > 0) { PERM.frost += n; if (!quiet) { addNum(p.x, p.y - 44, '+' + A.fmt(n) + ' 🔷 from the mine', '#64CDF5'); A.sfx('coin'); } } return n; };
   const mineRow = () => RL('mine') ? {e:'⛏️', n:'Frost Crystal Mine · ' + A.fmt(mineHas()) + ' 🔷 ready', d:Math.round(mineFull()*100) + '% full · digs ' + A.fmt(mineRate(RL('mine'))) + ' 🔷 an hour · holds 12 hours', btn:'Collect', ok:mineHas() > 0, fn:() => { mineTake(); save(); }} : null;
   // the Snow Friends Lodge adds teammates right away
   const syncMates = () => { const MI2 = X.mates(); while (mates.length < MI2.n) { const i = mates.length, lv = MI2.lv + RL('barracks'); mates.push({name:(MI2.names[i] || 'Pal'), role:ROLES[i % 3], lv, x:p.x + (i - 1.5)*30, y:p.y + 40, cool:1 + i*.3, heal:12, hp:2 + lv, max:2 + lv, ko:0, face:0, walk:0, throwT:0}); } };
