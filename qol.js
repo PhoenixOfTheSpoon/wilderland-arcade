@@ -9,7 +9,8 @@ const el = (tag, at, ...kids) => { const n = document.createElement(tag); at = a
   kids.flat().forEach(c => { if (c == null || c === false) return; n.appendChild(typeof c == 'object' ? c : document.createTextNode(String(c))); }); return n; };
 
 // ---------------- What's new ----------------
-const WN = {v:'2026-12-14k', items:[
+const WN = {v:'2026-12-14l', items:[
+  ['⭐', 'Developed Games', 'Snowball Showdown, Fishing Hole, Trailhead Defense and Deep Mines now have their own section at the top of the arcade floor, with big glowing cabinets and brand-new animated artwork.'],
   ['❄', 'Space throws snowballs + auto-target', 'In the Snow Kingdom, Space now throws a snowball (hold to charge), Q is your ability and T turns auto-target on or off: throws go to the strongest enemy in range, closest first. Space no longer skips dialogue, and a click right as a new line appears won\'t skip it either.'],
   ['📈', 'Kingdom skills have no max', 'Keep spending skill points: Strong Arm, Big Heart, Deep Pockets and Snow Factory keep growing, Quick Feet keeps getting a little faster, and Lucky Shot past rank 5 makes critical hits hit harder.'],
   ['🦎', 'Dumpling fixes', 'Arena Freeze and Starfall never happen at the same time, and safe circles are never inside the Starfall. The Gecko God\'s 50 layers are much deeper now.'],

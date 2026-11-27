@@ -7,7 +7,7 @@
 <script>
 /* Fast start: download every arcade file right away, in parallel (the arcade floor's files first), while the page itself starts up.
    The files run later, in order, once the arcade is on screen. A loading screen shows progress instead of a blank page. */
-(function(){ var B = '2026-12-14k'; window.WL_BUILD = B; var CORE = ["arcade-core.js", "prizes-more.js", "prizes2.js", "economy.js", "achievements.js", "avatar.js", "pets.js", "rebirth-road.js", "wonders.js", "qol.js"], GAMES = ["music.js", "live-events.js", "moderation.js", "calendar.js", "games-board.js", "games-edu.js", "games-action.js", "games-skill.js", "games-extra.js", "games-new.js", "games-td.js", "games-space.js", "games-idle.js", "games-secrets.js", "games-more.js", "games-more2.js", "games-more3.js", "snow-cast.js", "snow-world.js", "snow-saga.js", "snow-saga-story.js", "snow-saga-post.js", "snow-raids-art.js", "snow-raids.js", "snow-castle.js"], all = CORE.concat(GAMES), got = 0;
+(function(){ var B = '2026-12-14l'; window.WL_BUILD = B; var CORE = ["arcade-core.js", "prizes-more.js", "prizes2.js", "economy.js", "achievements.js", "avatar.js", "pets.js", "rebirth-road.js", "wonders.js", "qol.js"], GAMES = ["music.js", "live-events.js", "moderation.js", "calendar.js", "games-board.js", "games-edu.js", "games-action.js", "games-skill.js", "games-extra.js", "games-new.js", "games-td.js", "games-space.js", "games-idle.js", "games-secrets.js", "games-more.js", "games-more2.js", "games-more3.js", "snow-cast.js", "snow-world.js", "snow-saga.js", "snow-saga-story.js", "snow-saga-post.js", "snow-raids-art.js", "snow-raids.js", "snow-castle.js"], all = CORE.concat(GAMES), got = 0;
   window.WL_FILES = {core:CORE, games:GAMES};
   var say = function(){ var b = document.getElementById('wl-boot-bar'), t = document.getElementById('wl-boot-txt'); var pct = Math.min(96, Math.round(8 + 80*got/all.length + (window.WL_RUN||0)*8));
     if (b) b.style.width = pct + '%'; if (t) t.textContent = window.WL_RUN ? 'Opening the arcade…' : 'Loading the arcade… ' + pct + '%'; };
@@ -35,6 +35,12 @@
 <style>
 @font-face{font-family:"Uncut Sans";src:url("fonts/UncutSans-Medium.woff2") format("woff2"),url("fonts/UncutSans-Medium.otf") format("opentype");font-weight:500;font-display:swap;}
 @font-face{font-family:"Uncut Sans";src:url("fonts/UncutSans-Bold.woff2") format("woff2"),url("fonts/UncutSans-Bold.otf") format("opentype");font-weight:700;font-display:swap;}
+@keyframes wlDevGlow{0%,100%{box-shadow:0 0 0 3px #F9BF01,0 0 14px rgba(249,191,1,.55),0 10px 22px rgba(0,0,0,.45)}50%{box-shadow:0 0 0 3px #ffe27a,0 0 26px rgba(255,200,60,.9),0 10px 22px rgba(0,0,0,.45)}}
+@keyframes wlDevSheen{0%{transform:translateX(-140%) skewX(-20deg)}55%,100%{transform:translateX(260%) skewX(-20deg)}}
+.wl-dev{animation:wlDevGlow 2.6s ease-in-out infinite;}
+.wl-dev::after{content:'';position:absolute;top:0;left:0;width:40%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.28),transparent);animation:wlDevSheen 4.5s ease-in-out infinite;pointer-events:none;}
+.wl-dev:hover{transform:translateY(-4px) scale(1.03);}
+.wl-dev-tag{position:absolute;bottom:4px;left:50%;transform:translateX(-50%);background:linear-gradient(90deg,#F9BF01,#ffe27a,#F9BF01);color:#3a2400;font-size:9px;font-weight:800;padding:2px 8px;border-radius:999px;letter-spacing:.1em;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.4);}
 @keyframes wlTicker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 html,body{margin:0;background:#0b2e24;overflow-x:hidden;}
 button{touch-action:manipulation;}
@@ -208,10 +214,11 @@ img[src^="data:image/svg"]:hover{animation:wlGlow 1.6s ease-in-out infinite;}
           </sc-for>
 
           <sc-for list="{{ cabinets }}" as="cab" hint-placeholder-count="18">
-            <div onClick="{{ cab.open }}" style="position:absolute; left:{{ cab.x }}px; top:{{ cab.y }}px; width:140px; height:130px; cursor:pointer; display:flex; flex-direction:column; border-radius:12px; overflow:hidden; background:#121313; box-shadow:{{ cab.shadow }}; opacity:{{ cab.op }}; filter:{{ cab.flt }}; transition:transform .18s cubic-bezier(.3,1.4,.5,1), box-shadow .18s, opacity .2s;" style-hover="transform:translateY(-6px) scale(1.04);">
+            <div onClick="{{ cab.open }}" class="{{ cab.cls }}" style="position:absolute; left:{{ cab.x }}px; top:{{ cab.y }}px; width:{{ cab.cw }}px; height:{{ cab.ch }}px; cursor:pointer; display:flex; flex-direction:column; border-radius:12px; overflow:hidden; background:#121313; box-shadow:{{ cab.shadow }}; opacity:{{ cab.op }}; filter:{{ cab.flt }}; transition:transform .18s cubic-bezier(.3,1.4,.5,1), box-shadow .18s, opacity .2s;" style-hover="transform:translateY(-6px) scale(1.04);">
               <div style="background:{{ cab.color }}; color:#121313; font-weight:800; font-size:{{ cab.nfs }}px; letter-spacing:0.05em; text-align:center; padding:3px 4px; line-height:1.08; height:30px; display:flex; align-items:center; justify-content:center; box-sizing:border-box; overflow:hidden;">{{ cab.name }}</div>
-              <div style="flex:1; margin:6px 10px 4px; background:radial-gradient(circle at 50% 40%, #027a5a, #015640 70%); border-radius:6px; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;">
-                <img loading="lazy" src="{{ cab.icon }}" alt="" style="width:56px; height:56px; display:block;">
+              <div style="flex:1; margin:{{ cab.scrM }}; background:radial-gradient(circle at 50% 40%, #027a5a, #015640 70%); border-radius:6px; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden;">
+                <img loading="lazy" src="{{ cab.icon }}" alt="" style="width:{{ cab.iw }}; height:{{ cab.ih }}; object-fit:{{ cab.fit }}; display:block;">
+                <sc-if value="{{ cab.dev }}" hint-placeholder-val="{{ false }}"><span class="wl-dev-tag">★ DEVELOPED</span></sc-if>
                 <sc-if value="{{ cab.learn }}" hint-placeholder-val="{{ false }}"><span style="position:absolute; bottom:3px; left:4px; background:#64CDF5; color:#0b2e24; font-size:9px; font-weight:700; padding:2px 6px; border-radius:999px; letter-spacing:0.06em;">LEARN</span></sc-if>
                 <sc-if value="{{ cab.saved }}" hint-placeholder-val="{{ false }}"><span style="position:absolute; top:4px; right:4px; background:#F9BF01; color:#015640; font-size:9px; font-weight:700; padding:2px 6px; border-radius:999px; letter-spacing:0.06em;">SAVED</span></sc-if>
                 <sc-if value="{{ cab.isNew }}" hint-placeholder-val="{{ false }}"><span style="position:absolute; top:4px; left:4px; background:#EA55AB; color:#121313; font-size:9px; font-weight:700; padding:2px 6px; border-radius:999px; letter-spacing:0.06em;">NEW</span></sc-if>
@@ -1089,13 +1096,14 @@ const GAMES = [
 GAMES.forEach(g => { g.key0 = g.name; if (g.id == 'idle') g.title = 'Deep Mines'; g.name = g.title.toUpperCase(); });
 // ZONES: the floor is split into themed areas, each with its own floor color, sign and progress bar.
 const ZONES = [
+  {k:'dev',      n:'Developed Games',    e:'⭐', col:'#F9BF01', tint:'rgba(249,191,1,.16)',  ids:['snowball','fishing','td','idle'], dev:1},
   {k:'classic',  n:'Classic Corner',     e:'🕹', col:'#FF4539', tint:'rgba(255,69,57,.10)',   ids:['pong','breakout','snake','flappy','maze','comets','space','airhockey']},
   {k:'puzzle',   n:'Puzzle Plaza',       e:'🧩', col:'#3aa0e0', tint:'rgba(100,205,245,.16)', ids:['2048','mines','sokoban','pipes','gems','bubble','memory','simon','connect4','tictactoe','secrets']},
   {k:'action',   n:'Action Alley',       e:'⚡', col:'#e0a000', tint:'rgba(249,191,1,.15)',   ids:['runner','platformer','bounce','lumber','crossing','whack','reaction','rhythm','pinball','racing','skeeball']},
-  {k:'strategy', n:'Strategy Summit',    e:'🏰', col:'#8a4be0', tint:'rgba(138,75,224,.13)',  ids:['td','idle','snowball','rootout','cardbattle','stack']},
+  {k:'strategy', n:'Strategy Summit',    e:'🏰', col:'#8a4be0', tint:'rgba(138,75,224,.13)',  ids:['rootout','cardbattle','stack']},
   {k:'learning', n:'Learning Library',   e:'📚', col:'#1f6fc0', tint:'rgba(1,73,135,.13)',    ids:['words','trace','typing']},
-  {k:'commons',  n:'Wilderland Commons', e:'🌱', col:'#00B451', tint:'rgba(0,180,81,.14)',    ids:['farm','fishing']}];
-const ZONE_OF = {}; ZONES.forEach(Z => Z.ids.forEach(id => { ZONE_OF[id] = Z.k; })); GAMES.forEach(g => { if (!ZONE_OF[g.id]) { ZONE_OF[g.id] = 'classic'; ZONES[0].ids.push(g.id); } });
+  {k:'commons',  n:'Wilderland Commons', e:'🌱', col:'#00B451', tint:'rgba(0,180,81,.14)',    ids:['farm']}];
+const ZONE_OF = {}; ZONES.forEach(Z => Z.ids.forEach(id => { ZONE_OF[id] = Z.k; })); GAMES.forEach(g => { if (!ZONE_OF[g.id]) { ZONE_OF[g.id] = 'classic'; ZONES.find(Z => Z.k == 'classic').ids.push(g.id); } });
 const ZIX = k => ZONES.findIndex(Z => Z.k == k);
 GAMES.sort((a,b) => a.title.localeCompare(b.title, 'en', {numeric:true}));   // every list of games is A–Z by its full name; the floor places each one in its zone (A–Z inside the zone)
 const WIN_GAMES = ['connect4','tictactoe'];   // no real score: their cabinets count wins instead
@@ -1153,7 +1161,50 @@ const ICONS = {
   idle: '<path d="M6 58L14 38L26 34L40 38L52 32L60 58Z" fill="#6b4a2b"/><path d="M14 46l6-2M30 42l5 3M44 44l6-3" stroke="#c48a4a" stroke-width="3" stroke-linecap="round"/><path d="M22 54l4-6l5 6zM40 54l4-5l4 5z" fill="#F9BF01"/><g>'+at('rotate','-30 34 30;20 34 30;-30 34 30',.7,SPLINE)+'<path d="M34 30L46 8" stroke="#8D5B1D" stroke-width="4" stroke-linecap="round"/><path d="M36 6Q46 2 56 12" fill="none" stroke="#c9ccd1" stroke-width="5" stroke-linecap="round"/></g><path d="M50 26l2 -5l2 5l5 2l-5 2l-2 5l-2-5l-5-2z" fill="#9fd8ff">'+an('opacity','0;1;0',1.4)+'</path>',
 };
 const GLOSS = b => '<defs><filter id="ds" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2.2" stdDeviation="1.6" flood-color="#000" flood-opacity=".45"/></filter><linearGradient id="sh" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".38"/><stop offset=".45" stop-color="#fff" stop-opacity="0"/></linearGradient><radialGradient id="gl" cx=".5" cy=".42" r=".6"><stop offset="0" stop-color="#D5F367" stop-opacity=".22"/><stop offset="1" stop-color="#D5F367" stop-opacity="0"/></radialGradient></defs><circle cx="32" cy="30" r="31" fill="url(#gl)"/><g filter="url(#ds)">'+b+'</g><ellipse cx="30" cy="15" rx="17" ry="7" fill="url(#sh)" opacity=".7"/>';
-const _iconCache = {}; const ICON = id => { const k = id+(LOWFX?'~':''); return _iconCache[k] || (_iconCache[k] = svgURI(LOWFX ? (ICONS[id] || '') : GLOSS(ICONS[id] || ''))); };
+// ---------- Developed Games: big hand-made cabinet art (96×64 scenes; the square icon is the middle) ----------
+const DEV_IDS = ['fishing','td','snowball','idle'];
+const DEV_ART = {
+  fishing: '<defs><linearGradient id="fs" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff7a59"/><stop offset=".55" stop-color="#ffb86b"/><stop offset="1" stop-color="#ffe3a0"/></linearGradient><linearGradient id="fw" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2aa8d8"/><stop offset="1" stop-color="#062a5a"/></linearGradient><radialGradient id="fg" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff6a0"/><stop offset="1" stop-color="#fff6a0" stop-opacity="0"/></radialGradient></defs>'
+    +'<rect width="96" height="64" fill="url(#fs)"/><circle cx="70" cy="20" r="9" fill="#fff1b8"/><path d="M0 22 L14 14 L26 20 L40 10 L56 19 L70 13 L96 22 V26 H0Z" fill="#c4556a" opacity=".55"/>'
+    +'<rect y="24" width="96" height="40" fill="url(#fw)"/><path d="M0 24 Q12 22 24 24 T48 24 T72 24 T96 24" stroke="#bff0ff" stroke-width="1.2" fill="none">'+an('d','M0 24 Q12 22 24 24 T48 24 T72 24 T96 24;M0 24 Q12 26 24 24 T48 24 T72 24 T96 24;M0 24 Q12 22 24 24 T48 24 T72 24 T96 24',3)+'</path>'
+    +'<path d="M30 24 L22 64 M52 24 L60 64 M74 24 L86 64" stroke="#bff0ff" stroke-opacity=".12" stroke-width="5"/>'
+    +'<rect x="0" y="16" width="22" height="5" rx="1" fill="#7a4a24"/><rect x="4" y="21" width="3" height="10" fill="#5a3418"/><rect x="16" y="21" width="3" height="10" fill="#5a3418"/>'
+    +'<path d="M14 15 Q34 -4 50 8" stroke="#3a2412" stroke-width="2" fill="none"/><path d="M50 8 V44" stroke="#fff" stroke-opacity=".8" stroke-width=".7"><animate attributeName="d" values="M50 8 V44;M50 8 V48;M50 8 V44" dur="2.4s" repeatCount="indefinite"/></path>'
+    +'<g>'+at('translate','0 0;0 4;0 0',2.4)+'<circle cx="50" cy="45" r="2.2" fill="#ff4539"/><circle cx="50" cy="45" r="7" fill="url(#fg)" opacity=".7"/></g>'
+    +'<g>'+at('translate','-30 0;110 0',7)+'<path d="M10 52 q8 -6 16 0 q-8 6 -16 0z" fill="#F9BF01"/><path d="M10 52 l-6 -4 v8z" fill="#e09a00"/><circle cx="22" cy="51" r="1" fill="#121313"/></g>'
+    +'<g>'+at('translate','100 0;-40 0',9)+'<path d="M10 38 q6 -4 12 0 q-6 4 -12 0z" fill="#9fe8ff"/><path d="M22 38 l5 -3 v6z" fill="#64CDF5"/></g>'
+    +'<g fill="#e8fbff" opacity=".8"><circle cx="40" cy="58" r="1.2">'+an('cy','62;26',2.6)+an('opacity','.9;0',2.6)+'</circle><circle cx="62" cy="60" r=".9">'+an('cy','62;26',3.4)+an('opacity','.9;0',3.4)+'</circle></g>',
+  td: '<defs><linearGradient id="ts" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a1a5a"/><stop offset=".6" stop-color="#b8487a"/><stop offset="1" stop-color="#ff9a5a"/></linearGradient><radialGradient id="tb" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff3a0"/><stop offset="1" stop-color="#ffb000" stop-opacity="0"/></radialGradient></defs>'
+    +'<rect width="96" height="64" fill="url(#ts)"/><path d="M0 34 L18 18 L30 28 L48 12 L66 30 L80 20 L96 32 V40 H0Z" fill="#3a2a6a"/><path d="M0 40 L14 30 L28 38 L44 28 L60 38 L78 30 L96 38 V46 H0Z" fill="#24543a"/>'
+    +'<rect y="44" width="96" height="20" fill="#2f7a3a"/><path d="M-4 60 Q20 46 44 54 T96 50" stroke="#d8b878" stroke-width="7" fill="none" stroke-linecap="round"/>'
+    +'<g fill="#1a4a2a"><path d="M6 46 l5 -12 l5 12z"/><path d="M84 46 l5 -13 l5 13z"/><path d="M76 48 l4 -9 l4 9z"/></g>'
+    +'<rect x="22" y="22" width="14" height="26" rx="1" fill="#8a8aa0"/><rect x="20" y="18" width="18" height="6" fill="#a0a0b8"/><g fill="#a0a0b8"><rect x="20" y="15" width="4" height="4"/><rect x="27" y="15" width="4" height="4"/><rect x="34" y="15" width="4" height="4"/></g><rect x="26" y="30" width="6" height="8" rx="3" fill="#F9BF01"/>'
+    +'<path d="M29 15 V6" stroke="#6a4a2a" stroke-width="1.2"/><path d="M29 6 h9 l-2 3 l2 3 h-9z" fill="#FF4539">'+an('d','M29 6 h9 l-2 3 l2 3 h-9z;M29 6 h9 l-3 3 l3 3 h-9z;M29 6 h9 l-2 3 l2 3 h-9z',1.2)+'</path>'
+    +'<g>'+at('translate','0 0;34 26',1.1)+'<circle cx="38" cy="26" r="3" fill="#fff3a0"/><circle cx="38" cy="26" r="7" fill="url(#tb)"/></g>'
+    +'<g>'+at('translate','12 0;-6 0',4)+'<ellipse cx="72" cy="52" rx="6" ry="4.5" fill="#7ad13a"/><circle cx="70" cy="51" r="1" fill="#121313"/><circle cx="74" cy="51" r="1" fill="#121313"/></g>'
+    +'<g>'+at('translate','10 0;-8 0',4,'begin="1s"')+'<ellipse cx="86" cy="49" rx="5" ry="4" fill="#b06ad8"/><circle cx="84.5" cy="48" r=".9" fill="#121313"/><circle cx="87.5" cy="48" r=".9" fill="#121313"/></g>'
+    +'<circle cx="70" cy="52" r="0" fill="#fff3a0">'+an('r','0;0;8;0',1.1)+an('opacity','0;0;.9;0',1.1)+'</circle>',
+  snowball: '<defs><linearGradient id="ss" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#06123a"/><stop offset="1" stop-color="#1f4a8a"/></linearGradient><linearGradient id="sa" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3dffb0" stop-opacity="0"/><stop offset=".5" stop-color="#3dffb0" stop-opacity=".75"/><stop offset="1" stop-color="#b48cff" stop-opacity="0"/></linearGradient><radialGradient id="sb" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#9fe8ff" stop-opacity="0"/></radialGradient></defs>'
+    +'<rect width="96" height="64" fill="url(#ss)"/><path d="M0 14 Q24 2 48 12 T96 8 V20 Q72 26 48 18 T0 24Z" fill="url(#sa)">'+an('opacity','.5;1;.5',4)+'</path>'
+    +'<g fill="#fff"><circle cx="8" cy="6" r=".7"/><circle cx="40" cy="4" r=".6"/><circle cx="88" cy="16" r=".7"/><circle cx="62" cy="28" r=".5"/></g>'
+    +'<path d="M54 40 V26 h4 v-4 h4 v4 h4 v-4 h4 v4 h4 v-4 h4 v4 h4 V40Z" fill="#9fc8f0"/><path d="M68 40 v-8 a4 4 0 0 1 8 0 v8z" fill="#2a4a8a"/><path d="M74 22 V14 l8 3 l-8 3" fill="#FF4539"/>'
+    +'<path d="M0 44 Q24 36 48 42 T96 40 V64 H0Z" fill="#eaf6ff"/><path d="M0 52 Q30 46 60 52 T96 50 V64 H0Z" fill="#cfe6f8"/>'
+    +'<g transform="translate(20 34)"><rect x="-6" y="0" width="12" height="11" rx="4" fill="#00B451"/><rect x="-5" y="11" width="4" height="6" fill="#14204a"/><rect x="1" y="11" width="4" height="6" fill="#14204a"/><circle cx="0" cy="-5" r="6" fill="#f2c9a0"/><path d="M-6 -6 a6 6 0 0 1 12 0z" fill="#FF4539"/><circle cx="0" cy="-12" r="2" fill="#fff"/><circle cx="-2.2" cy="-4.4" r=".9" fill="#14204a"/><circle cx="2.2" cy="-4.4" r=".9" fill="#14204a"/>'
+    +'<path d="M5 3 L13 -5" stroke="#00B451" stroke-width="3.4" stroke-linecap="round">'+an('d','M5 3 L9 10;M5 3 L13 -5;M5 3 L13 -5',1.6)+'</path><path d="M-5 3 L-8 10" stroke="#00B451" stroke-width="3.4" stroke-linecap="round"/></g>'
+    +'<g>'+at('translate','34 30;80 24',1.6)+'<path d="M-14 1 L0 0 L-14 -1z" fill="#cfefff" opacity=".7"/><circle r="3.2" fill="#fff"/><circle r="8" fill="url(#sb)" opacity=".6"/></g>'
+    +'<g fill="#fff" opacity=".85"><circle cx="12" cy="0" r="1">'+an('cy','-2;66',5)+'</circle><circle cx="46" cy="0" r=".8">'+an('cy','-2;66',6.5,'begin="2s"')+'</circle><circle cx="84" cy="0" r="1.1">'+an('cy','-2;66',4.6,'begin="1s"')+'</circle></g>',
+  idle: '<defs><radialGradient id="ml" cx=".3" cy=".45" r=".6"><stop offset="0" stop-color="#ffcf6a" stop-opacity=".55"/><stop offset="1" stop-color="#ffcf6a" stop-opacity="0"/></radialGradient><linearGradient id="mr" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a1a10"/><stop offset="1" stop-color="#120a06"/></linearGradient></defs>'
+    +'<rect width="96" height="64" fill="url(#mr)"/><path d="M0 0 H96 V10 Q80 18 64 10 T30 12 T0 8Z" fill="#4a2e1a"/><path d="M0 64 V48 Q20 42 40 48 T96 46 V64Z" fill="#3a2414"/>'
+    +'<rect width="96" height="64" fill="url(#ml)">'+an('opacity','.75;1;.8;1;.75',2.2)+'</rect>'
+    +'<g><path d="M70 20 l6 -12 l6 12 l-6 10z" fill="#64CDF5"/><path d="M76 8 l6 12 l-6 10z" fill="#3a8ad8"/><path d="M84 30 l4 -9 l4 9 l-4 7z" fill="#b48cff"/><path d="M60 14 l3 -7 l3 7 l-3 5z" fill="#ff6ad5"/>'
+    +'<circle cx="74" cy="14" r="1.2" fill="#fff">'+an('opacity','0;1;0',1.6)+'</circle><circle cx="87" cy="26" r="1" fill="#fff">'+an('opacity','0;1;0',2.1,'begin=".7s"')+'</circle></g>'
+    +'<path d="M0 52 H96" stroke="#7a5a3a" stroke-width="2"/><g stroke="#5a3a20" stroke-width="2"><path d="M8 50 v4 M20 50 v4 M32 50 v4 M44 50 v4 M56 50 v4 M68 50 v4 M80 50 v4 M92 50 v4"/></g>'
+    +'<g>'+at('translate','-10 0;44 0;-10 0',8)+'<path d="M14 36 h26 l-3 12 h-20z" fill="#8a8aa0"/><path d="M16 36 l4 -6 l5 3 l5 -5 l4 4 l4 -2 l2 6z" fill="#F9BF01"/><circle cx="20" cy="50" r="3" fill="#2a2a2a"/><circle cx="34" cy="50" r="3" fill="#2a2a2a"/></g>'
+    +'<g transform="translate(14 22) rotate(-30)">'+at('rotate','-30;10;-30',1.2,'additive="sum"')+'<rect x="-1" y="-2" width="2.4" height="16" fill="#8D5B1D"/><path d="M-9 -2 Q0 -8 9 -2 L8 0 Q0 -5 -8 0z" fill="#c8d0dc"/></g>'
+    +'<circle cx="8" cy="20" r="3" fill="#ffcf6a"/><circle cx="8" cy="20" r="8" fill="#ffcf6a" opacity=".25">'+an('r','7;9;7',1.4)+'</circle>'};
+const DEV_URI = id => 'data:image/svg+xml;utf8,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 64" preserveAspectRatio="xMidYMid slice">'+(LOWFX ? stripAnim(DEV_ART[id]) : DEV_ART[id])+'</svg>');
+
+const _iconCache = {}; const ICON = id => { if (DEV_ART[id]) return _iconCache[id + (LOWFX ? '~d' : 'd')] || (_iconCache[id + (LOWFX ? '~d' : 'd')] = DEV_URI(id)); const k = id+(LOWFX?'~':''); return _iconCache[k] || (_iconCache[k] = svgURI(LOWFX ? (ICONS[id] || '') : GLOSS(ICONS[id] || ''))); };
 const KIOSK_ICONS = {
   shop: svgURI('<g>'+at('rotate','-20 26 38;10 26 38;-20 26 38',.9,SPLINE)+'<rect x="22" y="14" width="8" height="34" rx="3" fill="#8D5B1D"/><rect x="10" y="8" width="32" height="12" rx="4" fill="#c9ccd1"/></g><circle cx="44" cy="44" r="12" fill="none" stroke="#F9BF01" stroke-width="6" stroke-dasharray="6 3.4">'+at('rotate','0 44 44;360 44 44',3)+'</circle><circle cx="44" cy="44" r="4" fill="#F9BF01"/>'),
   board: svgURI('<path d="M20 10H44V26A12 12 0 0 1 20 26Z" fill="#F9BF01"/><path d="M20 14H12A8 8 0 0 0 20 26M44 14H52A8 8 0 0 1 44 26" fill="none" stroke="#F9BF01" stroke-width="3"/><rect x="28" y="36" width="8" height="10" fill="#F9BF01"/><rect x="20" y="46" width="24" height="7" rx="2" fill="#DD8B03"/><circle cx="26" cy="16" r="2" fill="#fff">'+an('opacity','0;1;0',1.6)+'</circle>'),
@@ -1166,8 +1217,8 @@ const PADS = {space:{d:'lr',a:[['Fire',' ']]}, snake:{d:'udlr',a:[['Start',' ']]
 const SWIPE = ['snake','2048','crossing','stack'];
 // Floor layout: zones stacked down the left (5 cabinets per row), kiosks and boards in the right column, trophies and expansions along the bottom.
 const FW = 1120, ZROW = 170, POSM = {}, ZLAY = []; let SVC = [];
-{ let zy = 30; ZONES.forEach(Z => { const ids = GAMES.filter(g => ZONE_OF[g.id] == Z.k).map(g => g.id), extra = Z.k == 'commons' ? 2 : 0, rows = Math.max(1, Math.ceil((ids.length + extra)/5)), hgt = 56 + rows*ZROW;
-    ZLAY.push({...Z, y:zy, h:hgt, count:ids.length}); ids.forEach((id, j) => { POSM[id] = {x:30 + (j%5)*162, y:zy + 54 + Math.floor(j/5)*ZROW}; });
+{ let zy = 30; ZONES.forEach(Z => { const ids = Z.dev ? Z.ids.slice() : GAMES.filter(g => ZONE_OF[g.id] == Z.k).map(g => g.id), extra = Z.k == 'commons' ? 2 : 0, per = Z.dev ? 4 : 5, rowH = Z.dev ? 212 : ZROW, rows = Math.max(1, Math.ceil((ids.length + extra)/per)), hgt = 56 + rows*rowH;
+    ZLAY.push({...Z, y:zy, h:hgt, count:ids.length}); ids.forEach((id, j) => { POSM[id] = Z.dev ? {x:30 + (j%4)*202, y:zy + 54 + Math.floor(j/4)*rowH, dev:1} : {x:30 + (j%5)*162, y:zy + 54 + Math.floor(j/5)*ZROW}; });
     if (extra) SVC = [0, 1].map(q => { const j = ids.length + q; return {x:30 + (j%5)*162, y:zy + 54 + Math.floor(j/5)*ZROW}; }); zy += hgt + 22; }); ZLAY.end = zy; }
 const TROPHY_Y = Math.max(ZLAY.end, 1950), EXP_Y = TROPHY_Y + 112, FH = EXP_Y + 172;
 const KIOSKS = [{id:'prize',x:850,y:50,w:230,h:200},{id:'daily',x:850,y:290,w:230,h:140},{id:'board',x:850,y:465,w:230,h:110},{id:'learn',x:850,y:605,w:230,h:110},{id:'shop',x:850,y:745,w:230,h:110},
@@ -1878,7 +1929,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048').sort((a,b) => a.key0.localeCompare(b.key0, 'en', {numeric:true})); return GAMES.indexOf(DG[h % DG.length]); };   // same order as the old A–Z floor, so the daily game never jumps
-const BUILD = '2026-12-14k';
+const BUILD = '2026-12-14l';
 const SCRIPTS_OLD = ['arcade-core.js','music.js','prizes-more.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','rebirth-road.js','wonders.js','qol.js','live-events.js','moderation.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js','games-secrets.js','games-more.js','games-more2.js','games-more3.js','snow-cast.js','snow-world.js'];
 const fmt = n => fmtN(Math.round(n));
 
@@ -2864,7 +2915,7 @@ class Component extends DCLogic {
           const Rc = (P.recent||[]).map(id => GAMES.find(g => g.id == id)).filter(Boolean).slice(0, 6); shelves.push({key:'rec', t:'🕘 RECENTLY PLAYED', col:'#64CDF5', items:Rc.map(mini), empty:!Rc.length, emptyText:'Play a game and it shows up here.'});
           const Nw = GAMES.filter(g => !plays[g.id]).sort(sorter); if (Nw.length) shelves.push({key:'new', t:'✨ TRY SOMETHING NEW · '+Nw.length+' NOT PLAYED YET', col:'#F9BF01', items:Nw.map(mini), empty:false, emptyText:''}); }
         const cabP = (c, i) => { const ok = !filt || match(c), fav = !!favs[c.id];
-          return {...c, ...POS[i], icon: ICON(c.id), best:bestOf(c), bestLbl:lblOf(c), nfs:cabFs(c.name), gfs:narrow ? (c.name.length > 14 ? 10 : 12) : cabFs(c.name), daily:i==di, saved:savedOf(c.id), isNew:!!c.isNew && !P.played[c.id] && !savedOf(c.id), learn: !!c.learn || (eduOn && EDU_SWITCH.includes(c.id)),
+          const dv = !!(POS[i] && POS[i].dev); return {...c, ...POS[i], icon: ICON(c.id), dev:dv, cw:dv ? 190 : 140, ch:dv ? 196 : 130, iw:dv ? '100%' : '56px', ih:dv ? '100%' : '56px', scrM:dv ? '4px 4px 2px' : '6px 10px 4px', cls:dv ? 'wl-dev' : '', fit:dv ? 'cover' : 'contain', best:bestOf(c), bestLbl:lblOf(c), nfs:cabFs(c.name), gfs:narrow ? (c.name.length > 14 ? 10 : 12) : cabFs(c.name), daily:i==di, saved:savedOf(c.id), isNew:!!c.isNew && !P.played[c.id] && !savedOf(c.id), learn: !!c.learn || (eduOn && EDU_SWITCH.includes(c.id)),
             shadow: (ni===i?glow:base)+(()=>{ const sk = window.WLR ? window.WLR.cabSkin(P) : P.skin; return sk && window.WLP ? ', '+window.WLP.skinStyle(sk) : ''; })(), op: ok ? 1 : .25, flt: ok ? 'none' : 'grayscale(.85)', ok,
             favIc: fav ? '♥' : '♡', favAria: fav ? 'Remove '+c.title+' from favorites' : 'Add '+c.title+' to favorites', favTap: e => { if (e && e.stopPropagation) e.stopPropagation(); const f2 = {...(this.P.favs||{})}; if (f2[c.id]) delete f2[c.id]; else f2[c.id] = 1; this.setP({favs:f2}); }, open:()=>this.open(c.id)}; };
         const cabs = GAMES.map(cabP), zpl = Z => GAMES.filter(g => ZONE_OF[g.id] == Z.k), pN = Z => zpl(Z).filter(g => plays[g.id]).length;
