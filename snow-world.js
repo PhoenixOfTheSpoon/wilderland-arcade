@@ -130,6 +130,16 @@ const genMap = () => { if (MAPC) return MAPC; const old = genOld(), M = new Uint
   for (let tries = 0; chests.length < 70 && tries < 8000; tries++) { const x = 3 + Math.floor(rnd()*(N - 6)), y = 3 + Math.floor(rnd()*(N - 6)), v = get(x, y); if (x < N0 && y < N0) continue; const r = regionAt(x, y);
     if (SOLID[v] || v == HOLE || v == WATER || REG[r].safe || Object.values(LM2).some(L => Math.hypot(L.x - x, L.y - y) < 6) || chests.some(C => Math.hypot(C.tx - x, C.ty - y) < 6)) continue;
     chests.push({id:chests.length, tx:x, ty:y, x:(x + .5)*TS, y:(y + .5)*TS, tier:Math.max(1, REG[r].tier)}); }
+  // the castle around Camp Cocoa: walls, a gate in the middle of each side and wherever a path reaches the wall
+  { const X0 = 38, X1 = 62, Y0 = 76, Y1 = 96, at = (x, y) => M[y*N + x], put = (x, y, v) => { M[y*N + x] = v; }, gates = [];
+    for (let y = Y0 + 1; y < Y1; y++) for (let x = X0 + 1; x < X1; x++) if (at(x, y) != HOUSE) put(x, y, CAMP);
+    const runs = (cells, fixed) => { let run = []; const out = []; for (const c of [...cells, null]) { if (c && c.hit) run.push(c); else if (run.length) { const m = run[Math.floor(run.length/2)]; if (Math.abs(m.k - fixed) > 4) out.push(m.p); run = []; } } return out; };   // one 3-wide gate per path that reaches the wall
+    const hz = [], vt = []; for (const [y, oy] of [[Y0, -1], [Y1, 1]]) { gates.push(...runs([...Array(X1 - X0 - 1)].map((_, i) => ({k:X0 + 1 + i, p:[X0 + 1 + i, y], hit:at(X0 + 1 + i, y + oy) == PATH})), 50)); }
+    for (const [x, ox] of [[X0, -1], [X1, 1]]) { gates.push(...runs([...Array(Y1 - Y0 - 1)].map((_, i) => ({k:Y0 + 1 + i, p:[x, Y0 + 1 + i], hit:at(x + ox, Y0 + 1 + i) == PATH})), 86)); }
+    for (let x = X0; x <= X1; x++) { put(x, Y0, WALL); put(x, Y1, WALL); } for (let y = Y0; y <= Y1; y++) { put(X0, y, WALL); put(X1, y, WALL); }
+    gates.push([50, Y0], [50, Y1], [X0, 86], [X1, 86]);
+    for (const [x, y] of gates) for (const d of [-1, 0, 1]) { const gx = y == Y0 || y == Y1 ? x + d : x, gy = y == Y0 || y == Y1 ? y : y + d; if (gx > X0 && gx < X1 || gy > Y0 && gy < Y1) put(gx, gy, CAMP); }
+    for (const [x, y, dx, dy] of [[50, Y0, 0, -1], [50, Y1, 0, 1], [X0, 86, -1, 0], [X1, 86, 1, 0]]) for (let k = 1; k <= 4; k++) for (const d of [-1, 0, 1]) { const tx = x + dx*k + (dy ? d : 0), ty = y + dy*k + (dx ? d : 0); if (SOLID[at(tx, ty)] || at(tx, ty) == SNOW) put(tx, ty, PATH); } }
   // every chest can be reached from camp: if rocks or trees box one in, open a path to it
   { const seen = new Uint8Array(N*N), ok = v => v == GATE || v == VEIL || !SOLID[v], q = [[50, 88]]; seen[88*N + 50] = 1;
     const fill = () => { while (q.length) { const [x, y] = q.pop(); for (const [a, b] of [[1,0],[-1,0],[0,1],[0,-1]]) { const nx = x + a, ny = y + b; if (nx < 0 || ny < 0 || nx >= N || ny >= N || seen[ny*N + nx] || !ok(M[ny*N + nx])) continue; seen[ny*N + nx] = 1; q.push([nx, ny]); } } }; fill();
@@ -177,7 +187,8 @@ A.snowWorld = function(X) {
     if (ch) { const before = Math.floor(explored*100/fog.length); explored += ch; const pct = Math.floor(explored*100/fog.length); if (pct > before) X.stat('snowExplore', pct, 'max'); } };
   // ---------- you ----------
   const mx0 = X.maxHp();
-  if (W.x >= N*TS) { W.x = Math.round(44.5*TS); W.y = Math.round(92*TS); }   // saves made inside a raid before this fix
+  if (W.x >= N*TS) { W.x = Math.round(44.5*TS); W.y = Math.round(92*TS); }
+  if (W.x && W.x < N*TS && SOLID[M[Math.floor(W.y/TS)*N + Math.floor(W.x/TS)]]) { W.x = 0; W.y = 0; }   // saved inside a spot that is now a castle wall   // saves made inside a raid before this fix
   const p = {x:W.x || CAMPX.x, y:W.y || CAMPX.y, hp:mx0, max:mx0, inv:2, ab:0, shieldT:0, eye:0, fortT:0, ammo:X.maxAmmo(), reload:0, vx:0, vy:0, face:-Math.PI/2, hitT:0, walk:0};
   if (blocked(p.x, p.y, 12)) { p.x = CAMPX.x; p.y = CAMPX.y; }
   const mau = {x:p.x - 40, y:p.y + 10, cool:1, walk:0, idle:0, st2:'', stT:0, blockCd:0, chargeCd:5, snackCd:0, dash:null, say:'', sayT:0, quipT:20};
@@ -571,9 +582,11 @@ A.snowWorld = function(X) {
   const fortPanel = () => openPanelUI(() => { const T = W.base.tier, nx = TIER_COST[T + 1];
     return {title:'🏰 ' + TIER_N[T] + ' · your base', sub:'Rooms give bonuses all over the Snow Kingdom. Each tier lets rooms grow one level more. You have ' + PERM.frost + ' 🔷 and ' + A.fmt(PERM.bank) + ' ❄.',
       rows:[forgeRow(), ...(nx ? [{e:'⬆️', n:'Upgrade to ' + TIER_N[T + 1], d:'Bigger walls, taller towers, rooms can reach level ' + (T + 2), btn:costTxt(nx), ok:canPay(nx), fn:() => { pay(nx); W.base.tier++; X.stat('snowFort', W.base.tier, 'max'); save(); A.sfx('win'); say('🏰 Your base is now a ' + TIER_N[W.base.tier] + '!', 3); }}] : [{e:'💎', n:'Crystal Castle', d:'Your base is fully upgraded', btn:''}]),
-        ...ROOMS.map(r0 => { const lv = RL(r0.id), max = T + 1, c = roomCost(r0.id, lv), locked = r0.need && !r0.need();
-          return {e:r0.e, n:r0.n + ' · Lv ' + lv + '/' + max, d:(lv ? r0.d(lv) : 'Not built') + (lv < max && !locked ? ' → next: ' + r0.d(lv + 1) : ''), btn:locked ? '🔒 ' + r0.needTxt : lv >= max ? (lv >= 4 ? 'MAX' : 'Needs a bigger base') : (lv ? 'Upgrade · ' : 'Build · ') + costTxt(c), ok:!locked && lv < max && canPay(c), fn:() => { pay(c); W.base.rooms[r0.id] = lv + 1; refreshMax(); save(); A.sfx('coin'); }}; }),
+        ...ROOMS.map(r0 => roomRow(r0, T)),
         {e:'📈', n:'Skills · kingdom level ' + kLv(), d:kPts() + ' skill point' + (kPts() == 1 ? '' : 's') + ' to spend (or press K)', btn:'Open skills', ok:true, fn:() => skillPanel()}]}; });
+  const roomRow = (r0, T) => { const lv = RL(r0.id), max = T + 1, c = roomCost(r0.id, lv), locked = r0.need && !r0.need();
+          return {e:r0.e, n:r0.n + ' · Lv ' + lv + '/' + max, d:(lv ? r0.d(lv) : 'Not built') + (lv < max && !locked ? ' → next: ' + r0.d(lv + 1) : ''), btn:locked ? '🔒 ' + r0.needTxt : lv >= max ? (lv >= 4 ? 'MAX' : 'Needs a bigger base') : (lv ? 'Upgrade · ' : 'Build · ') + costTxt(c), ok:!locked && lv < max && canPay(c), fn:() => { pay(c); W.base.rooms[r0.id] = lv + 1; refreshMax(); save(); A.sfx('win'); say('🏗 ' + r0.n + ' is now level ' + (lv + 1) + '! Look how it grew', 2.6); }}; };
+  const roomPanel = r0 => openPanelUI(() => ({title:r0.n + ' · ' + TIER_N[W.base.tier], sub:'You have ' + PERM.frost + ' 🔷 and ' + A.fmt(PERM.bank) + ' ❄. Bigger base tiers let rooms grow higher.', rows:[roomRow(r0, W.base.tier), ...(r0.id == 'forge' ? [forgeRow()] : []), {e:'🏰', n:'Whole base', d:'All rooms and base tiers', btn:'Open', ok:true, fn:fortPanel}]}));
   const forgeRow = () => { const fl = RL('forge'), c0 = roomCost('forge', 0);
     return fl ? {e:'🔨', n:'Forge gear · Uncommon or better, up to ' + GRN[Math.min(5, 1 + fl)] + ' guaranteed', d:'Random slot · upgrade the Forge for rarer gear · equip it in the Snowball menu → Loadout', btn:'Forge · 25 🔷', ok:PERM.frost >= 25, fn:() => { PERM.frost -= 25; const it = give({gear:Math.min(5, Math.floor(Math.random()*(1 + fl)) + 1)}); X.savePerm && X.savePerm(); save(); A.sfx('coin'); say('🔨 Forged: ' + (it ? it.name : 'gear') + (it ? ' (' + GRN[it.rar] + ')' : ''), 3); }}
       : {e:'🔨', n:'Forge gear', d:'You need a Forge first: build it here, then forge gear for 25 🔷', btn:'Build Forge · ' + costTxt(c0), ok:canPay(c0), fn:() => { pay(c0); W.base.rooms.forge = 1; save(); A.sfx('coin'); say('⚒️ Forge built! Now you can forge gear', 2.6); }}; };
@@ -655,7 +668,7 @@ A.snowWorld = function(X) {
     rows:RAIDS.map(R0 => { const ok = !R0.need || R0.need(); return {e:R0.e, n:R0.n + (W.raidClr[R0.id] ? ' ✓ cleared this week' : ''), d:ok ? 'Boss: ' + BOSS[R0.boss].n.toLowerCase().replace(/\b\w/g, m => m.toUpperCase()) + ' · cleared ' + (W.raids[R0.id]|0) + '×' : '🔒 ' + {labyrinth:'Reach Spirits of the Snow chapter 2', citadel:'Reach chapter 5', vault:'Beat the Yeti King', library:'Rescue Bau Bau'}[R0.id], btn:ok ? 'Enter raid' : 'Locked', ok, fn:() => { panel = null; enterRaid(R0); }}; })}));
   // where the base, raid board, shop and siege bell are
   const FORT = {x:57.5*TS, y:93.6*TS}, BOARD = {x:44.5*TS, y:90.5*TS};
-  const p3Things = L => { L.push({x:FORT.x, y:FORT.y, n:'Ice Fort', f:fortPanel}); if (!(SG && SG.warTable)) L.push({x:BOARD.x, y:BOARD.y, n:'Raids', f:raidPanel});
+  const p3Things = L => { L.push({x:FORT.x, y:FORT.y, n:TIER_N[W.base.tier], f:fortPanel}); if (A.snowCastle) for (const r0 of ROOMS) { const sp = A.snowCastle.SPOTS[r0.id]; if (sp) L.push({x:(sp[0] + .5)*TS, y:(sp[1] + .9)*TS, n:(RL(r0.id) ? '' : 'Build ') + r0.n, f:() => roomPanel(r0)}); } if (!(SG && SG.warTable)) L.push({x:BOARD.x, y:BOARD.y, n:'Raids', f:raidPanel});
     L.push({x:24.5*TS, y:113.5*TS, n:'Shop', f:shopPanel}); if (!siege) L.push({x:BELL.x, y:BELL.y, n:'Defend', f:startSiege});
     if (siege && siege.phase == 'build') TSPOT.forEach(s2 => { if (!siege.turrets.some(T => T.x == s2.x && T.y == s2.y)) L.push({x:s2.x, y:s2.y, n:'Build 120 ❄', f:() => { if (PERM.bank < 120) { say('Need 120 snowflakes', 1.6); A.sfx('bad'); return; } PERM.bank -= 120; siege.turrets.push({...s2, cool:1}); A.sfx('coin'); }}); });
     if (raid && raid.open == 0) L.push({x:rpx(2, 2).x, y:rpx(2, 2).y, n:'Leave raid', f:() => leaveRaid('🏕 You left the raid')});
@@ -666,6 +679,7 @@ A.snowWorld = function(X) {
     // level ups
     const lv = kLv(); if (lv > (W.klv || 1)) { W.klv = lv; X.stat('snowKLv', lv, 'max'); refreshMax(); say('📈 Kingdom level ' + lv + '! +1 skill point (K)' + ((lv - 1) % 3 == 0 ? ' · +1 max heart' : ''), 3); A.sfx('win'); save(); } };
   const p3Draw = () => {
+    if (A.snowCastle && onScreen(50*TS, 86*TS, 1100)) A.snowCastle.draw(g, {TS, t, tier:W.base.tier, RL, M, N, WALL, onScreen, low:low(), rr, font:A.font});
     // the Ice Fort: bigger and fancier every tier
     if (onScreen(FORT.x, FORT.y, 200)) { const T = W.base.tier, s2 = 1 + T*.25, fx = FORT.x, fy = FORT.y + 20; g.save(); g.translate(fx, fy); g.scale(s2, s2);
       g.fillStyle = 'rgba(0,0,0,.15)'; g.beginPath(); g.ellipse(0, 4, 52, 10, 0, 0, TAU); g.fill(); g.fillStyle = T >= 3 ? '#cfeaff' : '#e8f4ff'; rr(g, -44, -40, 88, 44, 6); g.fill(); g.strokeStyle = '#9ec4e8'; g.lineWidth = 2; rr(g, -44, -40, 88, 44, 6); g.stroke();
@@ -980,7 +994,7 @@ A.snowWorld = function(X) {
     if (boss) bossAI(boss, dt);
     // Loki's minions roam the land (never inside camp)
     spawnT -= dt; const cap = A.D(6, 8, 10); if (spawnT <= 0 && rg != 'camp' && !REG[rg].safe) { spawnT = 1.1; if (foes.length < cap && !boss) for (let k3 = 0; k3 < 6; k3++) { const a = Math.random()*TAU, r2 = 430 + Math.random()*260, sx = p.x + Math.cos(a)*r2, sy = p.y + Math.sin(a)*r2, rr2 = regAt(sx, sy);
-        if (inRealm() ? !SG.inside(sx, sy) : (sx < TS*2 || sy < TS*2 || sx > WORLD - TS*2 || sy > WORLD - TS*2) || rr2 == 'camp' || REG[rr2].safe || (rr2 == 'oldroad' && Math.random() < .5) || blocked(sx, sy, 16) || (!spiritsOpen() && Math.floor(sx/TS) >= N0 && sy < N0*TS) || Math.hypot(sx - FIRE.x, sy - FIRE.y) < 600) continue; const pool = REG[rr2].pool; spawnFoe(pool[Math.floor(Math.random()*pool.length)], sx, sy); break; } }
+        if (inRealm() ? !SG.inside(sx, sy) : (sx < TS*2 || sy < TS*2 || sx > WORLD - TS*2 || sy > WORLD - TS*2) || rr2 == 'camp' || M[Math.floor(sy/TS)*N + Math.floor(sx/TS)] == CAMP || REG[rr2].safe || (rr2 == 'oldroad' && Math.random() < .5) || blocked(sx, sy, 16) || (!spiritsOpen() && Math.floor(sx/TS) >= N0 && sy < N0*TS) || Math.hypot(sx - FIRE.x, sy - FIRE.y) < 600) continue; const pool = REG[rr2].pool; spawnFoe(pool[Math.floor(Math.random()*pool.length)], sx, sy); break; } }
     for (const f of foes) { const F = FOE[f.k], TG = lballT > 0 && dist(f, lb) < 420 ? lb : siege && F.siege && dist(f, p) > 120 ? BELL : p, d = dist(f, TG), ang = Math.atan2(TG.y - f.y, TG.x - f.x); f.flash = Math.max(0, (f.flash || 0) - dt); f.hurt = Math.max(0, f.hurt - dt); f.flap += dt*12; f.cool -= dt;
       if (d > 1150 && !F.clone) { f.dead = 1; continue; }
       if (f.kb > 0) { f.kb -= dt; const nx2 = f.x + f.kbx*dt, ny2 = f.y + f.kby*dt; if (F.fly || !blocked(nx2, ny2, 10)) { f.x = nx2; f.y = ny2; } }
@@ -1376,5 +1390,5 @@ A.snowWorld = function(X) {
     try { SG = A.snowSaga(S); } catch (e) { console.error('[saga] failed to start', e); SG = null; }
     if (A.snowRaids) { try { SG = A.snowRaids(S, SG); } catch (e) { console.error('[raids] failed to start', e); } } }
   return {frame:dt => { update(dt); draw(); drawTop(); }, down, move, up, key, close, adm, admin:{reveal:() => { fog.fill(1); for (let i = 0; i < fog.length; i++) paintBlock(i); explored = fog.length; save(); }, quest:() => { W.met = 1; W.runes = {forest:1, lake:1, caves:1}; W.mau = 1; W.down.grumble = W.down.icefang = W.down.crystal = W.down.rufus = 1; save(); say('Admin: runes + Mau Mau given, gate open'); }, tp:k => { const w2 = px(WAYS[k] || WAYS.camp); p.x = w2.x; p.y = w2.y + 40; foes = []; boss = null; }},
-    dbg:() => ({sq:{SQ, sqStep, sqAdvance, sqStart, journal, throwBall, chase:() => chase, course:() => course, waves:() => waves, spot, lballT:() => lballT}, p3:{raid:() => raid, siege:() => siege, panel:() => panel, startSiege, siegeEnd, enterRaid, leaveRaid, RAIDS, toggleMount, riding:() => riding, skillPanel, fortPanel, raidPanel, shopPanel, panelDown, kLv, RL, roomCost, BELL, FORT, BOARD, rpx, give}, p, W, mates, foes:() => foes, bossNow:() => boss, balls, gateOpen, things, spawnBoss, hurtBoss, chests, LAIR, use, update, dlg:() => dlg, nextLine, SG:() => SG, goal})}; };
+    dbg:() => ({sq:{SQ, sqStep, sqAdvance, sqStart, journal, throwBall, chase:() => chase, course:() => course, waves:() => waves, spot, lballT:() => lballT}, p3:{raid:() => raid, siege:() => siege, panel:() => panel, startSiege, siegeEnd, enterRaid, leaveRaid, RAIDS, toggleMount, riding:() => riding, skillPanel, fortPanel, raidPanel, shopPanel, panelDown, kLv, RL, roomCost, BELL, FORT, BOARD, rpx, give}, p, W, mates, foes:() => foes, bossNow:() => boss, balls, gateOpen, things, spawnBoss, hurtBoss, chests, LAIR, use, update, dlg:() => dlg, nextLine, SG:() => SG, goal, tileAt, regionAt, M:() => M})}; };
 })();

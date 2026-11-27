@@ -548,8 +548,7 @@ A.snowRaids = (S, SG0) => {
   // ---------- War Table (the raid hub, next to Camp Cocoa in the Frostpine Castle grounds) ----------
   const WTP = {x:44.5*TS, y:90.5*TS};
   const drawWarTable = () => { if (!S.onScreen(WTP.x, WTP.y, 260)) return; const x = WTP.x, y = WTP.y, t = S.t;
-    g.fillStyle = '#8a96b0'; ART.rr(g, x - 90, y - 110, 180, 70, 8); g.fill(); for (let i = 0; i < 6; i++) { g.fillStyle = '#a8b4cc'; g.fillRect(x - 90 + i*32, y - 122, 20, 14); } g.fillStyle = '#5a6278'; ART.rr(g, x - 18, y - 70, 36, 30, 14); g.fill();
-    for (const s of [-1, 1]) { g.fillStyle = '#5a3a1a'; g.fillRect(x + s*80, y - 150, 3, 60); g.fillStyle = s < 0 ? '#2f5fd0' : '#c8102e'; g.beginPath(); g.moveTo(x + s*80 + 3, y - 148); g.lineTo(x + s*80 + 3 + 26 + Math.sin(t*3)*3, y - 140); g.lineTo(x + s*80 + 3, y - 130); g.fill(); }
+    for (const s of [-1, 1]) { g.fillStyle = '#5a3a1a'; g.fillRect(x + s*60, y - 92, 3, 60); g.fillStyle = s < 0 ? '#2f5fd0' : '#c8102e'; g.beginPath(); g.moveTo(x + s*60 + 3, y - 90); g.lineTo(x + s*60 + 3 + 26 + Math.sin(t*3)*3, y - 82); g.lineTo(x + s*60 + 3, y - 72); g.fill(); }
     ART.shadow(g, x, y + 4, 56); g.fillStyle = '#6a4024'; ART.rr(g, x - 54, y - 34, 108, 34, 10); g.fill(); g.fillStyle = '#e8d8b0'; ART.rr(g, x - 46, y - 32, 92, 24, 6); g.fill();
     g.strokeStyle = '#a0805a'; g.lineWidth = 1.5; g.beginPath(); g.moveTo(x - 36, y - 18); g.quadraticCurveTo(x - 10, y - 30, x + 6, y - 16); g.quadraticCurveTo(x + 20, y - 8, x + 36, y - 24); g.stroke(); g.font = '10px ' + A.font; g.textAlign = 'center'; g.fillText('⚔', x - 20, y - 14); g.fillText('🚩', x + 18, y - 18);
     g.fillStyle = '#14204a'; g.font = '900 11px ' + A.font; g.fillText('⚔ THE WAR TABLE', x, y + 18);
