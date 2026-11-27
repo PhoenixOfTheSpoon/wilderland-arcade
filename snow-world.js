@@ -221,8 +221,8 @@ A.snowWorld = function(X) {
   const splat = (x, y, n, col) => { const k = low() ? Math.ceil(n/3) : n; for (let i = 0; i < k; i++) fx.push({x, y, vx:(Math.random() - .5)*170, vy:(Math.random() - .5)*170, t:.35 + Math.random()*.3, col:col || '#ffffff', r:1.5 + Math.random()*2.5}); };
   const give = o => { const og = X.curM ? X.curM() : 1; if (o.flakes) PERM.bank += Math.round(og * o.flakes * (1 + .1*X.PU('flakes')) * (1 + .1*((W.base && W.base.rooms.trophy)|0))); if (o.frost) PERM.frost += Math.round(og * o.frost*tm('loot')); if (o.xp) { X.addXp(o.xp); W.kxp = (W.kxp||0) + o.xp; } if (o.score) { score += o.score; api.score(score); } let it = null; if (o.gear != null) it = X.makeGear(o.gear); return it; };
   // ---------- talking ----------
-  const talk = (lines, done) => { if (!lines || !lines.length || !lines[0]) { console.warn('[snow] empty dialogue', new Error().stack); if (done) done(); return; } dlg = {lines, i:0, done}; A.sfx('blip'); };
-  const nextLine = () => { if (!dlg) return; dlg.i++; A.sfx('blip'); if (dlg.i >= dlg.lines.length) { const d = dlg.done; dlg = null; d && d(); } };
+  const talk = (lines, done) => { if (!lines || !lines.length || !lines[0]) { console.warn('[snow] empty dialogue', new Error().stack); if (done) done(); return; } dlg = {lines, i:0, done, at:t}; A.sfx('blip'); };
+  const nextLine = () => { if (!dlg) return; dlg.i++; dlg.at = t; A.sfx('blip'); if (dlg.i >= dlg.lines.length) { const d = dlg.done; dlg = null; d && d(); } };
   const PIPF = ['Old Pip', 'pip'];
   const talkPip = () => {
     if (!W.met) return talk([[...PIPF, 'Oh, thank goodness! A hero! I’m Old Pip, keeper of Camp Cocoa.'],
@@ -323,7 +323,7 @@ A.snowWorld = function(X) {
     haz = haz.filter(h => !h.done); if (!boss) haz = []; };
   Object.assign(FOE, {tguard:{n:'Frost Guard', hp:9, sp:0, r:17, pts:90, melee:1, guard:1}});
   const throwAt = (wx, wy, pk) => { const k = X.ballK(), cost = k == 'boulder' ? 3 : 1; if (p.ammo < cost) { if (msgT <= 0) say('Out of snowballs! They come back by themselves in a moment', 1.6); A.sfx('bad'); return; }
-    const ang = Math.atan2(wy - (p.y - 10), wx - p.x), sn = X.CL().snipe || 1, crit = Math.random() < .05*X.crit() ? 2 : 1;
+    const ang = Math.atan2(wy - (p.y - 10), wx - p.x), sn = X.CL().snipe || 1, crit = Math.random() < .05*X.crit() ? 2 + critX() : 1;
     let dmg = X.armM() * (1 + pk) * (pk > .5 ? sn : 1) * crit * (p.eye > 0 ? 2 : 1) * (buffT > 0 ? 1.25 : 1), r = 5 + pk*4, sp = 520 + (sn > 1 ? 120 : 0);
     if (p.stick) { p.stick = 0; balls.push({x:p.x, y:p.y - 10, vx:Math.cos(ang)*430, vy:Math.sin(ang)*430, mine:1, dmg:0, r:9, life:.75, kind:'stick', hits:[], col:'#8D5B1D'}); p.reload = .5; p.face = ang; p.throwT = .2; A.tone(300, .08, 'triangle', .04); say('🪵 Stick!', 1); return; }
     if (k == 'boulder') { dmg *= 3; r = 12; sp = 420; }
@@ -631,15 +631,17 @@ A.snowWorld = function(X) {
   const canPay = c => PERM.frost >= (c.frost||0) && PERM.bank >= (c.flakes||0), pay = c => { PERM.frost -= (c.frost||0); PERM.bank -= (c.flakes||0); };
   const costTxt = c => [c.frost ? c.frost + ' 🔷' : '', c.flakes ? A.fmt(c.flakes) + ' ❄' : ''].filter(Boolean).join(' + ');
   // kingdom level + skill tree (hearts keep growing: +1 every 3 levels, and the Heart skill)
-  const SK = [{id:'dmg', e:'💥', n:'Strong Arm', d:r => '+' + (8*r) + '% snowball damage'}, {id:'hp', e:'❤️', n:'Big Heart', d:r => '+' + r + ' max heart' + (r == 1 ? '' : 's')}, {id:'spd', e:'👟', n:'Quick Feet', d:r => '+' + (6*r) + '% walking speed'},
-    {id:'ammo', e:'⚪', n:'Deep Pockets', d:r => '+' + (2*r) + ' snowballs'}, {id:'crit', e:'🍀', n:'Lucky Shot', d:r => '+' + (4*r) + '% critical hits'}, {id:'regen', e:'🏭', n:'Snow Factory', d:r => 'Snowballs come back ' + (25*r) + '% faster'}];
+  const SK = [{id:'dmg', e:'💥', n:'Strong Arm', d:r => '+' + (8*r) + '% snowball damage'}, {id:'hp', e:'❤️', n:'Big Heart', d:r => '+' + r + ' max heart' + (r == 1 ? '' : 's')}, {id:'spd', e:'👟', n:'Quick Feet', d:r => '+' + Math.round(100*spdB(r)) + '% walking speed'},
+    {id:'ammo', e:'⚪', n:'Deep Pockets', d:r => '+' + (2*r) + ' snowballs'}, {id:'crit', e:'🍀', n:'Lucky Shot', d:r => '+' + (4*Math.min(5, r)) + '% critical hits' + (r > 5 ? ' · crits hit +' + (10*(r - 5)) + '% harder' : '')}, {id:'regen', e:'🏭', n:'Snow Factory', d:r => 'Snowballs come back ' + (25*r) + '% faster'}];
+  // skills have no rank cap: Quick Feet slows down after rank 5 (always a little more), Lucky Shot ranks past 5 make crits hit harder
+  const spdB = r => .06*Math.min(5, r) + (r > 5 ? .4*(1 - Math.pow(.92, r - 5)) : 0), critX = () => .1*Math.max(0, (W.sk.crit|0) - 5);
   const kLv = () => Math.floor(Math.sqrt(W.kxp/30)) + 1, kPts = () => kLv() - 1 - SK.reduce((a, s) => a + (W.sk[s.id]|0), 0);
   { const a0 = X.armM, m0 = X.maxAmmo, s0 = X.spd, h0 = X.maxHp, c0 = X.crit, g0 = X.give;
     X.armM = () => a0() * (1 + .08*(W.sk.dmg|0)) * (1 + .08*RL('forge')) * (X.gDmg ? X.gDmg() : 1);
     X.maxAmmo = () => m0() + 2*(W.sk.ammo|0) + 2*RL('yard');
-    X.spd = () => s0() * (1 + .06*(W.sk.spd|0)) * mountMul();
+    X.spd = () => s0() * (1 + spdB(W.sk.spd|0)) * mountMul();
     X.maxHp = () => h0() + (W.sk.hp|0) + RL('kitchen') + Math.floor((kLv() - 1)/3) + (W.extraHp|0);
-    X.crit = () => c0() + (W.sk.crit|0); }
+    X.crit = () => c0() + Math.min(5, W.sk.crit|0); }
   // snowball regen: every source multiplies. Standing still (not throwing) for a moment refills three times as fast.
   const regenParts = () => [['Fast Scoop & Snow Machine (arena upgrades)', X.scoop()], ['Snow Factory skill', 1 + .25*(W.sk.regen|0)], ['Snow Well', 1 + .35*RL('well')],
     ['Backpack & gloves', 1 + .1*(X.gStat ? X.gStat('pack') : 0) + .05*(X.gStat ? X.gStat('gloves') : 0)], ['Bottomless Mitten', W.mitten ? 1.5 : 1], ['Snow Globe Charm', W.globe ? 2 : 1]];
@@ -706,7 +708,7 @@ A.snowWorld = function(X) {
   const mrRows = () => { const n = mrFlags(RL('maproom')), F2 = W.mflags || []; return [{e:'📍', n:'Travel flags · ' + F2.length + '/' + n, d:n ? 'Open the map (M) anywhere in the kingdom and tap “Plant a travel flag here”' : 'Map Room level 4 gives your first travel flag', btn:''}]; };
   const GRN = ['Common', 'Uncommon', 'Rare', 'Epic', 'Legendary', 'Mythic', 'Snow'];
   const skillPanel = () => openPanelUI(() => ({title:'📈 Level ' + kLv() + ' · ' + kPts() + ' skill point' + (kPts() == 1 ? '' : 's'), sub:'Earn kingdom XP from enemies, bosses, raids and quests. Every 3 levels also gives +1 max heart. Next level at ' + A.fmt(30*kLv()*kLv()) + ' XP (you have ' + A.fmt(W.kxp) + '). ⚪ Snowball regen: ' + regenTxt() + '.',
-    rows:SK.map(s2 => { const r = W.sk[s2.id]|0; return {e:s2.e, n:s2.n + ' · rank ' + r + '/5', d:(r ? s2.d(r) : 'Not learned') + (r < 5 ? ' → ' + s2.d(r + 1) : ''), btn:r >= 5 ? 'MAX' : 'Learn · 1 point', ok:r < 5 && kPts() > 0, fn:() => { W.sk[s2.id] = r + 1; refreshMax(); save(); A.sfx('coin'); }}; })}));
+    rows:SK.map(s2 => { const r = W.sk[s2.id]|0; return {e:s2.e, n:s2.n + ' · rank ' + r, d:(r ? s2.d(r) : 'Not learned') + ' → ' + s2.d(r + 1), btn:'Learn · 1 point', ok:kPts() > 0, fn:() => { W.sk[s2.id] = r + 1; refreshMax(); save(); A.sfx('coin'); }}; })}));
   const SHOP = [{e:'🐟', n:'Bag of 5 treats', d:'For Royal Guard Mau Mau', c:{flakes:250}, fn:() => { W.treats = (W.treats||0) + 5; }},
     {e:'☕', n:'Cocoa (full heal)', d:'Heals you and your team right now (not during boss fights)', c:{flakes:120}, noBoss:1, fn:() => { p.hp = p.max; mates.forEach(m => { m.ko = 0; m.hp = m.max; }); }},
     {e:'🛷', n:'Sled', d:'Ride ×1.4 speed (V)', c:{flakes:1500}, own:'sled'}, {e:'🦌', n:'Reindeer', d:'Ride ×1.65 speed (V) · village level 1', c:{frost:40}, own:'reindeer', lv:1},
@@ -1065,32 +1067,36 @@ A.snowWorld = function(X) {
   const BTN = ['🤸', '⭐', '✋', '🐟', '📈', '📗', '🗺'];
   // touch screens (iPads, phones): a floating joystick on the left of the screen, a big THROW button that aims for you on the right
   let joy = null; const FIREB = () => ({x:VW - 96, y:BAR - 100, r:58});
-  const autoTarget = () => { if (boss && dist(boss, p) < 680) return boss; let tg = null, bd = 600; for (const f of foes) { if (f.dead || FOE[f.k].decoy) continue; const d3 = dist(f, p); if (d3 < bd) { bd = d3; tg = f; } } return tg; };
+  // auto-target: the strongest enemy in range first (boss, then most health); between equally strong ones, the closest, then farther ones
+  const autoTarget = () => { if (boss && dist(boss, p) < 680) return boss; let tg = null, bs = -1, bd = 1e9; for (const f of foes) { if (f.dead || FOE[f.k].decoy) continue; const d3 = dist(f, p); if (d3 > 600) continue; const s3 = (f.max || f.hp || 1)*(f.elite ? 1.5 : 1); if (s3 > bs + 1e-6 || (Math.abs(s3 - bs) <= 1e-6 && d3 < bd)) { bs = s3; bd = d3; tg = f; } } return tg; };
+  let spWas = false; const toggleAuto = () => { W.autoT = W.autoT ? 0 : 1; save(); A.sfx('blip'); say(W.autoT ? '🎯 Auto-target ON: throws go to the strongest enemy, closest first (T to turn off)' : '🎯 Auto-target OFF: throws go where you aim (T to turn on)', 2.4); };
   const autoAim = () => { const tg = autoTarget(); return tg ? {x:tg.x, y:tg.y - 8} : {x:p.x + Math.cos(p.face)*320, y:p.y + Math.sin(p.face)*320}; };
   let hudR = null, mmR = null, btnR = [];
   const inR = (q, r2) => r2 && q.x >= r2.x && q.x <= r2.x + r2.w && q.y >= r2.y && q.y <= r2.y + r2.h;
   const down = (q, e) => { if (e && e.pointerType) { const was = touchUI; touchUI = e.pointerType == 'touch' || e.pointerType == 'pen'; if (was != touchUI) layout(); }
-    mouseIn = true; aim = q; if (quiz) return; if (panel) { panelDown(q); return; } if (SG && SG.down(q)) return; if (mapOpen) return mapDown(q); if (dlg) return nextLine(); if (dead > 0) return;
+    mouseIn = true; aim = q; if (quiz) return; if (panel) { panelDown(q); return; } if (SG && SG.down(q)) return; if (mapOpen) return mapDown(q); if (dlg) { if (t - (dlg.at || 0) > .45) nextLine(); return; } if (dead > 0) return;
     if (inR(q, hudR)) { W.hudMin = W.hudMin ? 0 : 1; A.sfx('blip'); return; } if (inR(q, thrR)) { threatPanel(); return; } if (inR(q, mmR)) { openMap(false); return; }
-    for (const b of btnR) if (inR(q, b)) { if (b.id == 'ride') { toggleMount(); return; } if (b.id == 'roll') { roll(); return; } if (b.id == 'skills') { skillPanel(); return; } if (b.id == 'journal') { journal(); return; } if (b.id == 'hold') { holdMates = false; say('👣 Teammates: follow me', 1.6); return; } if (b.id == 'ball') { throwBall(); return; } if (b.id == 'ab') useAbility(); else if (b.id == 'use') use(); else if (b.id == 'feed') feedMau(); else openMap(false); return; }
+    for (const b of btnR) if (inR(q, b)) { if (b.id == 'ride') { toggleMount(); return; } if (b.id == 'roll') { roll(); return; } if (b.id == 'skills') { skillPanel(); return; } if (b.id == 'journal') { journal(); return; } if (b.id == 'hold') { holdMates = false; say('👣 Teammates: follow me', 1.6); return; } if (b.id == 'ball') { throwBall(); return; } if (b.id == 'auto') { toggleAuto(); return; } if (b.id == 'throw') { const wa = W.autoT ? autoAim() : {x:p.x + Math.cos(p.face)*300, y:p.y + Math.sin(p.face)*300}; throwAt(wa.x, wa.y, 0); return; } if (b.id == 'ab') useAbility(); else if (b.id == 'use') use(); else if (b.id == 'feed') feedMau(); else openMap(false); return; }
     if (touchUI && q.y > BAR) { const i = Math.floor(q.x/(VW/BTN.length)); [roll, useAbility, use, feedMau, skillPanel, journal, () => openMap(false)][Math.max(0, Math.min(BTN.length - 1, i))](); return; }
     if (touchUI) { const F = FIREB(); if (Math.hypot(q.x - F.x, q.y - F.y) < F.r + 14) { charge = {id:e.pointerId, t:0, auto:1}; return; } }
     const wq = toWorld(q); if (!boss) for (const T2 of things()) if (Math.hypot(T2.x - wq.x, T2.y - wq.y) < (touchUI ? 44 : 30) && dist(T2, p) < 110) { T2.f(); return; }
     if (touchUI && q.x < VW*.42 && q.y > 70 && !joy) { joy = {id:e.pointerId, ox:q.x, oy:q.y, x:q.x, y:q.y}; return; }
     charge = {id:e.pointerId, t:0}; };
   const move = (q, e) => { if (joy && e && joy.id == e.pointerId) { joy.x = q.x; joy.y = q.y; return; } if (e && e.pointerType == 'mouse' && touchUI && !e.buttons) { touchUI = false; joy = null; layout(); } mouseIn = q.y < BAR; if (!charge || (charge.id == e.pointerId && !charge.auto)) aim = q; };
-  const up = e => { pads.delete(e.pointerId); if (joy && joy.id == e.pointerId) { joy = null; return; } if (charge && charge.id == e.pointerId) { const pk = Math.min(1, charge.t), au = charge.auto; charge = null; if (!dlg && !mapOpen && !quiz && dead <= 0) { const wa = au ? autoAim() : toWorld(aim); throwAt(wa.x, wa.y, pk > .25 ? pk : 0); } } };
+  const up = e => { pads.delete(e.pointerId); if (joy && joy.id == e.pointerId) { joy = null; return; } if (charge && charge.id == e.pointerId) { const pk = Math.min(1, charge.t), au = charge.auto; charge = null; if (!dlg && !mapOpen && !quiz && dead <= 0) { const wa = au || W.autoT ? autoAim() : toWorld(aim); throwAt(wa.x, wa.y, pk > .25 ? pk : 0); } } };
   const key = e => { const k = e.key; if (quiz) return; if (!panel && !dlg && SG && SG.key(e)) return; if (panel) { if (k == 'Escape' || k == 'e' || k == 'E' || k == 'Enter' || k == 'k' || k == 'K' || k == 'j' || k == 'J') panel = null; return; }
     if (mapOpen) { if (k == 'm' || k == 'M' || k == 'Enter' || k == ' ') { mapOpen = false; travel = false; } return; }
-    if (dlg) { if (k == ' ' || k == 'Enter' || k == 'e' || k == 'E') nextLine(); return; }
-    if (k == 'm' || k == 'M') openMap(false); else if (k == 'e' || k == 'E' || k == 'Enter') use(); else if (k == ' ' || k == 'q' || k == 'Q') useAbility(); else if (k == 'g' || k == 'G') feedMau(); else if (k == 'v' || k == 'V') toggleMount(); else if (k == 'j' || k == 'J') journal(); else if (k == 'b' || k == 'B') throwBall(); else if (k == 'k' || k == 'K') skillPanel(); else if (k == 'Shift') roll(); else if (k == 'c' || k == 'C') { holdMates = !holdMates; say(holdMates ? '✋ Teammates: hold this position (C to follow)' : '👣 Teammates: follow me', 1.8); } else if (k == 'h' || k == 'H') { W.hudMin = W.hudMin ? 0 : 1; }
-    else if ((k == 'f' || k == 'F') && dead <= 0) { const wa = mouseIn ? toWorld(aim) : {x:p.x + Math.cos(p.face)*300, y:p.y + Math.sin(p.face)*300}; throwAt(wa.x, wa.y, 0); } };
+    if (dlg) { if (k == 'Enter' || k == 'e' || k == 'E') nextLine(); return; }
+    if (k == 'm' || k == 'M') openMap(false); else if (k == 'e' || k == 'E' || k == 'Enter') use(); else if (k == 'q' || k == 'Q') useAbility(); else if (k == 't' || k == 'T') toggleAuto(); else if (k == 'g' || k == 'G') feedMau(); else if (k == 'v' || k == 'V') toggleMount(); else if (k == 'j' || k == 'J') journal(); else if (k == 'b' || k == 'B') throwBall(); else if (k == 'k' || k == 'K') skillPanel(); else if (k == 'Shift') roll(); else if (k == 'c' || k == 'C') { holdMates = !holdMates; say(holdMates ? '✋ Teammates: hold this position (C to follow)' : '👣 Teammates: follow me', 1.8); } else if (k == 'h' || k == 'H') { W.hudMin = W.hudMin ? 0 : 1; }
+    else if ((k == 'f' || k == 'F') && dead <= 0) { const wa = W.autoT ? autoAim() : mouseIn ? toWorld(aim) : {x:p.x + Math.cos(p.face)*300, y:p.y + Math.sin(p.face)*300}; throwAt(wa.x, wa.y, 0); } };
   // ---------- update ----------
   const update = dt => { t += dt; msgT = Math.max(0, msgT - dt);
     for (const f2 of fx) { f2.x += f2.vx*dt; f2.y += f2.vy*dt; f2.t -= dt; } fx = fx.filter(f2 => f2.t > 0);
     for (const n of nums) { n.y -= 30*dt; n.t -= dt; } nums = nums.filter(n => n.t > 0);
     if (quiz || dlg || mapOpen || panel || (SG && SG.modal())) return;
     if (dead > 0) { dead -= dt; if (dead <= 0) respawn(); return; }
+    // Space = throw a snowball (hold to charge, release to throw)
+    { const sh = !!K.k[' ']; if (sh && !spWas && !charge) charge = {id:'key', t:0, auto:W.autoT ? 1 : 0}; else if (!sh && charge && charge.id == 'key') { const pk = Math.min(1, charge.t), au = charge.auto; charge = null; const wa = au ? autoAim() : mouseIn ? toWorld(aim) : {x:p.x + Math.cos(p.face)*300, y:p.y + Math.sin(p.face)*300}; throwAt(wa.x, wa.y, pk > .25 ? pk : 0); } spWas = sh; }
     if (charge) charge.t += dt * (1 + .12*(X.PU ? X.PU('pack') : 0)) * (X.CL().pack || 1);
     // move
     const kk = K.k; let mx = ((kk.ArrowRight || kk.d || kk.D || pad('r')) ? 1 : 0) - ((kk.ArrowLeft || kk.a || kk.A || pad('l')) ? 1 : 0), my = ((kk.ArrowDown || kk.s || kk.S || pad('d')) ? 1 : 0) - ((kk.ArrowUp || kk.w || kk.W || pad('u')) ? 1 : 0);
@@ -1208,8 +1214,11 @@ A.snowWorld = function(X) {
     g.fillStyle = 'rgba(0,0,0,.15)'; g.beginPath(); g.ellipse(0, 16, 13, 4, 0, 0, TAU); g.fill();
     g.fillStyle = '#14204a'; g.fillRect(-8, 6 + bob*.5, 6, 10); g.fillRect(2, 6 - bob*.5, 6, 10);
     g.fillStyle = col; rr(g, -11, -8, 22, 18, 7); g.fill(); g.fillStyle = 'rgba(255,255,255,.35)'; g.fillRect(-11, 1, 22, 3);
-    const aa = o.throwT > 0 ? o.face : o.face + 1.2; g.strokeStyle = col; g.lineWidth = 5; g.lineCap = 'round'; g.beginPath(); g.moveTo(8, -4); g.lineTo(8 + Math.cos(aa)*12, -4 + Math.sin(aa)*12); g.stroke();
-    if (o.charge > 0) { g.fillStyle = '#fff'; g.beginPath(); g.arc(8 + Math.cos(aa)*14, -4 + Math.sin(aa)*14, 4 + 5*Math.min(1, o.charge), 0, TAU); g.fill(); }
+    // two arms, always outside the body with an outline and mittens: the throwing arm follows your aim, the other hangs at your side
+    const fc = Math.cos(o.face || 0), sd = fc >= 0 ? 1 : -1, act = o.throwT > 0 || o.charge > 0, aa = act ? o.face : Math.PI/2 - sd*.35, sw = o.walk ? Math.sin(o.walk*14)*.25 : 0;
+    const arm = (sx, a2) => { const x0 = sx*10, y0 = -5, x1 = x0 + Math.cos(a2)*11, y1 = y0 + Math.sin(a2)*11; g.lineCap = 'round'; g.strokeStyle = 'rgba(20,32,74,.35)'; g.lineWidth = 7; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke(); g.strokeStyle = col; g.lineWidth = 5; g.beginPath(); g.moveTo(x0, y0); g.lineTo(x1, y1); g.stroke(); g.fillStyle = '#14204a'; g.beginPath(); g.arc(x1, y1, 3, 0, TAU); g.fill(); return [x1, y1]; };
+    arm(-sd, Math.PI/2 + sd*.35 - sw); const hnd = arm(sd, act ? aa : aa + sw);
+    if (o.charge > 0) { g.fillStyle = '#fff'; g.beginPath(); g.arc(hnd[0] + Math.cos(aa)*3, hnd[1] + Math.sin(aa)*3, 4 + 5*Math.min(1, o.charge), 0, TAU); g.fill(); }
     g.fillStyle = '#f2c9a0'; g.beginPath(); g.arc(0, -16, 9, 0, TAU); g.fill();
     g.fillStyle = o.hat || col; g.beginPath(); g.arc(0, -19, 9.5, Math.PI, 0); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.arc(0, -29, 3.5, 0, TAU); g.fill();
     g.fillStyle = '#14204a'; g.beginPath(); g.arc(-3, -15, 1.6, 0, TAU); g.arc(3, -15, 1.6, 0, TAU); g.fill();
@@ -1502,7 +1511,7 @@ A.snowWorld = function(X) {
     if (dlg) { const [who, pic, txt, mood] = dlg.lines[dlg.i], DW = Math.min(820, VW - 20), DX = VW/2 - DW/2, DY = VH - 150; g.fillStyle = 'rgba(20,32,74,.95)'; rr(g, DX, DY, DW, 140, 16); g.fill(); g.fillStyle = 'rgba(255,255,255,.1)'; rr(g, DX + 10, DY + 12, 84, 116, 12); g.fill(); g.save(); g.translate(DX + 52, DY + 86); g.scale(1.7, 1.7); portrait(pic, 0, 0, mood); g.restore();
       g.fillStyle = '#D5F367'; g.font = '800 15px ' + A.font; g.textAlign = 'left'; g.fillText(who, DX + 106, DY + 30); g.fillStyle = '#fff'; g.font = '600 14px ' + A.font;
       let line = '', ly = DY + 54; txt.split(' ').forEach(wd => { if (g.measureText(line + wd).width > DW - 130) { g.fillText(line, DX + 106, ly); line = ''; ly += 19; } line += wd + ' '; }); g.fillText(line, DX + 106, ly);
-      g.fillStyle = '#9fe8ff'; g.font = '700 11px ' + A.font; g.textAlign = 'right'; g.fillText((dlg.i + 1) + '/' + dlg.lines.length + ' · ' + (touchUI ? 'tap' : 'click, Space or E') + ' ▶', DX + DW - 12, DY + 130); }
+      g.fillStyle = '#9fe8ff'; g.font = '700 11px ' + A.font; g.textAlign = 'right'; g.fillText((dlg.i + 1) + '/' + dlg.lines.length + ' · ' + (touchUI ? 'tap' : 'click, Enter or E') + ' ▶', DX + DW - 12, DY + 130); }
     // controls: big buttons on touch screens; on computers a small row of key chips (you can click them too)
     const nt2 = nearThing(); btnR = [];
     if (touchUI) { if (!mapOpen && !panel && dead <= 0 && !dlg) { const F = FIREB(), tg = autoTarget();
@@ -1515,7 +1524,7 @@ A.snowWorld = function(X) {
       g.fillStyle = '#14204a'; g.fillRect(0, BAR, VW, 720 - BAR); const BW = VW/BTN.length;
       BTN.forEach((b, i) => { const on = (i == 1 && p.ab <= 0) || (i == 2 && nt2) || (i == 3 && W.mau && (W.treats||0) > 0) || (i == 4 && kPts() > 0), x = i*BW; g.fillStyle = on ? '#D5F367' : 'rgba(255,255,255,.16)'; rr(g, x + 4, BAR + 12, BW - 8, 76, 14); g.fill(); g.fillStyle = on ? '#14204a' : '#fff'; g.textAlign = 'center';
         g.font = '800 18px ' + A.font; g.fillText(i == 1 && p.ab > 0 ? Math.ceil(p.ab) + 's' : b, x + BW/2, BAR + 50); g.font = '700 10px ' + A.font; wrapClip(['Roll', X.CL().ab, nt2 ? nt2.n : 'Use', 'Feed (' + (W.treats||0) + ')', 'Skills', 'Journal', 'Map'][i], x + BW/2, BAR + 72, BW - 14); }); }
-    else { const chips = [['⭐ ' + (p.ab > 0 ? Math.ceil(p.ab) + 's' : X.CL().ab), 'Space', 'ab', p.ab <= 0], ['✋ ' + (nt2 ? nt2.n : 'Use'), 'E', 'use', !!nt2], ...(W.mau ? [['🐟 Feed Mau Mau (' + (W.treats||0) + ')', 'G', 'feed', (W.treats||0) > 0]] : []), ...(W.mount && !rOn() ? [[(MOUNTS.find(m => m.id == W.mount) || {e:'🛷'}).e + (riding ? ' Riding' : ' Ride'), 'V', 'ride', riding]] : []), ['🤸 Roll', 'Shift', 'roll', false], ...(W.lball ? [['🎾 Ball', 'B', 'ball', lballCd <= 0]] : []), ['📗 Journal', 'J', 'journal', false], ...(holdMates && mates.length ? [['✋ Team holding', 'C', 'hold', true]] : []), ['📈 Skills' + (kPts() > 0 ? ' (' + kPts() + ')' : ''), 'K', 'skills', kPts() > 0], ['🗺 Map', 'M', 'map', false]];
+    else { const chips = [['❄ Throw', 'Space', 'throw', false], ['🎯 Auto ' + (W.autoT ? 'ON' : 'OFF'), 'T', 'auto', !!W.autoT], ['⭐ ' + (p.ab > 0 ? Math.ceil(p.ab) + 's' : X.CL().ab), 'Q', 'ab', p.ab <= 0], ['✋ ' + (nt2 ? nt2.n : 'Use'), 'E', 'use', !!nt2], ...(W.mau ? [['🐟 Feed Mau Mau (' + (W.treats||0) + ')', 'G', 'feed', (W.treats||0) > 0]] : []), ...(W.mount && !rOn() ? [[(MOUNTS.find(m => m.id == W.mount) || {e:'🛷'}).e + (riding ? ' Riding' : ' Ride'), 'V', 'ride', riding]] : []), ['🤸 Roll', 'Shift', 'roll', false], ...(W.lball ? [['🎾 Ball', 'B', 'ball', lballCd <= 0]] : []), ['📗 Journal', 'J', 'journal', false], ...(holdMates && mates.length ? [['✋ Team holding', 'C', 'hold', true]] : []), ['📈 Skills' + (kPts() > 0 ? ' (' + kPts() + ')' : ''), 'K', 'skills', kPts() > 0], ['🗺 Map', 'M', 'map', false]];
       g.font = '800 11px ' + A.font; const fitW = VW - 24; let tot = 0, ws = chips.map(([a, k]) => g.measureText(a).width + g.measureText(k).width + 30); tot = ws.reduce((u, v) => u + v + 8, 0) - 8;
       if (tot > fitW) { chips.forEach(c => { c[0] = c[0].split(' ')[0]; }); ws = chips.map(([a, k]) => g.measureText(a).width + g.measureText(k).width + 30); tot = ws.reduce((u, v) => u + v + 8, 0) - 8; }   /* small screens: icons + keys only */
       const gap = tot > fitW ? 4 : 8; if (tot > fitW) tot = ws.reduce((u, v) => u + v + gap, 0) - gap; let x = Math.max(12, VW/2 - tot/2); const y = VH - 30;
@@ -1575,5 +1584,5 @@ A.snowWorld = function(X) {
     try { SG = A.snowSaga(S); } catch (e) { console.error('[saga] failed to start', e); SG = null; }
     if (A.snowRaids) { try { SG = A.snowRaids(S, SG); } catch (e) { console.error('[raids] failed to start', e); } } }
   return {frame:dt => { update(dt); draw(); drawTop(); }, down, move, up, key, close, adm, admin:{reveal:() => { fog.fill(1); for (let i = 0; i < fog.length; i++) paintBlock(i); explored = fog.length; save(); }, quest:() => { W.met = 1; W.runes = {forest:1, lake:1, caves:1}; W.mau = 1; W.down.grumble = W.down.icefang = W.down.crystal = W.down.rufus = 1; save(); say('Admin: runes + Mau Mau given, gate open'); }, tp:k => { const w2 = px(WAYS[k] || WAYS.camp); p.x = w2.x; p.y = w2.y + 40; foes = []; boss = null; }},
-    dbg:() => ({sq:{SQ, sqStep, sqAdvance, sqStart, journal, throwBall, chase:() => chase, course:() => course, waves:() => waves, spot, lballT:() => lballT}, p3:{X, raid:() => raid, siege:() => siege, panel:() => panel, startSiege, siegeEnd, enterRaid, leaveRaid, RAIDS, toggleMount, riding:() => riding, skillPanel, fortPanel, raidPanel, shopPanel, panelDown, kLv, RL, roomCost, BELL, FORT, BOARD, rpx, give, ROOMS, TIER_N, TIER_COST, MILE, buyRoom, tierUp, upgradeAll, buyable, mineHas, mineTake, mineRate, roomPanel, canBuy, hurtMe, joy:() => joy, autoTarget, thr, gearScore, THR, TM, haz:() => haz, stunB, addStg, guardsUp, threatPanel, respawn, hostN:() => hostN, mrPlant, openMap, mapDown, MAPR, travel:v => { travel = v; }}, p, W, mates, foes:() => foes, bossNow:() => boss, balls, gateOpen, things, spawnBoss, hurtBoss, chests, LAIR, use, update, dlg:() => dlg, nextLine, SG:() => SG, goal, tileAt, regionAt, M:() => M})}; };
+    dbg:() => ({sq:{SQ, sqStep, sqAdvance, sqStart, journal, throwBall, chase:() => chase, course:() => course, waves:() => waves, spot, lballT:() => lballT}, p3:{X, spawnFoe, talk, raid:() => raid, siege:() => siege, panel:() => panel, startSiege, siegeEnd, enterRaid, leaveRaid, RAIDS, toggleMount, riding:() => riding, skillPanel, fortPanel, raidPanel, shopPanel, panelDown, kLv, RL, roomCost, BELL, FORT, BOARD, rpx, give, ROOMS, TIER_N, TIER_COST, MILE, buyRoom, tierUp, upgradeAll, buyable, mineHas, mineTake, mineRate, roomPanel, canBuy, hurtMe, joy:() => joy, autoTarget, thr, gearScore, THR, TM, haz:() => haz, stunB, addStg, guardsUp, threatPanel, respawn, hostN:() => hostN, mrPlant, openMap, mapDown, MAPR, travel:v => { travel = v; }}, p, W, mates, foes:() => foes, bossNow:() => boss, balls, gateOpen, things, spawnBoss, hurtBoss, chests, LAIR, use, update, dlg:() => dlg, nextLine, SG:() => SG, goal, tileAt, regionAt, M:() => M})}; };
 })();

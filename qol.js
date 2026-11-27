@@ -9,7 +9,11 @@ const el = (tag, at, ...kids) => { const n = document.createElement(tag); at = a
   kids.flat().forEach(c => { if (c == null || c === false) return; n.appendChild(typeof c == 'object' ? c : document.createTextNode(String(c))); }); return n; };
 
 // ---------------- What's new ----------------
-const WN = {v:'2026-12-14j', items:[
+const WN = {v:'2026-12-14k', items:[
+  ['❄', 'Space throws snowballs + auto-target', 'In the Snow Kingdom, Space now throws a snowball (hold to charge), Q is your ability and T turns auto-target on or off: throws go to the strongest enemy in range, closest first. Space no longer skips dialogue, and a click right as a new line appears won\'t skip it either.'],
+  ['📈', 'Kingdom skills have no max', 'Keep spending skill points: Strong Arm, Big Heart, Deep Pockets and Snow Factory keep growing, Quick Feet keeps getting a little faster, and Lucky Shot past rank 5 makes critical hits hit harder.'],
+  ['🦎', 'Dumpling fixes', 'Arena Freeze and Starfall never happen at the same time, and safe circles are never inside the Starfall. The Gecko God\'s 50 layers are much deeper now.'],
+  ['🧤', 'Two arms', 'You and your teammates now show both arms, and they stay visible when lowered.'],
   ['🍭', 'Sugar Siege: fixes and a lot harder', 'Smashed buildings now come back by themselves at full health next wave (same level, same branch, free). Coins from defeated enemies show up right away and can be spent during the wave, and you can repair damaged buildings. The Broccoli Army is tougher: bigger waves, golden elite enemies from wave 4, Brutes and Avocado Tanks smash towers, Carrot Casters hunt the Sugar Sorcerer (2 hearts now), and every boss has a new attack. Easy stays gentle.'],
   ['💥', 'Way more Snow Kingdom damage', 'Your gear now raises snowball damage in the Snow Kingdom and raids: every equipped piece adds to it, and better grades and + levels add more (see 💥 Gear damage in Loadout). Plain snowballs no longer do half damage to bosses, stunned bosses take ×3, and Frost Guards only cut damage to 70%.'],
   ['⚔️', 'Bigger raid rewards', 'Raids now give about 3–4× the Frost Crystals, snowflakes and Raid Tokens, every clear drops a set piece, and the weekly chest is 3× bigger.'],

@@ -44,8 +44,8 @@ SAGA.postInit = api => {
     3:{r:'void', n:'DUMPLING, UNSEALED · THE FROZEN VOID', hp:4200, reward:'Flight', flag:'flight', d:'Press X (or the ✨ button) to fly for 2.5 s: over gaps, cliffs and danger.'}};
   [1, 2, 3].forEach(n => { BOSS['god' + n] = {n:GODN[n].n, hp:GODN[n].hp, r:34, phases:4, saga:1, post:1, brain:1, bar:1, draw:1, wake:600, god:n}; });
   const LAYERS = 50, GPH = ['', 'Ice Meteors', 'Gravity Reversed', 'Frozen Time', 'Three of Me', 'Black Hole', 'Constellation Walk', 'Echoes of Every Fight', 'Godstorm', 'The Last Seal', 'Starfall'];
-  BOSS.geckogod = {n:'THE GECKO GOD', hp:LAYERS*240, r:40, phases:10, saga:1, post:1, brain:1, bar:3, draw:1, wake:700, gg:1};
-  BOSS.geckogodR = {n:'THE GECKO GOD · REMATCH', hp:LAYERS*160, r:40, phases:10, saga:1, post:1, brain:1, bar:3, draw:1, wake:700, gg:1, rematch:1};
+  BOSS.geckogod = {n:'THE GECKO GOD', hp:LAYERS*1500, r:40, phases:10, saga:1, post:1, brain:1, bar:3, draw:1, wake:700, gg:1};
+  BOSS.geckogodR = {n:'THE GECKO GOD · REMATCH', hp:LAYERS*1000, r:40, phases:10, saga:1, post:1, brain:1, bar:3, draw:1, wake:700, gg:1, rematch:1};   // each of the 50 layers takes real work (was 240 / 160)
   Object.keys(BOSS).forEach(k => { if (BOSS[k].post && !LAIR[k]) LAIR[k] = {x:-1e6, y:-1e6}; });
   let rematch = null, gx = {hz:[], ghosts:[], copies:[], frozen:0, warn:null, shieldT:0, buffT:0, moments:{}, team:0, teamReady:false, flyCd:0, fill:0};
   const bossReady = (k, cur) => { const C = SG.C(); if (!C || !cur) return false; const s2 = pstep();
@@ -75,9 +75,11 @@ SAGA.postInit = api => {
     // time slows (warned)
     B.ts = (B.ts == null ? 9 : B.ts) - dt; if (B.ts <= 0) { B.ts = 14/sp1; warnBanner('⏳ TIME SLOWS!', 1.6); setTimeout(() => { PW.slow = .45; setTimeout(() => { PW.slow = 1; }, 3200); }, 1600); }
     // arena-wide freeze: get into a glowing safe circle
-    if (ph >= 2) { B.fz = (B.fz == null ? 6 : B.fz) - dt; if (B.fz <= 0) { B.fz = 16/sp1; warnBanner('❄ ARENA FREEZE! Stand in a glowing circle!', 2.6); const safes = [0, 1, 2].map(i => { const a = Math.random()*TAU, r = 120 + Math.random()*160; return {x:B.hx + Math.cos(a)*r, y:B.hy + Math.sin(a)*r}; }); safes.forEach(q => haz(q.x, q.y, 54, 2.6, 0, {safe:1})); haz(B.hx, B.hy, 9999, 2.6, 3, {freeze:1, safes}); } }
+    // Arena Freeze and Starfall never overlap, and safe circles are never inside a Starfall
+    const koOn = () => hz.some(h => h.ko && h.t > 0), fzOn = () => hz.some(h => h.freeze && h.t > 0);
+    if (ph >= 2) { B.fz = (B.fz == null ? 6 : B.fz) - dt; if (B.fz <= 0 && koOn()) B.fz = .5; if (B.fz <= 0) { B.fz = 16/sp1; B.ko = Math.max(B.ko || 0, 4); warnBanner('❄ ARENA FREEZE! Stand in a glowing circle!', 2.6); const kos = hz.filter(h => h.ko); const safes = [0, 1, 2].map(i => { let q = null; for (let tr = 0; tr < 30; tr++) { const a = Math.random()*TAU, r = 120 + Math.random()*160; q = {x:B.hx + Math.cos(a)*r, y:B.hy + Math.sin(a)*r}; if (!kos.some(h => Math.hypot(q.x - h.x, q.y - h.y) < h.r + 60)) break; } return q; }); safes.forEach(q => haz(q.x, q.y, 54, 2.6, 0, {safe:1})); haz(B.hx, B.hy, 9999, 2.6, 3, {freeze:1, safes}); } }
     // instant knockout (huge warning)
-    if (ph >= 3) { B.ko = (B.ko == null ? 8 : B.ko) - dt; if (B.ko <= 0) { B.ko = 20/sp1; warnBanner('☠ STARFALL! GET OUT OF THE RED!', 3); haz(B.x, B.y, 300, 3, 999, {ko:1}); } }
+    if (ph >= 3) { B.ko = (B.ko == null ? 8 : B.ko) - dt; if (B.ko <= 0 && fzOn()) B.ko = .5; if (B.ko <= 0) { B.ko = 20/sp1; B.fz = Math.max(B.fz || 0, 4); warnBanner('☠ STARFALL! GET OUT OF THE RED!', 3); haz(B.x, B.y, 300, 3, 999, {ko:1}); } }
     if (d < B.r + 14) S.hurtMe(2); };
   // the GECKO GOD: 50 layers, 10 phases
   const arenaPts = (B, R2) => { const out = []; for (let i = 0; i < 7; i++) { const a = i/7*TAU + .3; out.push({x:B.hx + Math.cos(a)*R2, y:B.hy + Math.sin(a)*R2}); } return out; };
@@ -231,7 +233,7 @@ SAGA.postInit = api => {
   // admin
   api.adm.post = () => { SV.post = 1; SV.ch = Math.max(SV.ch, 9); S.save(); S.say('Admin: post-game (Cat Gone Missing) started', 2.5); };
   api.adm.god = n => { SV.post = 1; SV.ch = Math.max(SV.ch, 9); n = Math.max(1, Math.min(4, Math.floor(n))); SV.ps = n == 4 ? PS.findIndex(s2 => s2.k == 'final') : PS.findIndex(s2 => s2.k == 'god' && s2.n == n); ['forbidden', 'above', 'void'].forEach(r => SV.postUnlock[r] = 1); if (n >= 2) SV.flags.sealBalls = 1; if (n >= 3) SV.flags.starCloak = 1; if (n >= 4) SV.flags.flight = 1; SV.flags.godSky = 1; const r = n == 4 ? 'void' : GODN[n].r; SG.enter(r, 0, true); const C = SG.C(), q = SG.W2T(C.lair); p.x = q.x; p.y = q.y + 320; S.save(); S.say('Admin: ' + (n == 4 ? 'the Gecko God' : 'godlike fight ' + n), 2.4); };
-  SAGA.post = {bossReady, ai:godAI, hurt, down:godDown, drawBoss, drawBar, respawn, drawScreen, drawWorld, mapIcons:(icon, cur, C) => { const s2 = pstep(); if (s2 && (s2.k == 'god' || s2.k == 'final' || s2.k == 'ritual') && cur == s2.r) icon(C.lair, '🌌'); }};
+  SAGA.post = {gx:() => gx, bossReady, ai:godAI, hurt, down:godDown, drawBoss, drawBar, respawn, drawScreen, drawWorld, mapIcons:(icon, cur, C) => { const s2 = pstep(); if (s2 && (s2.k == 'god' || s2.k == 'final' || s2.k == 'ritual') && cur == s2.r) icon(C.lair, '🌌'); }};
   SAGA.postModal = () => !!credits; SAGA.postThings = things; SAGA.postUpdate = update; SAGA.postDrawCamp = drawCamp; SAGA.postDrawTop = drawTop; SAGA.postKey = pkey; SAGA.postDown = pdown; SAGA.postRows = rows;
   // portraits for the new faces
   const portrait0 = S.portraitBase;
