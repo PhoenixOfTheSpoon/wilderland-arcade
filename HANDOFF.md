@@ -23,8 +23,8 @@ Paste this whole file into a new chat (or attach it) and say "continue the queue
   - Publish with the Artifact tool, using that `url`, `root` = the repo folder, and `files` keyed `"project/<file name>"`. The HTML must also be listed as `"project/Wilderland Arcade.dc.html"`.
   - Only send the files you changed; the others are kept.
   - If a publish is refused because a file wasn't read as published, read it with action "read", diff it against git, then publish.
-- **BUILD string:** it appears twice in `Wilderland Arcade.dc.html` (the head boot script and `const BUILD`). Bump it on every publish, e.g. `sed -i "s/2026-12-14a/2026-12-14b/g" "Wilderland Arcade.dc.html"`. The current value is **2026-12-14a**.
-- **What's New:** `WN = {v:'2026-12-14', items:[[emoji, title, text], ...]}` in `qol.js`. Add an entry for each big update and bump `v`.
+- **BUILD string:** it appears twice in `Wilderland Arcade.dc.html` (the head boot script and `const BUILD`). Bump it on every publish, e.g. `sed -i "s/2026-12-14b/2026-12-14c/g" "Wilderland Arcade.dc.html"`. The current value is **2026-12-14b**.
+- **What's New:** `WN = {v:'2026-12-14b', items:[[emoji, title, text], ...]}` in `qol.js`. Add an entry for each big update and bump `v`.
 - Local test server: `python3 -m http.server 8770` in the repo, run in the background. Playwright and Chromium are preinstalled (`require('playwright')`).
 - `firestore.rules` exists but **is still not published to Firebase**. Publishing it needs a browser, signed in to the Firebase console as the admin. Admin-only events must be enforced by Firestore rules tied to the admin's Google account; players can only read events.
 
@@ -93,7 +93,9 @@ Paste this whole file into a new chat (or attach it) and say "continue the queue
 - Fight 6: being knocked out resets him to full health; leaving keeps it.
 
 ## 4. THE QUEUE (in this order)
-**NEXT: Snow Kingdom Boss + Difficulty Overhaul** (the user's spec is in chat; stages): 2) Gear Score + Threat tiers (8), universal boss rules (projectile cap, 0.6 s tells, 2 s gaps, punish windows, leave = knockout, revive in arena at 50% with 3 s invulnerability, no Cocoa heal in fights, hearts after stuns, admin); 3) Dumpling fight 6 rework (black-ice dome, 10 new phases, Give up, reload = inside + knockout); 4) per-boss mechanics in batches.
+**NEXT: Snow Kingdom Boss + Difficulty Overhaul** — stage 2 DONE (Dec 14b): THREAT section in snow-world.js (`THR`, `TM` multipliers, `gearScore()` best piece per slot + Power Arm, `W.gsMax`, `thr()`, `W.forceThreat`), boss shots go through `bossShot` (≥0.6 s wind-up `TELL()`, patterns cut at 2.4 s + 2 s breather, ring gap `inGap`, cap 22/14 boss balls), stagger `addStg`/`stunB` (stun = ×2 player damage, uncharged ×0.5, hearts drop), Threat extras `exUpdate` (Fierce Frost Guards `tguard`, Brutal second form + slam `haz`, Mythic icicles), elites (`f.elite`), knockout = revive in arena at `W.koPct`% (respawn), boss health saved as a share (`W.bhm`). Raid bosses (`BOSS[k].rd`) skip all of it; Gecko God (`post`) gets anti-spam but no extras.
+  Remaining: 3) Dumpling fight 6 rework (black-ice dome, 10 new phases, Give up, reload = inside + knockout); 4) per-boss mechanics (3+ each) in batches + raid Threat extras.
+- **Class skill trees need more upgrades** (user: "not enough upgrades", Slinger Lv 21 has 11 unspent points; 3 branches × 3 ranks). User said do it LAST.
 
 **A. Snow Kingdom Update** (full spec below). Still to do:
 1. Infinite fusing through 10 grades to PHOENIX, then Phoenix +1, +2… forever.

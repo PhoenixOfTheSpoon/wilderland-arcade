@@ -986,6 +986,11 @@ A.register('snowball', { mount(host, api){
     {label:'Kingdom: set base level (1-12)', num:12, min:1, max:12, run:n => { if (!wm) openWorld(); wm && wm.adm.baseLv(n); }},
     {label:'Kingdom: set every open room to level (0-12, up to base level)', num:12, min:0, max:12, run:n => { if (!wm) openWorld(); wm && wm.adm.roomLv(n); }},
     {label:'Kingdom: base level rewards can be earned again', run:() => { if (!wm) openWorld(); wm && wm.adm.mileReset(); }},
+    {label:'Kingdom: Threat · force a tier (0 Calm 1 Rising 2 Fierce 3 Savage 4 Brutal 5 Dire 6 Mythic 7 Wilderland · -1 = follow gear) and show Gear Score', num:-1, min:-1, max:7, run:n => { if (!wm) openWorld(); wm && wm.adm.threat(n); }},
+    {label:'Kingdom: hearts after a boss-fight knockout (%)', num:50, min:1, max:100, run:n => { if (!wm) openWorld(); wm && wm.adm.koPct(n); }},
+    {label:'Kingdom: reset a boss to full health (0 = all bosses · number from the boss list in the Snow Kingdom admin message)', num:0, min:0, max:200, run:n => { if (!wm) openWorld(); if (wm) { if (n > 0) wm.adm.bossReset(n); else wm.adm.bossReset(0); } }},
+    {label:'Kingdom: list boss numbers (for reset)', run:() => { if (!wm) openWorld(); wm && wm.adm.bossListSay(); }},
+    {label:'Kingdom: jump the current boss to phase', num:2, min:1, max:60, run:n => { if (!wm) openWorld(); wm && wm.adm.bossPhase(n); }},
         {label:'Kingdom: side story — finish the current step (or start the next one)', run:() => { if (!wm) openWorld(); wm && wm.adm.sq(); }},
     {label:'Kingdom: finish every available side story', run:() => { if (!wm) openWorld(); wm && wm.adm.sqAll(); }}];
   // ---- save & resume (old v2 saves still load) ----
