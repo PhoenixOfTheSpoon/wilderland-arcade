@@ -10,7 +10,6 @@ const el = (tag, at, ...kids) => { const n = document.createElement(tag); at = a
 
 // ---------------- What's new ----------------
 const WN = {v:'2026-12-14f', items:[
-  ['⭐', 'OG code: originalgato', 'Until the end of 2026, redeem originalgato in Snowball Showdown (Loadout → reward code) for 10K Frost Crystals, 1K ice crystals, 1M snowflakes and a permanent ×2.5 on every Snowball Showdown currency you earn.'],
   ['💥', 'Way more Snow Kingdom damage', 'Your gear now raises snowball damage in the Snow Kingdom and raids: every equipped piece adds to it, and better grades and + levels add more (see 💥 Gear damage in Loadout). Plain snowballs no longer do half damage to bosses, stunned bosses take ×3, and Frost Guards only cut damage to 70%.'],
   ['⚔️', 'Bigger raid rewards', 'Raids now give about 3–4× the Frost Crystals, snowflakes and Raid Tokens, every clear drops a set piece, and the weekly chest is 3× bigger.'],
   ['🔥', 'Fusing goes past Snow, forever', 'Fuse 3 Snow pieces into ✦ Celestial, 3 Celestial into 🔥 Phoenix, then Phoenix +1, +2, +3… with no limit. Fusing now refunds every snowflake and Frost Crystal you spent on the + levels of the pieces you fused.'],
