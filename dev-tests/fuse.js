@@ -1,0 +1,12 @@
+const { chromium } = require('playwright');
+const app = `(()=>{ const el = document.querySelector('header'); const k = Object.keys(el).find(k=>k.startsWith('__reactFiber')); let f = el[k]; while (f && !(f.stateNode && f.stateNode.logic && f.stateNode.logic.logAct)) f = f.return; return f.stateNode.logic; })()`;
+(async()=>{ const b = await chromium.launch(); const ctx = await b.newContext({viewport:{width:1440,height:900}}); await ctx.route(/gstatic\.com|googleapis\.com/, r=>r.abort());
+ const p = await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message));
+ await p.addInitScript(()=>{ localStorage.setItem('wl-arcade-v1', JSON.stringify({econV:5, achV:2, tickets:5e6, earned:1e9, founderChk:1})); localStorage.setItem('wl-wn','2099'); localStorage.setItem('wl-road-welcomed','1'); });
+ await p.goto('http://localhost:8770/Wilderland%20Arcade.dc.html'); await p.waitForTimeout(5000); await p.evaluate(app+'.open("snowball")'); await p.waitForTimeout(1500);
+ const S = s => p.evaluate('(()=>{ const sn = window.Arcade._dbg.snow(); const P = sn.PERM; '+s+' })()');
+ await S('P.gear = []; P.eq = {}; const h = sn.makeGear(0, "hat"); for (let i=0;i<27;i++){ const it = sn.makeGear(0, "boots"); it.rar = 0; } for (let i=0;i<3;i++){ const it = sn.makeGear(0, "gloves"); it.rar = 4; } P.eq.gloves = P.gear.filter(x=>x.slot=="gloves")[0].id; P.eq = {hat:h.id}; sn.openPanel("loadout"); return 1');
+ await p.waitForTimeout(300); await p.getByText(/Fuse ALL the way up/).click(); await p.waitForTimeout(300);
+ console.log(await p.evaluate(()=>(document.body.innerText.match(/⚡ \d+ fusion[^\n]*/)||[])[0]));
+ console.log('boots:', await S('return P.gear.filter(x=>x.slot=="boots").map(x=>x.rar).join(",")'), '| gloves: ', await S('return P.gear.filter(x=>x.slot=="gloves").map(x=>x.rar+(P.eq.gloves==x.id?"(eq)":"")).join(",")'));
+ console.log('errors', errs); await b.close(); })();
