@@ -10,7 +10,7 @@ const N = +(process.argv[2] || 1), DIF = +(process.argv[3] || 0), SHOT = process
  for (let i=0;i<20;i++){ if (!(await D('return !!d.dlg()'))) break; await D('d.nextLine()'); }
  console.log('hooks:', await D('return [typeof SG.warTable, typeof SG.raidAdm, !!window.Arcade.RAIDS]'));
  await D(`d.W.mau = 1; d.W.bau = 1; SG.raidAdm.enter(${N}, ${DIF})`); await p.waitForTimeout(600);
- const R = await D('const r = SG.run(); return {n:r.R.n, fl:r.R.fl, fi:r.fi}'); console.log(R);
+ const R = await D('const r = SG.run(); return {n:r.R.n, fl:r.plan.map(q => q.c).join(""), fi:r.fi}'); console.log(R);
  for (let fi = 0; fi < R.fl.length; fi++) { await D(`SG.raidAdm.floor(${fi+1})`); await p.waitForTimeout(400);
    if (SHOT) await p.screenshot({path:`rd-${N}-${fi}.png`});
    // play: auto-throw at goal, move toward goal for a few seconds

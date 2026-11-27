@@ -9,7 +9,8 @@ const el = (tag, at, ...kids) => { const n = document.createElement(tag); at = a
   kids.flat().forEach(c => { if (c == null || c === false) return; n.appendChild(typeof c == 'object' ? c : document.createTextNode(String(c))); }); return n; };
 
 // ---------------- What's new ----------------
-const WN = {v:'2026-12-14l', items:[
+const WN = {v:'2026-12-14m', items:[
+  ['⚔️', 'Raids change every run', 'Every raid run now shuffles its floors and changes the shape of the rooms. Harder difficulties add more than bigger numbers: Heroic adds an Elite Pack floor and traps on every floor, Mythic also adds a Guardian\'s Echo floor and floor twists (darkness, slippery ice, a shrinking safe ring), and Nightmare adds a second echo and gives the final boss an extra phase. Extra floors pay extra.'],
   ['⭐', 'Developed Games', 'Snowball Showdown, Fishing Hole, Trailhead Defense and Deep Mines now have their own section at the top of the arcade floor, with big glowing cabinets and brand-new animated artwork.'],
   ['❄', 'Space throws snowballs + auto-target', 'In the Snow Kingdom, Space now throws a snowball (hold to charge), Q is your ability and T turns auto-target on or off: throws go to the strongest enemy in range, closest first. Space no longer skips dialogue, and a click right as a new line appears won\'t skip it either.'],
   ['📈', 'Kingdom skills have no max', 'Keep spending skill points: Strong Arm, Big Heart, Deep Pockets and Snow Factory keep growing, Quick Feet keeps getting a little faster, and Lucky Shot past rank 5 makes critical hits hit harder.'],

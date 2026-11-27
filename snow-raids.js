@@ -122,12 +122,13 @@ A.snowRaids = (S, SG0) => {
   const setV = (lx, ly, v) => { if (lx < 0 || ly < 0 || lx >= FW || ly >= FH) return; F.V[ly*FW + lx] = v; F.M[ly*FW + lx] = v == 1 || v == 2 || v == 3 ? T.WALL : v >= 4 && v <= 7 ? T.DEEP : T.FLOOR; };
   const V = (lx, ly) => lx < 0 || ly < 0 || lx >= FW || ly >= FH ? 1 : F.V[ly*FW + lx];
   const doorOpen = o => { F.door = o; for (const x of [16, 17]) for (const y of [0, 1]) F.M[y*FW + x] = o ? T.FLOOR : T.WALL; };
-  const genFloor = (fi) => { const R = run.R, code = R.fl[fi], r = rnd(run.seed + fi*977), M = new Uint8Array(FW*FH), Vv = new Uint8Array(FW*FH);
-    F = {fi, code, M, V:Vv, deco:[], door:false, obj:{}, done:false, t:0, chest:null, pz:null};
+  const genFloor = (fi) => { const R = run.R, PL = run.plan[fi], code = PL.c == 'E' ? 'c' : PL.c == 'M' ? 'G' : PL.c, r = rnd(run.seed + fi*977), M = new Uint8Array(FW*FH), Vv = new Uint8Array(FW*FH);
+    F = {fi, code, M, V:Vv, deco:[], door:false, obj:{}, done:false, t:0, chest:null, pz:null, elite:PL.c == 'E', echo:PL.c == 'M', tw:PL.tw || null, extra:!!PL.extra};
     for (let y = 0; y < FH; y++) for (let x = 0; x < FW; x++) setV(x, y, x < 1 || x >= FW - 1 || y < 2 || y >= FH - 1 ? 1 : 0);
     doorOpen(false);
     const free = (x, y, m = 1) => { for (let yy = y - m; yy <= y + m; yy++) for (let xx = x - m; xx <= x + m; xx++) if (V(xx, yy) != 0) return false; return !(Math.abs(x - 16.5) < 3 && y > FH - 5) && !(Math.abs(x - 16.5) < 3 && y < 5); };
-    if (code == 'B' || code == 'G') for (const [x, y] of [[8, 8], [25, 8], [8, 16], [25, 16]]) setV(x, y, 2);
+    if (code == 'B' || code == 'G') for (const [x, y] of [[[8, 8], [25, 8], [8, 16], [25, 16]], [[11, 6], [22, 6], [6, 12], [27, 12], [11, 18], [22, 18]], [[16, 6], [16, 18], [7, 12], [26, 12]]][PL.shape % 3]) setV(x, y, 2);
+    else if (code == 'c' && PL.shape) shapeRoom(PL.shape);
     else if (code == 'm') genMaze(r);
     else if (code != 'g') { const n = 3 + Math.floor(r()*3); for (let i = 0; i < n; i++) { const x = 4 + Math.floor(r()*12), y = 5 + Math.floor(r()*13); if (free(x, y)) { setV(x, y, 2); setV(FW - 1 - x, y, 2); } } }
     if (R.th == 'void' && code != 'm' && code != 'B' && code != 'G') for (let i = 0; i < 5; i++) { const x = 3 + Math.floor(r()*(FW - 6)), y = 5 + Math.floor(r()*(FH - 10)); if (free(x, y, 2)) { setV(x, y, 3); setV(x + 1, y, 3); } }
@@ -137,7 +138,8 @@ A.snowRaids = (S, SG0) => {
     for (const sx of [1.6, FW - 1.6]) for (let y = 5; y < FH - 2; y += 5) F.deco.push({k:TH.deco[(y + (sx > 2 ? 1 : 0)) % TH.deco.length], x:sx, y:y + .6, i:y});
     // the question chest (Learn mode: answer right for extra tokens), not on boss floors
     if (code != 'B') { const cx = r() < .5 ? 3 : FW - 4; F.chest = {...wp(cx, FH - 4), open:false}; }
-    F.spawn = wp(16.5 - .5, FH - 3); };
+    F.spawn = wp(16.5 - .5, FH - 3); if (code == 'c' && PL.shape && !reach()) { for (let y = 2; y < FH - 1; y++) for (let x = 1; x < FW - 1; x++) if (V(x, y) == 1 || V(x, y) == 4) setV(x, y, 0); }
+    if (F.tw == 'shrink') F.zr = {x:wp(16.5, 12).x, y:wp(16.5, 12).y, r:15*TS, min:5*TS, hurt:0}; };
   const genMaze = r => { const CW = 3, cols = 10, rows = 7, ox = 2, oy = 2, mk = () => { const vis = new Uint8Array(cols*rows), walls = new Set(), key = (a, b) => a < b ? a + ',' + b : b + ',' + a;
       for (let i = 0; i < cols*rows; i++) for (const j of [i + 1, i + cols]) if ((j == i + 1 && (i % cols) < cols - 1) || (j == i + cols && j < cols*rows)) walls.add(key(i, j));
       const st = [Math.floor(cols/2) + (rows - 1)*cols]; vis[st[0]] = 1; while (st.length) { const c = st[st.length - 1], nb = [c - 1, c + 1, c - cols, c + cols].filter(n => n >= 0 && n < cols*rows && !vis[n] && (Math.abs(n - c) != 1 || Math.floor(n/cols) == Math.floor(c/cols)));
@@ -148,19 +150,36 @@ A.snowRaids = (S, SG0) => {
       if (b == a + 1) { const x = ox + (ax + 1)*CW; for (let y = oy + ay*CW; y <= oy + ay*CW + CW; y++) out.push([x, y]); } else { const y = oy + (ay + 1)*CW; for (let x = ox + ax*CW; x <= ox + ax*CW + CW; x++) out.push([x, y]); } } return out.filter(([x, y]) => x > 0 && x < FW - 1 && y > 1 && y < FH - 1); };
   const applyMaze = i => { for (let y = 2; y < FH - 1; y++) for (let x = 1; x < FW - 1; x++) if (V(x, y) == 1) setV(x, y, 0); F.mz = i; for (const [x, y] of mazeWallTiles(F.mazes[i])) if (!(x >= 15 && x <= 18 && (y <= 3 || y >= FH - 3))) setV(x, y, 1);
     for (let y = 2; y <= 3; y++) for (let x = 15; x <= 18; x++) setV(x, y, 0); for (let y = FH - 3; y < FH - 1; y++) for (let x = 15; x <= 18; x++) setV(x, y, 0); };
+  // ---------- every run is different: floors shuffle, rooms change shape, harder difficulties add floors and twists ----------
+  const XN = {E:['The Elite Barracks', 'The Champions’ Hall'], M:['The Guardian’s Echo', 'The Guardian Returns']}, TWN = {dark:'🕯 Darkness: only your light shows the way', ice:'🧊 Frozen floor: slippery!', shrink:'⭕ The safe zone is shrinking: stay inside the ring'};
+  const buildPlan = (R, d, seed) => { const r = rnd(seed ^ 0x5bd1e995), it = R.fl.split('').map((c, i) => ({c, n:R.names[i] || 'Floor ' + (i + 1)})), boss = it.pop(), gi = it.findIndex(q => q.c == 'G'), G = gi >= 0 ? it.splice(gi, 1)[0] : null;
+    for (let i = it.length - 1; i > 0; i--) { const j = Math.floor(r()*(i + 1)); [it[i], it[j]] = [it[j], it[i]]; }
+    if (G) it.splice(Math.max(1, Math.min(it.length, Math.floor(it.length*(.45 + r()*.3)))), 0, G);
+    const extra = [[], ['E'], ['E', 'M'], ['E', 'M', 'M']][d] || [], cnt = {E:0, M:0}; for (const c of extra) { const gAt = it.findIndex(q => q.c == 'G'), lo = c == 'M' && gAt >= 0 ? gAt + 1 : 1, at = lo + Math.floor(r()*(it.length - lo + 1)); it.splice(at, 0, {c, n:XN[c][cnt[c]++], extra:1}); }   // guardian echoes come after the real guardian
+    it.push(boss); const tw = [0, 0, .5, .8][d] || 0; it.forEach(q => { if (q.c != 'B' && q.c != 'G' && q.c != 'M' && q.c != 'g' && r() < tw) { const opts = q.c == 'c' || q.c == 'E' ? ['dark', 'ice', 'shrink'] : ['dark', 'ice']; q.tw = opts[Math.floor(r()*opts.length)]; } });
+    it.forEach(q => { q.shape = Math.floor(r()*6); }); return it; };
+  const NFL = () => run && run.plan ? run.plan.length : 0;
+  // room shapes for fighting floors (always leave a way from the entrance to the door)
+  const shapeRoom = k => { const W2 = (x0, y0, x1, y1) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) setV(x, y, 1); };
+    if (k == 1) { W2(1, 2, 7, 7); W2(FW - 8, 2, FW - 2, 7); W2(1, FH - 7, 7, FH - 2); W2(FW - 8, FH - 7, FW - 2, FH - 2); }   // cross
+    else if (k == 2) { W2(13, 9, 20, 14); }   // ring around a middle block
+    else if (k == 3) { W2(1, 2, 6, FH - 2); W2(FW - 7, 2, FW - 2, FH - 2); }   // long hall
+    else if (k == 4) { W2(1, 8, 21, 9); W2(12, 15, FW - 2, 16); }   // zig-zag
+    else if (k == 5) { for (const [x, y] of [[8, 7], [24, 7], [8, 16], [24, 16], [16, 11]]) for (let yy = y; yy < y + 2; yy++) for (let xx = x; xx < x + 3; xx++) setV(xx, yy, 4); } };   // water islands
+  const reach = () => { const seen = new Uint8Array(FW*FH), q = [toL(F.spawn.x, F.spawn.y)]; seen[q[0].y*FW + q[0].x] = 1; while (q.length) { const c = q.pop(); if (c.y <= 2 && Math.abs(c.x - 16.5) < 2) return true; for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { const x = c.x + dx, y = c.y + dy; if (x < 0 || y < 0 || x >= FW || y >= FH || seen[y*FW + x] || (V(x, y) >= 1 && V(x, y) <= 3)) continue; seen[y*FW + x] = 1; q.push({x, y}); } } return false; };
   // ---------- starting, floors, leaving ----------
   const startRun = (R, d, key, fi = 0, resume) => { if (S.boss) S.boss = null; S.foes = []; S.balls = []; S.riding = false; S.panel = null; S.mapOpen = false;
-    run = {R, d, key:key|0, fi, seed:(Math.random()*1e9)|0, t:(resume && resume.t) || 0, deaths:(resume && resume.deaths) || 0, mods:weekMods(), tank:{hp:0, max:0, down:0}, buffT:0, hits:0, spiritT:0, voidT:0};
+    const seed0 = resume && resume.seed ? resume.seed : (Math.random()*1e9)|0; run = {R, d, key:key|0, fi, seed:seed0, plan:buildPlan(R, d, seed0), t:(resume && resume.t) || 0, deaths:(resume && resume.deaths) || 0, mods:weekMods(), tank:{hp:0, max:0, down:0}, buffT:0, hits:0, spiritT:0, voidT:0};
     run.tank.max = run.tank.hp = 10 + 2*d + (set4('kitchen') ? 6 : 0); p.over = S.RL('infirmary'); enterFloor(fi); A.sfx('win'); };   /* Infirmary: gold hearts for this raid */
   const enterFloor = fi => { run.fi = fi; genFloor(fi); hz = []; kicks = []; puffs = []; fx = []; S.foes = []; S.balls = []; S.boss = null; S.holdMates = false; F.t = 0;
     p.x = F.spawn.x; p.y = F.spawn.y; p.vx = p.vy = 0; p.inv = 1.5; S.mateHome(); mau.x = p.x - 46; mau.y = p.y + 6; mates.forEach((m, i) => { m.x = p.x + (i - 1)*60; m.y = p.y + 50; });
-    const R = run.R, nm = R.names[fi] || 'Floor ' + (fi + 1), code = F.code, tip = {c:'Defeat the enemies', r:'Read the rune tablet, then step on the plates in that order', b:'Light all 4 braziers (E) at the same time', l:'Ring the bells from the deepest to the highest (E or a snowball)',
+    run.dark = F.tw == 'dark' ? 1 : 0; const R = run.R, nm = run.plan[fi].n, code = F.code, tip = {c:'Defeat the enemies', r:'Read the rune tablet, then step on the plates in that order', b:'Light all 4 braziers (E) at the same time', l:'Ring the bells from the deepest to the highest (E or a snowball)',
       k:'Collect the 3 keys', g:'Cross the hall: dodge the red zones', m:'Find the way through the shifting maze (follow the arrow)', G:'The guardian awaits', B:'The raid boss awaits'}[code];
-    banner = {t:3.2, a:'Floor ' + (fi + 1) + ' / ' + R.fl.length + ' · ' + nm, b:tip}; S.say('📍 ' + nm, 2);
-    RS.run = {id:R.id, d:run.d, key:run.key, fi, t:Math.round(run.t), deaths:run.deaths}; S.save();
+    banner = {t:3.6, a:'Floor ' + (fi + 1) + ' / ' + NFL() + ' · ' + nm, b:(F.elite ? '⚔ ELITE PACK: tougher enemies, better loot · ' : F.echo ? '👻 The guardian is back for another round · ' : '') + tip + (F.tw ? ' · ' + TWN[F.tw] : '')}; S.say('📍 ' + nm, 2);
+    RS.run = {id:R.id, d:run.d, key:run.key, fi, t:Math.round(run.t), deaths:run.deaths, seed:run.seed}; S.save();
     setupObj(); };
   const setupObj = () => { const o = F.obj, code = F.code, R = run.R, r = rnd(run.seed + F.fi*31);
-    if (code == 'c') { o.wave = 0; o.waves = 2 + (run.d >= 2 ? 1 : 0); o.next = 1.6; }
+    if (code == 'c') { o.wave = 0; o.waves = 2 + (run.d >= 2 ? 1 : 0) + (F.elite ? 1 : 0); o.next = 1.6; }
     if (code == 'r') { o.order = [0, 1, 2, 3].sort(() => r() - .5); o.step = 0; o.plates = [[7, 8], [26, 8], [7, 16], [26, 16]].map(([x, y], i) => ({i, ...wp(x, y)})); o.tab = wp(16.5, 3.2); o.seen = 0; }
     if (code == 'b') { o.br = [[5, 5], [28, 5], [5, 19], [28, 19]].map(([x, y]) => ({...wp(x, y), lit:0})); o.puffT = 5; }
     if (code == 'l') { const sz = [0, 1, 2, 3].sort(() => r() - .5); o.bells = [[8, 7], [25, 7], [8, 16], [25, 16]].map(([x, y], i) => ({...wp(x, y), s:sz[i], rung:0, sw:0})); o.step = 0; o.tab = wp(16.5, 3.2); o.miss = 0; }
@@ -169,16 +188,16 @@ A.snowRaids = (S, SG0) => {
     if (code == 'm') { doorOpen(true); }
     if (code == 'G' || code == 'B') { o.spawnT = code == 'B' ? 1.2 : .8; } };
   const pick = a => a[Math.floor(Math.random()*a.length)];
-  const addFoe = (k, x, y, job) => { const L0 = toL(x, y), q = !solidL(L0.x, L0.y) ? {x, y} : F.spawn; S.spawnFoe(k, q.x, q.y); const f = S.foes[S.foes.length - 1]; if (!f) return null; f.rf = 1; f.job = job; f.hp = Math.ceil(f.hp*(1 + .35*run.d + .06*run.key)); f.max = f.hp; return f; };
-  const floorDone = () => { if (F.done) return; F.done = true; doorOpen(true); A.sfx('win'); S.cheerT = 1.2; say('🚪 The way forward opens! (go to the top door)', 2.6); give1('tok', 2); };
+  const addFoe = (k, x, y, job) => { const L0 = toL(x, y), q = !solidL(L0.x, L0.y) ? {x, y} : F.spawn; S.spawnFoe(k, q.x, q.y); const f = S.foes[S.foes.length - 1]; if (!f) return null; f.rf = 1; f.job = job; f.hp = Math.ceil(f.hp*(1 + .35*run.d + .06*run.key)*(F && F.elite ? 2 : 1)); f.max = f.hp; return f; };
+  const floorDone = () => { if (F.done) return; F.done = true; doorOpen(true); A.sfx('win'); S.cheerT = 1.2; say('🚪 The way forward opens! (go to the top door)', 2.6); give1('tok', F.extra ? 6 : 2); if (F.extra) S.give({frost:15*(run.d + 1), flakes:400*(run.d + 1)}); };
   const give1 = (k, n) => { if (k == 'tok') { n = Math.round(n*(X.curM ? X.curM() : 1)); RS.tok += n; fxNum(p.x, p.y - 50, '+' + n + ' 🎟 Raid Tokens', '#F9BF01'); } };
   const fxNum = (x, y, s2, c) => S.addNum(x, y, s2, c);
-  const leaveRun = (msg2, keep) => { if (!run) return; if (keep) RS.run = {id:run.R.id, d:run.d, key:run.key, fi:run.fi, t:Math.round(run.t), deaths:run.deaths}; else RS.run = null;
+  const leaveRun = (msg2, keep) => { if (!run) return; if (keep) RS.run = {id:run.R.id, d:run.d, key:run.key, fi:run.fi, t:Math.round(run.t), deaths:run.deaths, seed:run.seed}; else RS.run = null;
     run = null; F = null; hz = []; kicks = []; puffs = []; S.boss = null; S.foes = []; S.balls = []; S.holdMates = false; p.x = (44.5)*TS; p.y = (92.2)*TS; p.vx = p.vy = 0; S.mateHome(); mau.x = p.x - 40; mau.y = p.y + 10; S.save(); if (msg2) say(msg2, 3); };
   // ---------- boss fights ----------
   const kitOf = k => { const id = k.slice(3); return k[1] == 'b' ? KIT[id].fin : KIT[id].mini; };
-  const spawnRB = mini => { const R = run.R, k = (mini ? 'rm_' : 'rb_') + R.id, K = kitOf(k), at = wp(16.5, 9.5); LAIR[k] = {x:at.x, y:at.y + 40}; if (W.bhp) delete W.bhp[k]; S.spawnBoss(k); const B = S.boss; if (!B) return;
-    const hp = Math.round(K.hp*(.75 + .25*run.R.gs/100)*D().hp*(1 + .08*run.key)*(1 + .04*Math.max(0, X.lv() - 1))); B.hp = B.max = hp; B.ph = 1; B.phases = K.ph.length; B.saga = 1; B.r = K.r; B.talk = K.intro; B.talkT = 4;
+  const spawnRB = mini => { const R = run.R, k = (mini ? 'rm_' : 'rb_') + R.id, K0 = kitOf(k), K = !mini && run.d >= 3 ? {...K0, ph:[...K0.ph, ['volley', 'ring', 'spread', 'int:nova:Last Stand', ...K0.ph[K0.ph.length - 1].filter(a => !a.startsWith('pz'))]]} : K0, at = wp(16.5, 9.5); LAIR[k] = {x:at.x, y:at.y + 40}; if (W.bhp) delete W.bhp[k]; S.spawnBoss(k); const B = S.boss; if (!B) return;
+    const hp = Math.round(K.hp*(.75 + .25*run.R.gs/100)*D().hp*(1 + .08*run.key)*(1 + .04*Math.max(0, X.lv() - 1))); B.hp = B.max = Math.round(hp*(K !== K0 ? 1.2 : 1)*(F.echo ? 1.15 : 1)); B.ph = 1; B.phases = K.ph.length; B.saga = 1; B.r = K.r; B.talk = K.intro; B.talkT = 4;
     B.rd = {K, q:0, next:2, act:null, stag:0, down:0, weakT:0, cast:null, enr:D().enr + 20*K.ph.length, enraged:0, swipe:3, heat:0, heatT:0, wings:0, air:0, shield:0, mini}; B.hx = at.x; B.hy = at.y;
     run.cp = {k, ph:1}; intro = {t:2.8, n:K.n, mini, look:K.look}; if (mini) F.obj.boss = 1; else F.obj.boss = 1;
     if ((K.pas || []).includes('icicles')) run.ic = [[6, 6], [27, 6], [6, 18], [27, 18], [12, 12], [21, 12]].map(([x, y]) => ({...wp(x, y), t:0})); else run.ic = null;
@@ -310,7 +329,7 @@ A.snowRaids = (S, SG0) => {
   // ---------- boss defeated: next floor, or victory ----------
   const rbDown = B => { const rd = B.rd || {}; hz = []; run.copies = null; run.tail = null; run.bh = null; run.pz = null; run.safe = null; run.wind = null; run.grav = null; run.slowT = 0; S.holdMates = false; boom(B.x, B.y, '#ffe9a0'); S.cheerT = 3; S.shakeV = 10; S.REG['rd_' + run.R.id].mood = 'r_' + run.R.id;
     S.foes = S.foes.filter(f => !f.rf); if (rd.mini) { floorDone(); say('🏆 The guardian falls! The door opens', 3); give1('tok', 4); return; } victory(); };
-  const victory = () => { const R = run.R, d = run.d, k2 = R.id + ':' + d, secs = Math.round(run.t), first = !RS.lock.got[k2], loot = [], mul = (mod('treasure') ? 2 : 1)*D().loot*(1 + .1*run.key);
+  const victory = () => { const R = run.R, d = run.d, xtra = run.plan.filter(q => q.extra).length, k2 = R.id + ':' + d, secs = Math.round(run.t), first = !RS.lock.got[k2], loot = [], mul = (mod('treasure') ? 2 : 1)*D().loot*(1 + .1*run.key)*(1 + .15*xtra);
     RS.clr[k2] = (RS.clr[k2]|0) + 1; RS.maxD[R.id] = Math.max(RS.maxD[R.id]|0, d + 1); W.raids = W.raids || {}; W.raids[R.id] = (W.raids[R.id]|0) + 1; if (!RS.best[k2] || secs < RS.best[k2]) RS.best[k2] = secs; RS.keys[R.id] = Math.max(RS.keys[R.id]|0, run.key + 1);
     if (run.deaths == 0) RS.nd = (RS.nd|0) + 1; RS.troph[R.id] = Math.max(RS.troph[R.id]|0, d + 1); X.stat && X.stat('snowRaids', 1, 'add');
     const wr = S.RL('warroom'); const tok = Math.round((30 + 15*d + 2*run.key)*(mod('treasure') ? 2 : 1)*(set4('vault') ? 1.5 : 1)*(RS.relic == 'vault' ? 1.25 : 1)*(1 + .1*wr)*(X.curM ? X.curM() : 1)); RS.tok += tok; loot.push({e:'🎟', n:tok + ' Raid Tokens', c:'#F9BF01'});
@@ -379,6 +398,9 @@ A.snowRaids = (S, SG0) => {
     { const L = toL(p.x, p.y), v = V(L.x, L.y); if (v == 8) p.vx += 260*dt*3; if (v == 9) p.vx -= 260*dt*3; if (set4('temple') && v == 4) { p.vx *= 1.02; p.vy *= 1.02; } }
     // floor objectives
     const code = F.code;
+    // Heroic and up: traps go off on every normal floor · Mythic and up: some floors get a twist
+    if (run.d >= 1 && !F.done && 'crblk'.includes(code)) { F.trT = (F.trT == null ? 4 : F.trT) - dt; if (F.trT <= 0) { F.trT = [0, 6, 5, 4][run.d]; zone({x:p.x + (Math.random() - .5)*140, y:p.y + (Math.random() - .5)*140, r:46, t:1.1*D().tel, dmg:1, col:R.trap == 'lightning' ? '255,240,120' : R.trap == 'icicle' ? '159,232,255' : '255,69,57', trap:R.trap}); } }
+    if (F.zr) { const Z = F.zr; if (!F.done) Z.r = Math.max(Z.min, Z.r - dt*TS*.18); if (dist(Z, p) > Z.r) { Z.hurt -= dt; if (Z.hurt <= 0) { Z.hurt = 1.5; hitMe(1); say('⭕ Get back inside the ring!', 1.2); } } else Z.hurt = .6; }
     if (code == 'c' && !F.done) { const n = S.foes.filter(f => f.rf && !f.dead).length; if (n == 0) { o.next -= dt; if (o.next <= 0) { if (o.wave >= o.waves) floorDone(); else { o.wave++; o.next = 1.4; const cnt = 4 + Math.floor(F.fi/2) + run.d + (mod('swarm') ? 2 : 0); for (let i = 0; i < cnt; i++) { const q = wp(4 + Math.random()*(FW - 8), 4 + Math.random()*8); addFoe(R.pool[i % R.pool.length], q.x, q.y); } if (o.wave == o.waves) { const q = wp(16.5, 6); addFoe(R.id == 'vault' ? 'r_mimic' : R.id == 'temple' ? 'r_crab' : R.id == 'kitchen' ? 'r_cup' : 'golem', q.x, q.y); } say('⚔ Wave ' + o.wave + ' / ' + o.waves, 1.6); } } } }
     if (code == 'r' && !F.done) { if (!o.seen && dist(o.tab, p) < 170) { o.seen = 1; say('📜 Rune order: ' + o.order.map(i => ['❄', '🔥', '🌙', '⭐'][i]).join(' → '), 3); }
       for (const pl of o.plates) { if (dist(pl, p) < 30 && o.last !== pl.i) { o.last = pl.i; if (o.order[o.step] == pl.i) { o.step++; A.sfx('coin'); boom(pl.x, pl.y, '#9fe8ff'); if (o.step >= 4) floorDone(); } else { o.step = 0; A.sfx('bad'); say('✖ Wrong rune! The plates reset… and something woke up', 2.2); for (let i = 0; i < 2; i++) addFoe(pick(R.pool), pl.x + (i ? 80 : -80), pl.y - 60); } } }
@@ -396,7 +418,7 @@ A.snowRaids = (S, SG0) => {
       o.trapT = (o.trapT || 3) - dt; if (o.trapT <= 0) { o.trapT = [5, 4, 3.4, 2.8][run.d]; zone({x:p.x + (Math.random() - .5)*120, y:p.y + (Math.random() - .5)*120, r:52, t:1.2*D().tel, dmg:1, col:'159,255,224'}); } if (!F.done) F.done = true; }
     if ((code == 'G' || code == 'B') && !o.spawned) { o.spawnT -= dt; if (o.spawnT <= 0) { o.spawned = 1; spawnRB(code == 'G'); } }
     // the door at the top
-    if (F.door && p.y < 1.9*TS && Math.abs(p.x - wp(16.5, 0).x) < 70) { if (F.fi + 1 < R.fl.length) { enterFloor(F.fi + 1); A.sfx('blip'); } }
+    if (F.door && p.y < 1.9*TS && Math.abs(p.x - wp(16.5, 0).x) < 70) { if (F.fi + 1 < NFL()) { enterFloor(F.fi + 1); A.sfx('blip'); } }
     // particles
     const TH = ART.TH[R.th], mk = ART.PART[TH.part], cap = S.low() ? 12 : 46; if (mk && parts.length < cap && Math.random() < dt*20) { const q = {x:S.cam.x + Math.random()*S.VW, y:S.cam.y + Math.random()*S.VH, s:Math.random()*10, life:4 + Math.random()*3, age:0}; mk(q, wt); parts.push(q); }
     for (const q of parts) { q.x += q.vx*dt; q.y += q.vy*dt; q.life -= dt; q.age += dt; } parts = parts.filter(q => q.life > 0);
@@ -416,7 +438,7 @@ A.snowRaids = (S, SG0) => {
   const openQChest = () => { const c = F.chest; c.open = true; const go = n => { n = Math.round(n*(X.curM ? X.curM() : 1)); RS.tok += n; fxNum(c.x, c.y - 30, '+' + n + ' 🎟', '#F9BF01'); S.give({frost:3*n}); S.save(); };
     S.quiz = true; let ok = false; try { ok = X.learn2('RAID QUESTION CHEST · ANSWER RIGHT FOR BONUS TOKENS', () => { S.quiz = false; go(4); }, () => { S.quiz = false; go(1); }); } catch (e) {} if (!ok) { S.quiz = false; go(2); } };
   // ---------- goal arrow (always points at the objective) ----------
-  const goal = () => { if (!run || !F) return null; const o = F.obj, R = run.R, pre = R.e + ' ' + (F.fi + 1) + '/' + R.fl.length + ' · ', B = S.boss;
+  const goal = () => { if (!run || !F) return null; const o = F.obj, R = run.R, pre = R.e + ' ' + (F.fi + 1) + '/' + NFL() + ' · ', B = S.boss;
     if (vic) return null; if (F.done && F.code != 'g' && F.code != 'm') return {...wp(16.5, 1), n:pre + 'Go through the door at the top'};
     if (B && B.rd) { if (run.pz) { const nx = run.pz.items.find(q => !q.on); if (nx) return {x:nx.x, y:nx.y, n:pre + '🧩 Puzzle: ' + run.pz.kind + ' (' + Math.ceil(run.pz.t) + ' s)'}; } if (run.bh && run.bh.length) { const k = kicks.find(q => q.k == 'orb'); if (k) return {x:k.x, y:k.y, n:pre + 'Kick a light orb into the black hole'}; }
       if (B.bloat > 0 && !run.carry) { const k = kicks.find(q => q.k == 'chunk'); if (k) return {x:k.x, y:k.y, n:pre + 'Grab a meat chunk, then press G'}; } return {x:B.x, y:B.y, n:pre + 'Defeat ' + B.n.toLowerCase().replace(/\b\w/g, m => m.toUpperCase())}; }
@@ -455,6 +477,7 @@ A.snowRaids = (S, SG0) => {
     if (run.safe) for (const q of run.safe) { g.fillStyle = 'rgba(127,224,138,' + (.25 + .15*Math.sin(t*6)) + ')'; g.beginPath(); g.arc(q.x, q.y, 70, 0, TAU); g.fill(); g.strokeStyle = '#7fe08a'; g.lineWidth = 3; g.stroke(); g.fillStyle = '#fff'; g.font = '800 11px ' + A.font; g.textAlign = 'center'; g.fillText('SAFE', q.x, q.y + 4); }
     if (run.bh) for (const h of run.bh) { for (let k = 0; k < 4; k++) { g.strokeStyle = 'rgba(214,160,255,' + (.5 - k*.1) + ')'; g.lineWidth = 3; g.beginPath(); g.arc(h.x, h.y, 14 + k*12 + Math.sin(t*6 + k)*3, t*(2 + k), t*(2 + k) + 4); g.stroke(); } ART.circ(g, h.x, h.y, 16, '#05030f'); }
     // hazards (red zones)
+    if (F.zr) { const Z = F.zr; g.save(); g.strokeStyle = 'rgba(255,90,120,.85)'; g.lineWidth = 5; g.setLineDash([14, 10]); g.beginPath(); g.arc(Z.x, Z.y, Z.r, 0, TAU); g.stroke(); g.setLineDash([]); g.restore(); }
     for (const h of hz) { const k = h.T ? 1 - Math.max(0, h.t)/h.T : 1, c = h.col || '255,69,57';
       if (h.k == 'wave') { g.strokeStyle = 'rgba(255,200,60,.85)'; g.lineWidth = h.w; g.beginPath(); g.arc(h.x, h.y, h.r, 0, TAU); g.stroke(); continue; }
       g.fillStyle = 'rgba(' + c + ',' + (.15 + .25*k) + ')'; g.strokeStyle = 'rgba(' + c + ',.9)'; g.lineWidth = 2;
@@ -522,7 +545,7 @@ A.snowRaids = (S, SG0) => {
     // raid timer, floor progress, modifiers (right, under the mini map)
     const rx = VW - 196, ry = lastTY + 96; g.fillStyle = 'rgba(10,16,36,.65)'; ART.rr(g, rx, ry, 184, 62 + run.mods.length*14, 10); g.fill(); g.fillStyle = '#fff'; g.font = '800 11px ' + A.font; g.textAlign = 'left'; S.wrapClip(run.R.e + ' ' + run.R.n, rx + 8, ry + 16, 168);
     g.fillStyle = DIFF[run.d].c; g.font = '700 10px ' + A.font; g.fillText(DIFF[run.d].n + (run.key ? ' · key +' + run.key : '') + ' · ⏱ ' + Math.floor(run.t/60) + ':' + String(Math.floor(run.t % 60)).padStart(2, '0'), rx + 8, ry + 31);
-    for (let i = 0; i < run.R.fl.length; i++) { g.fillStyle = i < F.fi ? '#7fe08a' : i == F.fi ? '#F9BF01' : 'rgba(255,255,255,.2)'; g.beginPath(); g.arc(rx + 14 + i*20, ry + 44, 6, 0, TAU); g.fill(); }
+    { const n = NFL(), sp = Math.min(20, 168/Math.max(1, n)); for (let i = 0; i < n; i++) { const q = run.plan[i]; g.fillStyle = i < F.fi ? '#7fe08a' : i == F.fi ? '#F9BF01' : q.extra ? 'rgba(255,106,213,.55)' : 'rgba(255,255,255,.2)'; g.beginPath(); g.arc(rx + 14 + i*sp, ry + 44, Math.min(6, sp/2 - 1), 0, TAU); g.fill(); } }
     g.fillStyle = '#cfe3f5'; g.font = '600 9px ' + A.font; run.mods.forEach((m, i) => S.wrapClip('⚙ ' + m.n, rx + 8, ry + 66 + i*14, 168));
     if (run.buffT > 0) { g.fillStyle = '#F9BF01'; g.font = '800 11px ' + A.font; g.textAlign = 'center'; g.fillText('🍗 Mau Mau buff ' + Math.ceil(run.buffT) + 's', VW/2, VH - 52); }
     if (run.slowT > 0) { g.fillStyle = '#d6a0ff'; g.font = '800 12px ' + A.font; g.textAlign = 'center'; g.fillText('🧠 Slowed ' + Math.ceil(run.slowT) + 's', VW/2, VH - 68); }
@@ -571,7 +594,7 @@ A.snowRaids = (S, SG0) => {
       {e:'🎖', n:'Raid achievements & titles', d:'Bronze → Diamond', btn:'Open', fn:achPanel},
       {e:'🗓', n:'Weekly modifiers', d:weekMods().map(m => m.n + ': ' + m.d).join(' · '), btn:'Info', fn:() => S.say('🗓 This week: ' + weekMods().map(m => m.n + ' (' + m.d + ')').join(' + ') + '. They change every Monday.', 4)},
       {e:'💡', n:'Boss hints from your teammates', d:RS.hints ? 'ON: tips show under each attack name' : 'OFF', btn:RS.hints ? 'Turn off' : 'Turn on', fn:() => { RS.hints = RS.hints ? 0 : 1; S.save(); }}]}));
-  const raidPanel = R => openP(() => { const md = RS.maxD[R.id]|0, mk = RS.keys[R.id]|0; return {title:R.e + ' ' + R.n, sub:R.fl.length + ' floors · guardian: ' + KIT[R.id].mini.n.toLowerCase().replace(/\b\w/g, m => m.toUpperCase()) + ' · set: ' + R.set + ' (4 pieces: ' + R.setD + ') · your GS ' + GS(),
+  const raidPanel = R => openP(() => { const md = RS.maxD[R.id]|0, mk = RS.keys[R.id]|0; return {title:R.e + ' ' + R.n, sub:R.fl.length + ' floors (Heroic +1, Mythic +2, Nightmare +3) · new layout every run · guardian: ' + KIT[R.id].mini.n.toLowerCase().replace(/\b\w/g, m => m.toUpperCase()) + ' · set: ' + R.set + ' (4 pieces: ' + R.setD + ') · your GS ' + GS(),
     rows:[...DIFF.map((D2, d) => { const ok = d <= md, got = RS.lock.got[R.id + ':' + d]; return {e:['🟢', '🔵', '🟣', '🔴'][d], n:D2.n + (selD == d ? '  ✓ selected' : ''), d:ok ? 'rec. GS ' + recGS(R, d) + ' · ' + (got ? 'best loot taken this week (still gives tokens)' : 'best loot ready this week') + (RS.best[R.id + ':' + d] ? ' · best ' + fmtT(RS.best[R.id + ':' + d]) : '') + (d ? ' · adds new mechanics' : '') : '🔒 Beat ' + DIFF[d - 1].n + ' first', btn:selD == d ? '✓' : 'Select', ok, fn:() => { selD = d; }}; }),
       {e:'🔑', n:'Raid key: +' + selK + (mk ? ' (up to +' + mk + ')' : ''), d:mk ? 'Each key level: tougher bosses, better rewards. No limit!' : 'Clear this raid to earn keys', btn:mk ? 'Change' : '—', ok:mk > 0, fn:() => { selK = (selK + 1) % (mk + 1); }},
       {e:'⚔️', n:'START: ' + DIFF[selD].n + (selK ? ' · key +' + selK : ''), d:'Party: you' + (W.mau ? ', Mau Mau (tank)' : '') + (mates.length ? ', ' + mates.map(m => m.name).join(', ') : ''), btn:'START RAID', fn:() => startRun(R, selD, selK)},
@@ -616,8 +639,8 @@ A.snowRaids = (S, SG0) => {
     if (B && B.rd && B.bloat > 0) { B.shrunk = (B.shrunk || 0) + 1; B.hp -= B.max*.06; B.bloat = 0; stun(B, 2.5, 50, 'MAU MAU TOOK A BITE! It shrinks!'); if (B.hp <= 0) S.bossDown(B); } else { run.buffT = 10; run.buffHungry = 0; callout = {t:2.2, n:'🍖 Mau Mau is pumped! ×1.3 damage', tip:'', good:1}; } };
   const down = q => { if (vic) { if (vic.btn && q.x >= vic.btn.x && q.x <= vic.btn.x + vic.btn.w && q.y >= vic.btn.y && q.y <= vic.btn.y + vic.btn.h) closeVic(); return true; } return B0.down(q); };
   // ---------- admin tools (only the Snowball admin list shows these) ----------
-  const adm = {enter:(n, d) => { const R = RAIDS[Math.max(0, Math.min(9, (n|0) - 1))]; startRun(R, Math.max(0, Math.min(3, d|0)), 0); }, floor:n => { if (!run) return say('Start a raid first', 2); enterFloor(Math.max(0, Math.min(run.R.fl.length - 1, (n|0) - 1))); },
-    boss:() => { if (!run) adm.enter(1, 0); enterFloor(run.R.fl.length - 1); F.obj.spawnT = 0; }, skip:() => { const B = S.boss; if (B && B.rd) { if (B.ph >= B.phases) { B.hp = 1; } else { B.hp = B.max*(1 - B.ph/B.phases) - 1; hurtRB(B, .01); } } else if (run) floorDone(); },
+  const adm = {enter:(n, d) => { const R = RAIDS[Math.max(0, Math.min(9, (n|0) - 1))]; startRun(R, Math.max(0, Math.min(3, d|0)), 0); }, floor:n => { if (!run) return say('Start a raid first', 2); enterFloor(Math.max(0, Math.min(NFL() - 1, (n|0) - 1))); },
+    boss:() => { if (!run) adm.enter(1, 0); enterFloor(NFL() - 1); F.obj.spawnT = 0; }, skip:() => { const B = S.boss; if (B && B.rd) { if (B.ph >= B.phases) { B.hp = 1; } else { B.hp = B.max*(1 - B.ph/B.phases) - 1; hurtRB(B, .01); } } else if (run) floorDone(); },
     gear:() => { const R = run ? run.R : RAIDS[0]; const it = makeSet(R, 4); say('Admin: ' + (it ? it.name : 'gear'), 2); }, key:n => { for (const R of RAIDS) RS.keys[R.id] = Math.max(0, n|0); S.save(); say('Admin: every raid key set to +' + (n|0), 2); },
     resetLock:() => { RS.lock = {w:weekNo(), got:{}, chest:0}; W.raidClr = {}; S.save(); say('Admin: weekly raid lockouts reset', 2); }, unlockAll:() => { for (const R of RAIDS) RS.maxD[R.id] = 4; S.save(); say('Admin: every difficulty unlocked', 2); }, tokens:n => { RS.tok += n|0; S.save(); }, hints:() => { RS.hints = RS.hints ? 0 : 1; S.save(); say('Admin: boss hints ' + (RS.hints ? 'ON' : 'OFF'), 2); }};
   // ---------- the wrapped hook object ----------
@@ -629,7 +652,7 @@ A.snowRaids = (S, SG0) => {
     key, down, warmHeal:() => run ? false : B0.warmHeal(), blockMap:() => { if (run) { say('🗺 This floor is on the mini map (top right). The ⭐ is your goal', 2.2); return true; } return B0.blockMap(); }, save:() => B0.save(),
     respawn, bossReady:k => BOSS[k] && BOSS[k].rd ? false : B0.bossReady(k), bossAI:(B, dt, ph, ang, d) => B.rd ? bossAI(B, dt) : B0.bossAI(B, dt, ph, ang, d), bossDown:B => B.rd ? rbDown(B) : B0.bossDown(B),
     hurtBoss:(B, dmg) => B.rd ? hurtRB(B, dmg) : B0.hurtBoss(B, dmg), drawBoss, drawFoe, drawBar, portrait:(who, x, y, mood) => B0.portrait(who, x, y, mood),
-    raidOn:on, raidMods:() => run ? run.mods : null, warTable, raidAdm:adm, mauSpot, mateSpot, RAIDS, RS, startRun, leaveRun, GS, run:() => run, F:() => F, hz:() => hz, kicks:() => kicks, vic:() => vic, KIT, DIFF});
+    raidOn:on, raidMods:() => run ? (F && F.tw == 'ice' ? run.mods.concat([{id:'twice', n:'Frozen floor', ice:1}]) : run.mods) : null, warTable, raidAdm:adm, mauSpot, mateSpot, RAIDS, RS, startRun, leaveRun, GS, run:() => run, F:() => F, hz:() => hz, kicks:() => kicks, vic:() => vic, KIT, DIFF});
   // resume a raid the page was reloaded in the middle of: you start at the War Table with "Resume"
   return RD; };
 A.RAIDS = {RAIDS, KIT, DIFF, MODS};
