@@ -7,7 +7,7 @@
 <script>
 /* Fast start: download every arcade file right away, in parallel (the arcade floor's files first), while the page itself starts up.
    The files run later, in order, once the arcade is on screen. A loading screen shows progress instead of a blank page. */
-(function(){ var B = '2026-12-14m'; window.WL_BUILD = B; var CORE = ["arcade-core.js", "prizes-more.js", "prizes2.js", "economy.js", "achievements.js", "avatar.js", "pets.js", "rebirth-road.js", "wonders.js", "qol.js"], GAMES = ["music.js", "live-events.js", "moderation.js", "calendar.js", "games-board.js", "games-edu.js", "games-action.js", "games-skill.js", "games-extra.js", "games-new.js", "games-td.js", "games-space.js", "games-idle.js", "games-secrets.js", "games-more.js", "games-more2.js", "games-more3.js", "snow-cast.js", "snow-world.js", "snow-saga.js", "snow-saga-story.js", "snow-saga-post.js", "snow-raids-art.js", "snow-raids.js", "snow-castle.js"], all = CORE.concat(GAMES), got = 0;
+(function(){ var B = '2026-12-14n'; window.WL_BUILD = B; var CORE = ["arcade-core.js", "prizes-more.js", "prizes2.js", "economy.js", "achievements.js", "avatar.js", "pets.js", "rebirth-road.js", "wonders.js", "qol.js"], GAMES = ["music.js", "live-events.js", "moderation.js", "calendar.js", "games-board.js", "games-edu.js", "games-action.js", "games-skill.js", "games-extra.js", "games-new.js", "games-td.js", "games-space.js", "games-idle.js", "games-secrets.js", "games-more.js", "games-more2.js", "games-more3.js", "snow-cast.js", "snow-world.js", "snow-saga.js", "snow-saga-story.js", "snow-saga-post.js", "snow-raids-art.js", "snow-raids.js", "snow-castle.js"], all = CORE.concat(GAMES), got = 0;
   window.WL_FILES = {core:CORE, games:GAMES};
   var say = function(){ var b = document.getElementById('wl-boot-bar'), t = document.getElementById('wl-boot-txt'); var pct = Math.min(96, Math.round(8 + 80*got/all.length + (window.WL_RUN||0)*8));
     if (b) b.style.width = pct + '%'; if (t) t.textContent = window.WL_RUN ? 'Opening the arcade…' : 'Loading the arcade… ' + pct + '%'; };
@@ -1929,7 +1929,7 @@ const hashPw = async (pw, salt) => { try { const enc = new TextEncoder(); const 
   catch(e) { let h1 = 5381, h2 = 52711; const s = salt+':'+pw; for (let r=0;r<2000;r++) for (let i=0;i<s.length;i++) { const c = s.charCodeAt(i); h1 = ((h1*33)^c)>>>0; h2 = ((h2*31)+c+r)>>>0; } return 'f$'+h1.toString(16)+h2.toString(16); } };
 const today = () => new Date().toISOString().slice(0,10);
 const dailyIdx = () => { const d = today().split('-').join(''); let h=0; for (const c of d) h = (h*31 + c.charCodeAt(0)) % 9973; const DG = GAMES.filter(g=>!g.idle && g.id!='2048').sort((a,b) => a.key0.localeCompare(b.key0, 'en', {numeric:true})); return GAMES.indexOf(DG[h % DG.length]); };   // same order as the old A–Z floor, so the daily game never jumps
-const BUILD = '2026-12-14m';
+const BUILD = '2026-12-14n';
 const SCRIPTS_OLD = ['arcade-core.js','music.js','prizes-more.js','prizes2.js','economy.js','achievements.js','avatar.js','pets.js','rebirth-road.js','wonders.js','qol.js','live-events.js','moderation.js','calendar.js','games-action.js','games-board.js','games-skill.js','games-extra.js','games-new.js','games-td.js','games-space.js','games-edu.js','games-idle.js','games-secrets.js','games-more.js','games-more2.js','games-more3.js','snow-cast.js','snow-world.js'];
 const fmt = n => fmtN(Math.round(n));
 

@@ -9,7 +9,8 @@ const el = (tag, at, ...kids) => { const n = document.createElement(tag); at = a
   kids.flat().forEach(c => { if (c == null || c === false) return; n.appendChild(typeof c == 'object' ? c : document.createTextNode(String(c))); }); return n; };
 
 // ---------------- What's new ----------------
-const WN = {v:'2026-12-14m', items:[
+const WN = {v:'2026-12-14n', items:[
+  ['🫧', 'The Sunken Ice Temple is underwater', 'The whole temple raid is now underwater: enemies and bosses are twice as strong and every reward is doubled. Watch your air meter (it lasts longer the more stamina you have) and refill it at the bubble vents. Buy a Breathing Mask at the War Table with Frost Crystals to make your air last much longer, and keep upgrading it.'],
   ['⚔️', 'Raids change every run', 'Every raid run now shuffles its floors and changes the shape of the rooms. Harder difficulties add more than bigger numbers: Heroic adds an Elite Pack floor and traps on every floor, Mythic also adds a Guardian\'s Echo floor and floor twists (darkness, slippery ice, a shrinking safe ring), and Nightmare adds a second echo and gives the final boss an extra phase. Extra floors pay extra.'],
   ['⭐', 'Developed Games', 'Snowball Showdown, Fishing Hole, Trailhead Defense and Deep Mines now have their own section at the top of the arcade floor, with big glowing cabinets and brand-new animated artwork.'],
   ['❄', 'Space throws snowballs + auto-target', 'In the Snow Kingdom, Space now throws a snowball (hold to charge), Q is your ability and T turns auto-target on or off: throws go to the strongest enemy in range, closest first. Space no longer skips dialogue, and a click right as a new line appears won\'t skip it either.'],
