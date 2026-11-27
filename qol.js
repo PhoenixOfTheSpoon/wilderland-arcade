@@ -9,7 +9,8 @@ const el = (tag, at, ...kids) => { const n = document.createElement(tag); at = a
   kids.flat().forEach(c => { if (c == null || c === false) return; n.appendChild(typeof c == 'object' ? c : document.createTextNode(String(c))); }); return n; };
 
 // ---------------- What's new ----------------
-const WN = {v:'2026-12-14b', items:[
+const WN = {v:'2026-12-14c', items:[
+  ['🍭', 'New extra game: Sugar Siege', 'Be the Evil Sugar and defend your Sugar Keep from the healthy Broccoli Army across 24 levels! Build towers on the spots, train sugar troops, upgrade your keep with specializations, and beat 8 bosses up to the Broccoli King. Open it from ☰ Menu → Extras. It has its own coins, achievements and leaderboard, and it gives no tickets.'],
   ['❄', 'Threat: the Kingdom matches your gear', 'Snow Kingdom bosses and enemies now get tougher as your best Gear Score grows: Calm, Rising, Fierce, Savage, Brutal, Dire, Mythic and Wilderland (tap the Threat badge under your hearts). Higher Threat also gives more Frost Crystals and brings elite enemies (shielded, fast, splitting, healers). Unequipping gear never lowers it.'],
   ['💫', 'Bosses: read, dodge, punish', 'Every boss attack now has a wind-up (red glow and aim lines), rings always leave a gap, and bosses take breathers between attacks. Charged throws fill the boss’s STAGGER bar: stun it to deal double damage and grab the hearts it drops. Plain snowball spam only does half damage. At Fierce, Frost Guards shield bosses; at Brutal, bosses get a second form with slam circles; at Mythic, icicles fall (lure the boss under one!).'],
   ['🏳', 'No leaving to heal', 'Knocked out in a boss fight? You get back up in the arena with half your hearts, and the boss goes back to the top of its current phase. Leaving the arena counts as a knockout, and Cocoa can’t fully heal you during a boss fight.'],

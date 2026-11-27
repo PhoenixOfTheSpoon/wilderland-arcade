@@ -1,0 +1,10 @@
+const L = require('./lib.js');
+(async()=>{ const {b,p,errs,app} = await L.start({ctx:{viewport:{width:390,height:844}, hasTouch:true, isMobile:true}}); await p.evaluate(app + '.openSugar()'); await p.waitForTimeout(1200); await p.screenshot({path:'./ssp-map.png'});
+ const S = s => p.evaluate('(()=>{ const d = window.WLSugar._dbg(); ' + s + ' })()');
+ await S('d.startLevel(1, "normal")'); await p.waitForTimeout(400);
+ const cv = await p.$('.ss-root canvas'); const x0 = await S('return Math.round(d.hero.x)');
+ await p.evaluate(() => { const c = document.querySelector('.ss-root canvas'); const ev = (t, x, y) => c.dispatchEvent(new PointerEvent(t, {pointerId:3, pointerType:'touch', clientX:x, clientY:y, bubbles:true})); ev('pointerdown', 80, 600); window.__ev = ev; });
+ await p.evaluate(() => { const c = document.querySelector('.ss-root canvas'); window.dispatchEvent(new PointerEvent('pointermove', {pointerId:3, pointerType:'touch', clientX:150, clientY:600, bubbles:true})); }); await p.waitForTimeout(1200);
+ const x1 = await S('return Math.round(d.hero.x)'); await p.screenshot({path:'./ssp-play.png'}); await p.evaluate(() => window.dispatchEvent(new PointerEvent('pointerup', {pointerId:3, pointerType:'touch', clientX:150, clientY:600, bubbles:true})));
+ console.log('joystick moved hero', x0, '→', x1);
+ console.log(errs.filter(e=>!e.includes('Failed to load resource'))); await b.close(); })();

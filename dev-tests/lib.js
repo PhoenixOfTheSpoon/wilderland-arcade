@@ -3,7 +3,7 @@ const app = `(()=>{ const el = document.querySelector('header'); const k = Objec
 exports.start = async (o = {}) => { const b = await chromium.launch(); const ctx = await b.newContext(o.ctx || {viewport:{width:1600,height:1000}}); await ctx.route(/gstatic\.com|googleapis\.com/, r=>r.abort());
  const p = await ctx.newPage(); const errs=[]; p.on('pageerror',e=>errs.push(e.message)); p.on('console', m => { if (m.type() == 'error') errs.push('console: ' + m.text()); });
  const save = o.save || {econV:5, achV:2, tickets:5e6, earned:1e9, founderChk:1};
- if (!o.keep) await p.addInitScript((s)=>{ if (!sessionStorage.getItem('wl-test-init')) { sessionStorage.setItem('wl-test-init', '1'); localStorage.clear(); localStorage.setItem('wl-arcade-v1', JSON.stringify(s)); } localStorage.setItem('wl-wn','2099'); localStorage.setItem('wl-road-welcomed','1'); }, save);
+ if (!o.keep) await p.addInitScript((s)=>{ if (!sessionStorage.getItem('wl-test-init')) { sessionStorage.setItem('wl-test-init', '1'); localStorage.clear(); localStorage.setItem('wl-arcade-v1', JSON.stringify(s)); } localStorage.setItem('wl-wn','2026-12-14c'); localStorage.setItem('wl-road-welcomed','1'); }, save);
  await p.goto('http://localhost:8770/Wilderland%20Arcade.dc.html'); await p.waitForTimeout(5000);
  const D = s => p.evaluate('(()=>{ const wm = window.Arcade._dbg.snow().wm(); const d = wm.dbg(); const SG = d.SG(); '+s+' })()');
  const world = async () => { await p.evaluate(app+'.open("snowball")'); await p.waitForTimeout(1200); await p.evaluate(()=>{ window.Arcade._dbg.snow().openWorld(); }); await p.waitForTimeout(900); for (let i=0;i<25;i++){ if (!(await D('return !!d.dlg()'))) break; await D('d.nextLine()'); } };

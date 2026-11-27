@@ -23,8 +23,8 @@ Paste this whole file into a new chat (or attach it) and say "continue the queue
   - Publish with the Artifact tool, using that `url`, `root` = the repo folder, and `files` keyed `"project/<file name>"`. The HTML must also be listed as `"project/Wilderland Arcade.dc.html"`.
   - Only send the files you changed; the others are kept.
   - If a publish is refused because a file wasn't read as published, read it with action "read", diff it against git, then publish.
-- **BUILD string:** it appears twice in `Wilderland Arcade.dc.html` (the head boot script and `const BUILD`). Bump it on every publish, e.g. `sed -i "s/2026-12-14b/2026-12-14c/g" "Wilderland Arcade.dc.html"`. The current value is **2026-12-14b**.
-- **What's New:** `WN = {v:'2026-12-14b', items:[[emoji, title, text], ...]}` in `qol.js`. Add an entry for each big update and bump `v`.
+- **BUILD string:** it appears twice in `Wilderland Arcade.dc.html` (the head boot script and `const BUILD`). Bump it on every publish, e.g. `sed -i "s/2026-12-14c/2026-12-14d/g" "Wilderland Arcade.dc.html"`. The current value is **2026-12-14c**.
+- **What's New:** `WN = {v:'2026-12-14c', items:[[emoji, title, text], ...]}` in `qol.js`. Add an entry for each big update and bump `v`.
 - Local test server: `python3 -m http.server 8770` in the repo, run in the background. Playwright and Chromium are preinstalled (`require('playwright')`).
 - `firestore.rules` exists but **is still not published to Firebase**. Publishing it needs a browser, signed in to the Firebase console as the admin. Admin-only events must be enforced by Firestore rules tied to the admin's Google account; players can only read events.
 
@@ -79,6 +79,7 @@ Paste this whole file into a new chat (or attach it) and say "continue the queue
   - Set `localStorage 'wl-wn' = '2099'` in tests so the What's New popup doesn't block clicks.
 
 ## 3. Recently finished (don't redo)
+- **Sugar Siege** (Dec 14c): `sugar-siege.js`, an EXTRA game (not a cabinet), lazy-loaded by `openSugar()` from ☰ Menu → Extras. No tickets/prizes/Workshop. Own save `localStorage 'wl-sugar-v1:'+profKey`, own achievements, leaderboard game id `sugarsiege` (score cap `SCORE_MAX` = 490,500). 24 generated levels (`genLevel(n)`, seeded), flow fields (`field`, Dijkstra, Float64!), hero wand, 8 enemy types, 8 bosses, 8 building types to lv3 + 2 branches, troops, keep lv1–5 with 12 specializations, Easy/Normal/Hard, mid-wave reload restarts the wave. Music moods `ss_build/ss_battle/ss_boss` in music.js. Debug: `window.WLSugar._dbg()`.
 - Base to Level 12 (Dec 14): 12 tiers, rooms to 12, 9 new rooms (Lodge, Armory, Map Room, Infirmary, Beacon, Mine, War Room, Royal Hall, Spirit Vault), milestone rewards, Upgrade all + red dot, Level 12 celebration + Castle Builder diamond + Winter Kingdom Crown (Wilderland hat), admin set base/room levels.
 - Snowball Workshop is ticket-only (+2%/level, `tix:1` in UPG_RAW). Old power kept in `P.snowLeg` until the next rebirth.
 - Boss knockout rule (first part of the Boss + Difficulty overhaul): knocked out or leaving = boss refills to the top of its current phase (`spawnBoss`; Dumpling 6 too). Old mid-fight saves kept exact health once (`W.bhpExact`).
@@ -95,6 +96,7 @@ Paste this whole file into a new chat (or attach it) and say "continue the queue
 ## 4. THE QUEUE (in this order)
 **NEXT: Snow Kingdom Boss + Difficulty Overhaul** — stage 2 DONE (Dec 14b): THREAT section in snow-world.js (`THR`, `TM` multipliers, `gearScore()` best piece per slot + Power Arm, `W.gsMax`, `thr()`, `W.forceThreat`), boss shots go through `bossShot` (≥0.6 s wind-up `TELL()`, patterns cut at 2.4 s + 2 s breather, ring gap `inGap`, cap 22/14 boss balls), stagger `addStg`/`stunB` (stun = ×2 player damage, uncharged ×0.5, hearts drop), Threat extras `exUpdate` (Fierce Frost Guards `tguard`, Brutal second form + slam `haz`, Mythic icicles), elites (`f.elite`), knockout = revive in arena at `W.koPct`% (respawn), boss health saved as a share (`W.bhm`). Raid bosses (`BOSS[k].rd`) skip all of it; Gecko God (`post`) gets anti-spam but no extras.
   Remaining: 3) Dumpling fight 6 rework (black-ice dome, 10 new phases, Give up, reload = inside + knockout); 4) per-boss mechanics (3+ each) in batches + raid Threat extras.
+- **Snow Kingdom damage overhaul** (user spec in chat, Nov 27): gear raises damage (all multiplicative), Frostbite stacks, combo ×3, Shatter, remove the spam ×0.5, Frost Guards 70%, stun ×3, bosses pressure the player, fight-length targets per Threat tier, damage breakdown, admin DPS meter, big-number popups. DO THIS NEXT.
 - **Class skill trees need more upgrades** (user: "not enough upgrades", Slinger Lv 21 has 11 unspent points; 3 branches × 3 ranks). User said do it LAST.
 
 **A. Snow Kingdom Update** (full spec below). Still to do:

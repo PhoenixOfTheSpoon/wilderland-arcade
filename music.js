@@ -42,6 +42,10 @@ const MOODS = {
   r_clockwork:{root:59, sc:MIN, bpm:126, prog:[0,4,0,5], lead:'square',   arp:'square',   bass:'square',   drums:3, seed:397, vol:.85},
   r_void:     {root:54, sc:PHRY,bpm:92,  prog:[0,1,6,5], lead:'sawtooth', arp:'sine',     bass:'triangle', drums:2, seed:409, vol:.85},
   dump3:  {root:50, sc:HARM,bpm:170, prog:[0,5,1,6], lead:'sawtooth', arp:'sawtooth', bass:'sawtooth', drums:3, seed:203, vol:.78},
+  // Sugar Siege (original): a calm build tune, a battle march and the Final Wave boss theme
+  ss_build:  {root:65, sc:MAJ, bpm:100, prog:[0,3,4,0], lead:'triangle', arp:'sine',     bass:'triangle', drums:1, seed:503, vol:1},
+  ss_battle: {root:57, sc:MIN, bpm:144, prog:[0,5,6,4], lead:'square',   arp:'square',   bass:'sawtooth', drums:2, seed:521, vol:.9},
+  ss_boss:   {root:52, sc:HARM,bpm:160, prog:[0,1,5,4], lead:'sawtooth', arp:'square',   bass:'sawtooth', drums:3, seed:547, vol:.8},
 };
 const mtof = m => 440 * Math.pow(2, (m-69)/12);
 const rnd = seed => () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
