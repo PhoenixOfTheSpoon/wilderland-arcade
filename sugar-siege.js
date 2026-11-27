@@ -31,7 +31,8 @@ const EN = {
   bomber:{n:'Brussels Sprout Bomber', hp:18, sp:62, r:8, tier:2, coin:8, cost:3, bomb:1, from:4},
   avocado:{n:'Avocado Tank', hp:200, sp:17, r:16, tier:1, coin:26, cost:12, armor:.4, tank:1, from:5},
   carrot:{n:'Carrot Caster', hp:8, sp:22, r:8, tier:3, coin:10, cost:6, ranged:1, from:7}};
-const DMG = {hero:[0, .25, 1, 1.5], bld:[0, 2, 12, 9], troop:[0, 2, 8, 10], keep:[0, 3, 10, 15]};
+const DMG = {hero:[0, .25, 1, 1.5], bld:[0, 2.6, 15.6, 11.7], troop:[0, 2.6, 10.4, 13], keep:[0, 3, 10, 15]};   // buildings and troops take +30% (Dec 14j)
+const HMAX = 2;   // the Sugar Sorcerer's hearts
 const BOSSES = {3:{k:'radish', n:'Radish Rogue', hp:700, sp:46, r:16, dash:1},
   6:{k:'cauli', n:'Cauliflower Colossus', hp:1800, sp:20, r:24, armor:.35, pound:1, split:1},
   9:{k:'beet', n:'Beetroot Baron', hp:1700, sp:24, r:20, healer:1, puddle:1},
@@ -40,6 +41,8 @@ const BOSSES = {3:{k:'radish', n:'Radish Rogue', hp:700, sp:46, r:16, dash:1},
   18:{k:'cabbage', n:'Cabbage Queen', hp:3200, sp:22, r:22, guards:1},
   21:{k:'artichoke', n:'Artichoke Knight', hp:3700, sp:28, r:20, armor:.4, thorns:1, dash:1},
   24:{k:'king', n:'THE BROCCOLI KING', hp:6500, sp:20, r:28, king:1}};
+// one extra telegraphed attack per boss: red circles warn first (0.9–1.2 s), then the hit lands
+const BEX = {radish:{n:'Root Burst', ev:7}, cauli:{n:'Floret Toss', ev:8}, beet:{n:'Beet Juice Wave', ev:9}, eggplant:{n:'Hex Mark', ev:7}, pumpkin:{n:'Seed Spit', ev:8}, cabbage:{n:'Leaf Storm', ev:8}, artichoke:{n:'Thorn Ring', ev:8}, king:{n:'Royal Decree', ev:9}};
 // buildings: cost per level [1, 2, 3] and the two level-4 branches
 const BT = {
   sprinkle:{n:'Sprinkle Tower', d:'Fast single-target sprinkle darts', cost:[70, 90, 140], br:[{n:'Rainbow Gatling', d:'Very fast darts', cost:230}, {n:'Sniper Sprinkler', d:'Long range, big hits', cost:230}], from:1, hp:140},
@@ -70,7 +73,7 @@ const LNAME = ['Gumdrop Meadow', 'Candy Corn Creek', 'Radish Ridge', 'Taffy Pass
   'Peppermint Peaks', 'Jellybean Junction', 'Pumpkin Patch Panic', 'Caramel Canyon', 'Rock Candy Ruins', 'Cabbage Court', 'Cocoa Cliffs', 'Sorbet Summit', 'Artichoke Armory', 'Bonbon Bastion', 'Last Lollipop', 'The Broccoli Throne'];
 const wavesOf = n => n == 24 ? 15 : 5 + Math.floor((n - 1)/3);
 const parOf = n => wavesOf(n)*70;                           // seconds: beat it faster for the speed bonus
-const DIFFM = {easy:{coin:1.2, hp:.8, keep:1.3, score:.75, extraSpawn:0}, normal:{coin:1, hp:1, keep:1, score:1, extraSpawn:0}, hard:{coin:.8, hp:1.3, keep:.9, score:1.5, extraSpawn:1}};
+const DIFFM = {easy:{coin:1.2, hp:.8, keep:1.3, score:.75, extraSpawn:0, dmg:.75, elite:6, eliteP:.5, grow:6, start:1, bhp:1.1}, normal:{coin:1, hp:1, keep:1, score:1, extraSpawn:0, dmg:1, elite:4, eliteP:1, grow:7.5, start:.8, bhp:1.35}, hard:{coin:.8, hp:1.3, keep:.9, score:1.5, extraSpawn:1, dmg:1.25, elite:4, eliteP:1.6, grow:7.5, start:.8, bhp:1.35}};   // Easy stays gentle for younger kids
 // highest possible score: every wave + a full keep + the whole speed bonus, on Hard
 const LV_MAX = n => Math.round((1000*wavesOf(n) + 2000 + 3000)*DIFFM.hard.score);
 const SCORE_MAX = (() => { let s = 0; for (let n = 1; n <= LEVELS; n++) s += LV_MAX(n); return s; })();
@@ -152,10 +155,10 @@ const coinMul = () => (S('treasury') ? 1.3 : 1) * DIFFM[R.diff].coin;
 const themeOf = () => THEME[R && R.specs && R.specs[2] || 'base'] || THEME.base;
 const keepMax = () => Math.round(500*DIFFM[R.diff].keep*(1 + .25*(R.keepLv - 1))*(S('bastion') ? 1.5 : 1));
 
-const newRun = (n, diff) => { const Lv = genLevel(n); return {n, diff, wave:0, phase:'build', coins:Math.round((260 + 30*n)*DIFFM[diff].coin), keepLv:1, keepHP:0, specs:{}, wand:{d:0, r:0, s:0}, spots:Lv.spots.map(() => null), rub:[], t:0, flood:0, stormCd:0, reload:0}; };
+const newRun = (n, diff) => { const Lv = genLevel(n); return {n, diff, wave:0, phase:'build', coins:Math.round((260 + 30*n)*DIFFM[diff].start*DIFFM[diff].coin), keepLv:1, keepHP:0, specs:{}, wand:{d:0, r:0, s:0}, spots:Lv.spots.map(() => null), rub:[], t:0, flood:0, stormCd:0, reload:0}; };
 const startLevel = (n, diff, resume) => { L = genLevel(n); R = resume ? JSON.parse(JSON.stringify(resume)) : newRun(n, diff); R.phase = 'build'; if (!resume) R.keepHP = keepMax(); for (const i of R.rub) L.T[i] = RUB;
   FN = FT = null; fieldDirty = true; enemies = []; shots = []; fx = []; troops = []; spawnQ = []; boss = null; floatT = [];
-  hero = {x:(KX + 2.5)*TS, y:(KY + .5)*TS, hp:3, dead:0, cd:0, face:0, hurtT:0, walk:0, regen:0};
+  hero = {x:(KX + 2.5)*TS, y:(KY + .5)*TS, hp:HMAX, dead:0, cd:0, face:0, hurtT:0, walk:0, regen:0};
   R.spots.forEach((b, i) => { if (b) spawnTroopsFor(i, true); });
   cam.fit = window.innerWidth >= 900; cam.z = cam.fit ? fitZ() : Math.max(fitZ()*1.6, 1); scr = 'play';   /* Chromebooks see the whole map; phones follow the hero (pinch to zoom) */ mood(); save(); renderUI(); if (resume && resume.reload) say('You left in the middle of wave ' + (R.wave + 1) + ': it starts again from the beginning', 4); R.reload = 0; };
 const mood = () => { try { if (!window.WLMusic) return; window.WLMusic.mood(scr != 'play' ? 'ss_build' : R.phase == 'wave' ? (boss ? 'ss_boss' : 'ss_battle') : 'ss_build'); } catch (e) {} };
@@ -170,7 +173,7 @@ const bStats = (b) => { const T2 = BT[b.t], lv = b.lv, br = b.br; const k = lv +
     if (b.t == 'gumball') { if (br == 0) { s2.splash = 80; s2.dmg *= 2.2; s2.rate *= .7; } else { s2.multi = 3; s2.dmg *= 1.15; } }
     if (b.t == 'rock') { if (br == 0) { s2.chain = 2; s2.dmg *= 1.25; } else { s2.dmg *= 3; s2.rate *= .7; s2.shred = 1; } } }
   if (s2.dmg) s2.dmg *= dmgMul(); if (s2.rate) s2.rate *= rateMul(); if (s2.rng) s2.rng *= rngMul(); s2.k = k; return s2; };
-const bMaxHP = b => { const T2 = BT[b.t]; let h = T2.hp*(1 + .35*(b.lv - 1))*(b.br != null ? 1.4 : 1); if (T2.gate) { h = 120*(1 + .6*(b.lv - 1)); if (b.br == 0) h *= 2; if (S('bastion')) h *= 1.5; } if (b.t == 'ginger' && b.br == 1) h *= 2; return Math.round(h); };
+const bMaxHP = b => { const T2 = BT[b.t]; let h = .6*T2.hp*(1 + .35*(b.lv - 1))*(b.br != null ? 1.4 : 1); if (T2.gate) { h = .75*120*(1 + .6*(b.lv - 1)); if (b.br == 0) h *= 2; if (S('bastion')) h *= 1.5; } if (b.t == 'ginger' && b.br == 1) h *= 2; return Math.round(h); };   // buildings −40%, gates −25%
 const spent = b => { let c = 0; for (let l = 1; l <= b.lv; l++) c += Math.round(BT[b.t].cost[l - 1]*(b.cm || 1)); if (b.br != null) c += Math.round(BT[b.t].br[b.br].cost*(b.cm || 1)); return c; };
 const nextCost = b => { if (!b) return null; const T2 = BT[b.t]; if (b.lv < 3) return Math.round(T2.cost[b.lv]*costMul(b.t)); return null; };
 const build = (i, type) => { const c = Math.round(BT[type].cost[0]*costMul(type)); if (R.coins < c) { sfx('bad'); say('Not enough Chocolate Coins'); return; } R.coins -= c;
@@ -179,29 +182,33 @@ const upgrade = (i, br) => { const b = bAt(i); if (!b) return; let c = br != nul
   if (br != null) b.br = br; else b.lv++; b.hp = bMaxHP(b); spawnTroopsFor(i, true); sfx('win'); fxBurst(L.spots[i].px, L.spots[i].py, 22, '#fff3a0'); save(); };
 const sell = i => { const b = bAt(i); if (!b) return; R.coins += Math.round(spent(b)*.6); R.spots[i] = null; troops = troops.filter(q => q.home != i); sfx('coin'); save(); };
 const rebuild = i => { const b = bAt(i); if (!b || !b.rub) return; const c = Math.round(spent(b)*.5); if (R.coins < c) { sfx('bad'); say('Not enough Chocolate Coins'); return; } R.coins -= c; b.rub = 0; b.hp = bMaxHP(b); spawnTroopsFor(i, true); sfx('coin'); save(); };
-const breakB = (i, why) => { const b = bAt(i); if (!b || b.rub) return; const s2 = L.spots[i]; fxBurst(s2.px, s2.py, 26, '#c08a5a'); sfx('bad');
-  if (BT[b.t].gate) { b.rub = 1; b.hp = 0; say('A Taffy Gate was chewed through! It comes back after the round', 2.6); } else { b.rub = 1; b.hp = 0; troops = troops.filter(q => q.home != i); say((BT[b.t].n) + ' was smashed! Rebuild it from the rubble', 2.6); } save(); };
-const hurtB = (i, d) => { const b = bAt(i); if (!b || b.rub) return; b.hp -= d; b.hitT = .15; if (BT[b.t].gate) { SV.stats.gate += d; if (SV.stats.gate >= 2000) ach('gate'); } if (b.hp <= 0) breakB(i); };
+const breakB = (i, why) => { const b = bAt(i); if (!b || b.rub) return; const s2 = L.spots[i]; fxBurst(s2.px, s2.py, 26, '#c08a5a'); sfx('bad'); b.rub = 1; b.hp = 0; troops = troops.filter(q => q.home != i); fieldDirty = true;
+  say((BT[b.t].gate ? 'A Taffy Gate was chewed through!' : BT[b.t].n + ' was smashed!') + ' It comes back next wave', 2.6); save(); };
+// every smashed building comes back at full health for the next wave: same level, same branch, troops too, nothing to pay
+const restoreAll = () => { let n = 0; R.spots.forEach((b, i) => { if (b && b.rub) { b.rub = 0; b.hp = bMaxHP(b); spawnTroopsFor(i, true); n++; } }); if (n) { fieldDirty = true; } return n; };
+const repairCost = b => Math.ceil((1 - b.hp/bMaxHP(b))*spent(b)*.3);
+const repair = i => { const b = bAt(i); if (!b || b.rub) return; const c = repairCost(b); if (c <= 0) return; if (R.coins < c) { sfx('bad'); say('Not enough Chocolate Coins'); return; } R.coins -= c; b.hp = bMaxHP(b); sfx('coin'); save(); };
+const hurtB = (i, d) => { const b = bAt(i); if (!b || b.rub) return; d *= DIFFM[R.diff].dmg || 1; b.hp -= d; b.hitT = .15; if (BT[b.t].gate) { SV.stats.gate += d; if (SV.stats.gate >= 2000) ach('gate'); } if (b.hp <= 0) breakB(i); };
 // troops: each barracks keeps a squad; fallen troops come back every 10 s during waves
 const troopType = b => TROOPS[BT[b.t].bar][b.br != null ? 3 + b.br : b.lv - 1];
 const squadSize = b => (b.br != null ? 4 : [0, 2, 3, 3][b.lv]) + (S('garrison') ? 1 : 0);
 const rallyOf = i => { const b = bAt(i), s2 = L.spots[i]; if (b && b.rally) return b.rally; let best = null, bd = 1e9; for (const p of L.path) { const x = (p % GW + .5)*TS, y = (Math.floor(p/GW) + .5)*TS, d = Math.hypot(x - s2.px, y - s2.py); if (d < bd) { bd = d; best = {x, y}; } } return best && bd < 150 ? best : {x:s2.px, y:s2.py + 20}; };
 const spawnTroopsFor = (i, full) => { const b = bAt(i); troops = troops.filter(q => q.home != i); if (!b || b.rub || !BT[b.t].bar) return; const ty = troopType(b), n = squadSize(b), rp = rallyOf(i), s2 = L.spots[i];
   for (let k = 0; k < n; k++) troops.push(mkTroop(i, k, ty, rp, full ? null : s2)); };
-const mkTroop = (i, k, ty, rp, from) => { const hp = Math.round(ty.hp*(S('licorice') ? 1.2 : 1)*(1 + .1*(R.keepLv - 1))), a = k*TAU/5; return {home:i, slot:k, ty, x:from ? from.px : rp.x + Math.cos(a)*16, y:from ? from.py : rp.y + Math.sin(a)*12, hp, max:hp, cd:Math.random(), dead:0, foe:null, walk:0}; };
+const mkTroop = (i, k, ty, rp, from) => { const hp = Math.round(.75*ty.hp*(S('licorice') ? 1.2 : 1)*(1 + .1*(R.keepLv - 1))), a = k*TAU/5; return {home:i, slot:k, ty, x:from ? from.px : rp.x + Math.cos(a)*16, y:from ? from.py : rp.y + Math.sin(a)*12, hp, max:hp, cd:Math.random(), dead:0, foe:null, walk:0}; };
 
 // ---------- waves ----------
 const openSpawns = () => { const n = L.sp.length, W = wavesOf(R.n), k = 1 + Math.floor(R.wave/(W/n)) + DIFFM[R.diff].extraSpawn; return L.sp.slice(0, clamp(k, 1, n)); };   // more Broccoli Fields open in later waves
-const planWave = () => { const n = R.n, w = R.wave + 1, W = wavesOf(n); let budget = (9 + 6*w)*(1 + .15*(n - 1))*(R.diff == 'hard' ? 1.2 : R.diff == 'easy' ? .85 : 1);
+const planWave = () => { const n = R.n, w = R.wave + 1, W = wavesOf(n); let budget = (9 + DIFFM[R.diff].grow*w)*(1 + .15*(n - 1))*(R.diff == 'hard' ? 1.2 : R.diff == 'easy' ? .8 : 1);   // waves grow 25% faster
   const pool = Object.keys(EN).filter(k => EN[k].from <= n && (k != 'avocado' || w >= 3) && (k != 'carrot' || w >= 2)); const sp = openSpawns(), q = []; let tt = 1.2, guard = 0;
   while (budget > 0 && guard++ < 400) { const k = Math.random() < .45 ? 'foot' : pool[Math.floor(Math.random()*pool.length)]; const E = EN[k]; if (E.cost > budget + 1) continue; budget -= E.cost; const s2 = sp[Math.floor(Math.random()*sp.length)];
     q.push({at:tt, k, s:s2}); if (E.lead) for (let j = 0; j < 3; j++) q.push({at:tt + .25*(j + 1), k:'foot', s:s2}); if (k == 'lettuce') q[q.length - 1].at += .6; tt += Math.max(.35, 1.1 - .04*n) + Math.random()*.6; }
   if (w == W && BOSSES[n]) q.push({at:tt + 3, k:'BOSS', s:sp[0]}); spawnQ = q.sort((a, b) => a.at - b.at); R.wt = 0; };
-const startWave = () => { if (R.phase != 'build' || scr != 'play') return; R.snap = JSON.parse(JSON.stringify({...R, snap:null, reload:0})); SV.run = {...R.snap, reload:1}; R.phase = 'wave'; planWave(); R.flood = 0; save(); mood(); sfx('bad'); say('Wave ' + (R.wave + 1) + ' of ' + wavesOf(R.n) + ': the Broccoli Army marches!', 2.6); renderUI(); };
-const endWave = () => { R.wave++; R.phase = 'build'; const bonus = Math.round((40 + 12*R.wave)*coinMul()); R.coins += bonus; SV.stats.coins += bonus; let gp = 0;
-  R.spots.forEach((b, i) => { if (!b) return; if (BT[b.t].gate && b.rub) { b.rub = 0; b.hp = bMaxHP(b); } if (b.t == 'ginger' && !b.rub) { const pay = Math.round([0, 25, 45, 75][b.lv]*(b.br == 0 ? 2.4 : b.br == 1 ? 1.6 : 1)*coinMul()); gp += pay; R.coins += pay; fxText(L.spots[i].px, L.spots[i].py - 30, '+' + pay, '#7a4a22'); } });
-  troops.forEach(q => { if (q.dead) { q.dead = 0; const rp = rallyOf(q.home); q.x = rp.x; q.y = rp.y; } q.hp = q.max; }); hero.hp = 3; hero.dead = 0;
-  shots = []; boss = null; say('Wave cleared! +' + bonus + (gp ? ' and +' + gp + ' from Gingerbread Houses' : '') + ' Chocolate Coins', 3); sfx('win');
+const startWave = () => { if (R.phase != 'build' || scr != 'play') return; restoreAll(); R.snap = JSON.parse(JSON.stringify({...R, snap:null, reload:0})); SV.run = {...R.snap, reload:1}; R.phase = 'wave'; planWave(); R.flood = 0; save(); mood(); sfx('bad'); say('Wave ' + (R.wave + 1) + ' of ' + wavesOf(R.n) + ': the Broccoli Army marches!', 2.6); renderUI(); };
+const endWave = () => { R.wave++; R.phase = 'build'; const bonus = Math.round((40 + 12*R.wave)*.85*coinMul()); R.coins += bonus; SV.stats.coins += bonus; let gp = 0;
+  R.spots.forEach((b, i) => { if (!b) return; if (b.t == 'ginger' && !b.rub) { const pay = Math.round([0, 25, 45, 75][b.lv]*(b.br == 0 ? 2.4 : b.br == 1 ? 1.6 : 1)*coinMul()); gp += pay; R.coins += pay; fxText(L.spots[i].px, L.spots[i].py - 30, '+' + pay, '#7a4a22'); } });
+  troops.forEach(q => { if (q.dead) { q.dead = 0; const rp = rallyOf(q.home); q.x = rp.x; q.y = rp.y; } q.hp = q.max; }); hero.hp = HMAX; hero.dead = 0;
+  restoreAll(); shots = []; boss = null; say('Wave cleared! +' + bonus + (gp ? ' and +' + gp + ' from Gingerbread Houses' : '') + ' Chocolate Coins', 3); sfx('win');
   if (R.wave >= wavesOf(R.n)) return winLevel(); R.snap = null; SV.run = {...R, snap:null}; save(); mood(); renderUI(); };
 const winLevel = () => { const n = R.n, W = wavesOf(n), keepF = clamp(R.keepHP/keepMax(), 0, 1), par = parOf(n), speed = Math.max(0, 3000*(1 - R.t/(par*1.6)));
   const s2 = Math.round((1000*W + 2000*keepF + speed)*DIFFM[R.diff].score), old = SV.done[n]; SV.done[n] = {s:Math.max(s2, old ? old.s : 0), d:old && old.s > s2 ? old.d : R.diff, t:Math.round(R.t), at:Date.now()};
@@ -212,9 +219,10 @@ const postScore = () => { const s2 = Math.min(total(), SCORE_MAX); SV.best = Mat
 
 // ---------- enemies ----------
 const spawnEnemy = (k, s2) => { if (enemies.length >= 90) return; const E = EN[k], lvM = (1 + .1*(R.n - 1))*(1 + .06*R.wave)*DIFFM[R.diff].hp, hp = Math.round(E.hp*lvM);
-  enemies.push({k, x:(s2.x + .5)*TS + (Math.random() - .5)*14, y:(s2.y + .5)*TS + (Math.random() - .5)*14, hp, max:hp, sp:E.sp*(.92 + Math.random()*.16), slow:0, stacks:0, stackT:0, freeze:0, root:0, burn:0, cd:Math.random(), walk:Math.random()*6, bully:Math.random() < .4, chew:0, block:null, flash:0, armor:E.armor || 0}); };
-const spawnBoss = s2 => { const B = BOSSES[R.n]; if (!B) return; const hpM = (1 + .02*R.n)*DIFFM[R.diff].hp, hp = Math.round(B.hp*hpM);
-  boss = {k:'BOSS', bk:B.k, n:B.n, x:(s2.x + .5)*TS, y:(s2.y + .5)*TS, hp, max:hp, sp:B.sp, r:B.r, armor:B.armor || 0, B, slow:0, stacks:0, stackT:0, freeze:0, root:0, burn:0, cd:3, walk:0, flash:0, ph:1, phases:B.king ? (R.diff == 'hard' ? 4 : 3) : 2, t:0, tell:null, shieldOn:0};
+  const D2 = DIFFM[R.diff], el = R.wave + 1 >= D2.elite && Math.random() < Math.min(.3, (.1 + .02*(R.wave + 1 - D2.elite))*D2.eliteP);   // elites: double health, gold glow, double coins
+  enemies.push({k, elite:el ? 1 : 0, x:(s2.x + .5)*TS + (Math.random() - .5)*14, y:(s2.y + .5)*TS + (Math.random() - .5)*14, hp:el ? hp*2 : hp, max:el ? hp*2 : hp, sp:E.sp*(.92 + Math.random()*.16)*(el ? 1.1 : 1), slow:0, stacks:0, stackT:0, freeze:0, root:0, burn:0, cd:Math.random(), walk:Math.random()*6, bully:Math.random() < .4, chew:0, block:null, flash:0, armor:E.armor || 0}); };
+const spawnBoss = s2 => { const B = BOSSES[R.n]; if (!B) return; const hpM = DIFFM[R.diff].bhp*(1 + .02*R.n)*DIFFM[R.diff].hp, hp = Math.round(B.hp*hpM);
+  boss = {k:'BOSS', bk:B.k, n:B.n, x:(s2.x + .5)*TS, y:(s2.y + .5)*TS, hp, max:hp, sp:B.sp, r:B.r, armor:B.armor || 0, B, slow:0, stacks:0, stackT:0, freeze:0, root:0, burn:0, cd:3, walk:0, flash:0, ph:1, phases:B.king ? (R.diff == 'hard' ? 5 : 4) : 2, exCd:5, t:0, tell:null, shieldOn:0};
   enemies.push(boss); say('⚠ ' + B.n + ' joins the battle!', 3.4); mood(); sfx('bad'); };
 const tileOf = (x, y) => [clamp(Math.floor(x/TS), 0, GW - 1), clamp(Math.floor(y/TS), 0, GH - 1)];
 const walkable = (x, y) => { const [tx, ty] = tileOf(x, y), v = L.T[ty*GW + tx]; return v == G || v == BRG || v == RUB || v == KEEPT; };
@@ -223,11 +231,11 @@ const nextStep = (e, tank) => { const F = tank ? FT : FN, [tx, ty] = tileOf(e.x,
   return best; };
 const hurtE = (e, d, magic, src) => { if (e.dead) return; if (e === boss && e.shieldOn) { d *= .1; } let arm = e.armor; if (e.shred) arm *= .4; if (!magic) d *= 1 - arm; else if (e.k == 'kale') d *= 1.5; if (e === boss && boss.B.shield && !magic) d *= 1 - boss.B.shield;
   e.hp -= d; e.flash = .1; if (e.hp <= 0) killE(e, src); };
-const killE = (e, src) => { e.dead = 1; if (e === boss) { SV.stats.bosses++; ach('boss'); R.coins += Math.round(300*coinMul()); fxBurst(e.x, e.y, 60, '#7fd04a'); say('🏆 ' + boss.n + ' is defeated! +' + Math.round(300*coinMul()) + ' Chocolate Coins', 3.4); boss = null; mood(); sfx('win');
+const killE = (e, src) => { e.dead = 1; if (e === boss) { SV.stats.bosses++; ach('boss'); R.coins += Math.round(300*coinMul()); fxText(e.x, e.y - 30, '+' + Math.round(300*coinMul()), '#b07a1a'); fxBurst(e.x, e.y, 60, '#7fd04a'); say('🏆 ' + boss.n + ' is defeated! +' + Math.round(300*coinMul()) + ' Chocolate Coins', 3.4); boss = null; mood(); sfx('win');
     if (e.B.split && !e.splitDone) { } return; }
-  const E = EN[e.k], c = Math.round(E.coin*coinMul()); R.coins += c; SV.stats.coins += c; SV.stats.kills++; if (SV.stats.coins >= 20000) ach('rich');
+  const E = EN[e.k], c = Math.round(E.coin*coinMul()*(e.elite ? 2 : 1)); R.coins += c; SV.stats.coins += c; SV.stats.kills++; if (SV.stats.coins >= 20000) ach('rich');
   // defeated vegetables wilt, burst into leaves or roll away
-  fxBurst(e.x, e.y, low() ? 6 : 14, e.k == 'carrot' ? '#ff9a3c' : e.k == 'avocado' ? '#6aa84f' : e.k == 'lettuce' ? '#b7e07a' : e.k == 'bomber' ? '#7fbf4a' : '#3f9f3f', 'leaf'); if (Math.random() < .3) fxText(e.x, e.y - 14, '+' + c, '#8a5a2a'); };
+  fxBurst(e.x, e.y, low() ? 6 : 14, e.k == 'carrot' ? '#ff9a3c' : e.k == 'avocado' ? '#6aa84f' : e.k == 'lettuce' ? '#b7e07a' : e.k == 'bomber' ? '#7fbf4a' : '#3f9f3f', 'leaf'); fxText(e.x, e.y - 14, '+' + c, '#b07a1a'); };
 const bombGo = e => { fxBurst(e.x, e.y, 26, '#a8d860'); sfx('hit'); R.spots.forEach((b, i) => { if (!b || b.rub) return; const s2 = L.spots[i]; if (Math.hypot(s2.px - e.x, s2.py - e.y) < 48) hurtB(i, 45); }); if (dist(hero, e) < 40 && !hero.dead) hurtHero(DMG.hero[2]); e.dead = 1; };
 const hurtHero = d => { if (hero.dead || heroGod || hero.inv > 0) return; hero.hp -= d; hero.hurtT = .3; hero.inv = .5; hero.regen = 0; sfx('bad'); if (hero.hp <= 0) { hero.hp = 0; hero.dead = 5; say('💥 The Sugar Sorcerer is down! Back at the keep in 5 seconds', 3); } };
 const hurtKeep = d => { R.keepHP -= d; R.keepHit = .2; if (R.keepHP <= 0) { R.keepHP = 0; loseLevel(); } };
@@ -240,7 +248,7 @@ const enemyAI = (e, dt) => { if (e.dead) return; const E = e === boss ? null : E
   // healers mend their friends
   if (E && E.heal) { e.cd -= dt; if (e.cd <= 0) { e.cd = 1; for (const o of enemies) if (!o.dead && o !== e && o.hp < o.max && dist(o, e) < 75) { o.hp = Math.min(o.max, o.hp + 3 + R.n*.4); } fx.push({x:e.x, y:e.y, r:75, t:.4, ring:'#9fe07a'}); } }
   // carrot casters throw from far away
-  if (E && E.ranged) { e.cd -= dt; const tg = !hero.dead && dist(hero, e) < 160 ? hero : troops.find(q => !q.dead && dist(q, e) < 160); if (tg && e.cd <= 0) { e.cd = 2.2; shots.push({x:e.x, y:e.y, tg, sp:220, dmg:tg === hero ? DMG.hero[3] : DMG.troop[3], kind:'carrot', from:'enemy', life:2}); } if (tg) return; }
+  if (E && E.ranged) { e.cd -= dt; const tg = !hero.dead && dist(hero, e) < 230 ? hero : troops.find(q => !q.dead && dist(q, e) < 160); if (tg && e.cd <= 0) { e.cd = tg === hero ? 1.7 : 2.2; if (tg === hero) shots.push({x:e.x, y:e.y, tg:{x:hero.x, y:hero.y - 10}, sp:230, dmg:DMG.hero[3], kind:'carrot', from:'enemy', life:1.6, fixed:1}); else shots.push({x:e.x, y:e.y, tg, sp:220, dmg:DMG.troop[3], kind:'carrot', from:'enemy', life:2}); } if (tg) return; }
   // in a fight with a troop?
   if (e.block && (e.block.dead || dist(e.block, e) > 26)) e.block = null;
   if (e.block) { if (E && E.bomb) { e.block = null; } else { e.cd -= dt; if (e.cd <= 0) { e.cd = 1; hitTroop(e.block, DMG.troop[tier]); } return; } }
@@ -256,7 +264,8 @@ const enemyAI = (e, dt) => { if (e.dead) return; const E = e === boss ? null : E
   // a Taffy Gate in the way: chew through it (Spinach Brutes smash through fast)
   for (let i = 0; i < L.spots.length; i++) { const b = R.spots[i]; if (!b || b.rub || !BT[b.t].gate) continue; const s2 = L.spots[i]; if (Math.hypot(s2.px - e.x, s2.py - e.y) < 22) { e.cd -= dt; if (e.cd <= 0) { e.cd = 1; hurtB(i, (e === boss ? 40 : DMG.bld[tier]*(E && E.gateX ? E.gateX : 1)) + 1); if (b.br == 1 || b.lv >= 2) hurtE(e, b.br == 1 ? 6 : (b.lv - 1)*1.5); } return; } }
   // some enemies stop to attack buildings they brush past
-  if (e.bully && !(E && E.heal) && (e.bullyT || 0) < 7) for (let i = 0; i < L.spots.length; i++) { const b = R.spots[i]; if (!b || b.rub || BT[b.t].gate) continue; const s2 = L.spots[i], d2 = Math.hypot(s2.px - e.x, s2.py - e.y); if (d2 < (b.t == 'ginger' && b.br == 1 ? 70 : 40)) { e.bullyT = (e.bullyT || 0) + dt; e.cd -= dt; if (e.cd <= 0) { e.cd = 1; hurtB(i, DMG.bld[tier]); } return; } }
+  const smash = !!(E && (E.gateX || E.tank));   // Spinach Brutes and Avocado Tanks go after towers in their way
+  if ((e.bully || smash) && !(E && E.heal) && (smash || (e.bullyT || 0) < 7)) for (let i = 0; i < L.spots.length; i++) { const b = R.spots[i]; if (!b || b.rub || BT[b.t].gate) continue; const s2 = L.spots[i], d2 = Math.hypot(s2.px - e.x, s2.py - e.y); if (d2 < (b.t == 'ginger' && b.br == 1 ? 70 : smash ? 62 : 40)) { e.bullyT = (e.bullyT || 0) + dt; e.cd -= dt; if (e.cd <= 0) { e.cd = 1; hurtB(i, DMG.bld[tier]); } return; } }
   // walk the flow field
   const tank = !!((E && E.tank) || (e === boss && boss.B.tank)); const st = nextStep(e, tank); if (!st) return; const ti = st[1]*GW + st[0], tv = L.T[ti];
   if (tank && (tv == ROCK || tv == TREE || tv == CLIFF)) { e.chew += dt; if (e.chew > 2.4) { e.chew = 0; L.T[ti] = RUB; R.rub.push(ti); fieldDirty = true; fxBurst((st[0] + .5)*TS, (st[1] + .5)*TS, 16, '#d8a0c0'); sfx('hit'); } return; }
@@ -266,6 +275,7 @@ const enemyAI = (e, dt) => { if (e.dead) return; const E = e === boss ? null : E
 // ---------- bosses ----------
 const bossAI = (B, dt) => { B.t += dt; const P = B.B, np = B.phases, ph = Math.min(np, 1 + Math.floor((1 - B.hp/B.max)*np)); if (ph > B.ph) { B.ph = ph; say('⚠ ' + B.n + ' · phase ' + ph + '!', 2.4); sfx('bad'); onPhase(B); }
   B.cd -= dt; if (B.tell) { B.tell.t -= dt; if (B.tell.t <= 0) { const T2 = B.tell; B.tell = null; doTell(B, T2); } return; }
+  B.exCd -= dt; if (B.exCd <= 0 && BEX[B.bk]) { B.exCd = BEX[B.bk].ev; const zt = exZone(B); if (zt) { B.tell = zt; say('⚠ ' + BEX[B.bk].n + '! Get out of the red', 1.6); return; } }
   if (B.cd > 0) return; B.cd = 5 - Math.min(2, R.n*.06);
   if (P.dash) { const tg = hero.dead ? null : hero; if (tg && dist(tg, B) < 260) { B.tell = {k:'dash', t:.9, x:tg.x, y:tg.y}; return; } }
   if (P.pound) { if (troops.some(q => !q.dead && dist(q, B) < 120)) { B.tell = {k:'pound', t:1.1, x:B.x, y:B.y, r:110}; return; } }
@@ -277,13 +287,27 @@ const bossAI = (B, dt) => { B.t += dt; const P = B.B, np = B.phases, ph = Math.m
   if (P.guards || (P.king && B.ph >= 3)) { if (!enemies.some(o => o.guard && !o.dead)) { for (let i = 0; i < (P.king ? 4 : 3); i++) { spawnEnemy(P.king ? 'kale' : 'kale', {x:Math.floor(B.x/TS), y:Math.floor(B.y/TS)}); const o = enemies[enemies.length - 1]; if (o) { o.guard = 1; o.x += Math.cos(i*TAU/3)*40; o.y += Math.sin(i*TAU/3)*40; } } say(P.king ? 'The King hides behind his Kale Guard! Break the guards' : 'The Cabbage Queen shields herself with Kale guards!', 2.8); } }
   if (P.king) { for (let i = 0; i < 2 + B.ph; i++) spawnEnemy(B.ph >= 2 ? 'celery' : 'foot', {x:Math.floor(B.x/TS), y:Math.floor(B.y/TS)}); if (B.ph >= 4) for (let i = 0; i < 2; i++) spawnEnemy('bomber', {x:Math.floor(B.x/TS), y:Math.floor(B.y/TS)}); }
   if (P.thorns) {} };
-const onPhase = B => { const P = B.B; if (P.split && B.ph == 2) { for (let i = 0; i < 2; i++) { spawnEnemy('spinach', {x:Math.floor(B.x/TS), y:Math.floor(B.y/TS)}); } say('The Colossus sheds two Spinach Brutes!', 2.4); } if (P.king && B.ph == 4) { B.sp *= 1.5; say('THE BROCCOLI KING IS FURIOUS! (Hard)', 3); } };
-const doTell = (B, T2) => { if (T2.k == 'dash') { const a = Math.atan2(T2.y - B.y, T2.x - B.x); for (let k = 0; k < 10; k++) { const nx = B.x + Math.cos(a)*14, ny = B.y + Math.sin(a)*14; if (!walkable(nx, ny)) break; B.x = nx; B.y = ny; } if (!hero.dead && dist(hero, B) < B.r + 20) hurtHero(1.5); troops.forEach(q => { if (!q.dead && dist(q, B) < B.r + 20) hitTroop(q, 25); }); fxBurst(B.x, B.y, 14, '#ff6a6a'); }
+const onPhase = B => { const P = B.B; if (P.split && B.ph == 2) { for (let i = 0; i < 2; i++) { spawnEnemy('spinach', {x:Math.floor(B.x/TS), y:Math.floor(B.y/TS)}); } say('The Colossus sheds two Spinach Brutes!', 2.4); } if (P.king && B.ph == B.phases) { B.sp *= 1.5; say('THE BROCCOLI KING IS FURIOUS! Final phase!', 3); } };
+// zone attacks: a list of circles; anything still inside when the timer ends gets hit
+const exZone = B => { const H = hero.dead ? null : hero, live = troops.filter(q => !q.dead), blds = R.spots.map((b, i) => b && !b.rub && !BT[b.t].gate ? i : -1).filter(i => i >= 0).sort((a, b2) => Math.hypot(L.spots[a].px - B.x, L.spots[a].py - B.y) - Math.hypot(L.spots[b2].px - B.x, L.spots[b2].py - B.y));
+  const at = (o, r) => ({x:o.x, y:o.y, r}), sp = i => ({x:L.spots[i].px, y:L.spots[i].py, r:44, i}), Z = (z, t, o) => z.length ? Object.assign({k:'zone', t, max:t, z}, o) : null;
+  switch (B.bk) {
+    case 'radish': return H ? Z([at(H, 46)], .9, {hd:1, td:22}) : null;
+    case 'cauli': return Z(blds.slice(0, 1).map(sp), 1.1, {bd:45, td:20});
+    case 'beet': return Z([at(B, 130)], 1.2, {hd:1, td:25});
+    case 'eggplant': return H ? Z([at(H, 40)], 1, {hd:1, jamR:1}) : null;
+    case 'pumpkin': { if (!H) return null; const a = Math.atan2(H.y - B.y, H.x - B.x), z = []; for (let k = 1; k <= 3; k++) z.push({x:B.x + Math.cos(a)*k*60, y:B.y + Math.sin(a)*k*60, r:34}); return Z(z, 1, {hd:1, td:20, bd:25}); }
+    case 'cabbage': { const z = live.slice(0, 2).map(q => at(q, 38)); if (H) z.push(at(H, 38)); return Z(z, 1, {hd:1, td:24}); }
+    case 'artichoke': return Z([at(B, 100)], .9, {hd:1, td:28});
+    case 'king': return Z(blds.slice(0, 3).map(sp), 1.2, {bd:30, jam:3});
+  } return null; };
+const doTell = (B, T2) => { if (T2.k == 'zone') { for (const c of T2.z) { const inZ = o => Math.hypot(o.x - c.x, o.y - c.y) < c.r; if (T2.hd && !hero.dead && inZ(hero)) hurtHero(T2.hd); if (T2.td) troops.forEach(q => { if (!q.dead && inZ(q)) hitTroop(q, T2.td); }); R.spots.forEach((b, i) => { if (!b || b.rub) return; const s2 = {x:L.spots[i].px, y:L.spots[i].py}; if (!inZ(s2)) return; if (T2.bd) hurtB(i, T2.bd); if (T2.jam && bAt(i) && !bAt(i).rub) bAt(i).jam = T2.jam; if (T2.jamR && !BT[b.t].gate && !BT[b.t].bar) b.jam = 2.5; }); fx.push({x:c.x, y:c.y, r:c.r, t:.4, ring:'#ff6a6a'}); } sfx('hit'); return; }
+ if (T2.k == 'dash') { const a = Math.atan2(T2.y - B.y, T2.x - B.x); for (let k = 0; k < 10; k++) { const nx = B.x + Math.cos(a)*14, ny = B.y + Math.sin(a)*14; if (!walkable(nx, ny)) break; B.x = nx; B.y = ny; } if (!hero.dead && dist(hero, B) < B.r + 20) hurtHero(1.5); troops.forEach(q => { if (!q.dead && dist(q, B) < B.r + 20) hitTroop(q, 25); }); fxBurst(B.x, B.y, 14, '#ff6a6a'); }
   if (T2.k == 'pound') { troops.forEach(q => { if (!q.dead && Math.hypot(q.x - T2.x, q.y - T2.y) < T2.r) { hitTroop(q, 20); q.stun = 2; } }); if (!hero.dead && Math.hypot(hero.x - T2.x, hero.y - T2.y) < T2.r) hurtHero(1); fx.push({x:T2.x, y:T2.y, r:T2.r, t:.5, ring:'#ffffff'}); sfx('hit'); }
   if (T2.k == 'puddle') { const b = bAt(T2.i); if (b && !b.rub) { b.jam = 4; hurtB(T2.i, 30); } fx.push({x:T2.x, y:T2.y, r:40, t:.8, ring:'#a0306a'}); }
   if (T2.k == 'warp') { for (let k = 0; k < 4; k++) { const st = nextStep(B, false); if (!st) break; B.x = (st[0] + .5)*TS; B.y = (st[1] + .5)*TS; } fxBurst(B.x, B.y, 18, '#8a4be0'); }
   if (T2.k == 'roll') { for (let k = 0; k < 5; k++) { const st = nextStep(B, true); if (!st) break; const ti = st[1]*GW + st[0]; if (L.T[ti] == ROCK || L.T[ti] == TREE || L.T[ti] == CLIFF) { L.T[ti] = RUB; R.rub.push(ti); fieldDirty = true; } B.x = (st[0] + .5)*TS; B.y = (st[1] + .5)*TS; R.spots.forEach((b, i) => { if (b && !b.rub && BT[b.t].gate && Math.hypot(L.spots[i].px - B.x, L.spots[i].py - B.y) < 30) hurtB(i, 120); }); } fxBurst(B.x, B.y, 20, '#ff9a3c'); } };
-const hitTroop = (q, d) => { if (q.dead) return; q.hp -= d; q.flash = .12; if (boss && boss.B.thorns) {} if (q.hp <= 0) { q.dead = 10/(S('garrison') ? 1.6 : 1); q.foe = null; fxBurst(q.x, q.y, 10, '#e8b070'); } };
+const hitTroop = (q, d) => { if (q.dead) return; d *= DIFFM[R.diff].dmg || 1; q.hp -= d; q.flash = .12; if (boss && boss.B.thorns) {} if (q.hp <= 0) { q.dead = 10/(S('garrison') ? 1.6 : 1); q.foe = null; fxBurst(q.x, q.y, 10, '#e8b070'); } };
 
 // ---------- towers, troops, hero ----------
 const firstIn = (x, y, rng, pred) => { let best = null, bd = 1e9; const F = FN; for (const e of enemies) { if (e.dead) continue; if (Math.hypot(e.x - x, e.y - y) > rng) continue; if (pred && !pred(e)) continue; const [tx, ty] = tileOf(e.x, e.y), dv = F ? F[ty*GW + tx] : 0; if (dv < bd) { bd = dv; best = e; } } return best; };
@@ -305,8 +329,8 @@ const troopTick = (q, dt) => { if (q.dead) { if (R.phase == 'wave') { q.dead -= 
   const tgt = q.foe || slot, d2 = Math.hypot(tgt.x - q.x, tgt.y - q.y); if (d2 > (q.foe ? 15 : 3)) { const sp = ty.big ? 45 : 70; q.x += (tgt.x - q.x)/d2*Math.min(d2, sp*dt); q.y += (tgt.y - q.y)/d2*Math.min(d2, sp*dt); q.walk += dt*6; }
   if (q.foe && d2 < 22) { if (!EN[q.foe.k] || !EN[q.foe.k].bomb) q.foe.block = q; if (q.cd <= 0) { q.cd = ty.cd; hurtE(q.foe, ty.dmg*(1 + .08*(R.keepLv - 1)), false, 'troop'); if (ty.root && q.foe) q.foe.root = 1.2; if (ty.kb && q.foe && !q.foe.dead && q.foe !== boss) { const a = Math.atan2(q.foe.y - q.y, q.foe.x - q.x); const nx = q.foe.x + Math.cos(a)*14, ny = q.foe.y + Math.sin(a)*14; if (walkable(nx, ny)) { q.foe.x = nx; q.foe.y = ny; } } if (boss && q.foe === boss && boss.B.thorns) hitTroop(q, ty.dmg*.3); } } };
 const wandStats = () => ({dmg:(5 + 2.2*R.wand.d)*(S('sorcery') ? 1.5 : 1)*(1 + .1*(R.keepLv - 1)), rng:140 + 14*R.wand.r, rate:(2.2 + .3*R.wand.s)*rateMul()});
-const heroTick = dt => { const H = hero; if (H.dead) { H.dead -= dt; if (H.dead <= 0) { H.dead = 0; H.hp = 3; H.x = (KX + 2.5)*TS; H.y = (KY + .5)*TS; say('The Sugar Sorcerer is back!', 1.6); } return; }
-  H.inv = Math.max(0, (H.inv || 0) - dt); H.hurtT = Math.max(0, H.hurtT - dt); H.regen += dt; if (H.regen > 8 && H.hp < 3) { H.regen = 4; H.hp = Math.min(3, H.hp + 1); }
+const heroTick = dt => { const H = hero; if (H.dead) { H.dead -= dt; if (H.dead <= 0) { H.dead = 0; H.hp = HMAX; H.x = (KX + 2.5)*TS; H.y = (KY + .5)*TS; say('The Sugar Sorcerer is back!', 1.6); } return; }
+  H.inv = Math.max(0, (H.inv || 0) - dt); H.hurtT = Math.max(0, H.hurtT - dt); const fight = enemies.some(e => !e.dead && Math.hypot(e.x - H.x, e.y - H.y) < 150); if (fight) H.regen = 0; else H.regen += dt; if (H.regen > 12 && H.hp < HMAX) { H.regen = 0; H.hp = Math.min(HMAX, H.hp + 1); }   // slow regen, none while in combat
   let mx = (keys.ArrowRight || keys.d || keys.D ? 1 : 0) - (keys.ArrowLeft || keys.a || keys.A ? 1 : 0), my = (keys.ArrowDown || keys.s || keys.S ? 1 : 0) - (keys.ArrowUp || keys.w || keys.W ? 1 : 0);
   if (joy) { const dx = joy.x - joy.ox, dy = joy.y - joy.oy, d2 = Math.hypot(dx, dy); if (d2 > 8) { const m = Math.min(1, d2/55); mx = dx/d2*m; my = dy/d2*m; } }
   const Lm = Math.hypot(mx, my); if (Lm) { if (Lm > 1) { mx /= Lm; my /= Lm; } const sp = 150; const nx = H.x + mx*sp*dt, ny = H.y + my*sp*dt; if (walkable(nx, H.y) && nx > 8 && nx < WW - 8) H.x = nx; if (walkable(H.x, ny) && ny > 8 && ny < WH - 8) H.y = ny; H.walk += dt*8; H.face = Math.atan2(my, mx); }
@@ -384,7 +408,7 @@ const drawKeep = () => { const th = themeOf(), x = (KX + .5)*TS, y = (KY + 1.4)*
 const drawBuilding = (i) => { const s2 = L.spots[i], b = R.spots[i], x = s2.px, y = s2.py + 12, th = themeOf();
   if (!b) { const o = s2.opts; g.strokeStyle = 'rgba(160,60,110,.55)'; g.setLineDash([4, 4]); g.lineWidth = 2; rr(g, x - 15, y - 26, 30, 30, 6); g.stroke(); g.setLineDash([]); g.fillStyle = 'rgba(122,40,80,.85)'; g.font = '800 8px ' + FONT; g.textAlign = 'center';
     g.fillText(o.length > 1 ? o.length + ' CHOICES' : BT[o[0]].n.split(' ')[0].toUpperCase(), x, y - 9); g.fillText(Math.round(Math.min(...o.map(k => BT[k].cost[0]*costMul(k)))) + ' ◉', x, y + 1); return; }
-  if (b.rub) { for (let k = 0; k < 6; k++) circ(g, x - 12 + (k*7) % 24, y - 4 - (k*5) % 10, 4, '#c8946a'); g.fillStyle = 'rgba(122,40,80,.85)'; g.font = '800 8px ' + FONT; g.textAlign = 'center'; g.fillText(BT[b.t].gate ? 'GATE (BACK SOON)' : 'RUBBLE · REBUILD', x, y + 10); return; }
+  if (b.rub) { for (let k = 0; k < 6; k++) circ(g, x - 12 + (k*7) % 24, y - 4 - (k*5) % 10, 4, '#c8946a'); g.fillStyle = 'rgba(122,40,80,.85)'; g.font = '800 8px ' + FONT; g.textAlign = 'center'; g.fillText('BACK NEXT WAVE', x, y + 10); return; }
   const lv = b.lv + (b.br != null ? 1 : 0), sc = .9 + .08*lv, T2 = b.t; g.save(); g.translate(x, y); g.scale(sc, sc); if (b.hitT > 0) { b.hitT -= 1/60; g.translate((Math.random() - .5)*3, 0); } shadow(g, 0, 0, 16);
   if (T2 == 'sprinkle') { g.fillStyle = th.wall; rr(g, -10, -30, 20, 30, 4); g.fill(); g.fillStyle = th.roof; g.beginPath(); g.moveTo(-13, -30); g.lineTo(0, -44 - lv*2); g.lineTo(13, -30); g.fill(); for (let k = 0; k < 6; k++) { g.fillStyle = ['#ff5f9e', '#5fc8ff', '#ffe066', '#8ae05a'][k % 4]; g.fillRect(-8 + (k*5) % 16, -26 + k*4, 4, 2); }
     g.save(); g.translate(0, -34); g.rotate(b.aim || 0); g.fillStyle = '#444'; g.fillRect(0, -2.5, 12 + lv*2, 5); g.restore(); if (b.br == 0) { for (let k = 0; k < 3; k++) circ(g, -10 + k*10, -48, 3, ['#ff5f9e', '#5fc8ff', '#ffe066'][k]); } if (b.br == 1) { g.strokeStyle = '#fff'; g.lineWidth = 2; g.beginPath(); g.arc(0, -52, 5, 0, TAU); g.stroke(); } }
@@ -403,7 +427,7 @@ const drawBuilding = (i) => { const s2 = L.spots[i], b = R.spots[i], x = s2.px, 
   for (let k = 0; k < lv; k++) circ(g, -10 + k*7, 8, 2.5, k >= 3 ? '#F9BF01' : '#fff');
   g.restore(); if (b.hp < bMaxHP(b) && !BT[b.t].gate) { g.fillStyle = 'rgba(0,0,0,.4)'; g.fillRect(x - 14, y + 14, 28, 3); g.fillStyle = '#7fe08a'; g.fillRect(x - 14, y + 14, 28*clamp(b.hp/bMaxHP(b), 0, 1), 3); } if (b.jam > 0) { g.fillStyle = 'rgba(160,40,110,.5)'; g.beginPath(); g.arc(x, y - 10, 18, 0, TAU); g.fill(); } };
 // the Broccoli Army
-const drawEnemy = e => { const x = e.x, y = e.y, bob = Math.sin(e.walk)*1.5, E = EN[e.k]; if (e === boss) return drawBoss(e); g.save(); if (e.flash > 0) g.globalAlpha = .6; if (e.freeze > 0) { g.fillStyle = 'rgba(190,240,255,.7)'; g.beginPath(); g.arc(x, y - 6, E.r + 5, 0, TAU); g.fill(); }
+const drawEnemy = e => { const x = e.x, y = e.y, bob = Math.sin(e.walk)*1.5, E = EN[e.k]; if (e === boss) return drawBoss(e); if (e.elite) { g.strokeStyle = 'rgba(255,200,40,' + (.55 + .3*Math.sin(t*6)) + ')'; g.lineWidth = 3; g.beginPath(); g.arc(x, y - 4, E.r + 6, 0, TAU); g.stroke(); } g.save(); if (e.flash > 0) g.globalAlpha = .6; if (e.freeze > 0) { g.fillStyle = 'rgba(190,240,255,.7)'; g.beginPath(); g.arc(x, y - 6, E.r + 5, 0, TAU); g.fill(); }
   shadow(g, x, y + E.r*.8, E.r);
   const legs = () => { g.strokeStyle = '#3a6a2a'; g.lineWidth = 2; g.beginPath(); g.moveTo(x - 3, y); g.lineTo(x - 4 - bob, y + 7); g.moveTo(x + 3, y); g.lineTo(x + 4 + bob, y + 7); g.stroke(); };
   const eyes = (ey, angry) => { circ(g, x - 3, ey, 2.2, '#fff'); circ(g, x + 3, ey, 2.2, '#fff'); circ(g, x - 3, ey + .5, 1.1, '#14204a'); circ(g, x + 3, ey + .5, 1.1, '#14204a'); if (angry) { g.strokeStyle = '#14204a'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(x - 5, ey - 4); g.lineTo(x - 1, ey - 2.5); g.moveTo(x + 5, ey - 4); g.lineTo(x + 1, ey - 2.5); g.stroke(); } };
@@ -418,7 +442,8 @@ const drawEnemy = e => { const x = e.x, y = e.y, bob = Math.sin(e.walk)*1.5, E =
   if (e.stacks) { g.fillStyle = 'rgba(232,160,64,.75)'; g.beginPath(); g.ellipse(x, y + 6, E.r + 2, 4, 0, 0, TAU); g.fill(); } if (e.guard) { g.strokeStyle = 'rgba(255,230,120,.8)'; g.lineWidth = 2; g.beginPath(); g.arc(x, y - 8, E.r + 6, 0, TAU); g.stroke(); }
   if (e.hp < e.max) { g.fillStyle = 'rgba(0,0,0,.4)'; g.fillRect(x - 10, y - E.r - 20, 20, 3); g.fillStyle = '#ff5f5f'; g.fillRect(x - 10, y - E.r - 20, 20*clamp(e.hp/e.max, 0, 1), 3); } g.restore(); };
 const drawBoss = B => { const x = B.x, y = B.y, r = B.r, k = B.bk, bob = Math.sin(t*3)*2; g.save(); if (B.flash > 0) g.globalAlpha = .7; shadow(g, x, y + r*.7, r*1.1);
-  if (B.tell) { const T2 = B.tell, pr = 1 - Math.max(0, T2.t)/1.1; g.strokeStyle = 'rgba(255,60,60,.9)'; g.fillStyle = 'rgba(255,60,60,' + (.15 + .2*pr) + ')'; g.lineWidth = 3; g.beginPath(); g.arc(T2.x, T2.y, T2.r || 30, 0, TAU); g.fill(); g.stroke(); if (T2.k == 'dash') { g.setLineDash([6, 6]); g.beginPath(); g.moveTo(x, y); g.lineTo(T2.x, T2.y); g.stroke(); g.setLineDash([]); } }
+  if (B.tell && B.tell.z) { const T2 = B.tell, pr = 1 - Math.max(0, T2.t)/T2.max; for (const c of T2.z) { g.strokeStyle = 'rgba(255,60,60,.9)'; g.fillStyle = 'rgba(255,60,60,' + (.12 + .25*pr) + ')'; g.lineWidth = 3; g.beginPath(); g.arc(c.x, c.y, c.r, 0, TAU); g.fill(); g.stroke(); g.beginPath(); g.arc(c.x, c.y, c.r*pr, 0, TAU); g.stroke(); } }
+  else if (B.tell) { const T2 = B.tell, pr = 1 - Math.max(0, T2.t)/1.1; g.strokeStyle = 'rgba(255,60,60,.9)'; g.fillStyle = 'rgba(255,60,60,' + (.15 + .2*pr) + ')'; g.lineWidth = 3; g.beginPath(); g.arc(T2.x, T2.y, T2.r || 30, 0, TAU); g.fill(); g.stroke(); if (T2.k == 'dash') { g.setLineDash([6, 6]); g.beginPath(); g.moveTo(x, y); g.lineTo(T2.x, T2.y); g.stroke(); g.setLineDash([]); } }
   const eyes = (ey, s2) => { for (const ox of [-r*.3, r*.3]) { circ(g, x + ox, ey, 4*s2, '#fff'); circ(g, x + ox, ey + 1, 2*s2, '#14204a'); } g.strokeStyle = '#14204a'; g.lineWidth = 2; g.beginPath(); g.moveTo(x - r*.5, ey - 7*s2); g.lineTo(x - r*.12, ey - 4*s2); g.moveTo(x + r*.5, ey - 7*s2); g.lineTo(x + r*.12, ey - 4*s2); g.stroke(); };
   const crown = (cy, s2, c) => { g.fillStyle = c || '#F9BF01'; g.beginPath(); g.moveTo(x - 12*s2, cy); g.lineTo(x - 12*s2, cy - 9*s2); g.lineTo(x - 6*s2, cy - 4*s2); g.lineTo(x, cy - 12*s2); g.lineTo(x + 6*s2, cy - 4*s2); g.lineTo(x + 12*s2, cy - 9*s2); g.lineTo(x + 12*s2, cy); g.fill(); };
   if (k == 'radish') { circ(g, x, y - r + bob, r, '#d8306a'); g.fillStyle = '#fff'; g.beginPath(); g.ellipse(x, y - 6 + bob, r*.7, r*.4, 0, 0, Math.PI); g.fill(); for (const ox of [-6, 0, 6]) { g.fillStyle = '#5fbf3f'; g.beginPath(); g.ellipse(x + ox, y - 2*r - 6 + bob, 3, 9, ox*.08, 0, TAU); g.fill(); } eyes(y - r + bob, 1); g.fillStyle = '#14204a'; g.fillRect(x - r*.7, y - r - 4 + bob, r*1.4, 5); }
@@ -453,7 +478,7 @@ const drawHero = () => { const H = hero; if (H.dead) { const x = (KX + 2.5)*TS, 
   circ(g, x - 3, y - 14 + bob, 1.8, '#14204a'); circ(g, x + 3, y - 14 + bob, 1.8, '#14204a'); g.strokeStyle = '#14204a'; g.lineWidth = 1.2; g.beginPath(); g.moveTo(x - 4, y - 9 + bob); g.quadraticCurveTo(x, y - 7 + bob, x + 4, y - 10 + bob); g.stroke(); g.beginPath(); g.moveTo(x - 6, y - 18 + bob); g.lineTo(x - 1, y - 16 + bob); g.moveTo(x + 6, y - 18 + bob); g.lineTo(x + 1, y - 16 + bob); g.stroke();
   g.fillStyle = '#3a0a5a'; g.beginPath(); g.moveTo(x - 13, y - 22 + bob); g.lineTo(x + 13, y - 22 + bob); g.lineTo(x + 3, y - 42 + bob); g.fill(); circ(g, x + 4, y - 33 + bob, 2, '#F9BF01'); circ(g, x - 3, y - 27 + bob, 1.5, '#F9BF01');
   const a = H.aim != null ? H.aim : 0; g.strokeStyle = '#ff8ab8'; g.lineWidth = 3; g.beginPath(); g.moveTo(x + 8, y - 8 + bob); g.lineTo(x + 8 + Math.cos(a)*14, y - 8 + Math.sin(a)*14 + bob); g.stroke(); circ(g, x + 8 + Math.cos(a)*16, y - 8 + Math.sin(a)*16 + bob, 4, '#fff6a0');
-  for (let k = 0; k < 3; k++) circ(g, x - 12 + k*12, y - 52, 5, k < Math.ceil(H.hp - 1e-6) ? '#ff5f9e' : 'rgba(0,0,0,.25)'); };
+  for (let k = 0; k < HMAX; k++) circ(g, x - 6*(HMAX - 1) + k*12, y - 52, 5, k < Math.ceil(H.hp - 1e-6) ? '#ff5f9e' : 'rgba(0,0,0,.25)'); };
 const drawShots = () => { for (const s2 of shots) { const c = {sprinkle:'#ff5f9e', gumball:'#5fc8ff', wand:'#e8a0ff', storm:'#fff6a0', carrot:'#ff8a3c', bolt:'#c88aff', fudge:'#5a2a14', troop:'#ffe066', fizz:'#9fe8ff', cotton:'#ffc8ec'}[s2.kind] || '#fff';
     if (s2.kind == 'sprinkle') { g.strokeStyle = c; g.lineWidth = 3; g.beginPath(); g.moveTo(s2.x, s2.y); g.lineTo(s2.x - 5, s2.y + 2); g.stroke(); } else circ(g, s2.x, s2.y, s2.kind == 'gumball' || s2.kind == 'fudge' ? 6 : s2.kind == 'wand' ? 4.5 : 3.5, c); } };
 const drawFx = () => { for (const f of fx) { const a = Math.min(1, f.t*2); if (f.beam) { g.strokeStyle = f.col; g.globalAlpha = a; g.lineWidth = 4; g.beginPath(); g.moveTo(f.x, f.y); g.lineTo(f.x2, f.y2); g.stroke(); g.strokeStyle = '#fff'; g.lineWidth = 1.5; g.stroke(); g.globalAlpha = 1; continue; }
@@ -501,7 +526,7 @@ const css = () => { if (document.getElementById('ss-css')) return; const s = doc
 const openPanel = p => { panel = p; renderUI(); }, closePanel = () => { panel = null; renderUI(); };
 const renderUI = () => { if (!root) return; ui.top.innerHTML = ''; ui.bot.innerHTML = ''; ui.modal.innerHTML = ''; ui.modal.style.display = 'none'; ui.modal.style.background = '';
   const top = ui.top, bot = ui.bot; top.append(B('✕ Leave', () => SS.close(), {background:'rgba(40,10,30,.8)'}));
-  if (scr == 'play') { const W = wavesOf(R.n); top.append(chip('◉ ' + fmt(R.coins) + ' Chocolate Coins'), chip('🏰 Keep ' + Math.ceil(R.keepHP) + '/' + keepMax()), chip('Wave ' + Math.min(W, R.wave + (R.phase == 'wave' ? 1 : 0)) + ' / ' + W), chip(L.name + ' · ' + R.diff[0].toUpperCase() + R.diff.slice(1)));
+  if (scr == 'play') { const W = wavesOf(R.n); ui.coinC = chip('◉ ' + fmt(R.coins) + ' Chocolate Coins'); ui.keepC = chip('🏰 Keep ' + Math.ceil(R.keepHP) + '/' + keepMax()); ui.lastC = R.coins; ui.lastK = Math.ceil(R.keepHP); top.append(ui.coinC, ui.keepC, chip('Wave ' + Math.min(W, R.wave + (R.phase == 'wave' ? 1 : 0)) + ' / ' + W), chip(L.name + ' · ' + R.diff[0].toUpperCase() + R.diff.slice(1)));
     if (R.phase == 'build') bot.append(B('▶ Start wave ' + (R.wave + 1) + ' (Space)', startWave, {fontSize:'16px', padding:'12px 22px', background:'#e4588f'}));
     bot.append(B('🏰 Keep (K)', () => openPanel({k:'keep'}), {background:'#7a2a5a'})); if (S('sorcery')) bot.append(B('✨ Storm (Q)', storm, {background:'#8a4be0'})); if (S('fudge')) bot.append(B('🍫 Flood (F)', fudgeFlood, {background:'#5a2a14'}));
     bot.append(B(cam.fit ? '🔍 Zoom in' : '🗺 Whole map', () => { cam.fit = !cam.fit; cam.z = cam.fit ? fitZ() : Math.max(fitZ()*1.6, 1); renderUI(); }, {background:'rgba(40,10,30,.8)'})); bot.append(B('⏸ (P)', () => openPanel({k:'pause'}), {background:'rgba(40,10,30,.8)'})); }
@@ -509,20 +534,23 @@ const renderUI = () => { if (!root) return; ui.top.innerHTML = ''; ui.bot.innerH
   if (scr == 'map') return mapUI(); if (scr == 'won' || scr == 'lost') return resultUI(); if (!panel) return;
   ui.modal.style.display = 'flex'; const c = E('div', {}); c.className = 'ss-card'; ui.modal.append(c); ui.modal.onclick = e => { if (e.target === ui.modal) closePanel(); };
   if (panel.k == 'spot') spotUI(c, panel.i); else if (panel.k == 'keep') keepUI(c); else if (panel.k == 'pause') pauseUI(c); else if (panel.k == 'spec') specUI(c, panel.lv); };
+// the coin and keep counters update live (coins from kills can be spent during the wave)
+const liveChips = () => { if (scr != 'play' || !R || !ui.coinC) return; if (R.coins !== ui.lastC) { ui.lastC = R.coins; ui.coinC.textContent = '◉ ' + fmt(R.coins) + ' Chocolate Coins'; } const k = Math.ceil(R.keepHP); if (k !== ui.lastK) { ui.lastK = k; ui.keepC.textContent = '🏰 Keep ' + k + '/' + keepMax(); } };
 const chip = s2 => { const d = E('div', {}, s2); d.className = 'ss-chip'; return d; };
 const row = (title, sub, btns) => { const r = E('div', {}); r.className = 'ss-row'; const l = E('div', {flex:'1 1 240px'}, E('div', {fontWeight:900, fontSize:'15px'}, title), E('div', {fontSize:'12px', fontWeight:600, color:'#7a3a5a'}, sub)); r.append(l, E('div', {display:'flex', gap:'6px', flexWrap:'wrap'}, btns)); return r; };
 const head = (c, h, s2) => { const hh = E('div', {}, h); hh.className = 'ss-h'; const ss = E('div', {}, s2); ss.className = 'ss-s'; c.append(hh, ss); };
 const statTxt = b => { const st = bStats(b); if (b.t == 'ginger') return 'Pays ' + Math.round([0, 25, 45, 75][b.lv]*(b.br == 0 ? 2.4 : b.br == 1 ? 1.6 : 1)*coinMul()) + ' coins after each wave it survives'; if (b.t == 'taffy') return 'Health ' + Math.ceil(b.hp) + '/' + bMaxHP(b) + (b.lv >= 2 || b.br == 1 ? ' · spikes hurt chewers' : '');
-  if (BT[b.t].bar) { const ty = troopType(b); return squadSize(b) + ' × ' + ty.n + ' (' + Math.round(ty.hp*(S('licorice') ? 1.2 : 1)) + ' health, ' + ty.dmg + ' damage) · back 10 s after falling'; } if (b.t == 'syrup') return 'Slow stacks in its puddle' + (b.br == 0 || S('frosted') ? ' · freezes at 3 stacks' : '') + (b.br == 1 ? ' · burns' : '');
+  if (BT[b.t].bar) { const ty = troopType(b); return squadSize(b) + ' × ' + ty.n + ' (' + Math.round(.75*ty.hp*(S('licorice') ? 1.2 : 1)) + ' health, ' + ty.dmg + ' damage) · back 10 s after falling'; } if (b.t == 'syrup') return 'Slow stacks in its puddle' + (b.br == 0 || S('frosted') ? ' · freezes at 3 stacks' : '') + (b.br == 1 ? ' · burns' : '');
   return Math.round(st.dmg*10)/10 + ' damage · ' + Math.round(st.rate*10)/10 + '/s · range ' + Math.round(st.rng) + (st.splash ? ' · splash' : '') + (st.magic ? ' · magic (pierces armor)' : '') + (st.chain ? ' · chains' : '') + (st.multi ? ' · ×' + st.multi : ''); };
 const spotUI = (c, i) => { const s2 = L.spots[i], b = bAt(i);
   if (!b) { head(c, s2.opts.length > 1 ? 'Choose a building' : 'Build here', s2.far ? 'This spot is a bit out of the way…' : s2.opts.length > 1 ? 'This spot lets you choose one of these:' : 'This spot is made for:');
     s2.opts.forEach(k => { const cst = Math.round(BT[k].cost[0]*costMul(k)); c.append(row(BT[k].n, BT[k].d, [B('Build · ' + cst + ' ◉', () => { build(i, k); closePanel(); }, {background:R.coins >= cst ? '#e4588f' : '#c8a0b0'})])); }); }
-  else if (b.rub) { const cst = Math.round(spent(b)*.5); head(c, BT[b.t].n + ' · rubble', BT[b.t].gate ? 'Taffy Gates come back by themselves at the end of every round.' : 'Rebuild it as it was (level ' + b.lv + (b.br != null ? ', ' + BT[b.t].br[b.br].n : '') + ').'); if (!BT[b.t].gate) c.append(row('Rebuild', 'Half of what you spent on it', [B('Rebuild · ' + cst + ' ◉', () => { rebuild(i); closePanel(); })])); }
+  else if (b.rub) { head(c, BT[b.t].n + ' · smashed', 'Back next wave: it returns by itself at full health when the next wave starts (level ' + b.lv + (b.br != null ? ', ' + BT[b.t].br[b.br].n : '') + (BT[b.t].bar ? ', troops too' : '') + '). Nothing to pay.'); }
   else { const T2 = BT[b.t]; head(c, (b.br != null ? T2.br[b.br].n : T2.n) + ' · level ' + (b.lv + (b.br != null ? 1 : 0)), statTxt(b) + ' · health ' + Math.ceil(b.hp) + '/' + bMaxHP(b));
     const nc = nextCost(b); if (nc != null) c.append(row('Upgrade to level ' + (b.lv + 1), 'Stronger and looks fancier', [B('Upgrade · ' + nc + ' ◉', () => { upgrade(i); renderUI(); }, {background:R.coins >= nc ? '#e4588f' : '#c8a0b0'})]));
     else if (b.br == null) T2.br.forEach((br, k) => { const cst = Math.round(br.cost*costMul(b.t)); c.append(row('Level 4: ' + br.n, br.d, [B('Choose · ' + cst + ' ◉', () => { upgrade(i, k); renderUI(); }, {background:R.coins >= cst ? '#8a4be0' : '#c8a0b0'})])); });
     if (T2.bar) c.append(row('Move the troops', 'They guard the spot where your Sugar Sorcerer is standing (close to the barracks)', [B('Rally here', () => { const d2 = Math.hypot(hero.x - s2.px, hero.y - s2.py); if (d2 > 190) { say('Walk your Sugar Sorcerer closer to the barracks first'); sfx('bad'); return; } b.rally = {x:hero.x, y:hero.y}; sfx('blip'); save(); closePanel(); })]));
+    { const rc = repairCost(b); if (rc > 0) c.append(row('Repair', 'Back to full health (' + Math.ceil(b.hp) + '/' + bMaxHP(b) + ')', [B('Repair · ' + rc + ' ◉', () => { repair(i); renderUI(); }, {background:R.coins >= rc ? '#3aa36a' : '#c8a0b0'})])); }
     c.append(row('Sell', 'Get back 60%', [B('Sell · ' + Math.round(spent(b)*.6) + ' ◉', () => { sell(i); closePanel(); }, {background:'#7a5a6a'})])); }
   c.append(E('div', {textAlign:'right', marginTop:'8px'}, B('Close', closePanel, {background:'#7a2a5a'}))); };
 const keepUI = c => { const lv = R.keepLv; head(c, 'The Sugar Keep · level ' + lv + ' / 5', 'Health ' + Math.ceil(R.keepHP) + '/' + keepMax() + '. Every keep level makes the keep, your troops and your wand a bit stronger, and lets you pick a specialization.');
@@ -588,12 +616,12 @@ const pmove = e => { const p = ptrs.get(e.pointerId); if (!p) return; p.x = e.cl
 const pup = e => { const p = ptrs.get(e.pointerId); ptrs.delete(e.pointerId); if (ptrs.size < 2) pinch = null; if (!p) return; const moved = Math.hypot(p.x - p.sx, p.y - p.sy) > 12;
   if (joy && joy.id == e.pointerId) { const was = joy.moved; joy = null; if (was) return; } if (!moved && performance.now() - p.t < 450) tapAt(e.clientX, e.clientY); };
 const wheel = e => { if (scr != 'play') return; e.preventDefault(); cam.z = clamp(cam.z*(e.deltaY < 0 ? 1.12 : 1/1.12), fitZ(), 3); cam.fit = cam.z <= fitZ() + .001; };
-const loop = now => { raf = requestAnimationFrame(loop); if (document.hidden) { last = now; return; } const dt = Math.min(.05, (now - (last || now))/1000); last = now; try { update(dt); draw(); } catch (err) { console.error('[sugar siege]', err); } };
+const loop = now => { raf = requestAnimationFrame(loop); if (document.hidden) { last = now; return; } const dt = Math.min(.05, (now - (last || now))/1000); last = now; try { update(dt); draw(); liveChips(); } catch (err) { console.error('[sugar siege]', err); } };
 SS.open = a => { api = a || {}; if (root) return; load(); css(); root = E('div', {}); root.className = 'ss-root'; cv = E('canvas', {position:'absolute', inset:0}); g = cv.getContext('2d'); root.append(cv);
   ui.top = E('div', {}); ui.top.className = 'ss-bar'; ui.bot = E('div', {}); ui.bot.className = 'ss-bot'; ui.modal = E('div', {}); ui.modal.className = 'ss-modal'; root.append(ui.top, ui.bot, ui.modal); document.body.append(root);
   resize(); window.addEventListener('resize', resize); window.addEventListener('keydown', onKey, true); window.addEventListener('keyup', onKey, true); cv.addEventListener('pointerdown', pdown); window.addEventListener('pointermove', pmove); window.addEventListener('pointerup', pup); window.addEventListener('pointercancel', pup); cv.addEventListener('wheel', wheel, {passive:false});
   scr = 'map'; panel = null; mood(); renderUI(); if (SV.run) levelCard(SV.run.n); last = 0; raf = requestAnimationFrame(loop); };
 SS.close = () => { if (!root) return; if (scr == 'play' && R) { SV.run = R.phase == 'wave' && R.snap ? {...R.snap, reload:1} : {...R, snap:null}; save(); } cancelAnimationFrame(raf); window.removeEventListener('resize', resize); window.removeEventListener('keydown', onKey, true); window.removeEventListener('keyup', onKey, true); window.removeEventListener('pointermove', pmove); window.removeEventListener('pointerup', pup); window.removeEventListener('pointercancel', pup);
   root.remove(); root = null; keys = {}; joy = null; try { window.WLMusic && window.WLMusic.mood('floor'); } catch (e) {} if (api && api.closed) api.closed(); };
-SS._dbg = () => ({get L() { return L; }, get R() { return R; }, get SV() { return SV; }, get enemies() { return enemies; }, get troops() { return troops; }, get hero() { return hero; }, get boss() { return boss; }, update, startLevel, startWave, build, upgrade, spawnEnemy, spawnBoss, field, genLevel, tapAt, openPanel, panel:() => panel, scr:() => scr, FN:() => FN, SCORE_MAX, LV_MAX, wavesOf, setScr:v => { scr = v; renderUI(); }, renderUI, fudgeFlood, storm, keepMax, save, total});
+SS._dbg = () => ({get L() { return L; }, get R() { return R; }, get SV() { return SV; }, get enemies() { return enemies; }, get troops() { return troops; }, get hero() { return hero; }, get boss() { return boss; }, update, startLevel, startWave, build, upgrade, spawnEnemy, spawnBoss, field, genLevel, tapAt, openPanel, panel:() => panel, scr:() => scr, FN:() => FN, SCORE_MAX, LV_MAX, wavesOf, setScr:v => { scr = v; renderUI(); }, renderUI, fudgeFlood, storm, keepMax, save, total, breakB, hurtB, endWave, killE, bMaxHP, repair, repairCost, exZone, hurtHero, ui:() => ui, BOSSES});
 })();

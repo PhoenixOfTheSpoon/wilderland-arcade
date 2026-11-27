@@ -9,7 +9,8 @@ const el = (tag, at, ...kids) => { const n = document.createElement(tag); at = a
   kids.flat().forEach(c => { if (c == null || c === false) return; n.appendChild(typeof c == 'object' ? c : document.createTextNode(String(c))); }); return n; };
 
 // ---------------- What's new ----------------
-const WN = {v:'2026-12-14f', items:[
+const WN = {v:'2026-12-14j', items:[
+  ['🍭', 'Sugar Siege: fixes and a lot harder', 'Smashed buildings now come back by themselves at full health next wave (same level, same branch, free). Coins from defeated enemies show up right away and can be spent during the wave, and you can repair damaged buildings. The Broccoli Army is tougher: bigger waves, golden elite enemies from wave 4, Brutes and Avocado Tanks smash towers, Carrot Casters hunt the Sugar Sorcerer (2 hearts now), and every boss has a new attack. Easy stays gentle.'],
   ['💥', 'Way more Snow Kingdom damage', 'Your gear now raises snowball damage in the Snow Kingdom and raids: every equipped piece adds to it, and better grades and + levels add more (see 💥 Gear damage in Loadout). Plain snowballs no longer do half damage to bosses, stunned bosses take ×3, and Frost Guards only cut damage to 70%.'],
   ['⚔️', 'Bigger raid rewards', 'Raids now give about 3–4× the Frost Crystals, snowflakes and Raid Tokens, every clear drops a set piece, and the weekly chest is 3× bigger.'],
   ['🔥', 'Fusing goes past Snow, forever', 'Fuse 3 Snow pieces into ✦ Celestial, 3 Celestial into 🔥 Phoenix, then Phoenix +1, +2, +3… with no limit. Fusing now refunds every snowflake and Frost Crystal you spent on the + levels of the pieces you fused.'],
