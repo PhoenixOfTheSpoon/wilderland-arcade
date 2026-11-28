@@ -191,7 +191,7 @@ A.snowWorld = function(X) {
   const CAMPX = px({x:50, y:88}), FIRE = px({x:50, y:86}), PIP = px({x:46, y:84}), TENT = px({x:54, y:89}), THRONE = px({x:50, y:82});
   const LAIR = {grumble:px(LM.forest), icefang:px(LM.lake), crystal:px(LM.caves), rufus:px(LM.pass), loki:px(LM.castle)};
   const MAUCAGE = {x:LAIR.rufus.x, y:LAIR.rufus.y - 84}, BAUCAGE = {x:LAIR.loki.x, y:LAIR.loki.y - 120};
-  let SG = null; const inRealm = () => !!(SG && SG.cur && SG.cur()); const RMOD = k => { const m = SG && SG.raidMods ? SG.raidMods() : (raid ? raid.mods : null); return m ? m.find(q => q[k]) : null; }, rOn = () => !!(raid || (SG && SG.raidOn && SG.raidOn()));
+  let SG = null, PH = null; const inRealm = () => !!(SG && SG.cur && SG.cur()); const RMOD = k => { const m = SG && SG.raidMods ? SG.raidMods() : (raid ? raid.mods : null); return m ? m.find(q => q[k]) : null; }, rOn = () => !!(raid || (SG && SG.raidOn && SG.raidOn()));
   const tileAt = (tx, ty) => tx < 0 || ty < 0 || ty >= N ? ROCK : tx >= N ? (tx < N + 40 ? RM[ty*40 + tx - N] : SG ? SG.tile(tx, ty) : ROCK) : M[ty*N + tx];
   const runesN = () => ['forest', 'lake', 'caves'].filter(k => W.runes[k]).length;
   const gateOpen = () => runesN() >= 3 && !!W.mau;
@@ -420,7 +420,8 @@ A.snowWorld = function(X) {
   const hurtBoss = (dmg, src) => { const B = boss; if (!B) return; if (B.mk && A.dumpMech) dmg = A.dumpMech.onHit(B, dmg, src);   // Dumpling mechanics: ice shield, beam struggle
     // punish windows: big damage only while STUNNED; plain (uncharged) snowball spam does half; Frost Guards cut damage until they break
     if (!isRB(B)) { const me = src && src.mine && !src.team; if (B.stunT > 0) dmg *= me ? 3 : 1.5; else if (guardsUp()) dmg *= .7;
-      if (me) addStg(B, (src.chg >= .5 ? 8 + 14*src.chg : 1.2) + (B.q && B.q.length ? 6 : 0)); }
+      const R0 = PH && PH.hit(B, dmg, src);   /* every phase staggers its own way + the variety bonus (snow-phases.js) */
+      if (R0) { dmg = R0.dmg; if (R0.stg) addStg(B, R0.stg); } else if (me) addStg(B, (src.chg >= .5 ? 8 + 14*src.chg : 1.2) + (B.q && B.q.length ? 6 : 0)); }
     if (SG && B.saga && SG.hurtBoss(B, dmg)) return; if (B.fetch && B.fetch.t > 0) dmg *= 2; B.hp -= dmg; W.bhp = W.bhp || {}; W.bhp[B.k] = Math.max(0, B.hp); W.bhm = W.bhm || {}; W.bhm[B.k] = B.max; B.flash = .1; addNum(B.x + (Math.random() - .5)*30, B.y - B.r - 10, '-' + nfmt(dmg), '#FF4539');
     if (B.fetch && B.fetch.t > 0) dmg *= 1;   // (fetching doubles damage, applied by the caller below)
     const ph = phOf(B.hp, B.max, B.phases || 3);
@@ -448,6 +449,7 @@ A.snowWorld = function(X) {
     save(); };
   const bossAI = (B, dt) => { const ph = B.ph, d = dist(B, p), ang = Math.atan2(p.y - B.y, p.x - B.x), sp1 = 1 + .25*(ph - 1); B.t += dt; B.cd -= dt; B.flash = Math.max(0, B.flash - dt); B.talkT = Math.max(0, B.talkT - dt);
     const walk = (tx, ty, spd) => { const a = Math.atan2(ty - B.y, tx - B.x), nx = B.x + Math.cos(a)*spd*dt, ny = B.y + Math.sin(a)*spd*dt; if (Math.hypot(nx - B.hx, ny - B.hy) < 260 && !blocked(nx, ny, 18)) { B.x = nx; B.y = ny; } };
+    if (PH && PH.preAI(B, dt)) return;
     if (BOSS[B.k] && BOSS[B.k].brain && SG) { SG.bossAI(B, dt, ph, ang, d); return; }
     if (B.k == 'chao' || BOSS[B.k].ai) (B.k == 'chao' ? chaoAI : genericAI)(B, dt, ph, ang, d);
     else if (B.k == 'grumble') { walk(p.x, p.y, 34);
@@ -1187,7 +1189,7 @@ A.snowWorld = function(X) {
     if (!boss) for (const k in LAIR) { if (RAIDS.some(R0 => R0.mini == k || R0.boss == k)) continue;   /* raid bosses only appear through the raid itself (they used to wake up again right after dying) */
       if (BOSS[k] && BOSS[k].saga) { if (!SG || !SG.bossReady(k)) continue; if (!dlg && dist(p, LAIR[k]) < (BOSS[k].wake || 380)) { spawnBoss(k); break; } continue; } if (bossDone(k)) continue; if (k == 'loki' && !gateOpen()) continue; if ((BOSS[k].ai || k == 'chao') && !storyReady(k)) continue; if (dlg) break; if (dist(p, LAIR[k]) < 380) { spawnBoss(k); break; } }
     if (fx2() && !raid && !inRealm()) FX.update(dt, true); if (kn2()) KN.update(dt);
-    thrTick(dt); bossFire(); if (boss) { if (boss.stunT > 0) { boss.stunT -= dt; boss.t += dt; if (dist(p, {x:boss.hx, y:boss.hy}) > 1150) bossAI(boss, 0); } else bossAI(boss, dt*(isRB(boss) ? 1 : tm('spd'))); if (boss) exUpdate(boss, dt); } hazUpdate(dt); if (thrBanner) { thrBanner.t -= dt; if (thrBanner.t <= 0) thrBanner = null; }
+    if (PH && boss) PH.tick(dt); thrTick(dt); bossFire(); if (boss) { if (boss.stunT > 0) { boss.stunT -= dt; boss.t += dt; if (dist(p, {x:boss.hx, y:boss.hy}) > 1150) bossAI(boss, 0); } else bossAI(boss, dt*(isRB(boss) ? 1 : tm('spd'))); if (boss) exUpdate(boss, dt); } hazUpdate(dt); if (thrBanner) { thrBanner.t -= dt; if (thrBanner.t <= 0) thrBanner = null; }
     // Loki's minions roam the land (never inside camp)
     spawnT -= dt; const cap = A.D(6, 8, 10); if (spawnT <= 0 && rg != 'camp' && !REG[rg].safe) { spawnT = 1.1; if (foes.length < cap && !boss) for (let k3 = 0; k3 < 6; k3++) { const a = Math.random()*TAU, r2 = 430 + Math.random()*260, sx = p.x + Math.cos(a)*r2, sy = p.y + Math.sin(a)*r2, rr2 = regAt(sx, sy);
         if (inRealm() ? !SG.inside(sx, sy) : (sx < TS*2 || sy < TS*2 || sx > WORLD - TS*2 || sy > WORLD - TS*2) || rr2 == 'camp' || M[Math.floor(sy/TS)*N + Math.floor(sx/TS)] == CAMP || REG[rr2].safe || (rr2 == 'oldroad' && Math.random() < .5) || blocked(sx, sy, 16) || (!spiritsOpen() && Math.floor(sx/TS) >= N0 && sy < N0*TS) || Math.hypot(sx - FIRE.x, sy - FIRE.y) < 600) continue; const pool = REG[rr2].pool; let pk = pool[Math.floor(Math.random()*pool.length)]; if (FOE[pk].rare && Math.random() < .85) pk = pool[0]; spawnFoe(pk, sx, sy); break; } }
@@ -1498,7 +1500,7 @@ A.snowWorld = function(X) {
     for (const sk of sticks) if (onScreen(sk.x, sk.y)) { g.save(); g.translate(sk.x, sk.y); g.rotate(.4); g.fillStyle = '#8D5B1D'; rr(g, -12, -2.5, 24, 5, 2.5); g.fill(); g.fillRect(2, -7, 2.5, 6); g.restore(); if (!low()) { g.strokeStyle = 'rgba(249,191,1,' + (.4 + .3*Math.sin(t*5)) + ')'; g.lineWidth = 2; g.beginPath(); g.arc(sk.x, sk.y, 16, 0, TAU); g.stroke(); } }
     if (W.mau && mau.sniff && !W.snacks[mau.sniff.id] && onScreen(mau.sniff.x, mau.sniff.y)) { const sn = mau.sniff; g.font = '18px ' + A.font; g.textAlign = 'center'; g.fillText(sn.e, sn.x, sn.y + 6); g.fillStyle = '#F9BF01'; g.font = '900 18px ' + A.font; g.fillText('!', sn.x, sn.y - 18 + Math.sin(t*6)*3); }
     if (tornado) SC.tornado(g, tornado.x, tornado.y, tornado.r, t, low());
-    storyDraw(); p3Draw(); sqDraw(); if (SG) SG.drawWorld(); if (FX && !raid && !inRealm()) FX.drawWorld(g, t); if (KN) KN.drawOver(g);
+    storyDraw(); p3Draw(); sqDraw(); if (SG) SG.drawWorld(); if (PH) PH.drawWorld(); if (FX && !raid && !inRealm()) FX.drawWorld(g, t); if (KN) KN.drawOver(g);
     // characters, back to front (name tags are placed afterwards so they never overlap)
     const tags = [];
     const ents = foes.filter(f => onScreen(f.x, f.y)).map(f => ({y:f.y, d:() => { drawFoe(f); g.globalAlpha = 1; if (f.elite) eliteMark(f); }}));
@@ -1540,7 +1542,7 @@ A.snowWorld = function(X) {
     // darker caves and castle, with light around you
     const rg = regAt(p.x, p.y); if ((rg == 'caves' || (rg == 'castle' && tileAt(Math.floor(p.x/TS), Math.floor(p.y/TS)) == FLOOR)) && !low()) { const gr = g.createRadialGradient(p.x - cam.x, p.y - cam.y, 90, p.x - cam.x, p.y - cam.y, 420); gr.addColorStop(0, 'rgba(10,15,40,0)'); gr.addColorStop(1, 'rgba(10,15,40,.5)'); g.fillStyle = gr; g.fillRect(0, 0, VW, VH); }
     if (sqNightF) { g.fillStyle = 'rgba(8,16,48,.38)'; g.fillRect(0, 0, VW, VH); }
-    if (SG) SG.drawScreen(); if (FX && !raid && !inRealm()) { FX.drawScreen(g, t, VW, VH, touchUI); if (touchUI && !mapOpen && !panel && !dlg) FX.drawTouch(g, VW, BAR); }
+    if (SG) SG.drawScreen(); if (PH) PH.drawScreen(); if (FX && !raid && !inRealm()) { FX.drawScreen(g, t, VW, VH, touchUI); if (touchUI && !mapOpen && !panel && !dlg) FX.drawTouch(g, VW, BAR); }
     { const H2 = REG[rg] && REG[rg].haunt && !rOn(), night = rOn() ? 0 : nightAmt();   /* raids are indoors: no night sky */ if (H2 || night > .05) { const a2 = Math.max(night*.42, H2 ? (H2 == 2 && (W.sp|0) < 6 ? .5 : .32) : 0); const gr = g.createRadialGradient(p.x - cam.x, p.y - cam.y, 110, p.x - cam.x, p.y - cam.y, Math.max(VW, VH)*.7); gr.addColorStop(0, 'rgba(10,20,50,' + a2*.35 + ')'); gr.addColorStop(1, 'rgba(10,20,50,' + a2 + ')'); g.fillStyle = gr; g.fillRect(0, 0, VW, VH); }
       if (night > .4 && !low()) { for (let b = 0; b < 3; b++) { const yb = 30 + b*26; g.fillStyle = 'rgba(' + ['80,255,190', '120,200,255', '200,140,255'][b] + ',' + (.08 + .06*Math.sin(t*.7 + b))*night + ')'; g.beginPath(); g.moveTo(0, yb); for (let xx = 0; xx <= VW; xx += 40) g.lineTo(xx, yb + Math.sin(xx*.01 + t*.5 + b)*18); g.lineTo(VW, yb + 40); for (let xx = VW; xx >= 0; xx -= 40) g.lineTo(xx, yb + 40 + Math.sin(xx*.012 + t*.4 + b)*14); g.fill(); } }
       if (H2 && !low()) { g.fillStyle = 'rgba(180,230,255,.7)'; for (let i = 0; i < 14; i++) { const sx = (i*173 + t*12 - cam.x*.2) % VW, sy = (i*97 + Math.sin(t + i)*30 - cam.y*.2) % VH; g.beginPath(); g.arc((sx + VW) % VW, (sy + VH) % VH, 2 + (i % 3), 0, TAU); g.fill(); } }
@@ -1568,6 +1570,7 @@ A.snowWorld = function(X) {
     if (boss && SG && BOSS[boss.k] && BOSS[boss.k].bar) SG.drawBar(boss, TY);
     else if (boss) { const bw = Math.min(440, VW - 280), bx = VW/2 - bw/2, by = TY + 70; g.fillStyle = 'rgba(0,0,0,.35)'; rr(g, bx, by, bw, 14, 7); g.fill(); const np = boss.phases || 3; g.fillStyle = boss.ph >= np ? '#8a0000' : boss.ph >= 2 ? '#ff6a3c' : '#FF4539'; rr(g, bx, by, bw*Math.max(0, boss.hp)/boss.max, 14, 7); g.fill(); g.fillStyle = '#fff'; for (let i = 1; i < np; i++) g.fillRect(bx + bw*i/np, by, 2, 14);
       g.font = '800 12px ' + A.font; g.textAlign = 'center'; const bl = boss.n + ' · phase ' + boss.ph + '/' + np + (boss.phn ? ' · ' + boss.phn : ''); const tw = g.measureText(bl).width + 16; g.fillStyle = 'rgba(255,255,255,.85)'; rr(g, VW/2 - tw/2, by + 17, tw, 18, 9); g.fill(); g.fillStyle = '#14204a'; g.fillText(bl, VW/2, by + 30); }
+    if (PH && boss) PH.drawHud(TY);
     if (msgT > 0 && !dlg) { g.font = '700 13px ' + A.font; const tw = Math.min(VW - 30, g.measureText(msg).width + 30); g.fillStyle = 'rgba(20,32,74,.88)'; rr(g, VW/2 - tw/2, VH - 84, tw, 34, 12); g.fill(); g.fillStyle = '#fff'; g.textAlign = 'center'; wrapClip(msg, VW/2, VH - 62, VW - 50); }
     if (dead > 0) { g.fillStyle = 'rgba(230,240,255,' + Math.min(.9, (1.8 - dead)*.8) + ')'; g.fillRect(0, 0, VW, VH); }
     // dialogue box
@@ -1617,6 +1620,7 @@ A.snowWorld = function(X) {
   const adm = {
     kindled:() => { const ks = ['k_imp', 'k_hound', 'k_bat', 'k_wraith', 'k_golem', 'k_moth', 'k_cult', 'k_wisp']; ks.forEach((k, i) => { const a = i/ks.length*TAU; spawnFoe(k, p.x + Math.cos(a)*260, p.y + Math.sin(a)*260); }); say('Admin: the Kindled appear (one of each)', 2); },
     wild:() => { ['w_wolf', 'w_eagle', 'w_serpent', 'w_crab', 'w_lurker', 'w_elk'].forEach((k, i) => { const a = i/6*TAU; spawnFoe(k, p.x + Math.cos(a)*280, p.y + Math.sin(a)*280); }); say('Admin: wild creatures appear (one of each)', 2); },
+    bossPhase:n => PH ? PH.adm.phase(n) : 0, phDbg:() => PH ? PH.adm.dbg() : 0, phState:() => PH ? PH.adm.state() : null,
     forgemax:n => { W.base.rooms.forgemax = Math.max(0, Math.min(12, n|0)); save(); X.savePerm && X.savePerm(); say('Admin: 🔥 Forge Max level ' + (n|0), 2); },
     keeps:(c, v) => { if (SG && SG.keepAdm) return SG.keepAdm(c, v); say('Admin: keeps are not loaded', 2); },
     lit:(c, v) => { if (SG && SG.litAdm) return SG.litAdm(c, v); say('Admin: the Lit story is not loaded', 2); },
@@ -1653,6 +1657,7 @@ A.snowWorld = function(X) {
       get holdMates() { return holdMates; }, set holdMates(v) { holdMates = v; }, lball:() => lballLure(), get quiz() { return quiz; }, set quiz(v) { quiz = v; }, get lastReg() { return lastReg; }, set lastReg(v) { lastReg = v; }};
     Object.keys(BOSS).forEach(k => { if (BOSS[k].saga && !LAIR[k]) LAIR[k] = {x:-1e6, y:-1e6}; });
     try { SG = A.snowSaga(S); } catch (e) { console.error('[saga] failed to start', e); SG = null; }
+    if (A.snowPhases) { try { PH = A.snowPhases(Object.assign(Object.create(S), {stgNeed, stunB, isRB, addStg})); } catch (e) { console.error('[phases] failed to start', e); } }
     if (A.snowLit) { try { SG = A.snowLit(S, SG); } catch (e) { console.error('[lit] failed to start', e); } }   // THE BURNING WINTER: Lit story (snow-lit.js)
     if (A.snowKeeps) { try { SG = A.snowKeeps(S, SG); } catch (e) { console.error('[keeps] failed to start', e); } }   // THE BURNING WINTER: keeps & outposts (snow-keeps.js)
     if (A.snowRaids) { try { SG = A.snowRaids(S, SG); } catch (e) { console.error('[raids] failed to start', e); } } }

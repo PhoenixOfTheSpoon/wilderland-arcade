@@ -1022,6 +1022,8 @@ A.register('snowball', { mount(host, api){
     {label:'Kingdom: base level rewards can be earned again', run:() => { if (!wm) openWorld(); wm && wm.adm.mileReset(); }},
     {label:'Kingdom: spawn the Kindled (one of each)', run:() => { if (!wm) openWorld(); wm && wm.adm.kindled(); }},
     {label:'Kingdom: spawn the wild creatures (one of each)', run:() => { if (!wm) openWorld(); wm && wm.adm.wild(); }},
+    {label:'Kingdom: ⚔ Jump the current boss to phase (1-10)', num:1, min:1, max:10, run:n => { if (!wm) openWorld(); wm && wm.adm.bossPhase(n); }},
+    {label:'Kingdom: 🔍 Show boss stagger method + variety penalty', run:() => { if (!wm) openWorld(); wm && wm.adm.phDbg(); }},
     {label:'Kingdom: 🔥 Set Forge Max level (0-12)', num:12, min:0, max:12, run:n => { if (!wm) openWorld(); wm && wm.adm.forgemax(n); }},
     {label:'Kingdom: 🏰 Keeps: list (numbers for the next buttons)', run:() => { if (!wm) openWorld(); wm && wm.adm.keeps('list'); }},
     {label:'Kingdom: 🏰 Go to keep (1-8)', num:1, min:1, max:8, run:n => { if (!wm) openWorld(); wm && wm.adm.keeps('tp', n); }},
