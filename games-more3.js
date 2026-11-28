@@ -656,6 +656,8 @@ A.register('snowball', { mount(host, api){
           fz.appendChild(B('Fuse 3 ' + gr(r).n + ' ' + GSLOT[sl].e + ' → ' + gr(r + 1).n, () => { const use = spare.slice(0, 3), wasEq = use.some(x => PERM.eq[sl] == x.id), rf = payRefund(fuseRefund(use)); PERM.gear = PERM.gear.filter(x => !use.includes(x)); const e0 = PERM.eq[sl], it = makeGear(r + 1, sl); it.rar = r + 1; if (wasEq) PERM.eq[sl] = it.id; else if (e0 != null) PERM.eq[sl] = e0; savePerm(); A.sfx('win'); fmsg = '✨ Fused into ' + it.name + ' (' + gr(it.rar).n + ')' + rf; openPanel('loadout'); }, '#00B451')); } });
         if (!fz.children.length) fz.appendChild(el('div', {font:'500 11px '+A.font, color:'#8fb9c9'}, 'Nothing to fuse yet.'));
         else fz.prepend(B('⚡ Fuse ALL the way up', () => { const R2 = fuseAllCore(); savePerm(); A.sfx('win'); fmsg = '⚡ ' + R2.n + ' fusion' + (R2.n == 1 ? '' : 's') + (R2.top >= 0 ? ' · best result: ' + gr(R2.top).n : '') + R2.rf; openPanel('loadout'); }, '#F9BF01', '#14204a'));
+        if (PERM.ow && PERM.ow.fx && PERM.ow.fx.frost) { const fc2 = 30, okF = PERM.frost >= fc2; fr.appendChild(el('div', {font:'600 12px '+A.font, color:'#9fe8ff'}, '❄ Frostforged Snowballs: packed with Frost Crystals, they last much longer in heat (used up automatically when you throw into heat). You have ' + (PERM.ffb|0) + '.'));
+          fr.appendChild(B('Craft 10 Frostforged · ' + fc2 + ' 🔷', () => { if (!okF) { A.sfx('bad'); return; } PERM.frost -= fc2; PERM.ffb = (PERM.ffb|0) + 10; savePerm(); A.sfx('coin'); fmsg = '❄ +10 Frostforged Snowballs'; openPanel('loadout'); }, okF ? '#3f8fd8' : 'rgba(255,255,255,.1)')); }
         if (fmsg) { fr.appendChild(el('div', {font:'800 13px '+A.font, color:'#D5F367'}, fmsg)); fmsg = ''; } }
       Object.keys(GSLOT).forEach(sl => { const S2 = GSLOT[sl], cur = eqd(sl), r = card(); r.appendChild(el('div', {font:'800 15px '+A.font}, S2.e + ' ' + S2.n + ' · ' + S2.stat));
         const items = PERM.gear.filter(x => x.slot == sl).sort((a, b) => b.rar - a.rar || b.lv - a.lv); if (!items.length) r.appendChild(el('div', {font:'500 12px '+A.font, color:'#8fb9c9'}, 'No ' + S2.n.toLowerCase() + ' yet: gear drops from bosses and every few waves.'));
@@ -1012,6 +1014,9 @@ A.register('snowball', { mount(host, api){
     {label:'Kingdom: set base level (1-12)', num:12, min:1, max:12, run:n => { if (!wm) openWorld(); wm && wm.adm.baseLv(n); }},
     {label:'Kingdom: set every open room to level (0-12, up to base level)', num:12, min:0, max:12, run:n => { if (!wm) openWorld(); wm && wm.adm.roomLv(n); }},
     {label:'Kingdom: base level rewards can be earned again', run:() => { if (!wm) openWorld(); wm && wm.adm.mileReset(); }},
+    {label:'Kingdom: 🔥 start fires around me', run:() => { if (!wm) openWorld(); wm && wm.adm.fireHere(); }},
+    {label:'Kingdom: 💧 put out all fires', run:() => { if (!wm) openWorld(); wm && wm.adm.fireOut(); }},
+    {label:'Kingdom: ❄ unlock all fire tools (+50 Frostforged)', run:() => { if (!wm) openWorld(); wm && wm.adm.fireTools(); }},
     {label:'Kingdom: Threat · force a tier (0 Calm 1 Rising 2 Fierce 3 Savage 4 Brutal 5 Dire 6 Mythic 7 Wilderland · -1 = follow gear) and show Gear Score', num:-1, min:-1, max:7, run:n => { if (!wm) openWorld(); wm && wm.adm.threat(n); }},
     {label:'Kingdom: hearts after a boss-fight knockout (%)', num:50, min:1, max:100, run:n => { if (!wm) openWorld(); wm && wm.adm.koPct(n); }},
     {label:'Kingdom: reset a boss to full health (0 = all bosses · number from the boss list in the Snow Kingdom admin message)', num:0, min:0, max:200, run:n => { if (!wm) openWorld(); if (wm) { if (n > 0) wm.adm.bossReset(n); else wm.adm.bossReset(0); } }},

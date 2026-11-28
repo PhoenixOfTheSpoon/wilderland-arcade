@@ -9,7 +9,8 @@ const el = (tag, at, ...kids) => { const n = document.createElement(tag); at = a
   kids.flat().forEach(c => { if (c == null || c === false) return; n.appendChild(typeof c == 'object' ? c : document.createTextNode(String(c))); }); return n; };
 
 // ---------------- What's new ----------------
-const WN = {v:'2026-12-14t', items:[
+const WN = {v:'2026-12-14u', items:[
+  ['🔥', 'Fire vs Frost is ready (for what is coming…)', 'The Snow Kingdom now knows fire: heat melts snowballs in flight, fires spread through trees and wooden houses near you and leave ash, and Mau Mau sits on small fires. Five frost tools are ready for the story to hand you: Frostforged Snowballs, the Cold Lantern (L), the Blizzard Bomb (Z), the Snow Pump (hold R) and Frozen Heart (N). Nothing burns while you are away, and Camp Cocoa never burns.'],
   ['🗺', 'The Snow Kingdom is 4× bigger', 'The map now stretches east and south: Pinecrest Hollow, Mirrormere (skate the giant frozen lake), Northwatch Cliffs, Ravenwatch Woods, Ember Springs, Starlight Tundra, Old Mill Marsh and Shiverstone Quarry, plus two new villages, Pinecrest Village and Emberford, each with a shop, an inn (rest to wake up there) and a quest board with 3 daily jobs. Find 60 new chests, 16 lore notes, 8 viewpoints that reveal the map, 8 new waystones and the Expedition Gates. Everything you had stays exactly where it was.'],
   ['⚒️', 'Mass forging', 'The Forge (Snowball → Loadout) can now forge many pieces at once: pick ×1, ×10, ×50, ×250 or MAX, for one slot or across ALL slots. Auto-fuse (on by default) fuses as it forges, so your bag never throws good gear away. The top grade is now Phoenix +12.'],
   ['⏳', 'Endless Dungeon rebalanced', 'Rewards now grow 30% every floor instead of doubling (doubling handed out billions). Every floor has golden hourglasses: grab one for +12 seconds.'],
