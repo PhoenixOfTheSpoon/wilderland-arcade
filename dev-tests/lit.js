@@ -52,8 +52,8 @@ const L = require('./lib.js');
  ok('Ch5 done → keeps teaser, three regions scorched', s.ch == 6 && !s.k, [s, await D('return SG.litAdm("state").L.sc')]);
  // scorched lands: Kindled spawn and healing
  await D('d.p.x = 185*48; d.p.y = 195*48; d.foes().length = 0;'); await tick(300);
- const kn = await D('return d.foes().filter(f => window.Arcade._snowT.FOE[f.k].kx).length'); ok('Kindled roam scorched Ember Springs', kn > 0, kn);
- const rs = await D('const r0 = SG.litAdm("state").L.rs.ember | 0; d.foes().filter(f => window.Arcade._snowT.FOE[f.k].kx).forEach(f => d.p3.hurtFoeT(f, 1e6, {})); for (let i = 0; i < 5; i++) d.update(.05); return [r0, SG.litAdm("state").L.rs.ember]'); ok('beating Kindled heals the land', rs[1] > rs[0], rs);
+ const kn = await D('return d.foes().filter(f => f.k.slice(0, 2) == "k_").length'); ok('Kindled roam scorched Ember Springs', kn > 0, kn);
+ const rs = await D('const r0 = SG.litAdm("state").L.rs.ember | 0; d.foes().filter(f => f.k.slice(0, 2) == "k_").forEach(f => d.p3.hurtFoeT(f, 1e6, {})); for (let i = 0; i < 5; i++) d.update(.05); return [r0, SG.litAdm("state").L.rs.ember]'); ok('beating Kindled heals the land', rs[1] > rs[0], rs);
  await D('SG.litAdm("state").L.rs.ember = 29; d.p3.spawnFoe("k_imp", d.p.x + 100, d.p.y); d.update(.05); const f = d.foes().find(q => q.k == "k_imp"); d.p3.hurtFoeT(f, 1e6, {}); for (let i = 0; i < 5; i++) d.update(.05);');
  ok('Ember Springs healed at 30', (await D('return SG.litAdm("state").L.rd.ember')) == 1);
  await p.waitForTimeout(200); await p.screenshot({path:__dirname + '/lit-scorch.png'});

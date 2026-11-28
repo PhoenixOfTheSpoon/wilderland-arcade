@@ -132,7 +132,7 @@ A.snowLit = (S, SG0) => {
   const scorched = r => L.sc[r] && !L.rd[r];
   const heal = (r, n) => { if (!scorched(r)) return; L.rs[r] = (L.rs[r] || 0) + n; if (L.rs[r] >= 30) { L.rd[r] = 1; S.give({frost:200}); S.cheerT = 2; S.say('🌨 ' + RN[r] + ' is HEALED! Clean snow falls again · +200 🔷', 4); } S.save(); };
   const track = () => { const F = FX(), cur = new Set(F ? F.fires() : []); for (const f of prevF) if (!cur.has(f) && f.out) heal(rk(f.x, f.y), 1); prevF = cur;
-    const kn = new Set(S.foes.filter(f => S.FOE[f.k] && S.FOE[f.k].kx)); for (const f of prevK) if (!kn.has(f) && (f.hp <= 0 || f.dead)) heal(rk(f.x, f.y), 2); prevK = kn; return cur; };
+    const kn = new Set(S.foes.filter(f => f.k.slice(0, 2) == 'k_')); for (const f of prevK) if (!kn.has(f) && (f.hp <= 0 || f.dead)) heal(rk(f.x, f.y), 2); prevK = kn; return cur; };
   const near = (P, r) => Math.hypot(p.x - P.x, p.y - P.y) < r;
   const ringOpen = (P, r0, r1) => { for (let i = 0; i < 20; i++) { const a = Math.random()*TAU, r = r0 + Math.random()*(r1 - r0), x = P.x + Math.cos(a)*r, y = P.y + Math.sin(a)*r, tx = Math.floor(x/TS), ty = Math.floor(y/TS), v = S.tileAt(tx, ty);
       if (v != T.WATER && v != T.DEEP && v != T.HOLE && !S.solidAt(x, y)) return {x, y, tx, ty}; } return null; };
@@ -148,7 +148,7 @@ A.snowLit = (S, SG0) => {
   // ---------- scorched lands: Kindled, embers, ash ----------
   let spT = 6, igT = 15;
   const scorchTick = dt => { const r = rk(p.x, p.y); if (!scorched(r) || S.boss || (S.REG[S.regAt(p.x, p.y)] || {}).safe) return;
-    spT -= dt; if (spT <= 0) { spT = 9 + Math.random()*5; const n = S.foes.filter(f => S.FOE[f.k] && S.FOE[f.k].kx && Math.hypot(f.x - p.x, f.y - p.y) < 900).length;
+    spT -= dt; if (spT <= 0) { spT = 9 + Math.random()*5; const n = S.foes.filter(f => f.k.slice(0, 2) == 'k_' && Math.hypot(f.x - p.x, f.y - p.y) < 900).length;
       if (n < 4) { const q = ringOpen(p, 9*TS, 13*TS); if (q && rk(q.x, q.y) == r) { const pool = POOL[r]; S.spawnFoe(pool[Math.floor(Math.random()*pool.length)], q.x, q.y); } } }
     igT -= dt; if (igT <= 0) { igT = Math.max(10, 26 - 3*L.heat); const F = FX(); if (F) for (let i = 0; i < 14; i++) { const q = ringOpen(p, 7*TS, 13*TS); if (!q) continue; const v = S.tileAt(q.tx, q.ty);
         if ((v == T.TREE || v == T.DEAD || v == T.HOUSE) && rk(q.x, q.y) == r) { F.ignite(q.tx, q.ty, {life:40}); break; } } } };
@@ -176,7 +176,7 @@ A.snowLit = (S, SG0) => {
     B.a1 -= dt; if (B.a1 <= 0) { B.a1 = (2.3 - .2*ph)/sp; const k = 3 + ph; for (let i = 0; i < k; i++) S.shot(B, ang + (i - (k - 1)/2)*.2, 290 + 20*n, {col:'#ff8a2a', r:8, dmg:1}); }
     B.a2 -= dt; if (B.a2 <= 0) { B.a2 = 5.6 - .4*ph; circ(p.x, p.y, 72, 1.1); for (let i = 0; i < 1 + ph; i++) { const a = Math.random()*TAU, r = 90 + Math.random()*160; circ(p.x + Math.cos(a)*r, p.y + Math.sin(a)*r, 64, 1.2); } }
     if (n >= 2) { B.a3 -= dt; if (B.a3 <= 0) { B.a3 = 9 - ph; hz.push({x:p.x, y:p.y, ang:Math.random()*Math.PI, len:820, wd:54, gap:(Math.random() - .5)*400, w:1.5, wm:1.5, b:0}); } }
-    B.a4 -= dt; if (B.a4 <= 0) { B.a4 = 15; const kx = S.foes.filter(f => S.FOE[f.k] && S.FOE[f.k].kx).length; if (kx < 6) { const ks2 = n == 1 ? ['k_imp', 'k_imp'] : n == 2 ? ['k_hound', 'k_moth'] : ['k_wraith', 'k_wraith']; ks2.forEach(k => { const q = ringOpen(B, 40, 120); if (q) S.spawnFoe(k, q.x, q.y); }); S.say('🔥 Lit calls the Kindled', 1.6); } }
+    B.a4 -= dt; if (B.a4 <= 0) { B.a4 = 15; const kx = S.foes.filter(f => f.k.slice(0, 2) == 'k_').length; if (kx < 6) { const ks2 = n == 1 ? ['k_imp', 'k_imp'] : n == 2 ? ['k_hound', 'k_moth'] : ['k_wraith', 'k_wraith']; ks2.forEach(k => { const q = ringOpen(B, 40, 120); if (q) S.spawnFoe(k, q.x, q.y); }); S.say('🔥 Lit calls the Kindled', 1.6); } }
     if (ph >= 2) { B.a5 -= dt; if (B.a5 <= 0) { B.a5 = 8 - .5*ph; const q = ringOpen(p, 240, 330); if (q && Math.hypot(q.x - B.hx, q.y - B.hy) < 640) { S.splat(B.x, B.y, 14, '#5a4a48'); B.x = q.x; B.y = q.y; B.orb = Math.atan2(B.y - p.y, B.x - p.x); S.splat(B.x, B.y, 14, '#ffb04a'); } } }
     if (n >= 3 && ph >= 3) { B.a6 = (B.a6 == null ? 4 : B.a6) - dt; if (B.a6 <= 0) { B.a6 = 7; for (let i = 0; i < 9; i++) { const q = ringOpen(p, 0, 360); if (q) circ(q.x, q.y, 46, .9 + i*.12); } S.say('☄ Ember rain!', 1.4); } } };
   const hzTick = dt => { if (!isLit(S.boss)) { if (hz.length || hsrc) { hz = []; dropHeat(); } return; } const F = FX();
@@ -185,7 +185,7 @@ A.snowLit = (S, SG0) => {
           else { const dx = p.x - h.x, dy = p.y - h.y, al = dx*Math.cos(h.ang) + dy*Math.sin(h.ang), pe = -dx*Math.sin(h.ang) + dy*Math.cos(h.ang); hit = Math.abs(al) < h.len/2 && Math.abs(pe) < h.wd/2 && Math.abs(al - h.gap) > 70; }
           if (hit) S.hurtMe(1); S.shakeV = Math.max(S.shakeV, 3); } } else h.b -= dt; }
     hz = hz.filter(h => h.w > 0 || h.b > 0); };
-  const litDown = B => { const n = BOSS[B.k].lit, s = step(); hz = []; dropHeat(); S.foes = S.foes.filter(f => !(S.FOE[f.k] && S.FOE[f.k].kx));
+  const litDown = B => { const n = BOSS[B.k].lit, s = step(); hz = []; dropHeat(); S.foes = S.foes.filter(f => !(f.k.slice(0, 2) == 'k_'));
     S.splat(B.x, B.y, 40, '#ffb04a'); S.splat(B.x, B.y, 30, '#4a3a38'); S.shakeV = 8; S.cheerT = 2.5; A.sfx && A.sfx('win');
     S.give({frost:150 + 75*n, flakes:15000*n, xp:500*n, score:8000*n, gear:4}); W.litWins = W.litWins || {}; W.litWins[B.k] = (W.litWins[B.k] | 0) + 1;
     if (s && s.k == 'boss' && s.key == B.k) S.talk(s.after, adv); else S.say('🔥 Lit escaped again!', 2.5); };

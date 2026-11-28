@@ -9,7 +9,8 @@ const el = (tag, at, ...kids) => { const n = document.createElement(tag); at = a
   kids.flat().forEach(c => { if (c == null || c === false) return; n.appendChild(typeof c == 'object' ? c : document.createTextNode(String(c))); }); return n; };
 
 // ---------------- What's new ----------------
-const WN = {v:'2026-12-14x', items:[
+const WN = {v:'2026-12-14y', items:[
+  ['🏰', '8 enemy keeps to conquer', 'What’s left of Dumpling’s army has dug into 8 keeps across the Wider Kingdom. Smash the gate (or a cracked wall) with snowballs, topple the 4 towers, free the prisoners, then beat the Keep Lord. A keep you take becomes YOUR outpost: a waystone for fast travel, a rest spot, and upgrades bought with Frost Crystals (walls, snow turrets, a frost cannon and a garrison). Enemies may counterattack while you play (never while you’re away). Later in the Lit story, some keeps get seized by the Kindled…'],
   ['⏳', 'No more endless “Loading game…”', 'If a game file hiccups while downloading (often right after an update), the arcade now tries it again by itself. If a game still can’t load, you get a Reload button instead of waiting forever. Your progress is always safe.'],
   ['🗺', 'Map fix', 'Pressing M no longer closes the Snow Kingdom with “Something went wrong” once your Map Room is level 4 or higher. Travel flags work again.'],
   ['🔥', 'THE BURNING WINTER begins (after the Gecko God)', 'Beat the Gecko God and bring Oswald home, and the kingdom’s party is cut short: smoke over Ember Springs. Five new chapters: fires to fight, the Kindled, a mystery to solve and three fights with Lit, a hooded figure of fire who always gets away. You earn the Snow Pump, Cold Lantern, Frostforged snowballs, Blizzard Bomb and Frozen Heart along the way. Burned lands become Scorched: heal them by putting out fires and beating the Kindled. From Chapter 3, chase smoke columns for Lit sightings.'],
