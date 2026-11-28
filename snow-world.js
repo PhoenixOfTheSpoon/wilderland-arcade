@@ -665,6 +665,7 @@ A.snowWorld = function(X) {
     {id:'mine', e:'⛏️', n:'Frost Crystal Mine', at:9, d:lv => 'Digs ' + A.fmt(mineRate(lv)) + ' 🔷 an hour, even while you’re away (holds 12 hours)'},
     {id:'warroom', e:'🗡️', n:'War Room', at:10, d:lv => 'War Table raids: +' + 10*lv + '% Raid Tokens and loot · ' + 5*lv + '% chance of a bonus key level'},
     {id:'hall', e:'👑', n:'Royal Hall', at:11, d:lv => 'Mau Mau and teammates hit +' + 10*lv + '% harder' + (lv >= 4 ? ' · Royal Shield Belly' : ' · lv 4: Royal Shield Belly') + (lv >= 8 ? ' · triple throws' : ' · lv 8: triple throws')},
+    {id:'forgemax', e:'🔥', n:'Forge Max', at:8, d:lv => 'The Forge can make up to ' + gName(fmMax(lv)) + ' gear' + (lv >= 12 ? ' (Phoenix +10 to +12: fusing only)' : '')},
     {id:'vault', e:'✨', n:'Spirit Vault', at:12, d:lv => 'Spirit companions and Minccino’s blessing heal ' + 15*lv + '% faster · Little Mow’s treasures +' + 10*lv + '%'}];
   const guardCd = lv => lv <= 4 ? 7 - lv : 3*Math.pow(.92, lv - 4), shrineM = lv => lv <= 4 ? 1 - .2*lv : .2*Math.pow(.9, lv - 4);
   const forgeR = lv => [Math.min(5, 1 + Math.floor(lv/3)), Math.min(5, 1 + lv)];   // forged gear rarity range (Snow and above: fusing only)
@@ -677,10 +678,12 @@ A.snowWorld = function(X) {
   if (!W.koV2) { W.koV2 = 1; W.bhpExact = {}; for (const k in (W.bhp || {})) W.bhpExact[k] = 1; }   // saves mid-fight from before the knockout rule keep their exact boss health once
   W.base = W.base || {tier:0, rooms:{}}; W.base.rooms = W.base.rooms || {}; W.sk = W.sk || {}; W.kxp = W.kxp || 0; W.mounts = W.mounts || {}; W.village = W.village|0; W.raids = W.raids || {};
   const RL = id => W.base.rooms[id]|0;
-  const ROOM_MUL = {armory:1.5, maproom:1.5, infirmary:1.5, beacon:1.6, mine:1.8, warroom:1.8, hall:2, vault:2};
-  const roomCost = (id, lv) => { const m = Math.pow(1.6, Math.max(0, lv - 3))*(ROOM_MUL[id] || 1); return {frost:Math.round(8*(lv + 1)*(1 + W.base.tier*.6)*m + (id == 'shrine' ? 20 : 0)), flakes:Math.round(400*(lv + 1)*(W.base.tier + 1)*m)}; };
+  const ROOM_MUL = {armory:1.5, maproom:1.5, infirmary:1.5, beacon:1.6, mine:1.8, warroom:1.8, hall:2, vault:2, forgemax:3};
+  // FORGE MAX: each level raises the highest grade you can forge by one (lv1 Snow … lv12 Phoenix +9); Phoenix +10..+12 stay fusing-only
+  const fmMax = lv => lv ? 5 + Math.min(12, lv) : 5, gName = r => r <= 6 ? GRN[Math.max(0, r)] : r == 7 ? 'Celestial' : r == 8 ? 'Phoenix' : 'Phoenix +' + (r - 8);
+  const roomCost = (id, lv) => { const m = Math.pow(1.6, Math.max(0, lv - 3))*(ROOM_MUL[id] || 1)*(id == 'forgemax' ? Math.pow(2, lv + 1) : 1);   /* Forge Max climbs very steeply */ return {frost:Math.round(8*(lv + 1)*(1 + W.base.tier*.6)*m + (id == 'shrine' ? 20 : 0)), flakes:Math.round(400*(lv + 1)*(W.base.tier + 1)*m)}; };
   const canPay = c => PERM.frost >= (c.frost||0) && PERM.bank >= (c.flakes||0), pay = c => { PERM.frost -= (c.frost||0); PERM.bank -= (c.flakes||0); };
-  const costTxt = c => [c.frost ? c.frost + ' 🔷' : '', c.flakes ? A.fmt(c.flakes) + ' ❄' : ''].filter(Boolean).join(' + ');
+  const costTxt = c => [c.frost ? A.fmt(c.frost) + ' 🔷' : '', c.flakes ? A.fmt(c.flakes) + ' ❄' : ''].filter(Boolean).join(' + ');
   // kingdom level + skill tree (hearts keep growing: +1 every 3 levels, and the Heart skill)
   const SK = [{id:'dmg', e:'💥', n:'Strong Arm', d:r => '+' + (8*r) + '% snowball damage'}, {id:'hp', e:'❤️', n:'Big Heart', d:r => '+' + r + ' max heart' + (r == 1 ? '' : 's')}, {id:'spd', e:'👟', n:'Quick Feet', d:r => '+' + Math.round(100*spdB(r)) + '% walking speed'},
     {id:'ammo', e:'⚪', n:'Deep Pockets', d:r => '+' + (2*r) + ' snowballs'}, {id:'crit', e:'🍀', n:'Lucky Shot', d:r => '+' + (4*Math.min(5, r)) + '% critical hits' + (r > 5 ? ' · crits hit +' + (10*(r - 5)) + '% harder' : '')}, {id:'regen', e:'🏭', n:'Snow Factory', d:r => 'Snowballs come back ' + (25*r) + '% faster'}];
@@ -1614,6 +1617,7 @@ A.snowWorld = function(X) {
   const adm = {
     kindled:() => { const ks = ['k_imp', 'k_hound', 'k_bat', 'k_wraith', 'k_golem', 'k_moth', 'k_cult', 'k_wisp']; ks.forEach((k, i) => { const a = i/ks.length*TAU; spawnFoe(k, p.x + Math.cos(a)*260, p.y + Math.sin(a)*260); }); say('Admin: the Kindled appear (one of each)', 2); },
     wild:() => { ['w_wolf', 'w_eagle', 'w_serpent', 'w_crab', 'w_lurker', 'w_elk'].forEach((k, i) => { const a = i/6*TAU; spawnFoe(k, p.x + Math.cos(a)*280, p.y + Math.sin(a)*280); }); say('Admin: wild creatures appear (one of each)', 2); },
+    forgemax:n => { W.base.rooms.forgemax = Math.max(0, Math.min(12, n|0)); save(); X.savePerm && X.savePerm(); say('Admin: 🔥 Forge Max level ' + (n|0), 2); },
     keeps:(c, v) => { if (SG && SG.keepAdm) return SG.keepAdm(c, v); say('Admin: keeps are not loaded', 2); },
     lit:(c, v) => { if (SG && SG.litAdm) return SG.litAdm(c, v); say('Admin: the Lit story is not loaded', 2); },
     fireHere:() => { fx2(); const n = FX ? FX.adm.ignite() : 0; say('Admin: 🔥 ' + n + ' fires started', 2); }, fireOut:() => { if (fx2()) FX.adm.out(); say('Admin: 💧 all fires out', 2); }, fireTools:() => { if (fx2()) FX.adm.tools(); PERM.ffb = (PERM.ffb|0) + 50; save(); say('Admin: ❄ all fire tools unlocked + 50 Frostforged Snowballs', 2.4); },

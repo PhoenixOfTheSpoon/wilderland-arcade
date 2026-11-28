@@ -7,9 +7,9 @@
 const A = window.Arcade = window.Arcade || {}, TAU = Math.PI*2;
 const X0 = 38, X1 = 62, Y0 = 76, Y1 = 96;
 const SPOTS = {barracks:[41.5, 79.2], guard:[55.5, 78.6], forge:[59.4, 80], kitchen:[41, 88.6], pantry:[41.5, 93.6], trophy:[48, 93.8], shrine:[59.6, 89], yard:[53.4, 92.8], well:[45.6, 87.4],
-  lodge:[44.6, 79.6], armory:[52.6, 80.2], maproom:[43.4, 83.8], infirmary:[47.4, 82], beacon:[39.3, 90.8], mine:[60.7, 83.6], warroom:[47.8, 90.8], hall:[56.6, 82.2], vault:[53.2, 87.9]};
+  lodge:[44.6, 79.6], armory:[52.6, 80.2], maproom:[43.4, 83.8], infirmary:[47.4, 82], beacon:[39.3, 90.8], mine:[60.7, 83.6], warroom:[47.8, 90.8], hall:[56.6, 82.2], vault:[53.2, 87.9], forgemax:[57.2, 86.2]};
 const NAMES = {barracks:'Barracks', guard:'Royal Guard Post', forge:'Forge', kitchen:'Cocoa Kitchen', pantry:'Mau Mau’s Pantry', trophy:'Trophy Hall', shrine:'Spirit Shrine', yard:'Training Yard', well:'Snow Well',
-  lodge:'Snow Friends Lodge', armory:'Ice Armory', maproom:'Map Room', infirmary:'Infirmary', beacon:'Beacon Tower', mine:'Frost Crystal Mine', warroom:'War Room', hall:'Royal Hall', vault:'Spirit Vault'};
+  lodge:'Snow Friends Lodge', armory:'Ice Armory', maproom:'Map Room', infirmary:'Infirmary', beacon:'Beacon Tower', mine:'Frost Crystal Mine', warroom:'War Room', hall:'Royal Hall', vault:'Spirit Vault', forgemax:'Forge Max'};
 // wall looks per base level (tier 0–11): stone colour, top colour, line colour, height, crenellations, torch light, glow, and extras
 const WL = [{c:'#f4f8fc', top:'#ffffff', line:'#c8d8e8', h:16, cren:0}, {c:'#cfe8fb', top:'#eaf6ff', line:'#8ec0e8', h:26, cren:1}, {c:'#9fb4d0', top:'#c8d6ea', line:'#5a7090', h:34, cren:1, torch:'255,180,70'},
   {c:'#b8e4ff', top:'#e8f8ff', line:'#64CDF5', h:42, cren:1, torch:'255,180,70', glow:'100,205,245'},
@@ -110,6 +110,18 @@ const NEW = {
       g.fillStyle = 'rgba(159,232,255,' + (.55 + .35*k) + ')'; g.beginPath(); g.moveTo(x - 9, y); g.lineTo(x - 9, y - 16); g.quadraticCurveTo(x, y - 28, x + 9, y - 16); g.lineTo(x + 9, y); g.fill();
       for (let i = 0; i < 2 + S; i++) { const a = t*.9 + i*TAU/(2 + S); circ(g, x + Math.cos(a)*(w/2 + 14), y - h*.6 + Math.sin(a)*12, 3.5, 'rgba(200,240,255,' + (.6 + .3*k) + ')'); }
       if (S >= 2) { g.fillStyle = 'rgba(159,232,255,' + .14*k + ')'; g.beginPath(); g.arc(x, y - h*.6, w*.9, 0, TAU); g.fill(); } }};
+// FORGE MAX: a furnace hall whose fire takes the colour of the best grade you can forge (Snow → Celestial → Phoenix), bigger every level
+NEW.forgemax = (g, x, y, lv, t) => { const k = Math.min(12, lv), w = 44 + k*3, h = 30 + k*2.6, fire = lv >= 3 ? ['#ff9a3c', '#ffd24a'] : lv == 2 ? ['#b9a8ff', '#efe8ff'] : ['#9fe8ff', '#ffffff'], fl = .5 + .5*Math.sin(t*7);
+  shadow(g, x, y + 2, w*.65); g.fillStyle = '#4a4e5e'; rr(g, x - w/2, y - h, w, h, 5); g.fill(); g.fillStyle = '#5a6072'; for (let i = 0; i < 3; i++) g.fillRect(x - w/2, y - h + 8 + i*(h/3.4), w, 2);
+  g.fillStyle = '#2a2a36'; g.beginPath(); g.moveTo(x - w/2 - 6, y - h); g.lineTo(x, y - h - 14 - k*1.2); g.lineTo(x + w/2 + 6, y - h); g.fill();
+  const cw = 10 + k*.6, cx = x + w/2 - cw - 4; g.fillStyle = '#3a3a48'; g.fillRect(cx, y - h - 28 - k*1.5, cw, 30 + k*1.5); for (let i = 0; i < 2 + Math.floor(k/4); i++) { const s2 = (t*.7 + i*.4) % 1; circ(g, cx + cw/2 + Math.sin(s2*6 + i)*4, y - h - 30 - k*1.5 - s2*34, 2 + s2*3, 'rgba(' + (lv >= 3 ? '255,170,80,' : '190,220,255,') + (.8*(1 - s2)) + ')'); }
+  g.fillStyle = '#14141c'; g.beginPath(); g.moveTo(x - 13, y); g.lineTo(x - 13, y - 20); g.quadraticCurveTo(x, y - 32, x + 13, y - 20); g.lineTo(x + 13, y); g.fill();
+  g.fillStyle = fire[0]; g.beginPath(); g.moveTo(x - 9, y); g.quadraticCurveTo(x - 8, y - 16 - 4*fl, x, y - 22 - 5*fl); g.quadraticCurveTo(x + 8, y - 16 - 4*fl, x + 9, y); g.fill();
+  g.fillStyle = fire[1]; g.beginPath(); g.moveTo(x - 4, y); g.quadraticCurveTo(x - 4, y - 9, x, y - 13 - 3*fl); g.quadraticCurveTo(x + 4, y - 9, x + 4, y); g.fill();
+  g.fillStyle = '#6a6e7e'; g.fillRect(x - w/2 + 4, y - 10, 16, 6); g.fillRect(x - w/2 + 9, y - 4, 6, 4);   // anvil
+  if (lv >= 6) { g.fillStyle = 'rgba(255,160,60,' + (.12 + .1*fl) + ')'; g.beginPath(); g.arc(x, y - h*.5, w*.75, 0, TAU); g.fill(); }
+  if (lv >= 9) flag(g, x - w/2, y - h, '#ff9a3c', t, 26);
+  if (lv >= 12) { const cy = y - h - 26 - k*1.2 + Math.sin(t*2)*3; g.fillStyle = '#ffb347'; g.beginPath(); g.moveTo(x, cy - 8); g.lineTo(x + 7, cy); g.lineTo(x, cy + 8); g.lineTo(x - 7, cy); g.fill(); } };
 Object.assign(ROOM, NEW);
 const NEWB = Object.keys(NEW);
 // levels 5–12 dress every building up: lanterns, banners, a stone plinth, a crystal, gold trim, a glow, sparkles, a crown
@@ -122,7 +134,7 @@ const dress = (g, x, y, lv, t, low, w, top) => { if (lv < 5) return;
   if (lv >= 11 && !low) for (let i = 0; i < 4; i++) { const a = t*1.1 + i*TAU/4; circ(g, x + Math.cos(a)*(w/2 + 6), top + 10 + Math.sin(a)*10, 2.2, 'rgba(255,255,255,.9)'); }
   if (lv >= 12) { const cy = top - 30 + Math.sin(t*2)*3; g.fillStyle = '#ff5fd2'; g.beginPath(); g.moveTo(x - 9, cy + 4); g.lineTo(x - 9, cy - 4); g.lineTo(x - 4.5, cy); g.lineTo(x, cy - 7); g.lineTo(x + 4.5, cy); g.lineTo(x + 9, cy - 4); g.lineTo(x + 9, cy + 4); g.fill(); circ(g, x, cy - 7, 2, '#D5F367'); } };
 // rough size of each building at its biggest base look (for the dressing): [width, height]
-const BOX = {barracks:[80, 80], guard:[36, 100], forge:[80, 66], kitchen:[70, 74], pantry:[60, 40], trophy:[76, 66], shrine:[62, 70], yard:[100, 40], well:[44, 58], lodge:[70, 80], armory:[66, 60], maproom:[56, 80], infirmary:[66, 66], beacon:[24, 130], mine:[70, 54], warroom:[66, 60], hall:[76, 70], vault:[54, 70]};
+const BOX = {barracks:[80, 80], guard:[36, 100], forge:[80, 66], kitchen:[70, 74], pantry:[60, 40], trophy:[76, 66], shrine:[62, 70], yard:[100, 40], well:[44, 58], lodge:[70, 80], armory:[66, 60], maproom:[56, 80], infirmary:[66, 66], beacon:[24, 130], mine:[70, 54], warroom:[66, 60], hall:[76, 70], vault:[54, 70], forgemax:[76, 84]};
 const building = (g, id, x, y, lv, t, low) => { const [bw, bh] = BOX[id] || [60, 60], sc = lv > 4 ? 1 + .035*(lv - 4) : 1;
   if (lv >= 10 && !low) { const k = .5 + .5*Math.sin(t*1.6); g.fillStyle = 'rgba(160,230,255,' + (.10 + .08*k) + ')'; g.beginPath(); g.ellipse(x, y - bh*.45*sc, bw*.85*sc, bh*.7*sc, 0, 0, TAU); g.fill(); }
   g.save(); g.translate(x, y); g.scale(sc, sc); ROOM[id](g, 0, 0, NEWB.includes(id) ? lv : Math.min(4, lv), t); dress(g, 0, 0, lv, t, low, bw, -bh); g.restore(); };
