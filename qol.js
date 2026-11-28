@@ -9,7 +9,8 @@ const el = (tag, at, ...kids) => { const n = document.createElement(tag); at = a
   kids.flat().forEach(c => { if (c == null || c === false) return; n.appendChild(typeof c == 'object' ? c : document.createTextNode(String(c))); }); return n; };
 
 // ---------------- What's new ----------------
-const WN = {v:'2026-12-14s', items:[
+const WN = {v:'2026-12-14t', items:[
+  ['🗺', 'The Snow Kingdom is 4× bigger', 'The map now stretches east and south: Pinecrest Hollow, Mirrormere (skate the giant frozen lake), Northwatch Cliffs, Ravenwatch Woods, Ember Springs, Starlight Tundra, Old Mill Marsh and Shiverstone Quarry, plus two new villages, Pinecrest Village and Emberford, each with a shop, an inn (rest to wake up there) and a quest board with 3 daily jobs. Find 60 new chests, 16 lore notes, 8 viewpoints that reveal the map, 8 new waystones and the Expedition Gates. Everything you had stays exactly where it was.'],
   ['⚒️', 'Mass forging', 'The Forge (Snowball → Loadout) can now forge many pieces at once: pick ×1, ×10, ×50, ×250 or MAX, for one slot or across ALL slots. Auto-fuse (on by default) fuses as it forges, so your bag never throws good gear away. The top grade is now Phoenix +12.'],
   ['⏳', 'Endless Dungeon rebalanced', 'Rewards now grow 30% every floor instead of doubling (doubling handed out billions). Every floor has golden hourglasses: grab one for +12 seconds.'],
   ['🦎', 'Dumpling fights like a raid boss', 'Every Dumpling fight (1–6) and the three godlike fights now have raid-style mechanics: step on rune plates in order, hide behind ice pillars from his Frost Breath, break the crystals of his ice shield, win a beam struggle by hitting him, and stay inside a turning light. Each one is announced first, his normal attacks pause while it runs, and winning stuns him.'],

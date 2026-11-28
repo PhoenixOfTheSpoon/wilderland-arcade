@@ -6,7 +6,7 @@
 (function(){
 const A = window.Arcade, TAU = Math.PI*2;
 const rr = (g,x,y,w,h,r) => { g.beginPath(); if (g.roundRect) g.roundRect(x,y,w,h,r); else g.rect(x,y,w,h); };
-const N = 140, N0 = 100, TS = 48, WORLD = N*TS;   // the old 100×100 kingdom (top-left) + new lands east (Spirits of the Snow) and south
+const N = 280, N1 = 140, N0 = 100, TS = 48, WORLD = N*TS;   // the old 100×100 kingdom (top-left) + lands east (Spirits of the Snow) and south (N1 = 140), and the Wider Kingdom (snow-expanse.js) out to 280×280
 let VW = 600, VH = 620, BAR = 620;   // VW grows to fill a wide screen; VH/BAR: the touch buttons only show on touch screens
 const SNOW = 0, PATH = 1, TREE = 2, ROCK = 3, ICE = 4, DEEP = 5, HOLE = 6, WALL = 7, FLOOR = 8, GATE = 9, CAVE = 10, CAMP = 11, DEAD = 12, VEIL = 13, WATER = 14, HOUSE = 15;
 const SOLID = [0, 0, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 1];
@@ -16,7 +16,7 @@ const LM = {camp:{x:50, y:86}, forest:{x:16, y:62}, lake:{x:80, y:67}, caves:{x:
 const WAYS = {camp:{x:55, y:84, n:'Camp Cocoa'}, forest:{x:22, y:66, n:'Frostpine Forest'}, lake:{x:64, y:64, n:'Glimmer Lake'}, caves:{x:22, y:24, n:'Crystal Caves'}, pass:{x:44, y:31, n:'Howling Pass'}, castle:{x:83, y:35, n:'Shadow Castle Gate'},
   village:{x:30, y:110, n:'Frostpine Village'}, aurora:{x:62, y:116, n:'Aurora Fields'}, coast:{x:40, y:126, n:'Shipwreck Coast'}, ruins:{x:84, y:116, n:'Ice Giant Ruins'}, yeti:{x:112, y:112, n:'Yeti Mountains'},
   hollow:{x:106, y:82, n:'Spirit Hollow', spirit:1}, oldroad:{x:108, y:50, n:'The Old Road', spirit:1}, shrine:{x:118, y:38, n:'The Driveway Shrine', spirit:1}, hall:{x:127, y:74, n:'The Hall of Paws', spirit:1}, peak:{x:130, y:22, n:'Storm Peak', spirit:1}};
-const regionAt = (x, y) => { if (x >= N + 40) return (A.sagaReg && A.sagaReg(x, y)) || 'raid'; if (x >= N) return 'raid'; if (y >= N0) { if (x >= N0) return 'yeti'; if (y >= 127) return 'coast'; if (x < 42) return 'village'; if (x >= 74) return 'ruins'; return 'aurora'; }
+const regionAt = (x, y) => { if (x >= N + 40) return (A.sagaReg && A.sagaReg(x, y)) || 'raid'; if (x >= N) return 'raid'; if (x >= N1 || y >= N1) return A.snowExp ? A.snowExp.regionAt(x, y) : 'meadow'; if (y >= N0) { if (x >= N0) return 'yeti'; if (y >= 127) return 'coast'; if (x < 42) return 'village'; if (x >= 74) return 'ruins'; return 'aurora'; }
   if (x >= N0) { if (y < 22) return 'peak'; if (y < 42) return 'shrine'; if (y < 56) return 'oldroad'; if (y >= 56 && y < 78 && x >= 116) return 'hall'; return 'hollow'; }
   if (Math.hypot(x - 50, y - 86) < 8) return 'camp'; if (x >= 70 && y <= 34) return 'castle'; if (x < 34 && y < 40) return 'caves'; if (x < 36) return 'forest'; if (x > 62 && y > 44) return 'lake'; if (y < 44) return 'pass'; return 'meadow'; };
 const REG = {camp:{n:'Camp Cocoa', tier:0, pool:[]}, meadow:{n:'Snowy Meadows', tier:1, pool:['pup', 'pup', 'goon']}, forest:{n:'Frostpine Forest', tier:2, pool:['pup', 'goon', 'bat']},
@@ -26,6 +26,7 @@ const REG = {camp:{n:'Camp Cocoa', tier:0, pool:[]}, meadow:{n:'Snowy Meadows', 
   ruins:{n:'Ice Giant Ruins', tier:4, pool:['golem', 'golem', 'hound']}, yeti:{n:'Yeti Mountains', tier:5, pool:['golem', 'hound', 'yeti']},
   hollow:{n:'Spirit Hollow', tier:4, pool:['wisp', 'wisp', 'stormling'], haunt:1}, oldroad:{n:'The Old Road', tier:4, pool:['wisp'], haunt:1, quiet:1}, shrine:{n:'The Driveway Shrine', tier:4, pool:['wisp', 'stormling'], haunt:1},
   hall:{n:'The Hall of Paws', tier:0, pool:[], safe:1}, raid:{n:'Raid Dungeon', tier:5, pool:[], safe:1, haunt:1}, peak:{n:'Chao Chao’s Storm Peak', tier:5, pool:['stormling', 'wisp', 'stormling'], haunt:2}};
+if (A.snowExp) { Object.assign(REG, A.snowExp.REG); Object.assign(WAYS, A.snowExp.WAYS); }
 const FOE = {
   pup:{n:'Hex Pup', hp:2, sp:125, melee:1, r:13, pts:30},
   goon:{n:'Snow Goon', hp:3, sp:60, shoot:2.2, r:15, pts:40},
@@ -85,7 +86,7 @@ const genOld = () => { const N = N0; const M = new Uint8Array(N*N), set = (x, y,
 
 
 const LM2 = {village:{x:28, y:114}, aurora:{x:62, y:120}, coast:{x:30, y:133}, ruins:{x:88, y:122}, yeti:{x:120, y:122}, hollow:{x:114, y:86}, shrine:{x:121, y:31}, oldroad:{x:118, y:49}, hall:{x:127, y:64}, peak:{x:124, y:10}};
-const genMap = () => { if (MAPC) return MAPC; const old = genOld(), M = new Uint8Array(N*N), set = (x, y, v) => { if (x >= 0 && y >= 0 && x < N && y < N) M[y*N + x] = v; }, get = (x, y) => M[y*N + x];
+const genMap140 = () => { const N = N1; const old = genOld(), M = new Uint8Array(N*N), set = (x, y, v) => { if (x >= 0 && y >= 0 && x < N && y < N) M[y*N + x] = v; }, get = (x, y) => M[y*N + x];
   for (let y = 0; y < N0; y++) for (let x = 0; x < N0; x++) M[y*N + x] = old.M[y*N0 + x];
   // new lands
   for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) { if (x < N0 && y < N0) continue; const r = regionAt(x, y), n1 = noise(x, y, 6, 3), n2 = noise(x, y, 3, 4), h = hash(x, y, 11); let v = SNOW;
@@ -146,7 +147,30 @@ const genMap = () => { if (MAPC) return MAPC; const old = genOld(), M = new Uint
     chests.forEach(c => { if (seen[c.ty*N + c.tx]) return; const prev = new Int32Array(N*N).fill(-1), bq = [c.ty*N + c.tx]; prev[bq[0]] = bq[0]; let hit = -1;
       for (let h = 0; h < bq.length && hit < 0; h++) { const i = bq[h], x = i % N, y = (i - x)/N; for (const [a, b] of [[1,0],[-1,0],[0,1],[0,-1]]) { const nx = x + a, ny = y + b, j = ny*N + nx; if (nx < 1 || ny < 1 || nx >= N - 1 || ny >= N - 1 || prev[j] >= 0 || M[j] == HOUSE || M[j] == WALL) continue; prev[j] = i; if (seen[j]) { hit = j; break; } bq.push(j); } }
       for (let i = hit; i >= 0 && prev[i] != i; i = prev[i]) { if (SOLID[M[i]] && M[i] != GATE && M[i] != VEIL) M[i] = SNOW; } M[c.ty*N + c.tx] = M[c.ty*N + c.tx] || SNOW; q.push([c.tx, c.ty]); seen[c.ty*N + c.tx] = 1; fill(); }); }
+  return {M, chests}; };
+const genMap = () => { if (MAPC) return MAPC; const o140 = genMap140(), M = new Uint8Array(N*N), chests = o140.chests.slice(), set = (x, y, v) => { if (x >= 0 && y >= 0 && x < N && y < N) M[y*N + x] = v; }, get = (x, y) => M[y*N + x];
+  for (let y = 0; y < N1; y++) for (let x = 0; x < N1; x++) M[y*N + x] = o140.M[y*N1 + x];
+  const carve = (ax, ay, bx, by, wd) => { const dx = bx - ax, dy = by - ay, L = Math.hypot(dx, dy); for (let i = 0; i <= L*3; i++) { const q = i/(L*3), wob = Math.sin(q*8 + ax*.7)*2.4*Math.sin(q*Math.PI), px = ax + dx*q - dy/L*wob, py = ay + dy*q + dx/L*wob;
+      for (let oy = -wd; oy <= wd; oy++) for (let ox = -wd; ox <= wd; ox++) { const tx = Math.round(px + ox), ty = Math.round(py + oy); if (tx < 2 || ty < 2 || tx > N - 3 || ty > N - 3 || Math.hypot(ox, oy) > wd + .3) continue; const v = get(tx, ty);
+        if (v == HOLE || v == WATER) set(tx, ty, ICE); else if (v == ICE || v == CAMP || v == FLOOR || v == WALL || v == GATE || v == VEIL || v == HOUSE) continue; else set(tx, ty, PATH); } } };
+  const clear = (cx, cy, rad, v) => { for (let y = cy - rad; y <= cy + rad; y++) for (let x = cx - rad; x <= cx + rad; x++) if (Math.hypot(x - cx, y - cy) <= rad && x > 1 && y > 1 && x < N - 2 && y < N - 2) set(x, y, v); };
+  const box = (x0, y0, x1, y1, door) => { for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) set(x, y, x == x0 || x == x1 || y == y0 || y == y1 ? WALL : FLOOR); if (door) door.forEach(([x, y]) => set(x, y, FLOOR)); };
+  const house = (x, y) => { for (let yy = y; yy < y + 2; yy++) for (let xx = x; xx < x + 3; xx++) set(xx, yy, HOUSE); };
+  if (A.snowExp) A.snowExp.gen({M, T:{SNOW, PATH, TREE, ROCK, ICE, DEEP, HOLE, WALL, FLOOR, CAVE, DEAD, WATER, HOUSE}, set, get, noise, carve, clear, house, box});
+  // 60 more chests in the Wider Kingdom (the old 70 keep their ids and places)
+  let sd = 1337; const rnd = () => (sd = (sd*16807) % 2147483647) / 2147483647, LMX = A.snowExp ? [...A.snowExp.NOTES, ...A.snowExp.VIEWS, ...Object.values(A.snowExp.WAYS), ...Object.values(A.snowExp.VIL)] : [];
+  for (let tries = 0; chests.length < 130 && tries < 12000; tries++) { const x = 3 + Math.floor(rnd()*(N - 6)), y = 3 + Math.floor(rnd()*(N - 6)), v = get(x, y); if (x < N1 && y < N1) continue; const r = regionAt(x, y);
+    if (SOLID[v] || v == HOLE || v == WATER || !REG[r] || REG[r].safe || LMX.some(L => Math.hypot(L.x - x, L.y - y) < 5) || chests.some(C => Math.hypot(C.tx - x, C.ty - y) < 7)) continue;
+    chests.push({id:chests.length, tx:x, ty:y, x:(x + .5)*TS, y:(y + .5)*TS, tier:Math.max(1, REG[r].tier)}); }
+  // everything new can be reached from camp: open a path to any boxed-in chest, waystone or landmark
+  { const seen = new Uint8Array(N*N), ok = v => v == GATE || v == VEIL || !SOLID[v], q = [[50, 88]]; seen[88*N + 50] = 1;
+    const fill = () => { while (q.length) { const [x, y] = q.pop(); for (const [a, b] of [[1,0],[-1,0],[0,1],[0,-1]]) { const nx = x + a, ny = y + b; if (nx < 0 || ny < 0 || nx >= N || ny >= N || seen[ny*N + nx] || !ok(M[ny*N + nx])) continue; seen[ny*N + nx] = 1; q.push([nx, ny]); } } }; fill();
+    const targets = [...chests.filter(c => c.id >= o140.chests.length).map(c => [c.tx, c.ty]), ...LMX.map(L => [L.x, L.y])];
+    for (const [tx0, ty0] of targets) { if (seen[ty0*N + tx0]) continue; const prev = new Int32Array(N*N).fill(-1), bq = [ty0*N + tx0]; prev[bq[0]] = bq[0]; let hit = -1;
+      for (let h = 0; h < bq.length && hit < 0; h++) { const i = bq[h], x = i % N, y = (i - x)/N; for (const [a, b] of [[1,0],[-1,0],[0,1],[0,-1]]) { const nx = x + a, ny = y + b, j = ny*N + nx; if (nx < 2 || ny < 2 || nx >= N - 2 || ny >= N - 2 || prev[j] >= 0 || M[j] == HOUSE || M[j] == WALL || (nx < N1 && ny < N1)) continue; prev[j] = i; if (seen[j]) { hit = j; break; } bq.push(j); } }
+      for (let i = hit; i >= 0 && prev[i] != i; i = prev[i]) { if (SOLID[M[i]] || M[i] == HOLE) M[i] = M[i] == WATER ? ICE : SNOW; } if (SOLID[M[ty0*N + tx0]]) M[ty0*N + tx0] = SNOW; q.push([tx0, ty0]); seen[ty0*N + tx0] = 1; fill(); } }
   MAPC = {M, chests}; return MAPC; };
+A._snowMap = () => genMap();   // tests: compare the map
 A.snowWorld = function(X) {
   const {host, api, c, K, PERM} = X, g = c.getContext('2d'), {M, chests} = genMap();
   const W = PERM.ow = Object.assign({v:1, x:0, y:0, met:0, runes:{}, mau:0, loki:0, bau:0, down:{}, chests:{}, ways:{camp:1}, fog:'', kills:0, deaths:0}, PERM.ow || {});
@@ -178,7 +202,7 @@ A.snowWorld = function(X) {
   const dist = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
   const low = () => !!A.lowFx;
   // ---------- fog of war: the map fills in as you explore (2×2-tile blocks, saved) ----------
-  const FB = N/2, fog = new Uint8Array(FB*FB); { const s2 = W.fog || '', oldFB = W.fogV == 2 ? FB : 50; for (let i = 0; i < s2.length; i++) { const v = parseInt(s2[i], 16) || 0; for (let b = 0; b < 4; b++) if (v & (1 << b)) { const j = i*4 + b, bx = j % oldFB, by = Math.floor(j/oldFB); if (by < FB) fog[by*FB + bx] = 1; } } W.fogV = 2; }
+  const FB = N/2, fog = new Uint8Array(FB*FB); { const s2 = W.fog || '', oldFB = W.fogV == 3 ? FB : W.fogV == 2 ? 70 : 50; for (let i = 0; i < s2.length; i++) { const v = parseInt(s2[i], 16) || 0; for (let b = 0; b < 4; b++) if (v & (1 << b)) { const j = i*4 + b, bx = j % oldFB, by = Math.floor(j/oldFB); if (by < FB) fog[by*FB + bx] = 1; } } W.fogV = 3; }
   const fogStr = () => { let s2 = ''; for (let i = 0; i < fog.length; i += 4) s2 += (fog[i] | fog[i + 1] << 1 | fog[i + 2] << 2 | fog[i + 3] << 3).toString(16); return s2.replace(/0+$/, ''); };
   const mini = document.createElement('canvas'); mini.width = N; mini.height = N; const mg = mini.getContext('2d');
   const paintBlock = i => { const bx = (i % FB)*2, by = Math.floor(i/FB)*2; for (let y = by; y < by + 2; y++) for (let x = bx; x < bx + 2; x++) { const v = tileAt(x, y); mg.fillStyle = regionAt(x, y) == 'castle' && v == SNOW ? '#cfd2e2' : MINI[v]; mg.fillRect(x, y, 1, 1); } };
@@ -199,7 +223,7 @@ A.snowWorld = function(X) {
   const mauSay = (txt, d) => { mau.say = txt; mau.sayT = d || 3.2; };
   const bubble = (x, y, txt) => { g.font = '700 11px ' + A.font; const tw = Math.min(260, g.measureText(txt).width + 16); g.fillStyle = 'rgba(255,255,255,.95)'; rr(g, x - tw/2, y - 20, tw, 22, 10); g.fill(); g.beginPath(); g.moveTo(x - 5, y + 2); g.lineTo(x + 5, y + 2); g.lineTo(x, y + 8); g.fill(); g.fillStyle = '#14204a'; g.textAlign = 'center'; wrapClip(txt, x, y - 5, tw - 12); };
   // hidden snacks all over the kingdom: only Mau Mau can sniff them out
-  const SNACKS = (() => { const out = []; let sd = 77; const rnd = () => (sd = (sd*16807) % 2147483647) / 2147483647; for (let k = 0; out.length < 36 && k < 4000; k++) { const x = 4 + Math.floor(rnd()*(N - 8)), y = 4 + Math.floor(rnd()*(N - 8)), v = tileAt(x, y); if (SOLID[v] || v == HOLE || regionAt(x, y) == 'camp' || out.some(o => Math.hypot(o.tx - x, o.ty - y) < 7)) continue; out.push({id:out.length, tx:x, ty:y, x:(x + .5)*TS, y:(y + .5)*TS, e:['🐟', '🍗', '🧀', '🥛'][out.length % 4]}); } return out; })();
+  const SNACKS = (() => { const out = []; let sd = 77; const rnd = () => (sd = (sd*16807) % 2147483647) / 2147483647; for (let k = 0; out.length < 36 && k < 4000; k++) { const x = 4 + Math.floor(rnd()*(N1 - 8)), y = 4 + Math.floor(rnd()*(N1 - 8)), v = tileAt(x, y); if (SOLID[v] || v == HOLE || regionAt(x, y) == 'camp' || out.some(o => Math.hypot(o.tx - x, o.ty - y) < 7)) continue; out.push({id:out.length, tx:x, ty:y, x:(x + .5)*TS, y:(y + .5)*TS, e:['🐟', '🍗', '🧀', '🥛'][out.length % 4]}); } return out; })();
   const feedMau = () => { if (!W.mau) { say('Free Royal Guard Mau Mau first. He’s caged at Howling Pass', 2.4); return; } if ((W.treats||0) <= 0) { say('🐟 No treats! Chests, enemies and Mau Mau’s nose (“!”) find more', 2.6); mauSay('Was that... a no-snack button?', 2.2); A.sfx('bad'); return; }
     W.treats--; mau.st2 = 'dance'; mau.stT = 2.8; buffT = (20 + 5*RL('pantry')) * (W.spoon ? 2 : 1); p.hp = Math.min(p.max, p.hp + 2); mates.forEach(m => { if (!m.ko) m.hp = m.max; }); splat(mau.x, mau.y - 10, 18, '#F9BF01'); A.sfx('win');
     mauSay(['Om nom nom! ROYAL POWER!', 'This fish was guarded... into my belly.', 'Royal Guard rule #1: never skip lunch!', 'Mmm! The team feels STRONGER!'][Math.floor(Math.random()*4)], 3); say('🐟 Mau Mau ate a treat! The team hits harder for 20 seconds, +♥', 2.6); X.stat('snowFeed', 1, 'add'); save(); };
@@ -248,7 +272,7 @@ A.snowWorld = function(X) {
       [...BAUF, 'Then I name you Snow General of the kingdom! Take this royal treasure. Now, let us go home to Camp Cocoa.']],
     () => { W.bau = 1; const it = give({frost:50, flakes:800, xp:150, score:5000, gear:4}); X.stat('snowRescue', 1, 'add'); save(); A.sfx('win'); say('👑 Kingdom saved! +50 Frost Crystals · ' + (it ? it.name : '') + ' · title: Snow General', 5); });
   // ---------- treasure chests ----------
-  const openChest = ch => { if (W.chests[ch.id]) return; const T2 = ch.tier, go = mult => { W.chests[ch.id] = 1; const fl = Math.round((25 + Math.random()*35)*T2*mult), fr = Math.round((1 + Math.random()*2)*T2*mult) + X.PU('frost'), gear = Math.random() < .25 + .1*T2 ? Math.max(0, T2 - 2) : null;
+  const openChest = ch => { if (W.chests[ch.id]) return; if (A.snowExp) jobTick('chest', regionAt(ch.tx, ch.ty)); const T2 = ch.tier, go = mult => { W.chests[ch.id] = 1; const fl = Math.round((25 + Math.random()*35)*T2*mult), fr = Math.round((1 + Math.random()*2)*T2*mult) + X.PU('frost'), gear = Math.random() < .25 + .1*T2 ? Math.max(0, T2 - 2) : null;
       const tr = W.mau && Math.random() < .5 ? 1 + (Math.random() < .3 ? 1 : 0) : 0; W.treats = (W.treats||0) + tr; const it = give({flakes:fl, frost:fr, score:100*T2, gear}); X.stat('snowChest', 1, 'add'); save(); A.sfx('coin'); splat(ch.x, ch.y - 10, 12, '#F9BF01'); say('🎁 +' + fl + ' ❄ banked · +' + fr + ' Frost Crystals' + (tr ? ' · +' + tr + ' 🐟' : '') + (it ? ' · ' + it.name : '') + (mult > 1 ? ' · DOUBLED!' : ''), 3.5); };
     if (boss) { go(1); return; }   // no pop-up questions in the middle of a boss fight
     quiz = true; if (!X.learn2('BONUS QUESTION · ANSWER RIGHT FOR DOUBLE TREASURE', () => { quiz = false; go(2); }, () => { quiz = false; go(1); })) quiz = false; };
@@ -259,7 +283,33 @@ A.snowWorld = function(X) {
     if (W.loki && !W.bau) L.push({x:BAUCAGE.x, y:BAUCAGE.y, n:'Free', f:freeBau});
     if (W.bau) L.push({x:THRONE.x, y:THRONE.y, n:'Talk', f:talkBau});
     if (W.mau && !(boss && boss.k == 'sq_mau')) L.push({x:mau.x, y:mau.y, n:'Talk', f:talkMau, quiet:1});   // tap Mau Mau to chat; he follows you, so no pop-up label
+    if (A.snowExp && !raid && !inRealm()) expThings(L);
     const n0 = L.length; const L2 = sqThings(p3Things(storyThings(L))); if (SG) SG.things(L2); for (let i = n0; i < L2.length; i++) if (L2[i].n != 'Talk') L2[i].pri = 1; return L2; };
+  // ---------- the Wider Kingdom: lore notes, viewpoints, expedition gates, village shops, inns and quest boards ----------
+  const EX = A.snowExp; W.notes = W.notes || {}; W.views = W.views || {};
+  const expThings = L => { const near = q => Math.abs(q.x*TS - p.x) < 400 && Math.abs(q.y*TS - p.y) < 400;
+    for (const nt of EX.NOTES) if (near(nt)) L.push({x:(nt.x + .5)*TS, y:(nt.y + .5)*TS, n:W.notes[nt.x + ',' + nt.y] ? 'Read again' : 'Read', f:() => { const k = nt.x + ',' + nt.y, first = !W.notes[k]; W.notes[k] = 1; talk([[nt.t, 'snow', nt.note]], () => { if (first) { give({frost:5 + 3*REG[nt.reg].tier, xp:60}); addNum(p.x, p.y - 40, '+lore', '#F9BF01'); } save(); }); }});
+    for (const v of EX.VIEWS) if (near(v)) L.push({x:(v.x + .5)*TS, y:(v.y + .5)*TS, n:'Look out', f:() => { const bx = Math.floor(v.x/2), by = Math.floor(v.y/2), R0 = 22; let ch = 0; for (let y = by - R0; y <= by + R0; y++) for (let x = bx - R0; x <= bx + R0; x++) { if (x < 0 || y < 0 || x >= FB || y >= FB || Math.hypot(x - bx, y - by) > R0) continue; const i = y*FB + x; if (!fog[i]) { fog[i] = 1; paintBlock(i); ch++; } } explored += ch;
+      const first = !W.views[v.reg]; W.views[v.reg] = 1; if (first) give({frost:10 + 4*REG[v.reg].tier, xp:80}); say('🔭 You can see all of ' + REG[v.reg].n + ' from here! The map fills in', 3); A.sfx('win'); save(); }});
+    for (const G of EX.GATES) if (near(G)) L.push({x:(G.x + .5)*TS, y:(G.y + .5)*TS - 20, n:'Expedition Gate', f:() => { if (SG && SG.expedition && ((W.sp|0) >= 6 || (W.saga && Object.keys(W.saga.seen || {}).length))) SG.expedition(); else say('The gate hums… it opens to the lands beyond once your Dumpling saga reaches them (Spirits of the Snow first)', 3.2); }});
+    for (const k in EX.VIL) { const V = EX.VIL[k], at = (dx, dy) => ({x:(V.x + dx + .5)*TS, y:(V.y + dy + .5)*TS}); if (!near(V)) continue;
+      L.push({...at(-4, -3), n:'Shop', f:() => vilShop(k)}, {...at(5, -3), n:'Inn', f:() => vilInn(k)}, {...at(0, 4), n:'Quest board', f:() => vilBoard(k)}); } };
+  const vilShop = k => { const V = EX.VIL[k]; openPanelUI(() => ({title:'🛒 ' + V.n + ' Shop', sub:'You have ' + A.fmt(PERM.frost) + ' 🔷 and ' + A.fmt(PERM.bank) + ' ❄',
+    rows:[{e:'☕', n:'Hot Cocoa', d:'Heal to full hearts right now', btn:'150 ❄', ok:PERM.bank >= 150 && p.hp < p.max, fn:() => { PERM.bank -= 150; p.hp = Math.max(p.hp, p.max); A.sfx('coin'); save(); }},
+      {e:'🐟', n:'Mau Mau treats ×5', d:'Feed him (G) for a big buff', btn:'400 ❄', ok:PERM.bank >= 400, fn:() => { PERM.bank -= 400; W.treats = (W.treats || 0) + 5; A.sfx('coin'); save(); }},
+      {e:'🗺', n:'Map of ' + REG[V.reg].n, d:'Reveals the whole region on your map', btn:'40 🔷', ok:PERM.frost >= 40, fn:() => { PERM.frost -= 40; let ch = 0; for (let i = 0; i < fog.length; i++) if (!fog[i] && regionAt((i % FB)*2 + 1, Math.floor(i/FB)*2 + 1) == V.reg) { fog[i] = 1; paintBlock(i); ch++; } explored += ch; A.sfx('win'); say('🗺 ' + REG[V.reg].n + ' is on your map now', 2.4); save(); }},
+      {e:'🎒', n:'Snowball bundle', d:'Refill your snowballs', btn:'60 ❄', ok:PERM.bank >= 60, fn:() => { PERM.bank -= 60; p.ammo = X.maxAmmo(); A.sfx('coin'); save(); }}]})); };
+  const vilInn = k => { const V = EX.VIL[k]; p.hp = Math.max(p.hp, p.max); W.inn = k; save(); A.sfx('win'); talk([[V.n + ' Inn', 'snow', 'You rest by the fire. Full hearts! If you get snowed under, you’ll wake up here now (until you rest at another inn).']]); };
+  // quest board: 3 small daily jobs per village (miss a day? nothing lost, there are new ones tomorrow)
+  const dayKey = () => { const d = new Date(); return d.getFullYear()*10000 + (d.getMonth() + 1)*100 + d.getDate(); };
+  const jobsFor = k => { const V = EX.VIL[k], dk = dayKey(); W.jobs = W.jobs || {}; let J = W.jobs[k]; if (!J || J.day != dk) { const h = q => hash(dk % 100000, q, k.length*7), regs = Object.keys(EX.REG).filter(r => !EX.REG[r].village), r1 = regs[Math.floor(h(1)*regs.length)], r2 = V.reg;
+      J = W.jobs[k] = {day:dk, list:[{t:'kill', reg:r2, need:12, got:0}, {t:'kill', reg:r1, need:20, got:0}, {t:'chest', reg:'any', need:1, got:0}]}; } return J; };
+  const jobTxt = j => j.t == 'kill' ? 'Defeat ' + j.need + ' enemies in ' + REG[j.reg].n : 'Open a chest anywhere in the Wider Kingdom';
+  const jobPay = (k, j) => ({frost:20 + 4*(REG[j.reg] ? REG[j.reg].tier : 3), flakes:600});
+  const vilBoard = k => openPanelUI(() => { const J = jobsFor(k), V = EX.VIL[k]; return {title:'📋 ' + V.n + ' Quest Board', sub:'Three small jobs a day. Missed one? No problem: new jobs come tomorrow.',
+    rows:J.list.map(j => ({e:j.done ? '✅' : j.t == 'kill' ? '⚔️' : '🧰', n:jobTxt(j) + ' (' + Math.min(j.got, j.need) + '/' + j.need + ')', d:'Reward: ' + jobPay(k, j).frost + ' 🔷 + ' + jobPay(k, j).flakes + ' ❄', btn:j.done ? 'Done' : j.got >= j.need ? 'Claim' : 'In progress', ok:!j.done && j.got >= j.need,
+      fn:() => { if (j.done || j.got < j.need) return; j.done = 1; give(jobPay(k, j)); A.sfx('win'); say('📋 Job done! +' + jobPay(k, j).frost + ' 🔷', 2.4); save(); }}))}; });
+  const jobTick = (t2, reg) => { if (!W.jobs) return; for (const k in W.jobs) { const J = W.jobs[k]; if (!J || J.day != dayKey()) continue; for (const j of J.list) if (!j.done && j.t == t2 && (j.reg == reg || (t2 == 'chest' && EX.REG[reg]))) j.got++; } };
   const nearThing = () => { let best = null, bd = 74; for (const T2 of things()) { if (T2.quiet) continue; const d0 = dist(T2, p); if (d0 >= 74) continue; const d = d0 - (T2.pri ? 30 : 0); if (d < bd) { bd = d; best = T2; } } return best; };
   const use = () => { if (dlg) return nextLine(); const T2 = nearThing(); if (T2) T2.f(); };
   // ---------- the quest arrow ----------
@@ -340,7 +390,7 @@ A.snowWorld = function(X) {
   // ---------- enemies ----------
   const spawnFoe = (k, x, y) => { const F = FOE[k], tier = Math.max(1, REG[regAt(x, y)].tier), el = !F.rd && !F.clone && !F.decoy && !F.guard && !rOn() && Math.random() < TM.elite[thr()] ? ['shield', 'fast', 'split', 'heal'][Math.floor(Math.random()*4)] : '', hp = Math.ceil(F.hp * (1 + .3*(tier - 1)) * A.D(.8, 1, 1.25) * (F.rd ? 1 : tm('fhp')) * (el ? 1.5 : 1)); foes.push({k, x, y, hp, max:hp, elite:el, cool:1 + Math.random()*1.5, wa:Math.random()*TAU, wt:0, stun:0, kb:0, kbx:0, kby:0, hurt:0, dir:Math.random() < .5 ? 1 : -1, tier, flap:Math.random()*6}); };
   const hurtFoe = (f, dmg) => { if (RMOD('glass')) dmg *= 2; f.hp -= dmg; f.hurt = 3; f.flash = .12; addNum(f.x, f.y - 26, '-' + nfmt(dmg), '#FF4539'); if (f.hp <= 0 && !f.dead) killFoe(f); };
-  const killFoe = f => { f.dead = 1; if (!f.dk) { f.dk = 1; p.ammo = Math.min(X.maxAmmo(), p.ammo + 1 + RL('well')); } const F = FOE[f.k]; splat(f.x, f.y, 14, f.k == 'imp' || f.k == 'pup' || f.k == 'clone' ? '#c08aff' : '#ffffff'); if (F.decoy) addNum(f.x, f.y - 30, 'Fake-out!', '#2f8ad8'); if (F.clone) return;
+  const killFoe = f => { if (A.snowExp && !f.dead) jobTick('kill', regAt(f.x, f.y)); f.dead = 1; if (!f.dk) { f.dk = 1; p.ammo = Math.min(X.maxAmmo(), p.ammo + 1 + RL('well')); } const F = FOE[f.k]; splat(f.x, f.y, 14, f.k == 'imp' || f.k == 'pup' || f.k == 'clone' ? '#c08aff' : '#ffffff'); if (F.decoy) addNum(f.x, f.y - 30, 'Fake-out!', '#2f8ad8'); if (F.clone) return;
     const fl = Math.round((3 + Math.random()*5) * f.tier); give({flakes:fl, xp:2, score:F.pts*f.tier}); addNum(f.x, f.y - 44, '+' + fl + ' ❄', '#2f8ad8'); W.kills = (W.kills || 0) + 1; X.stat('snowWorldKills', 1, 'add');
     if (f.elite) { const fr = 1 + thr(); give({frost:fr}); addNum(f.x, f.y - 60, '+' + fr + ' 🔷 elite', '#64CDF5'); if (f.elite == 'split' && !f.mini) for (const sx of [-18, 18]) { spawnFoe(f.k, f.x + sx, f.y); const m2 = foes[foes.length - 1]; if (m2) { m2.mini = 1; m2.elite = ''; m2.hp = m2.max = Math.max(1, Math.ceil(f.max*.3)); } } }
     if (!boss && Math.random() < .09) drops.push({x:f.x, y:f.y, k:'cocoa', life:15}); else if (W.mau && Math.random() < .05) drops.push({x:f.x, y:f.y, k:'fish', life:18}); };
@@ -355,7 +405,7 @@ A.snowWorld = function(X) {
     if (boss && !isRB(boss) && !raid) { const B = boss, np = B.phases || 3; B.hp = Math.max(1, B.max*(1 - (B.ph - 1)/np)*(B.ph > 1 ? .9999 : 1)); W.bhp = W.bhp || {}; W.bhm = W.bhm || {}; W.bhp[B.k] = B.hp; W.bhm[B.k] = B.max;
       B.q = []; B.stunT = 0; B.stg = 0; haz = []; balls = balls.filter(b => b.mine); foes = foes.filter(f => f.k == 'tguard'); const kx = B.hx, ky = B.hy + 240; if (!blocked(kx, ky, 14)) { p.x = kx; p.y = ky; }
       p.vx = p.vy = 0; p.hp = Math.max(1, Math.ceil(p.max*(W.koPct || 50)/100)); p.inv = 3; p.ammo = X.maxAmmo(); mates.forEach(m => { m.ko = 0; m.hp = m.max; }); mateHome(); save();
-      say('💫 Back on your feet with ' + p.hp + ' heart' + (p.hp == 1 ? '' : 's') + '! The boss is back at the top of phase ' + B.ph, 3.2); return; } if (siege) siegeEnd(false); raid = null; riding = false; tornado = null; sticks = []; p.stick = 0; p.x = CAMPX.x; p.y = CAMPX.y; p.vx = p.vy = 0; p.hp = p.max; p.inv = 2.5; p.ammo = X.maxAmmo(); foes = []; balls = []; if (boss) { boss = null; } mau.x = p.x - 40; mau.y = p.y + 10; mates.forEach(m => { m.ko = 0; m.hp = m.max; }); mateHome(); save(); say('🏕 Back at Camp Cocoa. Everything you found is safe!', 3); };
+      say('💫 Back on your feet with ' + p.hp + ' heart' + (p.hp == 1 ? '' : 's') + '! The boss is back at the top of phase ' + B.ph, 3.2); return; } if (siege) siegeEnd(false); raid = null; riding = false; tornado = null; sticks = []; p.stick = 0; { const IN = W.inn && A.snowExp && A.snowExp.VIL[W.inn], RP = IN ? px({x:IN.x + 5, y:IN.y - 1}) : CAMPX; p.x = RP.x; p.y = RP.y; }   /* wake up at the last inn you rested at */ p.vx = p.vy = 0; p.hp = p.max; p.inv = 2.5; p.ammo = X.maxAmmo(); foes = []; balls = []; if (boss) { boss = null; } mau.x = p.x - 40; mau.y = p.y + 10; mates.forEach(m => { m.ko = 0; m.hp = m.max; }); mateHome(); save(); say('🏕 Back at Camp Cocoa. Everything you found is safe!', 3); };
   // ---------- bosses ----------
   const bossDone = k => k == 'loki' ? (W.loki > 0 && !lokiReady) || (W.lokiReformed && !lokiSpar) : (BOSS[k].ai || k == 'chao') ? storyDone(k) : !!W.down[k];
   const phOf = (hp, max, np) => Math.min(np, 1 + Math.floor((1 - Math.max(0, hp)/max) * np));
@@ -451,7 +501,7 @@ A.snowWorld = function(X) {
     {k:'changed', at:{x:134, y:52}, n:'Memory: How He Changed', lines:[[...BAUQ, 'After that, he stopped coming to the warm window. He hissed at shadows. At us. He’d stare at nothing for hours.', 'sad'], [...BAUQ, 'We tried to help. We all tried. But it was like a storm had moved in behind his eyes.', 'sad']]},
     {k:'ran', at:{x:112, y:28}, n:'Memory: The Night He Ran', lines:[[...BAUQ, 'One snowy night the door was open for just a moment. He ran out into the dark and didn’t look back.', 'sad'], [...BAUQ, 'We called and called. He never came home. Everyone thought he was gone for good.', 'sad'], [...BAUQ, '...I think part of him never stopped running.', 'sad']]}].map(m => ({...m, x:(m.at.x + .5)*TS, y:(m.at.y + .5)*TS}));
   const LANTERNS = [{x:20, y:80}, {x:60, y:40}, {x:90, y:90}, {x:30, y:120}, {x:110, y:60}, {x:126, y:118}].map((q, i) => ({i, x:(q.x + .5)*TS, y:(q.y + .5)*TS}));
-  const TREAS = [...Array(10)].map((_, i) => { let x = 0, y = 0, k = 0; do { x = 6 + Math.floor(hash(i, k, 31)*(N - 12)); y = 6 + Math.floor(hash(k, i, 37)*(N - 12)); k++; } while ((SOLID[tileAt(x, y)] || tileAt(x, y) == HOLE || tileAt(x, y) == WATER) && k < 200); return {i, x:(x + .5)*TS, y:(y + .5)*TS, e:['🪀','🧸','🎀','🪶','🐚','🔑','🧦','🪙','🍂','🌰'][i]}; });
+  const TREAS = [...Array(10)].map((_, i) => { let x = 0, y = 0, k = 0; do { x = 6 + Math.floor(hash(i, k, 31)*(N1 - 12)); y = 6 + Math.floor(hash(k, i, 37)*(N1 - 12)); k++; } while ((SOLID[tileAt(x, y)] || tileAt(x, y) == HOLE || tileAt(x, y) == WATER) && k < 200); return {i, x:(x + .5)*TS, y:(y + .5)*TS, e:['🪀','🧸','🎀','🪶','🐚','🔑','🧦','🪙','🍂','🌰'][i]}; });
   W.small = W.small || {}; W.lanW = W.lanW || {};
   const bauF = {x:p.x - 30, y:p.y + 30, walk:0, cool:1};
   const comp = {x:p.x + 30, y:p.y - 20, healT:15};
@@ -1367,7 +1417,7 @@ A.snowWorld = function(X) {
     g.restore();
     if (B.talkT > 0 && B.talk) { g.font = '700 12px ' + A.font; const tw = Math.min(380, g.measureText(B.talk).width + 20), bx = Math.max(8, Math.min(VW - tw - 8, x - cam.x - tw/2)) + cam.x, by = Math.max(cam.y + topY() + 112, y - B.r - 70); g.fillStyle = 'rgba(255,255,255,.95)'; rr(g, bx, by, tw, 28, 10); g.fill(); g.fillStyle = '#14204a'; g.textAlign = 'left'; wrapClip(B.talk, bx + 10, by + 19, tw - 20); } };
   const wrapClip = (s2, x, y, mw) => { let line = s2; while (g.measureText(line).width > mw && line.length > 4) line = line.slice(0, -2); if (line != s2) line = line.slice(0, -1) + '…'; g.fillText(line, x, y); };
-  const RT = {hollow:'#d6ecff', shrine:'#e4e8f4', oldroad:'#dfe3ea', hall:'#eef1f6', peak:'#cdd3e3', aurora:'#eef6ff', coast:'#f2f6fa', ruins:'#e6ecf2', yeti:'#e8eef6', village:'#f3f7fb', raid:'#584878'};
+  const RT = {...Object.fromEntries(Object.entries(REG).filter(([k, r]) => r.tint).map(([k, r]) => [k, r.tint])), hollow:'#d6ecff', shrine:'#e4e8f4', oldroad:'#dfe3ea', hall:'#eef1f6', peak:'#cdd3e3', aurora:'#eef6ff', coast:'#f2f6fa', ruins:'#e6ecf2', yeti:'#e8eef6', village:'#f3f7fb', raid:'#584878'};
   const tileCol = (v, x, y) => v == 16 ? '#5d4c7d' : v == VEIL ? (spiritsOpen() ? '#cfeaff' : '#7ad8ff') : v == WATER ? '#3a6ab0' : v == HOUSE ? '#b0703a' : v == PATH && regionAt(x, y) == 'oldroad' ? '#9aa2ac' : v == SNOW && RT[regionAt(x, y)] ? RT[regionAt(x, y)] : v == SNOW ? (regionAt(x, y) == 'castle' ? '#d8dbe9' : '#eef5fc') : v == PATH ? '#e6dcc8' : v == ICE || v == HOLE ? '#c4e8fa' : v == DEEP ? '#ffffff' : v == WALL ? '#2e2048' : v == FLOOR || v == GATE ? '#5d4c7d' : v == CAVE || (v == ROCK && regionAt(x, y) == 'caves') ? '#5a6a80' : v == CAMP ? '#f3e6cf' : regionAt(x, y) == 'castle' ? '#d8dbe9' : '#eef5fc';
   const drawTiles = () => { const x0 = Math.floor(cam.x/TS), y0 = Math.floor(cam.y/TS), x1 = Math.min((raid ? N + 40 : N) - 1, x0 + Math.ceil(VW/TS) + 1), y1 = Math.min(N - 1, y0 + Math.ceil(VH/TS) + 1);
     // smooth, natural ground: every tile gets its land's snow colour first, then paths, ice, drifts, water and cave floors
@@ -1391,7 +1441,7 @@ A.snowWorld = function(X) {
     for (let ty = y0; ty <= y1; ty++) for (let tx = x0; tx <= x1; tx++) { const v = tileAt(tx, ty), sx = tx*TS, sy = ty*TS, h = hash(tx, ty, 7);
       if (v == TREE) { const ox = (h - .5)*10; g.fillStyle = 'rgba(0,0,0,.12)'; g.beginPath(); g.ellipse(sx + 24 + ox, sy + 42, 16, 5, 0, 0, TAU); g.fill(); g.fillStyle = '#6b4a2b'; g.fillRect(sx + 21 + ox, sy + 32, 6, 12);
         const tr2 = regionAt(tx, ty), sz = .8 + h*.45; if (tr2 == 'hollow' && !low() && h < .35) { g.fillStyle = 'rgba(150,225,255,' + (.35 + .25*Math.sin(t*2 + tx)) + ')'; g.beginPath(); g.arc(sx + 24 + ox + Math.sin(t + tx)*6, sy + 8 + Math.cos(t*1.3 + ty)*5, 3, 0, TAU); g.fill(); }
-        for (const [w0, yy] of [[22, 34], [18, 22], [13, 10]]) { const w2 = w0*sz; g.fillStyle = tr2 == 'hollow' ? '#1f5a7a' : tr2 == 'forest' ? '#24583a' : tr2 == 'village' ? '#2f7a4a' : '#2f6a3a'; g.beginPath(); g.moveTo(sx + 24 + ox - w2, sy + yy); g.lineTo(sx + 24 + ox, sy + yy - 20); g.lineTo(sx + 24 + ox + w2, sy + yy); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.moveTo(sx + 24 + ox - w2*.45, sy + yy - 11); g.lineTo(sx + 24 + ox, sy + yy - 20); g.lineTo(sx + 24 + ox + w2*.45, sy + yy - 11); g.fill(); } }
+        for (const [w0, yy] of [[22, 34], [18, 22], [13, 10]]) { const w2 = w0*sz; g.fillStyle = tr2 == 'hollow' ? '#1f5a7a' : tr2 == 'forest' ? '#24583a' : tr2 == 'village' ? '#2f7a4a' : (REG[tr2] && REG[tr2].tree) || '#2f6a3a'; g.beginPath(); g.moveTo(sx + 24 + ox - w2, sy + yy); g.lineTo(sx + 24 + ox, sy + yy - 20); g.lineTo(sx + 24 + ox + w2, sy + yy); g.fill(); g.fillStyle = '#fff'; g.beginPath(); g.moveTo(sx + 24 + ox - w2*.45, sy + yy - 11); g.lineTo(sx + 24 + ox, sy + yy - 20); g.lineTo(sx + 24 + ox + w2*.45, sy + yy - 11); g.fill(); } }
       else if (v == ROCK) { const r0 = regionAt(tx, ty), cv = r0 == 'caves', dark = cv ? '#3a4658' : r0 == 'peak' ? '#6a7084' : r0 == 'ruins' ? '#8ab0c8' : '#8a8e94', lite = cv ? '#4a5870' : r0 == 'peak' ? '#868ca0' : r0 == 'ruins' ? '#b8d8ec' : '#a6aab0';
         const nR = tileAt(tx + 1, ty) == ROCK, nD = tileAt(tx, ty + 1) == ROCK, sz = .75 + h*.5, cx = sx + 24 + (h - .5)*8, cy = sy + 28;
         g.fillStyle = 'rgba(0,0,0,.12)'; g.beginPath(); g.ellipse(cx, cy + 14*sz, 22*sz, 6, 0, 0, TAU); g.fill();
@@ -1424,6 +1474,7 @@ A.snowWorld = function(X) {
       if (W.bau && !(W.party && W.party.bau)) SC.spirit(g, 'bau', THRONE.x, THRONE.y - 8, {mood:'happy'}, t);
       penguin(PIP.x, PIP.y); if (!W.met || (Math.sin(t*3) > 0 && !W.bau && !W.loki && runesN() == 0 && !W.mau)) { g.fillStyle = '#F9BF01'; g.font = '900 22px ' + A.font; g.textAlign = 'center'; g.fillText('!', PIP.x, PIP.y - 30 + Math.sin(t*5)*3); } }
     // waystones and chests
+    if (A.snowExp && !raid && !inRealm()) A.snowExp.drawProps(g, t, onScreen, low(), W);
     for (const k in WAYS) { const w2 = px(WAYS[k]); if (!onScreen(w2.x, w2.y)) continue; const on = W.ways[k]; g.fillStyle = 'rgba(0,0,0,.15)'; g.beginPath(); g.ellipse(w2.x, w2.y + 16, 16, 5, 0, 0, TAU); g.fill(); g.fillStyle = '#8a8e94'; g.beginPath(); g.moveTo(w2.x - 12, w2.y + 16); g.lineTo(w2.x - 9, w2.y - 26); g.lineTo(w2.x, w2.y - 34); g.lineTo(w2.x + 9, w2.y - 26); g.lineTo(w2.x + 12, w2.y + 16); g.fill();
       g.fillStyle = on ? 'rgba(100,205,245,' + (.7 + .3*Math.sin(t*3)) + ')' : '#5a6a80'; g.beginPath(); g.arc(w2.x, w2.y - 12, 6, 0, TAU); g.fill(); if (on && !low()) { g.fillStyle = 'rgba(100,205,245,.18)'; g.beginPath(); g.arc(w2.x, w2.y - 12, 18, 0, TAU); g.fill(); } }
     for (const ch of chests) { if (!onScreen(ch.x, ch.y)) continue; const op = W.chests[ch.id]; g.fillStyle = 'rgba(0,0,0,.15)'; g.beginPath(); g.ellipse(ch.x, ch.y + 12, 16, 4, 0, 0, TAU); g.fill(); g.fillStyle = '#8D5B1D'; rr(g, ch.x - 15, ch.y - 6, 30, 18, 3); g.fill();
@@ -1483,6 +1534,7 @@ A.snowWorld = function(X) {
       if (night > .4 && !low()) { for (let b = 0; b < 3; b++) { const yb = 30 + b*26; g.fillStyle = 'rgba(' + ['80,255,190', '120,200,255', '200,140,255'][b] + ',' + (.08 + .06*Math.sin(t*.7 + b))*night + ')'; g.beginPath(); g.moveTo(0, yb); for (let xx = 0; xx <= VW; xx += 40) g.lineTo(xx, yb + Math.sin(xx*.01 + t*.5 + b)*18); g.lineTo(VW, yb + 40); for (let xx = VW; xx >= 0; xx -= 40) g.lineTo(xx, yb + 40 + Math.sin(xx*.012 + t*.4 + b)*14); g.fill(); } }
       if (H2 && !low()) { g.fillStyle = 'rgba(180,230,255,.7)'; for (let i = 0; i < 14; i++) { const sx = (i*173 + t*12 - cam.x*.2) % VW, sy = (i*97 + Math.sin(t + i)*30 - cam.y*.2) % VH; g.beginPath(); g.arc((sx + VW) % VW, (sy + VH) % VH, 2 + (i % 3), 0, TAU); g.fill(); } }
       if (stormFlash > 0) { g.fillStyle = 'rgba(255,255,255,' + stormFlash*.8 + ')'; g.fillRect(0, 0, VW, VH); } }
+    if (A.snowExp && !rOn() && !inRealm()) A.snowExp.drawWeather(g, rg, t, VW, VH, low());
     { const snowN = low() ? 0 : (blizzard > 0 || (rg == 'peak' && (W.sp|0) < 6)) ? 170 : 40; if (blizzard > 0 && !low()) { g.fillStyle = 'rgba(235,242,255,' + Math.min(.32, blizzard*.1) + ')'; g.fillRect(0, 0, VW, VH); }
       const wind = blizzard > 0 ? 160 : 14; g.fillStyle = 'rgba(255,255,255,.85)'; for (let i = 0; i < snowN; i++) { const sx = (i*137 + t*(wind + i % 5*4) - cam.x*.3) % VW, sy = (i*71 + t*(30 + i % 7*6) - cam.y*.3) % VH; g.fillRect((sx + VW) % VW, (sy + VH) % VH, 2, 2); } }
     // quest arrow
@@ -1537,6 +1589,7 @@ A.snowWorld = function(X) {
       const ms = (L2) => ({x:MAPR.x + (L2.x + .5)*MAPR.s, y:MAPR.y + (L2.y + .5)*MAPR.s}), seen = L2 => fog[Math.floor(L2.y/2)*FB + Math.floor(L2.x/2)];
       g.font = '18px ' + A.font; [['camp', '🏕'], ['forest', W.runes.forest ? '🌙' : '🌲'], ['lake', W.runes.lake ? '🌙' : '🧊'], ['caves', W.runes.caves ? '🌙' : '💎'], ['pass', W.mau ? '🐱' : '⛓'], ['castle', W.bau ? '👑' : '🏰']].forEach(([k, e2]) => { if (!seen(LM[k])) return; const q = ms(LM[k]); g.fillText(e2, q.x, q.y + 6); });
       [['village', '🏘'], ['aurora', '🌌'], ['coast', '⚓'], ['ruins', '🗿'], ['yeti', '🏔'], ['hollow', '✨'], ['shrine', '⛩️'], ['oldroad', '🛤️'], ['hall', '🕯️'], ['peak', '🌩️']].forEach(([k, e2]) => { if (!seen(LM2[k])) return; const q = ms(LM2[k]); g.fillText(e2, q.x, q.y + 6); });
+      if (A.snowExp) { g.font = '800 11px ' + A.font; g.textAlign = 'center'; for (const k in A.snowExp.CEN) { const c2 = A.snowExp.CEN[k]; if (!seen(c2)) continue; const q = ms(c2); g.fillStyle = 'rgba(10,16,36,.55)'; const tw = g.measureText(REG[k].n).width + 10; g.fillRect(q.x - tw/2, q.y - 9, tw, 14); g.fillStyle = '#e8f4ff'; g.fillText(REG[k].n, q.x, q.y + 2); } for (const k in A.snowExp.VIL) { const V = A.snowExp.VIL[k]; if (!seen(V)) continue; const q = ms(V); g.fillStyle = '#F9BF01'; g.fillText('🏘 ' + V.n, q.x, q.y - 10); } }
       sqMap(ms); mrBig(ms);
       for (const k in WAYS) { if (!W.ways[k]) continue; const q = ms(WAYS[k]); g.fillStyle = travel ? '#64CDF5' : 'rgba(100,205,245,.8)'; g.beginPath(); g.arc(q.x, q.y, travel ? 10 : 5, 0, TAU); g.fill(); if (travel) { g.fillStyle = '#fff'; g.font = '700 11px ' + A.font; g.fillText(WAYS[k].n, q.x, q.y - 14); } }
       const pq = {x:MAPR.x + p.x/TS*MAPR.s, y:MAPR.y + p.y/TS*MAPR.s}; g.fillStyle = '#FF4539'; g.beginPath(); g.arc(pq.x, pq.y, 6, 0, TAU); g.fill(); g.strokeStyle = '#fff'; g.lineWidth = 2; g.stroke();

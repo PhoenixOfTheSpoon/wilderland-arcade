@@ -43,6 +43,15 @@ const MOODS = {
   r_void:     {root:54, sc:PHRY,bpm:92,  prog:[0,1,6,5], lead:'sawtooth', arp:'sine',     bass:'triangle', drums:2, seed:409, vol:.85},
   dump3:  {root:50, sc:HARM,bpm:170, prog:[0,5,1,6], lead:'sawtooth', arp:'sawtooth', bass:'sawtooth', drums:3, seed:203, vol:.78},
   // Sugar Siege (original): a calm build tune, a battle march and the Final Wave boss theme
+  // the Wider Kingdom (snow-expanse.js): one mood per new region
+  reg_pine:   {root:62, sc:DOR, bpm:104, prog:[0,3,4,3], lead:'triangle', arp:'sine',     bass:'triangle', drums:1, seed:611, vol:1},
+  reg_mirror: {root:67, sc:MAJ, bpm:84,  prog:[0,5,3,4], lead:'sine',     arp:'triangle', bass:'sine',     drums:0, seed:617, vol:1},
+  reg_north:  {root:57, sc:MIN, bpm:126, prog:[0,6,5,4], lead:'sawtooth', arp:'triangle', bass:'triangle', drums:2, seed:631, vol:.8},
+  reg_raven:  {root:55, sc:MIN, bpm:76,  prog:[0,5,6,4], lead:'triangle', arp:'sine',     bass:'sine',     drums:0, seed:641, vol:.9},
+  reg_ember:  {root:60, sc:DOR, bpm:112, prog:[0,4,3,6], lead:'square',   arp:'triangle', bass:'sawtooth', drums:2, seed:653, vol:.85},
+  reg_tundra: {root:64, sc:MAJ, bpm:92,  prog:[0,3,5,4], lead:'sine',     arp:'sine',     bass:'triangle', drums:1, seed:659, vol:1},
+  reg_marsh:  {root:58, sc:MIN, bpm:88,  prog:[0,3,6,5], lead:'triangle', arp:'sine',     bass:'triangle', drums:1, seed:661, vol:.95},
+  reg_quarry: {root:52, sc:MIN, bpm:118, prog:[0,6,3,4], lead:'square',   arp:'square',   bass:'sawtooth', drums:2, seed:673, vol:.8},
   ss_build:  {root:65, sc:MAJ, bpm:100, prog:[0,3,4,0], lead:'triangle', arp:'sine',     bass:'triangle', drums:1, seed:503, vol:1},
   ss_battle: {root:57, sc:MIN, bpm:144, prog:[0,5,6,4], lead:'square',   arp:'square',   bass:'sawtooth', drums:2, seed:521, vol:.9},
   ss_boss:   {root:52, sc:HARM,bpm:160, prog:[0,1,5,4], lead:'sawtooth', arp:'square',   bass:'sawtooth', drums:3, seed:547, vol:.8},

@@ -116,7 +116,7 @@ A.snowSaga = S => {
   // ---------- going places ----------
   const enter = (id, wi, quiet) => { if (S.raid || S.siege) { S.say('Finish what you’re doing first', 2); return; } cur = id; C = genRegion(id); loadFog(); buildMini(); SV.seen[id] = 1; const w = C.ways[wi || 0] || C.spawn, q = W2T(w);
     p.x = q.x; p.y = q.y + 40; p.vx = p.vy = 0; S.foes = []; S.balls = []; S.boss = null; S.tornado = null; S.mateHome(); S.mau.x = p.x - 40; S.mau.y = p.y + 10; SV.way[id + ':' + (wi || 0)] = 1; lastSafe = {x:p.x, y:p.y}; stam = stamMax(); S.riding = false;
-    S.lastReg = ''; reveal(); if (!quiet) { S.say(C.R.e + ' ' + C.R.n, 3); A2.sfx('win'); } SV.at = {id, x:p.x, y:p.y}; if (story() && story().entered) story().entered(id); S.save(); };
+    S.lastReg = ''; reveal(); if (!quiet) { S.say(C.R.e + ' ' + C.R.n, 3); A2.sfx('win'); } SV.at = {id, x:p.x, y:p.y, rx:RX}; if (story() && story().entered) story().entered(id); S.save(); };
   const leave = (msg) => { cur = null; C = null; SV.at = null; const q = S.CAMPX; p.x = q.x; p.y = q.y; p.vx = p.vy = 0; S.foes = []; S.balls = []; S.boss = null; S.mateHome(); S.mau.x = p.x - 40; S.mau.y = p.y + 10; S.lastReg = ''; mode = ''; S.say(msg || '🏕 Back at Camp Cocoa', 2.4); S.save(); };
   // ---------- expedition board (at camp) ----------
   const BOARD = {x:57.5*TS, y:84.6*TS}, STATUE = {x:44.5*TS, y:81.6*TS};
@@ -258,7 +258,7 @@ A.snowSaga = S => {
     // temporary ice from snowballs: throw at water to freeze a bridge
     for (const b of S.balls) { if (!b.mine) continue; const bt = Math.floor(b.x/TS), by = Math.floor(b.y/TS), x = bt - RX; if (x < 0 || x >= RW || by < 0 || by >= RH) continue; if (C.M[by*RW + x] == SWIM && !C.temp.has(by*RW + x)) { C.temp.set(by*RW + x, {v:ICE, t:22}); S.splat(b.x, b.y, 6, '#c4e8fa'); } }
     C.temp.forEach((o, k) => { o.t -= dt; if (o.t <= 0) C.temp.delete(k); });
-    SV.at = {id:cur, x:Math.round(p.x), y:Math.round(p.y)}; };
+    SV.at = {id:cur, x:Math.round(p.x), y:Math.round(p.y), rx:RX}; };
   // ---------- drawing the land ----------
   const drawTiles = () => { const cam = S.cam, x0 = Math.max(RX - 1, Math.floor(cam.x/TS)), y0 = Math.floor(cam.y/TS), x1 = Math.min(RX + RW, x0 + Math.ceil(S.VW/TS) + 1), y1 = Math.min(RH, y0 + Math.ceil(S.VH/TS) + 1), R = C.R, t = S.t, lo = S.low();
     g.fillStyle = R.sky || R.voidL ? (R.voidL ? '#0a1028' : '#1a2a5a') : R.base; g.fillRect(cam.x - 10, cam.y - 10, S.VW + 20, S.VH + 20);
@@ -338,7 +338,7 @@ A.snowSaga = S => {
   // Escape closes a shrine before the game sees it
   const escK = e => { if (e.key != 'Escape') return; if (modal) { e.stopPropagation(); e.preventDefault(); modal = null; } else if (story() && story().modal && story().modal()) { e.stopPropagation(); e.preventDefault(); story().key(e); } }; document.addEventListener('keydown', escK, true);
   // ---------- resume where you were ----------
-  const SG = {cur:() => cur, C:() => C, tile:(tx, ty) => tx >= RX && tx < RX + RW ? tl(tx, ty) : ROCK, inside, bounds:() => ({x0:RX*TS, x1:(RX + RW)*TS, y1:RH*TS}), modal:() => !!modal || !!(story() && story().modal && story().modal()), move, update:dt => { update(dt); wayCheck(); },
+  const SG = {expedition, cur:() => cur, C:() => C, tile:(tx, ty) => tx >= RX && tx < RX + RW ? tl(tx, ty) : ROCK, inside, bounds:() => ({x0:RX*TS, x1:(RX + RW)*TS, y1:RH*TS}), modal:() => !!modal || !!(story() && story().modal && story().modal()), move, update:dt => { update(dt); wayCheck(); },
     things, goal:() => story() && story().goal ? story().goal(cur, C, W2T) : null, drawTiles, drawWorld, ents, drawScreen, drawTop, drawMini, drawMap, mapDown, key, down, warmHeal:() => !!cur && C.fires.some(q => { const w = W2T(q); return Math.hypot(w.x + 30 - p.x, w.y - p.y) < 110; }),
     blockMap:() => !!modal, save:() => { SV.stam = Math.max(SV.stam, 100); }, respawn:() => { if (story() && story().respawn && story().respawn()) return true; if (!cur) return false; const i = [2, 1, 0].find(j => SV.way[cur + ':' + j]) || 0, q = W2T(C.ways[i]); p.x = q.x; p.y = q.y + 40; p.vx = p.vy = 0; p.hp = p.max; p.inv = 2.5; p.ammo = X.maxAmmo(); S.foes = []; S.balls = []; S.boss = null; S.mateHome(); S.say('❄ You wake up at the waystone', 2.4); return true; },
     bossReady:k => !!(story() && story().bossReady && story().bossReady(k, cur)), bossAI:(B, dt, ph, ang, d) => story() && story().bossAI(B, dt, ph, ang, d), bossDown:B => story() && story().bossDown(B), hurtBoss:(B, dmg) => !!(story() && story().hurtBoss && story().hurtBoss(B, dmg)),
@@ -348,7 +348,7 @@ A.snowSaga = S => {
     shrineSolve:() => { if (!modal) return; const P = modal.P; if (P.kind == 'push') { modal.blocks = P.sw.slice(); } else { modal.got = (1 << P.cryst.length) - 1; modal.pos = P.goal; } win(); },
     dispose:() => document.removeEventListener('keydown', escK, true)};
   SAGA.story = null; if (SAGA.storyInit) { try { SAGA.story = SAGA.storyInit(S, SG); } catch (e) { console.error('[saga story]', e); } }
-  if (SV.at && SV.at.id && REGIONS[RIDX[SV.at.id]]) { const at = SV.at; try { enter(at.id, 0, true); if (inside(at.x, at.y)) { p.x = at.x; p.y = at.y; } } catch (e) { console.error('[saga resume]', e); cur = null; C = null; SV.at = null; } }
+  if (SV.at && SV.at.id && REGIONS[RIDX[SV.at.id]]) { const at = SV.at; try { enter(at.id, 0, true); const sh = (RX - (at.rx || 180))*TS;   /* the lands beyond moved east when the main map grew (180 → 320 tiles) */ if (inside(at.x + sh, at.y)) { p.x = at.x + sh; p.y = at.y; } } catch (e) { console.error('[saga resume]', e); cur = null; C = null; SV.at = null; } }
   return SG; };
 const SAGA = A.SAGA = A.SAGA || {}; SAGA.REGIONS = REGIONS; SAGA.genRegion = genRegion;
 })();
