@@ -1014,6 +1014,8 @@ A.register('snowball', { mount(host, api){
     {label:'Kingdom: set base level (1-12)', num:12, min:1, max:12, run:n => { if (!wm) openWorld(); wm && wm.adm.baseLv(n); }},
     {label:'Kingdom: set every open room to level (0-12, up to base level)', num:12, min:0, max:12, run:n => { if (!wm) openWorld(); wm && wm.adm.roomLv(n); }},
     {label:'Kingdom: base level rewards can be earned again', run:() => { if (!wm) openWorld(); wm && wm.adm.mileReset(); }},
+    {label:'Kingdom: spawn the Kindled (one of each)', run:() => { if (!wm) openWorld(); wm && wm.adm.kindled(); }},
+    {label:'Kingdom: spawn the wild creatures (one of each)', run:() => { if (!wm) openWorld(); wm && wm.adm.wild(); }},
     {label:'Kingdom: 🔥 start fires around me', run:() => { if (!wm) openWorld(); wm && wm.adm.fireHere(); }},
     {label:'Kingdom: 💧 put out all fires', run:() => { if (!wm) openWorld(); wm && wm.adm.fireOut(); }},
     {label:'Kingdom: ❄ unlock all fire tools (+50 Frostforged)', run:() => { if (!wm) openWorld(); wm && wm.adm.fireTools(); }},
