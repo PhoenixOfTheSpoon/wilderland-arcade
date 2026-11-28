@@ -9,7 +9,8 @@ const el = (tag, at, ...kids) => { const n = document.createElement(tag); at = a
   kids.flat().forEach(c => { if (c == null || c === false) return; n.appendChild(typeof c == 'object' ? c : document.createTextNode(String(c))); }); return n; };
 
 // ---------------- What's new ----------------
-const WN = {v:'2026-12-15b', items:[
+const WN = {v:'2026-12-15c', items:[
+  ['◇', 'New top rarity: PURE', 'Fuse NINE Phoenix +12 pieces of the same slot into one PURE piece. It comes at max level, glows white, and maxes that slot for good: no more forging or fusing needed there.'],
   ['⚔', 'Every boss phase plays differently', 'Charge-and-release no longer works everywhere. Each phase has its own way to stagger the boss, shown under its health bar: weak points, pylons to smash, wind-ups to interrupt, icicles to drop on it, reflected throws, Frostbite combos, parries, treats to lure it and more. From phase 2 the arena changes too (cracking ice, closing walls, darkness, wind, rising water) and most bosses move and attack in new ways. Repeating the same move over and over now does less and less: switch it up!'],
   ['🔥', 'New castle room: Forge Max', 'Unlocks at base level 8. Every level lets the Forge make one grade higher: Snow, Celestial, Phoenix, then Phoenix +1 all the way to Phoenix +9 at level 12 (Phoenix +10 to +12 still need fusing). In Loadout → Forge pick “Random up to max” (cheaper) or “At max rarity” (pricey). The upgrades get very expensive: level 12 is a long-term goal.'],
   ['🆕', 'Shorter What’s New', 'This box now only shows what you haven’t seen yet. Menu → Settings → What’s new still shows the recent list.'],

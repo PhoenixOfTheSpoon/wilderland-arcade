@@ -1,0 +1,20 @@
+// PURE rarity: nine Phoenix +12 of one slot → PURE, that slot is maxed
+const L = require('./lib.js');
+(async()=>{ const {b,p,errs,app} = await L.start({ctx:{viewport:{width:1440,height:900}}}); const ok = (n, c, v) => console.log((c ? 'PASS ' : 'FAIL ') + n + (v !== undefined ? ' → ' + JSON.stringify(v) : ''));
+ await p.evaluate(app + '.open("snowball")'); await p.waitForTimeout(1200);
+ const S = s => p.evaluate('(()=>{ const sn = window.Arcade._dbg.snow(); const P = sn.PERM; '+s+' })()');
+ const pop = () => p.evaluate(()=>document.querySelectorAll('.wlw-pop').forEach(e=>e.remove()));
+ await S('P.gear = []; P.eq = {}; P.frost = 1e9; P.fq = 1; P.faf = 1; P.ow = P.ow || {}; P.ow.base = P.ow.base || {rooms:{}, tier:11}; P.ow.base.rooms = P.ow.base.rooms || {}; P.ow.base.rooms.forge = 12; for (let i = 0; i < 8; i++) P.gear.push({id:P.gid++, slot:"gloves", rar:20, lv:3, name:"g" + i}); sn.openPanel("loadout"); return 1'); await p.waitForTimeout(300); await pop();
+ ok('8 Phoenix +12 is not enough', !(await p.evaluate(() => /Fuse 9 Phoenix \+12/.test(document.body.innerText))));
+ await S('P.gear.push({id:P.gid++, slot:"gloves", rar:20, lv:0, name:"g9"}); sn.openPanel("loadout"); return 1'); await p.waitForTimeout(300); await pop();
+ await p.locator('button', {hasText:/Fuse 9 Phoenix \+12/}).click({force:true}); await p.waitForTimeout(300);
+ const g = await S('const it = P.gear.find(x => x.slot == "gloves"); return [P.gear.filter(x => x.slot == "gloves").length, it.rar, it.lv, P.eq.gloves == it.id, it.name]'); ok('9 × +12 → one PURE piece at max level, equipped', g[0] == 1 && g[1] == 21 && g[2] == 10 && g[3] && /^PURE/.test(g[4]), g);
+ const txt = await p.evaluate(() => document.body.innerText); ok('Loadout shows PURE · maxed and no more gloves forging', /PURE · maxed/.test(txt) && !/Forge 🧤 Gloves ·/.test(txt));
+ await S('P.fq = 50; sn.openPanel("loadout"); return 1'); await p.waitForTimeout(300); await pop(); await p.locator('button', {hasText:/across ALL slots/}).click({force:true}); await p.waitForTimeout(500);
+ ok('forging across all slots skips the maxed slot', (await S('return P.gear.filter(x => x.slot == "gloves").length')) == 1);
+ await S('for (let i = 0; i < 9; i++) P.gear.push({id:P.gid++, slot:"hat", rar:20, lv:0, name:"h" + i}); return 1'); await S('return 1');
+ const fa = await S('sn.openPanel("loadout"); return 1'); await p.waitForTimeout(300); await pop(); await p.locator('button', {hasText:/Fuse ALL the way up/}).click({force:true}); await p.waitForTimeout(300);
+ ok('Fuse ALL also makes PURE from nine +12s', (await S('return P.gear.filter(x => x.slot == "hat" && x.rar == 21).length')) == 1);
+ await p.reload(); await p.waitForTimeout(5000); await p.evaluate(app + '.open("snowball")'); await p.waitForTimeout(1200);
+ ok('PURE gear saved after reload', (await S('return P.gear.filter(x => x.rar == 21).length')) == 2);
+ console.log(errs.filter(e => !e.includes('Failed to load')).slice(0, 5)); await b.close(); })();
