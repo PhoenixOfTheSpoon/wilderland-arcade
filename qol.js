@@ -9,7 +9,8 @@ const el = (tag, at, ...kids) => { const n = document.createElement(tag); at = a
   kids.flat().forEach(c => { if (c == null || c === false) return; n.appendChild(typeof c == 'object' ? c : document.createTextNode(String(c))); }); return n; };
 
 // ---------------- What's new ----------------
-const WN = {v:'2026-12-14y', items:[
+const WN = {v:'2026-12-14z', items:[
+  ['🆕', 'Shorter What’s New', 'This box now only shows what you haven’t seen yet. Menu → Settings → What’s new still shows the recent list.'],
   ['🏰', '8 enemy keeps to conquer', 'What’s left of Dumpling’s army has dug into 8 keeps across the Wider Kingdom. Smash the gate (or a cracked wall) with snowballs, topple the 4 towers, free the prisoners, then beat the Keep Lord. A keep you take becomes YOUR outpost: a waystone for fast travel, a rest spot, and upgrades bought with Frost Crystals (walls, snow turrets, a frost cannon and a garrison). Enemies may counterattack while you play (never while you’re away). Later in the Lit story, some keeps get seized by the Kindled…'],
   ['⏳', 'No more endless “Loading game…”', 'If a game file hiccups while downloading (often right after an update), the arcade now tries it again by itself. If a game still can’t load, you get a Reload button instead of waiting forever. Your progress is always safe.'],
   ['🗺', 'Map fix', 'Pressing M no longer closes the Snow Kingdom with “Something went wrong” once your Map Room is level 4 or higher. Travel flags work again.'],
@@ -64,10 +65,15 @@ const WN = {v:'2026-12-14y', items:[
   ['⚙️', 'Settings & hotkeys', 'Menu → Settings: number format, animation level, sound and music volume. Press ? on the arcade floor for every hotkey.'],
 ]};
 Q.WN = WN;
-Q.whatsNew = force => { if (!force && LS('wl-wn', '') == WN.v) return false; LSset('wl-wn', WN.v); css();
+// only what you HAVEN'T seen pops up: every item is remembered by its title once shown (wl-wn-seen).
+// Old saves (no list yet) count everything as seen except the newest entry. The menu button (force) shows the last 12.
+const wnSeen = () => { let v = null; try { v = JSON.parse(LS('wl-wn-seen', 'null')); } catch (e) {} if (Array.isArray(v)) return new Set(v);
+  const was = LS('wl-wn', ''); return new Set(was == WN.v ? WN.items.map(q => q[1]) : was ? WN.items.slice(1).map(q => q[1]) : []); };
+Q.whatsNew = force => { const seen = wnSeen(), fresh = WN.items.filter(q => !seen.has(q[1])); if (!force && !fresh.length) { LSset('wl-wn', WN.v); return false; }
+  const show = force ? WN.items.slice(0, 12) : fresh.slice(0, 6);   /* never a wall of text: the newest 6 at most */ LSset('wl-wn', WN.v); LSset('wl-wn-seen', JSON.stringify(WN.items.map(q => q[1]))); css();
   const o = el('div', {cls:'wlq-ov'}), close = () => { o.remove(); document.removeEventListener('keydown', kd, true); }, kd = e => { if (e.key == 'Escape') { e.stopPropagation(); close(); } };
   o.appendChild(el('div', {cls:'wlq-card'}, el('div', {style:{fontSize:'40px'}}, '🆕'), el('div', {cls:'wlq-h1'}, 'What’s new'), el('div', {cls:'wlq-sub'}, 'Update '+WN.v),
-    el('div', {cls:'wlq-list'}, WN.items.map(([e, n, d]) => el('div', {cls:'wlq-item'}, el('div', {style:{fontSize:'26px'}}, e), el('div', null, el('b', null, n), el('div', {style:{fontSize:'13px', color:'#3d3d3d'}}, d))))),
+    el('div', {cls:'wlq-list'}, show.map(([e, n, d]) => el('div', {cls:'wlq-item'}, el('div', {style:{fontSize:'26px'}}, e), el('div', null, el('b', null, n), el('div', {style:{fontSize:'13px', color:'#3d3d3d'}}, d))))),
     el('button', {cls:'wlq-btn', onclick:close}, 'Let’s play!')));
   o.onclick = e => { if (e.target === o) close(); }; document.addEventListener('keydown', kd, true); document.body.appendChild(o); return true; };
 
