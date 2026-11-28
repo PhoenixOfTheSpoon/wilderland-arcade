@@ -9,7 +9,8 @@ const el = (tag, at, ...kids) => { const n = document.createElement(tag); at = a
   kids.flat().forEach(c => { if (c == null || c === false) return; n.appendChild(typeof c == 'object' ? c : document.createTextNode(String(c))); }); return n; };
 
 // ---------------- What's new ----------------
-const WN = {v:'2026-12-14w', items:[
+const WN = {v:'2026-12-14x', items:[
+  ['⏳', 'No more endless “Loading game…”', 'If a game file hiccups while downloading (often right after an update), the arcade now tries it again by itself. If a game still can’t load, you get a Reload button instead of waiting forever. Your progress is always safe.'],
   ['🗺', 'Map fix', 'Pressing M no longer closes the Snow Kingdom with “Something went wrong” once your Map Room is level 4 or higher. Travel flags work again.'],
   ['🔥', 'THE BURNING WINTER begins (after the Gecko God)', 'Beat the Gecko God and bring Oswald home, and the kingdom’s party is cut short: smoke over Ember Springs. Five new chapters: fires to fight, the Kindled, a mystery to solve and three fights with Lit, a hooded figure of fire who always gets away. You earn the Snow Pump, Cold Lantern, Frostforged snowballs, Blizzard Bomb and Frozen Heart along the way. Burned lands become Scorched: heal them by putting out fires and beating the Kindled. From Chapter 3, chase smoke columns for Lit sightings.'],
   ['🐺', 'New creatures in the Wider Kingdom', 'Frost Wolves hunt in packs of three, Ice Eagles dive from Northwatch Cliffs (watch for their shadow), Quarry Rock Crabs need charged hits, Marsh Lurkers hide under the snow, and a rare Ice Serpent lurks in Mirrormere. If you are lucky you might meet a Starlight Elk: stand still near it and it will trust you. (Something hotter is coming later…)'],
